@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #1a2a4a;
+}
+.dashboard-desc {
+    font-size: 1.2rem;
+    color: #444;
+    margin-bottom: 2rem;
+}
+.dashboard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    width: 100%;
+    max-width: 1200px;
+    margin-bottom: 40px;
+    justify-content: flex-start;
+}
+.dashboard-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: box-shadow 0.2s;
+    border: none;
+    min-width: 260px;
+    max-width: 320px;
+    flex: 1 1 260px;
+}
+.dashboard-card:hover {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+.dashboard-card h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.dashboard-card p {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 1.2rem;
+}
+.dashboard-card .btn {
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #0d47a1;
+    border: none;
+}
+.dashboard-card .btn:hover {
+    background: #1565c0;
+}
+.dashboard-kpi, .dashboard-facility {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    padding: 24px 20px;
+    margin-bottom: 24px;
+    max-width: 600px;
+    width: 100%;
+}
+.dashboard-kpi h4, .dashboard-facility h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.dashboard-kpi ul, .dashboard-facility ul {
+    padding-left: 0;
+    margin-bottom: 0;
+}

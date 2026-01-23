@@ -1,0 +1,62 @@
+@extends('layouts.qc-admin')
+@section('title', 'Efficiency Summary Report')
+@section('content')
+<div style="max-width:1100px;margin:0 auto;">
+    <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin-bottom:18px;">⚡ 3️⃣ Efficiency Summary Report</h2>
+    <p style="color:#555;margin-bottom:24px;">Summary of energy efficiency across all facilities.</p>
+    <!-- FILTERS -->
+    <form method="GET" action="" style="margin-bottom:24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;">
+            <label for="facility_id" style="font-weight:700;margin-bottom:4px;">Facility</label>
+            <select name="facility_id" id="facility_id" class="form-control" style="min-width:170px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="">All Facilities</option>
+                @foreach($facilities ?? [] as $facility)
+                    <option value="{{ $facility->id }}" @if(request('facility_id') == $facility->id) selected @endif>{{ $facility->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;">
+            <label for="rating" style="font-weight:700;margin-bottom:4px;">Rating</label>
+            <select name="rating" id="rating" class="form-control" style="min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="" disabled selected hidden>Select Rating</option>
+                <option value="all" @if(request('rating') == 'all' || request('rating') == '') selected @endif>All Ratings</option>
+                <option value="High" @if(request('rating') == 'High') selected @endif>High</option>
+                <option value="Medium" @if(request('rating') == 'Medium') selected @endif>Medium</option>
+                <option value="Low" @if(request('rating') == 'Low') selected @endif>Low</option>
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding:7px 22px;border-radius:7px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);margin-top:24px;">Filter</button>
+        </div>
+    </form>
+        <thead style="background:#e9effc;">
+            <tr>
+                <th>Facility</th>
+                <th>EUI</th>
+                <th>Rating</th>
+                <th>Last Audit</th>
+                <th>Flag</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($efficiencyRows ?? [] as $row)
+            <tr>
+                <td>{{ $row['facility'] }}</td>
+                <td>{{ $row['eui'] }}</td>
+                <td>{{ $row['rating'] }}</td>
+                <td>{{ $row['last_audit'] }}</td>
+                <td>
+                    @if($row['flag'])
+                        <span style="color:#e11d48;font-weight:700;">🚩 For Maintenance</span>
+                    @else
+                        <span style="color:#22c55e;font-weight:700;">OK</span>
+                    @endif
+                </td>
+            </tr>
+            @empty
+            <tr><td colspan="5" class="text-center">No efficiency data found.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+@endsection
