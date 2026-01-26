@@ -29,21 +29,34 @@ class EnergyEfficiencyAnalysisController extends Controller
         $highCount = $mediumCount = $lowCount = $flaggedCount = 0;
         foreach ($records->get() as $rec) {
             $facility = $rec->facility;
-            $avg = $facility && $facility->energyProfiles()->latest()->first() ? $facility->energyProfiles()->latest()->first()->average_monthly_kwh : null;
-            $variance = ($rec->kwh_consumed && $avg !== null) ? $rec->kwh_consumed - $avg : null;
+            $avgKwh = optional($facility?->energyProfiles()->latest()->first())->average_monthly_kwh;
+            $variance = ($rec->kwh_consumed && $avgKwh !== null) ? $rec->kwh_consumed - $avgKwh : null;
             $eui = ($rec->kwh_consumed && $facility && $facility->floor_area) ? round($rec->kwh_consumed / $facility->floor_area, 2) : null;
-            $percent = ($avg && $avg != 0) ? ($rec->kwh_consumed / $avg) * 100 : 0;
-            // Inverted: High: <60%, Medium: 60% to <80%, Low: >=80%
-            if ($percent < 60) {
-                $ratingVal = 'High';
-                $highCount++;
-            } elseif ($percent >= 60 && $percent < 80) {
+
+            // Dynamic threshold logic (same as Energy Monitoring)
+            $size = 'small';
+            if ($avgKwh > 3000) {
+                $size = 'extra_large';
+            } elseif ($avgKwh > 1500) {
+                $size = 'large';
+            } elseif ($avgKwh > 500) {
+                $size = 'medium';
+            }
+            $percent = 0.3; // default for small
+            if ($size === 'medium') $percent = 0.2;
+            if ($size === 'large') $percent = 0.15;
+            if ($size === 'extra_large') $percent = 0.10;
+            $dynamicThreshold = $avgKwh ? $avgKwh * (1 + $percent) : null;
+            if ($dynamicThreshold !== null && $rec->kwh_consumed >= $dynamicThreshold) {
+                $ratingVal = 'Low'; // Not efficient
+                $lowCount++;
+                $flaggedCount++;
+            } elseif ($dynamicThreshold !== null && $rec->kwh_consumed >= $avgKwh) {
                 $ratingVal = 'Medium';
                 $mediumCount++;
             } else {
-                $ratingVal = 'Low';
-                $lowCount++;
-                $flaggedCount++;
+                $ratingVal = 'High'; // Efficient
+                $highCount++;
             }
             if ($rating && $rating !== 'all' && $ratingVal !== $rating) continue;
             $efficiencyRows[] = [
@@ -51,10 +64,11 @@ class EnergyEfficiencyAnalysisController extends Controller
                 'facility' => $facility ? $facility->name : '-',
                 'month' => ($rec->month ? date('M', mktime(0,0,0,(int)$rec->month,1)) : '-') . ' ' . $rec->year,
                 'actual_kwh' => $rec->kwh_consumed,
-                'avg_kwh' => $avg,
+                'avg_kwh' => $avgKwh,
                 'variance' => $variance,
                 'eui' => $eui,
                 'rating' => $ratingVal,
+                'status' => $ratingVal,
             ];
         }
         // Prepare modal variables from the first facility (if any)
@@ -80,13 +94,26 @@ class EnergyEfficiencyAnalysisController extends Controller
                     foreach ($records as $rec) {
                         $avg = $profile ? $profile->average_monthly_kwh : null;
                         $variance = ($rec->kwh_consumed && $avg !== null) ? $rec->kwh_consumed - $avg : null;
-                        $percent = ($avg && $avg != 0) ? ($rec->kwh_consumed / $avg) * 100 : 0;
-                        if ($percent < 60) {
-                            $ratingVal = 'High';
-                        } elseif ($percent >= 60 && $percent < 80) {
+                        // Dynamic threshold logic (Low/Medium/High)
+                        $size = 'small';
+                        if ($avg > 3000) {
+                            $size = 'extra_large';
+                        } elseif ($avg > 1500) {
+                            $size = 'large';
+                        } elseif ($avg > 500) {
+                            $size = 'medium';
+                        }
+                        $percent = 0.3;
+                        if ($size === 'medium') $percent = 0.2;
+                        if ($size === 'large') $percent = 0.15;
+                        if ($size === 'extra_large') $percent = 0.10;
+                        $dynamicThreshold = $avg ? $avg * (1 + $percent) : null;
+                        if ($dynamicThreshold !== null && $rec->kwh_consumed >= $dynamicThreshold) {
+                            $ratingVal = 'Low';
+                        } elseif ($dynamicThreshold !== null && $rec->kwh_consumed >= $avg) {
                             $ratingVal = 'Medium';
                         } else {
-                            $ratingVal = 'Low';
+                            $ratingVal = 'High';
                         }
                         $modalUsageTable[] = [
                             'month' => ($rec->month ? date('M', mktime(0,0,0,(int)$rec->month,1)) : '-') . ' ' . $rec->year,
@@ -94,7 +121,7 @@ class EnergyEfficiencyAnalysisController extends Controller
                             'avg_kwh' => $avg,
                             'variance' => $variance,
                             'rating' => $ratingVal,
-                            'status' => $rec->status,
+                            'status' => $ratingVal,
                         ];
                     }
                     // Maintenance

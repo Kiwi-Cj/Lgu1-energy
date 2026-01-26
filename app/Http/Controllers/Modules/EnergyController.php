@@ -75,7 +75,7 @@ class EnergyController extends Controller
             'facility_id' => 'required|exists:facilities,id',
             'month' => 'required|string|max:2',
             'year' => 'required|string|max:4',
-            'kwh_consumed' => 'required|numeric',
+            'actual_kwh' => 'required|numeric',
             'status' => 'nullable|string',
         ]);
 
@@ -90,11 +90,13 @@ class EnergyController extends Controller
         $facility = \App\Models\Facility::find($validated['facility_id']);
         $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
         $avg = $profile ? $profile->average_monthly_kwh : null;
-        $kwh_vs_avg = ($avg !== null) ? $validated['kwh_consumed'] - $avg : null;
+        $kwh_vs_avg = ($avg !== null) ? $validated['actual_kwh'] - $avg : null;
         $percent_change = ($avg && $avg != 0) ? (($kwh_vs_avg / $avg) * 100) : null;
         $validated['kwh_vs_avg'] = $kwh_vs_avg;
         $validated['percent_change'] = $percent_change;
         $usage->update($validated);
+        // Auto-update EnergyProfile average if 3+ records exist
+        $facility->updateProfileAverageFromRecords();
         // Preserve filters after update (use filter fields from form if present)
         $params = [];
         if ($request->filled('facility_id_filter')) $params['facility_id'] = $request->input('facility_id_filter');
@@ -127,7 +129,7 @@ class EnergyController extends Controller
             'facility_id' => 'required|exists:facilities,id',
             'month' => 'required|string|max:2',
             'year' => 'required|string|max:4',
-            'kwh_consumed' => 'required|numeric',
+            'actual_kwh' => 'required|numeric',
             'meralco_bill' => 'nullable|image|max:4096',
         ]);
 
@@ -155,22 +157,45 @@ class EnergyController extends Controller
 
         $validated['created_by'] = auth()->id();
 
-        // Compute kwh_vs_avg and percent_change
+        // Compute kwh_vs_avg, percent_change, and set average_monthly_kwh for the record
         $facility = \App\Models\Facility::find($validated['facility_id']);
         $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
         $avg = $profile ? $profile->average_monthly_kwh : null;
-        $kwh_vs_avg = ($avg !== null) ? $validated['kwh_consumed'] - $avg : null;
+        $kwh_vs_avg = ($avg !== null) ? $validated['actual_kwh'] - $avg : null;
         $percent_change = ($avg && $avg != 0) ? (($kwh_vs_avg / $avg) * 100) : null;
         $validated['kwh_vs_avg'] = $kwh_vs_avg;
         $validated['percent_change'] = $percent_change;
-    \App\Models\EnergyRecord::create($validated);
+        $validated['average_monthly_kwh'] = $avg;
+        \App\Models\EnergyRecord::create($validated);
 
-    // Preserve filters after add (use filter fields from form if present)
-    $params = [];
-    if ($request->filled('facility_id')) $params['facility_id'] = $request->input('facility_id');
-    if ($request->filled('month')) $params['month'] = $request->input('month');
-    if ($request->filled('year')) $params['year'] = $request->input('year');
-    return redirect()->route('modules.energy.index', $params)->with('success', 'Energy record added successfully!');
+        // Always update or create the latest energy profile's average_monthly_kwh from first3months_data
+        $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+        if ($first3mo) {
+            $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+            $profile = $facility->energyProfiles()->latest()->first();
+            if ($profile) {
+                $profile->update(['average_monthly_kwh' => $avgKwh]);
+            } else {
+                $facility->energyProfiles()->create([
+                    'average_monthly_kwh' => $avgKwh,
+                    'electric_meter_no' => 'N/A',
+                    'utility_provider' => 'N/A',
+                    'contract_account_no' => 'N/A',
+                    'main_energy_source' => 'Grid',
+                    'backup_power' => 'None',
+                    'transformer_capacity' => 0,
+                    'number_of_meters' => 1,
+                ]);
+            }
+        }
+        // Auto-update EnergyProfile average if 3+ records exist (fallback)
+        $facility->updateProfileAverageFromRecords();
+        // Preserve filters after add (use filter fields from form if present)
+        $params = [];
+        if ($request->filled('facility_id')) $params['facility_id'] = $request->input('facility_id');
+        if ($request->filled('month')) $params['month'] = $request->input('month');
+        if ($request->filled('year')) $params['year'] = $request->input('year');
+        return redirect()->route('modules.energy.index', $params)->with('success', 'Energy record added successfully!');
     }
     public function index(Request $request)
     {
@@ -204,23 +229,42 @@ class EnergyController extends Controller
         $recentUsages = $query->orderByDesc('year')->orderByDesc('month')->get();
         // Attach average_monthly_kwh, kwh_vs_avg, percent_change, and status for each record
         foreach ($recentUsages as $usage) {
-            $profile = $usage->facility ? $usage->facility->energyProfiles()->latest()->first() : null;
-            $avg = $profile ? $profile->average_monthly_kwh : null;
-            $usage->average_monthly_kwh = $avg;
-            $usage->kwh_vs_avg = ($avg !== null)
-                ? $usage->kwh_consumed - $avg
+            // Use the value from the DB, not from the profile
+            $avgKwh = $usage->average_monthly_kwh;
+            $usage->kwh_vs_avg = ($avgKwh !== null)
+                ? $usage->actual_kwh - $avgKwh
                 : null;
-            $usage->percent_change = ($avg && $avg != 0)
-                ? (($usage->kwh_vs_avg / $avg) * 100)
+            $usage->percent_change = ($avgKwh && $avgKwh != 0)
+                ? (($usage->kwh_vs_avg / $avgKwh) * 100)
                 : null;
-            if ($avg !== null) {
-                $diff = $usage->kwh_consumed - $avg;
-                $usage->status = $diff > 0 ? 'High' : 'Normal';
+
+            // Dynamic threshold status logic (High/Medium/Low)
+            if ($avgKwh !== null) {
+                $size = 'small';
+                if ($avgKwh > 3000) {
+                    $size = 'extra_large';
+                } elseif ($avgKwh > 1500) {
+                    $size = 'large';
+                } elseif ($avgKwh > 500) {
+                    $size = 'medium';
+                }
+                $percent = 0.3;
+                if ($size === 'medium') $percent = 0.2;
+                if ($size === 'large') $percent = 0.15;
+                if ($size === 'extra_large') $percent = 0.10;
+                $dynamicThreshold = $avgKwh * (1 + $percent);
+                if ($usage->actual_kwh >= $dynamicThreshold) {
+                    $usage->status = 'Low';
+                } elseif ($usage->actual_kwh >= $avgKwh) {
+                    $usage->status = 'Medium';
+                } else {
+                    $usage->status = 'High';
+                }
             } else {
                 $usage->status = null;
             }
         }
-        $totalKwh = $query->sum('kwh_consumed');
+        $totalKwh = $query->sum('actual_kwh');
         $activeFacilities = Facility::where('status', 'active')->count();
         $facilities = Facility::all();
 
@@ -242,7 +286,7 @@ class EnergyController extends Controller
         foreach ($graphQuery->get() as $rec) {
             $m = (int)ltrim($rec->month, '0');
             if ($m >= 1 && $m <= 12) {
-                $monthlyKwh[$m] += $rec->kwh_consumed;
+                $monthlyKwh[$m] += $rec->actual_kwh;
                 if ($baselineValue !== null) {
                     $baselineKwh[$m] = $baselineValue;
                 }
@@ -312,7 +356,7 @@ class EnergyController extends Controller
             $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
             $avg = $profile ? $profile->average_monthly_kwh : null;
             
-            $actualKwh = $record->kwh_consumed;
+            $actualKwh = $record->actual_kwh;
             $variance = ($avg !== null) ? ($actualKwh - $avg) : null;
             
             // Determine trend based on variance

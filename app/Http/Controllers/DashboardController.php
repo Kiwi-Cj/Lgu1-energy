@@ -19,7 +19,11 @@ class DashboardController extends Controller
         $userFacilityId = ($userRole === 'staff') ? $user->facility_id : null;
 
         // 1. Summary Cards
-        $totalFacilities = Facility::count();
+        if ($userRole === 'staff') {
+            $totalFacilities = $user->facility_id ? 1 : 0;
+        } else {
+            $totalFacilities = Facility::count();
+        }
         $totalKwh = EnergyRecord::whereMonth('created_at', now()->month)->sum('kwh_consumed');
         $totalCost = Bill::whereMonth('created_at', now()->month)->sum('total_bill');
         $activeAlerts = EnergyRecord::where('alert_flag', 1)->count();

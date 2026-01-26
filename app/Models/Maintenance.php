@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToFacility;
 
 class Maintenance extends Model
 {
@@ -23,10 +24,8 @@ class Maintenance extends Model
         'remarks',
     ];
 
-    public function facility()
-    {
-        return $this->belongsTo(Facility::class);
-    }
+
+    use BelongsToFacility;
 
     public function energyEfficiency()
     {

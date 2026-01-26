@@ -3,6 +3,9 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Sanctum\HasApiTokens;
+use App\Models\Traits\BelongsToFacility;
 
 class User extends Authenticatable
 {
@@ -20,14 +23,18 @@ class User extends Authenticatable
         'status',
         'last_login',
         'facility_id', // Facility assignment for Staff users
+        'otp_code',
+        'otp_expires_at',
+        'otp_verified',
     ];
+        protected $casts = [
+            'otp_expires_at' => 'datetime',
+            'otp_verified' => 'boolean',
+        ];
     protected $hidden = [
         'password', 'remember_token',
     ];
 
     // Facility relationship (optional, if user is assigned to a facility)
-    public function facility()
-    {
-        return $this->belongsTo(\App\Models\Facility::class, 'facility_id');
-    }
+    use BelongsToFacility;
 }

@@ -125,20 +125,42 @@ body.dark-mode .dark-toggle{
 }
 
 /* ===== MAIN CONTENT ===== */
-.main-content{
-    margin-left:260px;
-    padding:36px 20px;
-    position:relative;
-    z-index:10;
+.main-content {
+    margin-left: 260px;
+    padding: 0;
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
-.main-content-inner{
-    width:100%;
-    max-width:1100px;
-    margin:auto;
-    background:#fff;
-    border-radius:18px;
-    padding:32px;
-    box-shadow:0 6px 24px rgba(0,0,0,.12);
+.main-header {
+    background: #2c3e50;
+    color: #fff;
+    padding: 18px 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 8px solid #2c3e50;
+    margin-left: -32px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+.main-content-inner {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.12);
+    flex: 1 1 auto;
+    overflow-y: auto;
+    height: calc(100vh - 70px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -218,27 +240,37 @@ body.dark-mode .dark-toggle{
         <ul class="nav-list">
             <li><a href="/modules/dashboard/index" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            @if($role=='admin'||$role=='staff')
+            {{-- OPERATIONS GROUP --}}
+            <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+            @if($role=='super admin'||$role=='admin'||$role=='staff')
                 <li><a href="/modules/facilities/index" class="nav-link"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                @if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff')
+                    <li class="nav-item-has-submenu">
+                        <a href="#" class="nav-link submenu-toggle">
+                            <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                        <ul class="nav-submenu">
+                            <li><a href="{{ route('energy.dashboard') }}" class="nav-link">Dashboard</a></li>
+                            <li><a href="{{ route('energy.trend') }}" class="nav-link">Trend Analysis</a></li>
+                            <li><a href="{{ route('energy.exportReport') }}" class="nav-link">Export COA Report</a></li>
+                        </ul>
+                    </li>
+                @endif
                 <li><a href="/modules/maintenance/index" class="nav-link"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
                 <li><a href="/modules/billing/index" class="nav-link"><i class="fa-solid fa-money-bill-wave"></i> Billing & Cost</a></li>
             @endif
 
-            {{-- Energy Monitoring: Available for Staff (restricted to assigned facility), Admin, and Energy Officer --}}
-            @if($role=='admin'||$role=='energy_officer'||$role=='staff')
-                <li><a href="/modules/energy/index" class="nav-link"><i class="fa-solid fa-bolt"></i> Energy Monitoring</a></li>
-            @endif
-
-            @if($role=='admin'||$role=='energy_officer')
+            {{-- ANALYTICS GROUP --}}
+            @if($role=='super admin'||$role=='admin'||$role=='energy_officer')
+                <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
                 <li><a href="/modules/energy-efficiency-analysis" class="nav-link"><i class="fa-solid fa-chart-line"></i> Energy Efficiency Analysis</a></li>
-
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle">
                         <span><i class="fa-solid fa-chart-bar"></i> Reports & Analytics</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
-                        <li><a href="/modules/reports/index" class="nav-link">Main Dashboard</a></li>
                         <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
                         <li><a href="/modules/reports/billing" class="nav-link">Billing Report</a></li>
                         <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
@@ -246,8 +278,9 @@ body.dark-mode .dark-toggle{
                 </li>
             @endif
 
-            {{-- Users & Roles and Settings: Admin only --}}
-            @if($role=='admin')
+            {{-- ADMINISTRATION GROUP --}}
+            @if($role=='super admin'||$role=='admin')
+                <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">ADMINISTRATION</li>
                 <li><a href="/modules/users/index" class="nav-link"><i class="fa-solid fa-users"></i> Users & Roles</a></li>
                 <li><a href="/modules/settings/index" class="nav-link"><i class="fa-solid fa-gear"></i> System Settings</a></li>
             @endif
@@ -257,7 +290,7 @@ body.dark-mode .dark-toggle{
     <div class="user-info">
         Welcome, {{ $user->full_name ?? $user->name ?? 'Admin' }}<br>
         <small style="color:#666;font-size:0.85rem;">{{ ucfirst($role ?? 'User') }}</small>
-        <button class="dark-toggle" id="darkToggle">🌙 Dark Mode</button>
+   
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="logout-btn">Logout</button>
@@ -265,9 +298,80 @@ body.dark-mode .dark-toggle{
     </div>
 </div>
 
+
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content">
-    
+    <div class="main-header" style="background:rgba(44,62,80,.92); color:#fff; padding:10px 28px; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-left:8px solid #2c3e50; margin-left:-32px; position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; min-height:48px; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:12px; min-width:160px; justify-content:flex-end;">
+            <!-- Reserved space for header title (QC Admin Panel) -->
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <button id="notifBtn" title="Notifications" style="background:none; border:none; color:#fff; font-size:1.35rem; cursor:pointer; position:relative; padding:6px; border-radius:50%; transition:background 0.15s, color 0.15s;">
+                <i class="fa-regular fa-bell" id="notifBell" style="transition: color 0.2s;"></i>
+                @php $alerts = $alerts ?? []; @endphp
+                <span id="notifDot" style="{{ !empty($alerts) && count($alerts) > 0 ? 'display:flex;' : 'display:none;' }} align-items:center; justify-content:center; position:absolute; top:-4px; right:-4px; min-width:14px; height:14px; background:#e74c3c; color:#fff; font-size:0.72em; font-weight:700; border-radius:50%; box-shadow:0 0 4px 1px #e74c3c99; border:1.5px solid #fff; padding:0 3px; text-align:center; line-height:1; z-index:2;">
+                    {{ !empty($alerts) && count($alerts) > 0 ? count($alerts) : '' }}
+                </span>
+            </button>
+            <button id="darkToggleHeader" class="dark-toggle" title="Toggle dark mode" style="margin:0; background:none; border:none; color:#fff; font-size:1.5rem; padding:7px; border-radius:50%; transition:background 0.18s, color 0.18s; display:flex; align-items:center; justify-content:center;">
+                <span id="darkModeIconWrap" style="display:inline-block; transition:transform 0.3s cubic-bezier(.4,2,.6,1);">
+                    <i id="darkModeIcon" class="fa-regular fa-moon"></i>
+                </span>
+            </button>
+            <div class="user-menu" style="position:relative; margin-left:10px;">
+                @php
+                    $user = auth()->user();
+                    $userName = $user->full_name ?? $user->name ?? 'User';
+                    $initial = strtoupper(mb_substr($userName,0,1));
+                @endphp
+                <button id="userMenuBtn" style="display:flex; align-items:center; background:none; border:none; color:#fff; cursor:pointer; padding:4px 10px 4px 4px; border-radius:18px; transition:background 0.15s; gap:8px;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#3762c8; color:#fff; border-radius:50%; font-weight:600; font-size:1.1rem; letter-spacing:1px;">{{ $initial }}</span>
+                    <span style="font-size:1rem; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $userName }}</span>
+                    <i class="fa fa-caret-down" style="font-size:1rem;"></i>
+                </button>
+                <div id="userDropdown" style="display:none; position:absolute; right:0; top:110%; min-width:160px; background:#fff; color:#222; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,0.13); z-index:100; padding:8px 0;">
+                    <a href="/modules/users/profile" style="display:block; padding:10px 18px; color:#222; text-decoration:none; font-size:0.98rem; border-radius:6px 6px 0 0; transition:background 0.13s;">Profile</a>
+                    <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                        @csrf
+                        <button type="submit" style="width:100%; text-align:left; background:none; border:none; color:#e74c3c; padding:10px 18px; font-size:0.98rem; border-radius:0 0 6px 6px; cursor:pointer; transition:background 0.13s;">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- User dropdown styles moved to head -->
+    </style>
+    <style>
+    .user-menu:focus-within #userDropdown,
+    #userMenuBtn.active + #userDropdown {
+        display: block !important;
+    }
+    #userDropdown a:hover, #userDropdown button:hover {
+        background: #f2f4fa;
+    }
+    /* Professional minimalist notif/dark mode */
+    #notifBtn, #darkToggleHeader {
+        outline: none;
+    }
+    #notifBtn:hover, #notifBtn:focus, #darkToggleHeader:hover, #darkToggleHeader:focus {
+        background: rgba(255,255,255,0.08);
+        color: #f9d423;
+    }
+    #notifBtn:active, #darkToggleHeader:active {
+        background: rgba(255,255,255,0.16);
+        color: #ff4e50;
+    }
+    #notifDot {
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+    #darkModeIcon {
+        transition: color 0.3s, transform 0.3s cubic-bezier(.4,2,.6,1);
+    }
+    .dark-mode #darkModeIcon {
+        color: #f9d423;
+        transform: rotate(-180deg) scale(1.15);
+    }
+    </style>
+    </div>
     <div class="main-content-inner">
         @yield('content')
     </div>
@@ -290,32 +394,52 @@ document.querySelectorAll('.submenu-toggle').forEach(btn=>{
     }
 });
 
+// User dropdown logic
+const userMenuBtn = document.getElementById('userMenuBtn');
+const userDropdown = document.getElementById('userDropdown');
+if(userMenuBtn && userDropdown){
+    userMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+        userMenuBtn.classList.toggle('active');
+    };
+    document.addEventListener('click', (e) => {
+        if (!userMenuBtn.contains(e.target)) {
+            userDropdown.style.display = 'none';
+            userMenuBtn.classList.remove('active');
+        }
+    });
+}
 // Dark mode
 const toggle=document.getElementById('darkToggle');
 const toggleHeader=document.getElementById('darkToggleHeader');
-
-function setDarkModeButtonText(btn) {
-    if (!btn) return;
-    const on = document.body.classList.contains('dark-mode');
-    btn.textContent = on ? '☀ Light Mode' : '🌙 Dark Mode';
-}
-
-function syncDarkModeButtons() {
-    setDarkModeButtonText(toggle);
-    setDarkModeButtonText(toggleHeader);
-}
-
+const notifBtn=document.getElementById('notifBtn');
+const notifDot=document.getElementById('notifDot');
 if(localStorage.getItem('darkMode')==='on'){
     document.body.classList.add('dark-mode');
 }
-syncDarkModeButtons();
-
+// Notification dot visibility is now handled by blade (alerts count)
+// Professional dark mode icon toggle
+function updateDarkModeIcon() {
+    const icon = document.getElementById('darkModeIcon');
+    if (!icon) return;
+    if (document.body.classList.contains('dark-mode')) {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
+        icon.title = 'Light Mode';
+    } else {
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+        icon.title = 'Dark Mode';
+    }
+}
+updateDarkModeIcon();
 if(toggle){
     toggle.onclick=()=>{
         document.body.classList.toggle('dark-mode');
         const on=document.body.classList.contains('dark-mode');
         localStorage.setItem('darkMode',on?'on':'off');
-        syncDarkModeButtons();
+        syncDarkModeButtons && syncDarkModeButtons();
     };
 }
 if(toggleHeader){
@@ -323,7 +447,8 @@ if(toggleHeader){
         document.body.classList.toggle('dark-mode');
         const on=document.body.classList.contains('dark-mode');
         localStorage.setItem('darkMode',on?'on':'off');
-        syncDarkModeButtons();
+        syncDarkModeButtons && syncDarkModeButtons();
+        updateDarkModeIcon();
     };
 }
 </script>

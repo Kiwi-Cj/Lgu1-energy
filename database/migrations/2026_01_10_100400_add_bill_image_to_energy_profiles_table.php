@@ -5,17 +5,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void
-    {
-        Schema::table('energy_profiles', function (Blueprint $table) {
-            $table->string('bill_image')->nullable()->after('number_of_meters');
-        });
-    }
 
-    public function down(): void
-    {
-        Schema::table('energy_profiles', function (Blueprint $table) {
-            $table->dropColumn('bill_image');
-        });
-    }
+    // public function up(): void
+    // {
+    //     Schema::table('energy_profiles', function (Blueprint $table) {
+    //         $table->dropColumn('bill_image');
+    //     });
+    // }
+
+    // public function down(): void
+    // {
+    //     Schema::table('energy_profiles', function (Blueprint $table) {
+    //         $table->dropColumn('bill_image');
+    //     });
+    // }
 };

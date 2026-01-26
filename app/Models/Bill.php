@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToFacility;
 
 class Bill extends Model
 {
@@ -18,10 +19,8 @@ class Bill extends Model
         'meralco_bill_picture',
     ];
 
-    public function facility()
-    {
-        return $this->belongsTo(Facility::class);
-    }
+
+    use BelongsToFacility;
 
     // Accessor for total_bill
     public function getTotalBillAttribute($value)

@@ -29,8 +29,6 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-
-
         $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
@@ -38,16 +36,26 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Generate OTP
+        $otp = random_int(100000, 999999);
+        $otpExpires = now()->addMinutes(10);
+
         $user = User::create([
             'full_name' => $request->full_name,
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'otp_code' => $otp,
+            'otp_expires_at' => $otpExpires,
+            'otp_verified' => false,
         ]);
+
+        // Send OTP notification
+        $user->notify(new \App\Notifications\SendOtpNotification($otp));
 
         event(new Registered($user));
 
-        // Redirect to login page with success message
-        return redirect()->route('login')->with('success', 'Successfully registered! You may now log in.');
+        // Redirect to OTP verification page
+        return redirect()->route('verify.otp.form', ['user_id' => $user->id]);
     }
 }

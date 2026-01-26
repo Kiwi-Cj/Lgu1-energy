@@ -36,7 +36,7 @@ class EnergyMonitoringController extends Controller
             'month' => 'required',
             'year' => 'required',
             'kwh_consumed' => 'required|numeric',
-            'meralco_bill' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
         ]);
 
         // Prevent duplicate entry for the same facility, month, and year
@@ -49,9 +49,9 @@ class EnergyMonitoringController extends Controller
         }
 
         $data = $validated;
-        if ($request->hasFile('meralco_bill')) {
-            $path = $request->file('meralco_bill')->store('meralco_bills', 'public');
-            $data['meralco_bill'] = $path;
+        if ($request->hasFile('meralco_bill_picture')) {
+            $path = $request->file('meralco_bill_picture')->store('meralco_bills', 'public');
+            $data['meralco_bill_picture'] = $path;
         }
 
         \App\Models\EnergyRecord::create($data);

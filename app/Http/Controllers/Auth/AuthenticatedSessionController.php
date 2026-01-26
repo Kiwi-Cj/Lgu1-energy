@@ -24,11 +24,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
-
+        $request->ensureIsNotRateLimited();
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($request->throttleKey());
+            return back()->withErrors(['email' => trans('auth.failed')]);
+        }
+        \Illuminate\Support\Facades\Auth::login($user);
         $request->session()->regenerate();
-
-        // Redirect all users to dashboard after login
         return redirect()->intended('/modules/dashboard/index');
     }
 

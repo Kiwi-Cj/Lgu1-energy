@@ -79,9 +79,7 @@ body::before {
 
             <button class="btn-primary" type="submit">Sign In</button>
 
-            <p class="small-text">Don’t have an account?
-                <a href="{{ url('/register') }}" class="link">Create one</a>
-            </p>
+            <!-- Registration link removed -->
         </form>
     </div>
 </div>

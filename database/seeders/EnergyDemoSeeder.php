@@ -20,6 +20,9 @@ class EnergyDemoSeeder extends Seeder
             // Create an energy profile
             $profile = EnergyProfile::create([
                 'facility_id' => $facility->id,
+                'electric_meter_no' => 'EM-' . rand(1000, 9999),
+                'utility_provider' => 'Meralco',
+                'contract_account_no' => 'CA-' . rand(10000, 99999),
                 'average_monthly_kwh' => rand(800, 1200),
                 'main_energy_source' => 'Meralco',
                 'backup_power' => 'Generator',

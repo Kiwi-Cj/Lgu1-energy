@@ -34,9 +34,29 @@
                 @endforeach
             </select>
         </div>
-        <div style="display:flex;flex-direction:column;">
-            <label for="month" style="font-weight:700;margin-bottom:4px;">Month / Year</label>
-            <input type="month" name="month" id="month" class="form-control" style="min-width:140px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;" value="{{ request('month') }}">
+        <div style="display:flex;flex-direction:column;min-width:120px;">
+            <label for="month" style="font-weight:700;margin-bottom:4px;">Month</label>
+            <select name="month" id="month" class="form-control" style="min-width:100px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="all" @if(request('month') == 'all' || !request('month')) selected @endif>All Months</option>
+                @php
+                    $availableMonths = isset($availableMonths) && is_array($availableMonths) && count($availableMonths)
+                        ? $availableMonths
+                        : range(1,12);
+                @endphp
+                @foreach($availableMonths as $m)
+                    <option value="{{ str_pad($m,2,'0',STR_PAD_LEFT) }}" @if(request('month') == str_pad($m,2,'0',STR_PAD_LEFT)) selected @endif>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div style="display:flex;flex-direction:column;min-width:100px;">
+            <label for="year" style="font-weight:700;margin-bottom:4px;">Year</label>
+            <select name="year" id="year" class="form-control" required style="min-width:100px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="" disabled selected hidden>Select Year</option>
+                @php $currentYear = date('Y'); @endphp
+                @foreach(range($currentYear, $currentYear-10) as $y)
+                    <option value="{{ $y }}" @if(request('year') == $y) selected @endif>{{ $y }}</option>
+                @endforeach
+            </select>
         </div>
         <div style="display:flex;flex-direction:column;">
             <label for="rating" style="font-weight:700;margin-bottom:4px;">Rating</label>
@@ -74,7 +94,7 @@
             <tr>
                 <td>
                     <!-- Modal link: always use $row['facility_id'] for AJAX -->
-                    <a href="#" style="color:#2563eb;font-weight:600;text-decoration:underline;cursor:pointer;" onclick="openFacilityModalAjaxById('{{ $row['facility_id'] ?? '' }}'); return false;">{{ $row['facility'] }}</a>
+                    <a href="#" style="color:#2563eb;font-weight:600;text-decoration:underline;cursor:pointer;" onclick="openFacilityModalAjaxById('{{ $row['facility_id'] ?? '' }}', '{{ $row['month'] }}'); return false;">{{ $row['facility'] }}</a>
                 </td>
                 <td>{{ $row['month'] }}</td>
                 <td>{{ $row['actual_kwh'] }}</td>
@@ -188,8 +208,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function openFacilityModalAjaxById(facilityId) {
+function openFacilityModalAjaxById(facilityId, monthLabel) {
     if (!facilityId) return;
+    // Parse monthLabel (e.g. "Mar 2026")
+    let month = null, year = null;
+    if (monthLabel) {
+        const parts = monthLabel.split(' ');
+        if (parts.length === 2) {
+            const monthStr = parts[0];
+            const yearStr = parts[1];
+            month = (new Date(Date.parse(monthStr + ' 1, 2000'))).getMonth() + 1;
+            year = parseInt(yearStr);
+        }
+    }
     document.getElementById('facilityModal').style.display = 'flex';
     // Loading states
     document.getElementById('modalFacilityName').textContent = 'Loading...';
@@ -207,7 +238,11 @@ function openFacilityModalAjaxById(facilityId) {
     document.getElementById('modalMaintRemarks').textContent = '-';
     document.getElementById('modalMaintLink').href = '#';
     // Fetch data
-    fetch('/modules/facilities/' + facilityId + '/modal-detail')
+    let url = '/modules/facilities/' + facilityId + '/modal-detail';
+    if (month && year) {
+        url += `?month=${month}&year=${year}`;
+    }
+    fetch(url)
         .then(r => r.json())
         .then(data => {
             document.getElementById('modalFacilityName').textContent = data.name || '-';
@@ -248,8 +283,8 @@ function openFacilityModalAjaxById(facilityId) {
                         backgroundColor: 'rgba(37,99,235,0.08)',
                         tension: 0.3,
                         pointRadius: 4,
-                        pointBackgroundColor: data.trend.map((v,i) => ratingColor(data.usage[i]?.rating)),
-                        pointBorderColor: data.trend.map((v,i) => ratingColor(data.usage[i]?.rating)),
+                        pointBackgroundColor: '#e11d48',
+                        pointBorderColor: '#e11d48',
                     }]
                 },
                 options: {
@@ -257,19 +292,58 @@ function openFacilityModalAjaxById(facilityId) {
                     scales: { y: { beginAtZero: true } }
                 }
             });
+            // Show trend analysis below chart
+            let trendDiv = document.getElementById('modalTrendAnalysis');
+            if (!trendDiv) {
+                trendDiv = document.createElement('div');
+                trendDiv.id = 'modalTrendAnalysis';
+                trendDiv.style = 'margin-top:8px;font-weight:600;color:#2563eb;';
+                ctx.canvas.parentNode.appendChild(trendDiv);
+            }
+            trendDiv.textContent = '3-Month Trend: ' + (data.trend_analysis || '-');
+
+            // Show trend-based recommendation directly below the trend label
+            let trendRecDiv = document.getElementById('modalTrendRecommendation');
+            if (!trendRecDiv) {
+                trendRecDiv = document.createElement('div');
+                trendRecDiv.id = 'modalTrendRecommendation';
+                trendRecDiv.style = 'margin-top:4px;font-size:1rem;color:#444;';
+                trendDiv.parentNode.insertBefore(trendRecDiv, trendDiv.nextSibling);
+            }
+            // Find the first trend-based recommendation from backend (if any)
+            let trendRec = '';
+            if (Array.isArray(data.recommendations)) {
+                for (let r of data.recommendations) {
+                    if (r.startsWith('Energy usage is')) { trendRec = r; break; }
+                }
+            }
+            trendRecDiv.textContent = trendRec;
 
             // Use recommendations from backend if present, else generate based on rating
             const recList = document.getElementById('modalRecommendations');
-            let recs = Array.isArray(data.recommendations) ? data.recommendations : [];
+            let recs = Array.isArray(data.recommendations) ? data.recommendations.filter(r => !r.startsWith('Energy usage is')) : [];
             if (recs.length === 0 && data.usage && data.usage.length) {
-                // Get the latest rating
-                const lastRow = data.usage[data.usage.length - 1];
-                if (lastRow && lastRow.rating) {
-                    if (lastRow.rating === 'High') {
-                        recs = ['Maintain current practices.', 'Continue monitoring for any unusual spikes.', 'Reward facility for efficiency.'];
-                    } else if (lastRow.rating === 'Medium') {
+                // Find the row matching the clicked month (should be the last in usage, but safer to match by label)
+                let selectedMonth = null;
+                if (month && year) {
+                    // Compose label as in backend: e.g. 'Mar 2026'
+                    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    const mIdx = parseInt(month,10)-1;
+                    if (mIdx >= 0 && mIdx < 12) {
+                        selectedMonth = monthNames[mIdx] + ' ' + year;
+                    }
+                }
+                let usageRow = null;
+                if (selectedMonth) {
+                    usageRow = data.usage.find(row => row.month === selectedMonth);
+                }
+                if (!usageRow) usageRow = data.usage[data.usage.length - 1];
+                if (usageRow && usageRow.rating) {
+                    if (usageRow.rating === 'High') {
+                        recs = ['Excellent efficiency! Maintain current practices.', 'Continue monitoring for any unusual spikes.', 'Consider sharing best practices with other facilities.'];
+                    } else if (usageRow.rating === 'Medium') {
                         recs = ['Review energy usage patterns.', 'Check for possible equipment inefficiencies.', 'Consider minor improvements.'];
-                    } else if (lastRow.rating === 'Low') {
+                    } else if (usageRow.rating === 'Low') {
                         recs = ['Conduct a full energy audit.', 'Schedule maintenance for major equipment.', 'Implement corrective actions immediately.'];
                     } else {
                         recs = ['No special recommendations.'];
@@ -280,7 +354,9 @@ function openFacilityModalAjaxById(facilityId) {
             } else if (recs.length === 0) {
                 recs = ['No special recommendations.'];
             }
-            recList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+            // Remove duplicate recommendations
+            const uniqueRecs = Array.from(new Set(recs));
+            recList.innerHTML = uniqueRecs.map(r => `<li>${r}</li>`).join('');
         });
 }
 function closeFacilityModal() {

@@ -1,4 +1,103 @@
 <?php
+
+// Delete first3months_data for a facility (for AJAX, with CSRF/session)
+Route::delete('/api/facilities/{facility}/first3months-data', function($facility) {
+	$deleted = \DB::table('first3months_data')->where('facility_id', $facility)->delete();
+	return response()->json(['success' => $deleted > 0]);
+});
+// API endpoint to get first3months_data for a facility
+Route::get('/api/facilities/{facility}/first3months-data', function($facilityId) {
+    $row = \DB::table('first3months_data')->where('facility_id', $facilityId)->first();
+    if ($row) {
+        return response()->json([
+            'month1' => $row->month1,
+            'month2' => $row->month2,
+            'month3' => $row->month3,
+        ]);
+    }
+    return response()->json([]);
+});
+use App\Http\Controllers\First3MonthsController;
+// Energy Monitoring named routes for sidebar dropdown
+Route::middleware(['auth', 'verified'])->group(function () {
+	// First 3 Months Data Entry for Facilities
+	Route::get('/facilities/first3months', [First3MonthsController::class, 'create'])->name('facilities.first3months.create');
+	Route::post('/facilities/first3months', [First3MonthsController::class, 'store'])->name('facilities.first3months.store');
+				// Energy Monitoring - Energy Profile page
+			// Placeholder route for energy-profiles.store to resolve RouteNotFoundException
+			Route::post('/modules/energy-profiles', function() {
+				// Implement storing logic here
+				return redirect()->back()->with('success', 'Energy profile stored (placeholder).');
+			})->name('energy-profiles.store');
+		// Placeholder route for facilities.exportReport to resolve RouteNotFoundException
+		Route::get('/modules/facilities/export-report', function() {
+			return 'Export report for facilities (placeholder).';
+		})->name('facilities.exportReport');
+	Route::get('/modules/energy/dashboard', function() {
+        $facilities = \App\Models\Facility::all();
+        $userRole = strtolower(auth()->user()?->role ?? '');
+        return view('modules.energy-monitoring.index', compact('facilities', 'userRole'));
+    })->name('energy.dashboard');
+
+	Route::get('/modules/energy/records', function(\Illuminate\Http\Request $request) {
+		$facilities = \App\Models\Facility::all();
+		$query = \App\Models\EnergyRecord::with('facility');
+		if ($request->has('facility_id') && $request->facility_id) {
+			$query->where('facility_id', $request->facility_id);
+		}
+		$monthlyRecords = $query->get();
+		return view('modules.energy-monitoring.records', compact('facilities', 'monthlyRecords'));
+	})->name('energy.records');
+
+	// Handle Add Monthly Record POST
+	Route::post('/modules/energy/records', function(\Illuminate\Http\Request $request) {
+		   $validated = $request->validate([
+			   'facility_id' => 'required|exists:facilities,id',
+			   'month' => 'required|integer|min:1|max:12',
+			   'year' => 'required|integer',
+			   'actual_kwh' => 'required|numeric',
+			'average_monthly_kwh' => 'nullable|numeric',
+			   'rate_per_kwh' => 'required|numeric',
+			   'energy_cost' => 'nullable|numeric',
+			   'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+		   ]);
+		// Prevent duplicate entry for the same facility, month, and year
+		$exists = \App\Models\EnergyRecord::where('facility_id', $validated['facility_id'])
+			->where('month', $validated['month'])
+			->where('year', $validated['year'])
+			->exists();
+		if ($exists) {
+			return redirect()->back()->withInput()->withErrors(['duplicate' => 'An energy record for this facility and month/year already exists.']);
+		}
+		   $data = $validated;
+		   // Set baseline_kwh to average_monthly_kwh (they should always match)
+		   if (!isset($data['average_monthly_kwh']) || $data['average_monthly_kwh'] === null) {
+			   $data['average_monthly_kwh'] = 0;
+		   }
+		   // Calculate deviation_percent
+		$data['deviation_percent'] = (isset($data['average_monthly_kwh']) && $data['average_monthly_kwh'] != 0)
+			? round((($data['actual_kwh'] - $data['average_monthly_kwh']) / $data['average_monthly_kwh']) * 100, 2)
+			   : 0;
+		   // Calculate energy_cost
+		   $data['energy_cost'] = $data['actual_kwh'] * $data['rate_per_kwh'];
+		   if ($request->hasFile('meralco_bill_picture')) {
+			   $path = $request->file('meralco_bill_picture')->store('meralco_bills', 'public');
+			   $data['meralco_bill_picture'] = $path;
+		   }
+		   \App\Models\EnergyRecord::create($data);
+		   return redirect()->route('modules.energy.index')->with('success', 'Energy record added!');
+	});
+
+	Route::get('/modules/energy/trend', function() {
+		$trendData = [];
+		// You can populate $trendData with your actual trend analytics data here
+		return view('modules.energy-monitoring.trend', compact('trendData'));
+	})->name('energy.trend');
+
+	Route::get('/modules/energy/export-report', function() {
+		return view('modules.energy.export-report');
+	})->name('energy.exportReport');
+});
 // Users & Roles Management - Admin/Energy Officer only
 use Illuminate\Http\Request as HttpRequest;
 use App\Http\Controllers\Modules\FacilityController;
@@ -9,6 +108,8 @@ use App\Http\Controllers\Modules\MaintenanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
+		// Engineer Approval Toggle (AJAX)
+		Route::post('/modules/facilities/{id}/toggle-engineer-approval', [FacilityController::class, 'toggleEngineerApproval'])->name('modules.facilities.toggle-engineer-approval');
     Route::get('modules/users', [\App\Http\Controllers\Modules\UsersController::class, 'index'])->name('users.index');
     Route::get('modules/users/index', [\App\Http\Controllers\Modules\UsersController::class, 'index']);
     Route::post('modules/users', [\App\Http\Controllers\Modules\UsersController::class, 'store'])->name('users.store');
@@ -44,14 +145,14 @@ Route::get('/modules/energy/get-kwh-consumed', function(HttpRequest $request) {
 	$facilityId = $request->facility_id;
 	$monthYear = $request->month; // format: YYYY-MM
 	if (!$facilityId || !$monthYear) {
-		return response()->json(['kwh_consumed' => null]);
+		return response()->json(['actual_kwh' => null]);
 	}
 	[$year, $month] = explode('-', $monthYear);
 	$record = \App\Models\EnergyRecord::where('facility_id', $facilityId)
 		->where('year', $year)
 		->where('month', str_pad($month, 2, '0', STR_PAD_LEFT))
 		->first();
-	return response()->json(['kwh_consumed' => $record ? $record->kwh_consumed : null]);
+	return response()->json(['actual_kwh' => $record ? $record->actual_kwh : null]);
 })->name('modules.energy.get-kwh-consumed');
 // Maintenance History Route
 Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
@@ -97,7 +198,7 @@ Route::get('/modules/energy/export-excel', function(\Illuminate\Http\Request $re
 				$r->year,
 				$monthName,
 				$r->facility ? $r->facility->name : '',
-				$r->kwh_consumed,
+				$r->actual_kwh,
 			]);
 		}
 		fclose($file);
@@ -138,7 +239,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 			$monthlyBreakdown = [];
 			foreach (range(1, 12) as $m) {
 				$monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
-				$actual = $monthRecords->sum('kwh_consumed');
+				$actual = $monthRecords->sum('actual_kwh');
 				$baseline = $monthRecords->map(function($r){
 					$profile = $r->facility ? $r->facility->energyProfiles()->latest()->first() : null;
 					return $profile ? $profile->average_monthly_kwh : 0;
@@ -176,47 +277,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 			};
 			return response()->stream($callback, 200, $headers);
 		})->name('modules.energy.annual.export-excel');
-	Route::get('/modules/facilities/{facility}/energy-profile', function($facility) {
-		$facilityModel = \App\Models\Facility::findOrFail($facility);
-		$energyProfiles = $facilityModel->energyProfiles;
-		return view('modules.facilities.energy-profile.index', compact('facilityModel', 'energyProfiles'));
-	})->name('modules.facilities.energy-profile.index');
 
-	// Show create form for energy profile
-	Route::get('/modules/facilities/{facility}/energy-profile/create', function($facility) {
-		$facilityModel = \App\Models\Facility::findOrFail($facility);
-		return view('modules.facilities.energy-profile.create', compact('facilityModel'));
-	})->name('modules.facilities.energy-profile.create');
+	   // (Modal-based creation: create route/view removed)
 
-	// Store new energy profile
-	Route::post('/modules/facilities/{facility}/energy-profile', function($facility, \Illuminate\Http\Request $request) {
-		$facilityModel = \App\Models\Facility::findOrFail($facility);
-		$validated = $request->validate([
-			'electric_meter_no' => 'required|string|max:255',
-			'utility_provider' => 'required|string|max:255',
-			'contract_account_no' => 'required|string|max:255',
-			'average_monthly_kwh' => 'required|numeric',
-			'main_energy_source' => 'required|string|max:255',
-			'backup_power' => 'required|string|max:255',
-			'transformer_capacity' => 'nullable|string|max:255',
-			'number_of_meters' => 'required|integer',
-			'bill_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4096',
-		]);
-		$validated['facility_id'] = $facilityModel->id;
-		if ($request->hasFile('bill_image')) {
-			$validated['bill_image'] = $request->file('bill_image')->store('energy_bills', 'public');
-		}
-		\App\Models\EnergyProfile::create($validated);
-		return redirect()->route('modules.facilities.energy-profile.index', $facilityModel->id)
-			->with('success', 'Energy profile added successfully!');
-	})->name('modules.facilities.energy-profile.store');
 });
 // =====================
 // LOGOUT ROUTE (for Auth::logout)
 // =====================
-use Illuminate\Support\Facades\Auth;
 Route::post('/logout', function () {
-    Auth::logout();
+    \Illuminate\Support\Facades\Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/login');
@@ -245,7 +314,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 	// Facilities
 	Route::get('/modules/facilities/index', [FacilityController::class, 'index'])->name('modules.facilities.index');
 	Route::get('/modules/facilities/create', fn() => view('modules.facilities.create'))->name('modules.facilities.create');
-	Route::get('/modules/facilities/{id}/show', fn($id) => view('modules.facilities.show', ['id' => $id]))->name('modules.facilities.show');
+	Route::get('/modules/facilities/{id}/show', function($id) {
+		$facility = \App\Models\Facility::findOrFail($id);
+		// Prefer first3months_data if available
+		$first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+		if ($first3mo) {
+			$avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+			$showAvg = true;
+		} else {
+			$records = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->take(3)->get();
+			$showAvg = $records->count() === 3;
+			$avgKwh = $showAvg ? $records->avg('kwh_consumed') : null;
+		}
+		return view('modules.facilities.show', compact('facility', 'showAvg', 'avgKwh'));
+	})->name('modules.facilities.show');
 	Route::get('/modules/facilities/{id}/edit', fn($id) => view('modules.facilities.edit', ['id' => $id]))->name('modules.facilities.edit');
 
 	// Billing
@@ -294,13 +376,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 		$validated = $request->validate([
 			'facility_id' => 'required|exists:facilities,id',
 			'month' => 'required|date_format:Y-m',
-			'kwh_consumed' => 'required|numeric',
+			'actual_kwh' => 'required|numeric',
 			'unit_cost' => 'required|numeric',
 			'status' => 'required|in:Paid,Unpaid,Pending',
 			'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
 		]);
 		$validated['unit_cost'] = 12.50;
-		$validated['total_bill'] = $validated['kwh_consumed'] * $validated['unit_cost'];
+		$validated['total_bill'] = $validated['actual_kwh'] * $validated['unit_cost'];
 
 		if ($request->hasFile('meralco_bill_picture')) {
 			$path = $request->file('meralco_bill_picture')->store('bills', 'public');
@@ -315,12 +397,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 		$validated = $request->validate([
 			'facility_id' => 'required|exists:facilities,id',
 			'month' => 'required|date_format:Y-m',
-			'kwh_consumed' => 'required|numeric',
+			'actual_kwh' => 'required|numeric',
 			'unit_cost' => 'required|numeric',
 			'status' => 'required|in:Paid,Unpaid,Pending',
 		]);
 		$validated['unit_cost'] = 12.50;
-		$validated['total_bill'] = $validated['kwh_consumed'] * $validated['unit_cost'];
+		$validated['total_bill'] = $validated['actual_kwh'] * $validated['unit_cost'];
 		$bill->update($validated);
 		return redirect()->route('modules.billing.index')->with('success', 'Bill updated successfully!');
 	})->name('modules.billing.update');
@@ -359,7 +441,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 	})->name('modules.users.roles');
 
 	// Energy
-	Route::get('/modules/energy/index', [EnergyController::class, 'index'])->name('modules.energy.index');
+	Route::get('/modules/energy/index', function(\Illuminate\Http\Request $request) {
+		$facilities = \App\Models\Facility::all();
+		$query = \App\Models\EnergyRecord::with('facility');
+		if ($request->has('facility_id') && $request->facility_id) {
+			$query->where('facility_id', $request->facility_id);
+		}
+		$monthlyRecords = $query->get();
+		return view('modules.energy-monitoring.records', compact('facilities', 'monthlyRecords'));
+	})->name('modules.energy.index');
 	Route::get('/modules/energy/create', [EnergyController::class, 'create'])->name('modules.energy.create');
 	Route::post('/modules/energy/store', [EnergyController::class, 'store'])->name('modules.energy.store');
 	Route::get('/modules/energy/{id}/show', [EnergyController::class, 'show'])->name('modules.energy.show');
@@ -386,7 +476,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 		$annualBaseline = 0;
 		foreach (range(1, 12) as $m) {
 			$monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
-			$actual = $monthRecords->sum('kwh_consumed');
+			$actual = $monthRecords->sum('actual_kwh');
 			$baseline = $monthRecords->map(function($r){
 				$profile = $r->facility ? $r->facility->energyProfiles()->latest()->first() : null;
 				return $profile ? $profile->average_monthly_kwh : 0;
@@ -408,4 +498,66 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 		return view('modules.energy.annual.annual', compact('years','selectedYear','facilities','selectedFacility','totalActualKwh','annualBaseline','annualDifference','annualStatus','monthlyBreakdown'));
 	})->name('modules.energy.annual');
+});
+// =====================
+// FACILITIES ENERGY PROFILE ROUTES
+// =====================
+Route::middleware(['auth', 'verified'])->group(function () {
+	// Energy Profile per Facility
+	Route::get('/modules/facilities/{facility}/energy-profile', function($facility) {
+		$facilityModel = \App\Models\Facility::findOrFail($facility);
+		$energyProfiles = $facilityModel->energyProfiles;
+		// Always update latest profile's average_monthly_kwh from first3months_data if available
+		$first3mo = \DB::table('first3months_data')->where('facility_id', $facilityModel->id)->first();
+		if ($first3mo && $energyProfiles->count()) {
+			$avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+			$latestProfile = $energyProfiles->first();
+			if ($latestProfile->average_monthly_kwh != $avgKwh) {
+				$latestProfile->update(['average_monthly_kwh' => $avgKwh]);
+			}
+		}
+		return view('modules.facilities.energy-profile.index', compact('facilityModel', 'energyProfiles'));
+	})->name('modules.facilities.energy-profile.index');
+
+	// Store new energy profile (controller-based)
+	Route::post('/modules/facilities/{facility}/energy-profile', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'store'])->name('modules.facilities.energy-profile.store');
+
+	// Delete energy profile (controller, like monthly record)
+	Route::delete('/modules/facilities/{facility}/energy-profile/{profile}', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'destroy'])
+		->name('modules.facilities.energy-profile.destroy');
+
+	// Fallback for DELETE without profile id (returns 405)
+	Route::delete('/modules/facilities/{facility}/energy-profile', function() {
+    abort(405, 'Profile ID required for delete.');
+});
+});
+// =====================
+// LOGOUT ROUTE (for Auth::logout)
+// =====================
+Route::post('/logout', function () {
+    \Illuminate\Support\Facades\Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/login');
+})->name('logout');
+
+// API endpoint for 3-month average kWh for a facility (checks both energy_readings and first3months_data)
+Route::get('/api/facilities/{facility}/3mo-avg', function($facilityId) {
+	$facility = \App\Models\Facility::find($facilityId);
+	if (!$facility) {
+		return response()->json(['error' => 'Facility not found'], 404);
+	}
+	// Always use first3months_data if it exists
+	$row = \DB::table('first3months_data')->where('facility_id', $facilityId)->first();
+	if ($row) {
+		$avg = (floatval($row->month1) + floatval($row->month2) + floatval($row->month3)) / 3;
+		return response()->json(['avg_kwh' => round($avg, 2)]);
+	}
+	// Otherwise, try to get from energy_readings
+	$readings = $facility->energyReadings()->orderBy('year')->orderBy('month')->take(3)->pluck('kwh');
+	if ($readings->count() === 3) {
+		$avg = $readings->avg();
+		return response()->json(['avg_kwh' => round($avg, 2)]);
+	}
+	return response()->json(['avg_kwh' => null]);
 });

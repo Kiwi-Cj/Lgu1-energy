@@ -25,4 +25,6 @@ class MaintenanceHistory extends Model
     {
         return $this->belongsTo(Facility::class);
     }
+
+    use App\Models\Traits\BelongsToFacility;
 }

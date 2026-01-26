@@ -8,9 +8,7 @@
         <ul class="nav-list">
             <li><a href="{{ url('modules/dashboard') }}" class="nav-link" id="dashboard-link">Dashboard</a></li>
             <li><a href="{{ url('modules/facilities') }}" class="nav-link" id="facility-link">Facility</a></li>
-            @if(auth()->check() && strtolower(auth()->user()->role ?? '') !== 'staff')
-                <li><a href="{{ url('modules/users') }}" class="nav-link" id="users-link">Users</a></li>
-            @endif
+            {{-- Users link removed from sidebar for all roles --}}
             <li><a href="{{ url('modules/energy') }}" class="nav-link" id="energy-link">Energy</a></li>
             <li><a href="{{ url('modules/billing') }}" class="nav-link" id="billing-link">Billing</a></li>
             <li><a href="#" class="nav-link" id="efficiency-link">Efficiency</a></li>

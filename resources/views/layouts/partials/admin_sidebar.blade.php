@@ -19,7 +19,7 @@
     <li><a href="/modules/projects"><span class="menu-icon">🏗️</span><span>Energy Efficiency Projects</span></a></li>
     <li><a href="/modules/alerts"><span class="menu-icon">🤖</span><span>AI Alerts & Recommendations</span></a></li>
     <li><a href="/modules/reports"><span class="menu-icon">📈</span><span>Reports & Analytics</span></a></li>
-    <li><a href="/modules/users"><span class="menu-icon">👤</span><span>Users & Roles</span></a></li>
+    <!-- Users & Roles link removed from sidebar -->
     <li><a href="/modules/settings"><span class="menu-icon">⚙️</span><span>System Settings</span></a></li>
 </ul>
 <script>

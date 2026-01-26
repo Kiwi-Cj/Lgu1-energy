@@ -28,10 +28,16 @@ class EnergyRecordObserver
     public function saved(EnergyRecord $record)
     {
         $facility = $record->facility;
-        $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-        $avg = $profile ? $profile->average_monthly_kwh : null;
-        $variance = ($record->kwh_consumed && $avg !== null) ? $record->kwh_consumed - $avg : null;
-        $eui = ($record->kwh_consumed && $facility && $facility->floor_area) ? round($record->kwh_consumed / $facility->floor_area, 2) : null;
+        // Always use first3months_data for avg_kwh if available
+        $first3mo = $facility ? \DB::table('first3months_data')->where('facility_id', $facility->id)->first() : null;
+        if ($first3mo) {
+            $avg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+        } else {
+            $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+            $avg = $profile ? $profile->average_monthly_kwh : null;
+        }
+        $variance = ($record->kwh_consumed && $avg !== null) ? $record->kwh_consumed - $avg : 0;
+        $eui = ($record->kwh_consumed && $facility && $facility->floor_area) ? round($record->kwh_consumed / $facility->floor_area, 2) : 0; // Never null
         $percent = ($avg && $avg != 0) ? ($record->kwh_consumed / $avg) * 100 : 0;
         // Inverted: High: <60%, Medium: 60% to <80%, Low: >=80%
         if ($percent < 60) {
@@ -59,8 +65,8 @@ class EnergyRecordObserver
             'year' => $record->year,
         ], [
             'actual_kwh' => $record->kwh_consumed,
-            'avg_kwh' => $avg,
-            'variance' => $variance,
+            'avg_kwh' => $avg !== null ? $avg : 0,
+            'variance' => $variance !== null ? $variance : 0,
             'eui' => $eui,
             'rating' => $ratingVal,
             'auto_flagged' => $autoFlagged,

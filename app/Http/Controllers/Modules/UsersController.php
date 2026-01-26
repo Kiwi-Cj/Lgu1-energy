@@ -12,10 +12,12 @@ class UsersController extends Controller
     public function index()
     {
         // Block Staff from accessing User Management
+        // Only restrict staff; super admin, admin, and energy_officer have access
         if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
+        // Super admin has full access (no block)
 
         // Get all users with their assigned facility (if any)
         $users = User::with('facility')->get();
@@ -53,7 +55,7 @@ class UsersController extends Controller
             'email' => 'required|email|unique:users,email',
             'username' => 'nullable|string|max:255|unique:users,username',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|string|in:admin,staff,energy_officer',
+            'role' => 'required|string|in:super admin,admin,staff,energy_officer',
             'status' => 'required|string|in:active,inactive',
             'facility_id' => 'nullable|exists:facilities,id',
             'department' => 'nullable|string|max:255',
@@ -87,7 +89,7 @@ class UsersController extends Controller
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'username' => 'nullable|string|max:255|unique:users,username,' . $id,
-            'role' => 'required|string|in:admin,staff,energy_officer',
+            'role' => 'required|string|in:super admin,admin,staff,energy_officer',
             'status' => 'required|string|in:active,inactive',
             'facility_id' => 'nullable|exists:facilities,id',
             'department' => 'nullable|string|max:255',
