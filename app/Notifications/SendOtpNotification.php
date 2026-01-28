@@ -1,34 +1,32 @@
 <?php
 
+
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-class SendOtpNotification extends Notification implements ShouldQueue
+class SendOtpNotification extends Notification
 {
-    use Queueable;
 
-    public $otp;
+    protected string $otp;
 
-    public function __construct($otp)
+    public function __construct(string $otp)
     {
         $this->otp = $otp;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
         return ['mail'];
     }
 
-    public function toMail($notifiable)
+    public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
             ->subject('Your OTP Code')
-            ->line('Your One-Time Password (OTP) is: ' . $this->otp)
-            ->line('This code will expire in 10 minutes.')
-            ->line('If you did not request this, please ignore this email.');
+            ->markdown('emails.otp', [
+                'otp' => $this->otp,
+            ]);
     }
 }

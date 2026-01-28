@@ -36,9 +36,9 @@ class EnergyRecordObserver
             $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
             $avg = $profile ? $profile->average_monthly_kwh : null;
         }
-        $variance = ($record->kwh_consumed && $avg !== null) ? $record->kwh_consumed - $avg : 0;
-        $eui = ($record->kwh_consumed && $facility && $facility->floor_area) ? round($record->kwh_consumed / $facility->floor_area, 2) : 0; // Never null
-        $percent = ($avg && $avg != 0) ? ($record->kwh_consumed / $avg) * 100 : 0;
+        $variance = ($record->actual_kwh && $avg !== null) ? $record->actual_kwh - $avg : 0;
+        $eui = ($record->actual_kwh && $facility && $facility->floor_area) ? round($record->actual_kwh / $facility->floor_area, 2) : 0; // Never null
+        $percent = ($avg && $avg != 0) ? ($record->actual_kwh / $avg) * 100 : 0;
         // Inverted: High: <60%, Medium: 60% to <80%, Low: >=80%
         if ($percent < 60) {
             $ratingVal = 'High';
@@ -51,7 +51,7 @@ class EnergyRecordObserver
         // Check for trend: last 3 months increasing
         $trendIncreasing = false;
         if ($facility) {
-            $recent = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->take(3)->pluck('kwh_consumed');
+            $recent = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->take(3)->pluck('actual_kwh');
             if ($recent->count() === 3 && $recent[0] > $recent[1] && $recent[1] > $recent[2]) {
                 $trendIncreasing = true;
             }
@@ -64,7 +64,7 @@ class EnergyRecordObserver
             'month' => $record->month ? date('M', mktime(0,0,0,(int)$record->month,1)) : '-',
             'year' => $record->year,
         ], [
-            'actual_kwh' => $record->kwh_consumed,
+            'actual_kwh' => $record->actual_kwh,
             'avg_kwh' => $avg !== null ? $avg : 0,
             'variance' => $variance !== null ? $variance : 0,
             'eui' => $eui,

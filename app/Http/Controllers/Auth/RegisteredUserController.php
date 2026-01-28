@@ -51,6 +51,7 @@ class RegisteredUserController extends Controller
         ]);
 
         // Send OTP notification
+        \Log::info('Sending OTP to: ' . $user->email);
         $user->notify(new \App\Notifications\SendOtpNotification($otp));
 
         event(new Registered($user));

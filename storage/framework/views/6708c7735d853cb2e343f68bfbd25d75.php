@@ -59,7 +59,7 @@
 </div>
 
 <!-- Add Facility Modal -->
-<div id="addFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;">
+<div id="addFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:10050 !important;pointer-events:auto !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
     <div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;">
         <button class="modal-close" type="button" style="top:12px;right:12px;">&times;</button>
         <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Add Facility</h2>

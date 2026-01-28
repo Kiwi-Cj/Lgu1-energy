@@ -104,8 +104,15 @@
 
                         </td>
                         <td style="padding:10px;text-align:center;">
-                            <?php echo $facility->status_badge; ?>
-
+                            <?php if($facility->status === 'High'): ?>
+                                <span style="color:#e11d48;font-weight:700;">High</span>
+                            <?php elseif($facility->status === 'Medium'): ?>
+                                <span style="color:#f59e0b;font-weight:700;">Medium</span>
+                            <?php elseif($facility->status === 'Normal'): ?>
+                                <span style="color:#22c55e;font-weight:700;">Normal</span>
+                            <?php else: ?>
+                                <span style="color:#888;">-</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>

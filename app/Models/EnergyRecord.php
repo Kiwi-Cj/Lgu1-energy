@@ -25,14 +25,10 @@ class EnergyRecord extends Model
         'year',
         'month',
         'actual_kwh',
-        'baseline_kwh',
-        'deviation_percent',
-        'alert_level',
-        'alert_message',
         'energy_cost',
         'rate_per_kwh',
         'recorded_by',
-        'meralco_bill_picture', // optional bill image
+        'bill_image', // optional bill image
     ];
 
 

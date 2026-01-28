@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
         \App\Models\Facility::factory()->count(5)->create();
         $this->call([
             UserSeeder::class,
-            // EnergyDemoSeeder::class, // Temporarily bypassed to avoid error on missing auto_flagged column
+            EnergyRecordSeeder::class,
         ]);
     }
 }

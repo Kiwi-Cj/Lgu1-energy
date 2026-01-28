@@ -1,3 +1,85 @@
+<!-- Edit Facility Modal -->
+<div id="editFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:10050 !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
+	<div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;position:relative;">
+		<button class="modal-close" type="button" onclick="closeEditFacilityModal()" style="top:12px;right:12px;position:absolute;font-size:1.5rem;background:none;border:none;color:#2563eb;">&times;</button>
+		<h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Edit Facility</h2>
+		<form id="editFacilityForm" action="<?php echo e(route('facilities.update', $facility->id)); ?>" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
+			<?php echo csrf_field(); ?>
+			<?php echo method_field('PUT'); ?>
+			<div style="display:flex;gap:12px;">
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_name" style="font-weight:500;">Name</label>
+					<input type="text" id="edit_name" name="name" value="<?php echo e($facility->name); ?>" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_type" style="font-weight:500;">Type</label>
+					<input type="text" id="edit_type" name="type" value="<?php echo e($facility->type); ?>" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+			</div>
+			<div style="display:flex;gap:12px;">
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_department" style="font-weight:500;">Department</label>
+					<input type="text" id="edit_department" name="department" value="<?php echo e($facility->department); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_address" style="font-weight:500;">Address</label>
+					<input type="text" id="edit_address" name="address" value="<?php echo e($facility->address); ?>" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+			</div>
+			<div style="display:flex;gap:12px;">
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_barangay" style="font-weight:500;">Barangay</label>
+					<input type="text" id="edit_barangay" name="barangay" value="<?php echo e($facility->barangay); ?>" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_floor_area" style="font-weight:500;">Floor Area</label>
+					<input type="number" id="edit_floor_area" name="floor_area" value="<?php echo e($facility->floor_area); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+			</div>
+			<div style="display:flex;gap:12px;">
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_floors" style="font-weight:500;">Floors</label>
+					<input type="number" id="edit_floors" name="floors" value="<?php echo e($facility->floors); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_year_built" style="font-weight:500;">Year Built</label>
+					<input type="number" id="edit_year_built" name="year_built" value="<?php echo e($facility->year_built); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+			</div>
+			<div style="display:flex;gap:12px;">
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_operating_hours" style="font-weight:500;">Operating Hours</label>
+					<input type="text" id="edit_operating_hours" name="operating_hours" value="<?php echo e($facility->operating_hours); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+				</div>
+				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+					<label for="edit_status" style="font-weight:500;">Status</label>
+					<select id="edit_status" name="status" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+						<option value="active" <?php if($facility->status=='active'): ?> selected <?php endif; ?>>Active</option>
+						<option value="inactive" <?php if($facility->status=='inactive'): ?> selected <?php endif; ?>>Inactive</option>
+						<option value="maintenance" <?php if($facility->status=='maintenance'): ?> selected <?php endif; ?>>Maintenance</option>
+					</select>
+				</div>
+			</div>
+			<div style="display:flex;flex-direction:column;gap:4px;">
+				<label for="edit_image" style="font-weight:500;">Image</label>
+				<input type="file" id="edit_image" name="image" accept="image/*" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+			</div>
+			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+				<button type="submit" class="btn" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:7px;padding:7px 18px;font-size:0.98rem;min-width:90px;cursor:pointer;">Save</button>
+				<button type="button" class="btn" onclick="closeEditFacilityModal()" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:7px;padding:7px 18px;font-size:0.98rem;min-width:90px;cursor:pointer;">Cancel</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<script>
+function openEditFacilityModal() {
+	document.getElementById('editFacilityModal').style.display = 'flex';
+}
+function closeEditFacilityModal() {
+	document.getElementById('editFacilityModal').style.display = 'none';
+}
+</script>
 
 <?php $__env->startSection('title', 'Facility Details'); ?>
 <?php $__env->startSection('content'); ?>
@@ -12,10 +94,26 @@
 				   <i class="fa fa-image" title="No Image"></i>
 			   </div>
 		   <?php endif; ?>
-		   <div>
-			   <h2 style="font-size:1.7rem;font-weight:700;color:#222;margin:0 0 8px 0;"><?php echo e($facility->name ?? '-'); ?></h2>
-			   <div style="color:#6366f1;font-weight:500;margin-bottom:4px;"><?php echo e($facility->type ?? '-'); ?></div>
-			   <div style="font-size:1rem;color:#555;"><?php echo e($facility->department ?? '-'); ?></div>
+		   <div style="flex:1;">
+			   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+				   <div>
+					   <h2 style="font-size:1.7rem;font-weight:700;color:#222;margin:0 0 8px 0;"><?php echo e($facility->name ?? '-'); ?></h2>
+					   <div style="color:#6366f1;font-weight:500;margin-bottom:4px;"><?php echo e($facility->type ?? '-'); ?></div>
+					   <div style="font-size:1rem;color:#555;"><?php echo e($facility->department ?? '-'); ?></div>
+				   </div>
+				   <a href="<?php echo e(url('/energy-actions?facility='.$facility->id)); ?>" title="Show Energy Actions"
+					  class="energy-action-icon-link" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;position:relative;top:-10px;">
+					   <span class="energy-action-icon" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:#2563eb1a;color:#2563eb;border-radius:50%;font-size:1.25rem;transition:background 0.18s, color 0.18s;">
+						   <i class="fa fa-bolt"></i>
+					   </span>
+					   <span class="energy-action-label" style="font-size:0.93rem;color:#2563eb;font-weight:600;margin-top:2px;position:absolute;top:36px;left:50%;transform:translateX(-50%);background:#fff;padding:2px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(55,98,200,0.10);opacity:0;pointer-events:none;transition:opacity 0.18s;white-space:nowrap;">Show Energy Action</span>
+				   </a>
+				   <style>
+				   .energy-action-icon-link:hover .energy-action-label {
+					   opacity: 1 !important;
+				   }
+				   </style>
+			   </div>
 		   </div>
 	   </div>
 	   <div style="margin-bottom:1.1rem;"><strong>Address:</strong> <?php echo e($facility->address ?? '-'); ?></div>
@@ -40,7 +138,7 @@
 	   </div>
 
 	   <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:2.2rem;">
-		   <a href="<?php echo e(route('facilities.edit', $facility->id)); ?>" class="btn" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:8px;padding:10px 22px;text-decoration:none;">Edit</a>
+		   <button type="button" onclick="openEditFacilityModal()" class="btn" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:8px;padding:10px 22px;cursor:pointer;">Edit</button>
 		   <button type="button" onclick="openDeleteFacilityModal(<?php echo e($facility->id); ?>)" style="background:#e11d48;color:#fff;font-weight:600;border:none;border-radius:8px;padding:10px 22px;cursor:pointer;">Delete</button>
 	   </div>
    </div>

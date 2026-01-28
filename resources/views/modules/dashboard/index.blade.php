@@ -99,7 +99,15 @@
                             {{ number_format($facility->monthly_kwh) }}
                         </td>
                         <td style="padding:10px;text-align:center;">
-                            {!! $facility->status_badge !!}
+                            @if($facility->status === 'High')
+                                <span style="color:#e11d48;font-weight:700;">High</span>
+                            @elseif($facility->status === 'Medium')
+                                <span style="color:#f59e0b;font-weight:700;">Medium</span>
+                            @elseif($facility->status === 'Normal')
+                                <span style="color:#22c55e;font-weight:700;">Normal</span>
+                            @else
+                                <span style="color:#888;">-</span>
+                            @endif
                         </td>
                     </tr>
                 @empty

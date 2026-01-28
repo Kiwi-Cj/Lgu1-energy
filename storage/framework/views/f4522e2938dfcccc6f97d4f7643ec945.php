@@ -1,160 +1,266 @@
 
 <?php $__env->startSection('title', 'Energy Monitoring Dashboard'); ?>
-<?php $__env->startSection('content'); ?>
 
+<?php $__env->startSection('content'); ?>
 <?php
     $userRole = strtolower(auth()->user()->role ?? '');
 ?>
 
+
 <h2 style="font-size:2rem; font-weight:700; margin-bottom:1.5rem;">Energy Monitoring Dashboard</h2>
 
-<!-- Summary Cards -->
-<div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:2rem;">
-    <div style="flex:1 1 180px; background:#f5f8ff; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(55,98,200,0.08);">
+<!-- OVERVIEW CARDS -->
+<div style="width:100%; display:flex; gap:24px; flex-wrap:wrap; margin-bottom:2.5rem;">
+    <div style="flex:1 1 220px; background:#f5f8ff; padding:20px; border-radius:14px;">
         <div style="font-weight:500; color:#3762c8;">🏢 Total Facilities</div>
-        <div style="font-weight:700; font-size:1.8rem;"><?php echo e($totalFacilities ?? '-'); ?></div>
+        <div style="font-weight:700; font-size:2rem;"><?php echo e($totalFacilities ?? '-'); ?></div>
     </div>
-    <div style="flex:1 1 180px; background:#f0fdf4; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(34,197,94,0.08);">
-        <div style="font-weight:500; color:#22c55e;">🟢 Active</div>
-        <div style="font-weight:700; font-size:1.8rem;"><?php echo e($activeFacilities ?? '-'); ?></div>
+
+    <div style="flex:1 1 220px; background:#fff0f3; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#e11d48;">
+            🚨 Facilities with <b>HIGH</b> Alert
+        </div>
+        <div style="font-weight:700; font-size:2rem; color:#e11d48;">
+            <?php echo e($highAlertCount ?? 0); ?>
+
+        </div>
     </div>
-    <div style="flex:1 1 180px; background:#fff7ed; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(234,179,8,0.08);">
-        <div style="font-weight:500; color:#f59e42;">🛠 Maintenance</div>
-        <div style="font-weight:700; font-size:1.8rem;"><?php echo e($maintenanceFacilities ?? '-'); ?></div>
+
+    <div style="flex:1 1 220px; background:#e0f2fe; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#0284c7;">
+            ⚡ Avg kWh vs Baseline (This Month)
+        </div>
+        <div style="font-weight:700; font-size:2rem;">
+            <?php echo e($avgKwhVsBaseline ?? '-'); ?>
+
+        </div>
     </div>
-    <div style="flex:1 1 180px; background:#fff0f3; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(225,29,72,0.08);">
-        <div style="font-weight:500; color:#e11d48;">🚫 Inactive</div>
-        <div style="font-weight:700; font-size:1.8rem;"><?php echo e($inactiveFacilities ?? '-'); ?></div>
-    </div>
-    <div style="flex:1 1 180px; background:#e0f2fe; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(14,165,233,0.08);">
-        <div style="font-weight:500; color:#0284c7;">⚡ Avg Monthly kWh</div>
-        <div style="font-weight:700; font-size:1.8rem;"><?php echo e(round($avgMonthlyKwh ?? 0,2)); ?></div>
+
+    <div style="flex:1 1 220px; background:#f0fdf4; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#22c55e;">
+            � Total Energy Cost (This Month)
+        </div>
+        <div style="font-weight:700; font-size:2rem; color:#22c55e;">
+            ₱<?php echo e(number_format($totalEnergyCost ?? 0, 2)); ?>
+
+        </div>
     </div>
 </div>
 
-<!-- Facility Table -->
-<div style="overflow-x:auto; margin-bottom:2rem;">
-<table style="width:100%; border-collapse:collapse;">
-    <thead style="background:#f3f4f6; color:#111;">
-        <tr>
-            <th style="padding:10px 12px; text-align:left;">Facility</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Floor Area</th>
-            <th>Baseline kWh</th>
-            <th>Trend</th>
-            <th>EUI (kWh/m²)</th>
-            <th>Last Maint</th>
-            <th>Next Maint</th>
-            <th>Alerts</th>
-            <?php if($userRole !== 'staff'): ?> <th>Actions</th> <?php endif; ?>
-        </tr>
-    </thead>
-    <tbody>
-        <?php $__empty_1 = true; $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-            <tr style="border-bottom:1px solid #e5e7eb;">
-                <td><?php echo e($facility->name); ?></td>
-                <td><?php echo e($facility->type); ?></td>
-                <td><?php echo e($facility->status); ?></td>
-                <td><?php echo e($facility->floor_area ?? '-'); ?></td>
-                <td><?php echo e($facility->baseline_kwh ?? '-'); ?></td>
-                <td><?php echo e($facility->trend_analysis ?? '-'); ?></td>
-                <td><?php echo e($facility->monthly_eui ?? '-'); ?></td>
-                <td><?php echo e($facility->last_maintenance ?? '-'); ?></td>
-                <td><?php echo e($facility->next_maintenance ?? '-'); ?></td>
-                <td>
-                    <?php if($facility->alert_level): ?>
-                        <span style="color:red; font-weight:600;"><?php echo e($facility->alert_level); ?></span>
-                    <?php else: ?>
-                        -
-                    <?php endif; ?>
-                </td>
+<!-- FACILITY TABLE (Dynamic: search + pagination) -->
+<form method="GET" action="" style="margin-bottom:18px; display:flex; gap:10px; align-items:center;">
+    <input type="text" name="search" value="<?php echo e(request('search')); ?>" placeholder="Search facility..." style="border-radius:8px; border:1px solid #c3cbe5; padding:8px 14px; font-size:1rem; width:220px;">
+    <button type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-weight:600; font-size:1rem; cursor:pointer;">Search</button>
+    <?php if(request('search')): ?>
+        <a href="<?php echo e(url()->current()); ?>" style="margin-left:8px; color:#e11d48; text-decoration:underline; font-size:0.98rem;">Clear</a>
+    <?php endif; ?>
+</form>
+<div style="background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(31,38,135,0.08); margin-bottom:1.2rem;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.93rem;">
+        <thead style="background:#f1f5f9;">
+            <tr style="text-align:center;">
+                <th style="padding:6px 8px; text-align:center;">Facility</th>
+                <th style="padding:6px 8px; text-align:center;">Type</th>
+                <th style="padding:6px 8px; text-align:center;">Status</th>
+                <th style="padding:6px 8px; text-align:center;">Month</th>
+                <th style="padding:6px 8px; text-align:center;">Floor Area</th>
+                <th style="padding:6px 8px; text-align:center;">Baseline kWh</th>
+                <th style="padding:6px 8px; text-align:center;">Trend</th>
+                <th style="padding:6px 8px; text-align:center;">EUI (kWh/m²)</th>
+                <th style="padding:6px 8px; text-align:center;">Last Maint</th>
+                <th style="padding:6px 8px; text-align:center;">Next Maint</th>
+                <th style="padding:6px 8px; text-align:center;">Alerts</th>
                 <?php if($userRole !== 'staff'): ?>
-                <td style="display:flex; gap:6px;">
-                    <a href="<?php echo e(url('/modules/facilities/'.$facility->id.'/energy-profile')); ?>" title="View"><i class="fa fa-eye"></i></a>
-                    <button onclick="openResetBaselineModal(<?php echo e($facility->id); ?>)" title="Reset Baseline"><i class="fa fa-repeat"></i></button>
-                    <button onclick="toggleEngineerApproval(<?php echo e($facility->id); ?>)" title="Toggle Approval"><i class="fa fa-check-circle"></i></button>
-                </td>
+                    <th style="padding:6px 8px; text-align:center;">Actions</th>
                 <?php endif; ?>
             </tr>
+        </thead>
+        <tbody>
+        <?php $__empty_1 = true; $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+            <?php 
+                $record = $facility->energyRecords->first(); 
+                $currentMonth = date('n');
+                $currentYear = date('Y');
+                $trendAnalysis = '-';
+                $alertLevel = '-';
+                $eui = null;
+                $hasCurrentMonth = $record && $record->month == $currentMonth && $record->year == $currentYear;
+            ?>
+            <?php if($hasCurrentMonth): ?>
+                <?php
+                    $actualKwh = $record->actual_kwh ?? 0;
+                    $floorArea = $facility->floor_area;
+                    $eui = (isset($floorArea) && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
+
+                    // Trend and Alert Logic
+                    $previousRecord = \App\Models\EnergyRecord::where('facility_id', $facility->id)
+                        ->where(function($q) use ($record) {
+                            $q->where('year', '<', $record->year)
+                              ->orWhere(function($q2) use ($record){
+                                  $q2->where('year', $record->year)
+                                     ->where('month', '<', $record->month);
+                              });
+                        })
+                        ->orderBy('year', 'desc')
+                        ->orderBy('month', 'desc')
+                        ->first();
+
+                    if($previousRecord){
+                        $trend = $previousRecord->actual_kwh > 0 
+                            ? round((($record->actual_kwh - $previousRecord->actual_kwh)/$previousRecord->actual_kwh)*100, 2) 
+                            : null;
+                        $trendAnalysis = $trend !== null ? $trend . '%' : '-';
+
+                        // Facility size alert thresholds
+                        $size = $facility->size_label ?? 'Medium'; // Small, Medium, Large, Extra Large
+                        $alert = 'Low';
+
+                        if($trend !== null){
+                            if($size === 'Small'){
+                                if($trend > 30) $alert = 'High';
+                                elseif($trend > 15) $alert = 'Medium';
+                            } elseif($size === 'Medium'){
+                                if($trend > 20) $alert = 'High';
+                                elseif($trend > 10) $alert = 'Medium';
+                            } elseif($size === 'Large' || $size === 'Extra Large'){
+                                if($trend > 15) $alert = 'High';
+                                elseif($trend > 5) $alert = 'Medium';
+                            }
+                        }
+                        $alertLevel = $alert;
+                    }
+                ?>
+                <tr style="border-bottom:1px solid #e5e7eb; text-align:center; background:<?php echo e($loop->even ? '#f8fafc' : '#fff'); ?>; font-size:0.93rem;">
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($facility->name); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($facility->type); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($facility->status); ?></td>
+                    <td style="padding:6px 8px; text-align:center;">
+                        <?php
+                            $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        ?>
+                        <?php echo e(isset($record->month) ? $monthsArr[$record->month-1] : '-'); ?>
+
+                    </td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($facility->floor_area ?? '-'); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($facility->average_monthly_kwh ?? '-'); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($trendAnalysis); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($eui !== null ? $eui : '-'); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($record->last_maintenance ?? '-'); ?></td>
+                    <td style="padding:6px 8px; text-align:center;"><?php echo e($record->next_maintenance ?? '-'); ?></td>
+
+                    <td style="padding:6px 8px; text-align:center;">
+                        <?php if($alertLevel === 'High'): ?>
+                            <span style="color:#e11d48; font-weight:600;">High</span>
+                        <?php elseif($alertLevel === 'Medium'): ?>
+                            <span style="color:#f59e42; font-weight:600;">Medium</span>
+                        <?php elseif($alertLevel === 'Low'): ?>
+                            <span style="color:#22c55e; font-weight:600;">Low</span>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
+
+                    <?php if($userRole !== 'staff'): ?>
+                    <td style="padding:12px; height:100%; text-align:center; vertical-align:middle;">
+                        <div style="display:inline-flex; gap:10px; justify-content:center; align-items:center;">
+                            <a href="<?php echo e(url('/modules/facilities/'.$facility->id.'/energy-profile')); ?>" title="View"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#2563eb1a; color:#2563eb; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; text-decoration:none;"
+                                onmouseover="this.style.background='#2563eb';this.style.color='#fff'" onmouseout="this.style.background='#2563eb1a';this.style.color='#2563eb'">
+                                <i class="fa fa-eye" style="font-size:1rem;"></i>
+                            </a>
+                            <button onclick="openResetBaselineModal(<?php echo e($facility->id); ?>)" title="Reset Baseline"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#f59e421a; color:#f59e42; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; cursor:pointer;"
+                                onmouseover="this.style.background='#f59e42';this.style.color='#fff'" onmouseout="this.style.background='#f59e421a';this.style.color='#f59e42'">
+                                <i class="fa fa-repeat" style="font-size:1rem;"></i>
+                            </button>
+                            <button onclick="toggleEngineerApproval(<?php echo e($facility->id); ?>)" title="Toggle Approval"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#22c55e1a; color:#22c55e; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; cursor:pointer;"
+                                onmouseover="this.style.background='#22c55e';this.style.color='#fff'" onmouseout="this.style.background='#22c55e1a';this.style.color='#22c55e'">
+                                <i class="fa fa-check-circle" style="font-size:1rem;"></i>
+                            </button>
+                            <!-- 🔥 ADDED: CREATE ENERGY ACTION -->
+                            <?php if($alertLevel === 'High' || $alertLevel === 'Medium'): ?>
+                            <a href="<?php echo e(url('/energy-actions/create?facility='.$facility->id)); ?>"
+                               title="Create Energy Action"
+                               style="width:28px;height:28px;border-radius:50%;
+                                      background:#e11d481a;color:#e11d48;
+                                      display:flex;align-items:center;justify-content:center;
+                                      text-decoration:none;">
+                                <i class="fa fa-bolt"></i>
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                    <?php endif; ?>
+                </tr>
+            <?php endif; ?>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <tr>
-                <td colspan="11" style="text-align:center; padding:20px;">No facilities found.</td>
+                <td colspan="11" style="padding:20px; text-align:center;">
+                    No facilities found.
+                </td>
             </tr>
         <?php endif; ?>
-    </tbody>
-</table>
+        </tbody>
+
+    </table>
 </div>
 
-<!-- Trend Chart -->
-<div style="margin-bottom:2rem;">
-    <canvas id="energyTrendChart" style="width:100%; max-width:800px; height:300px;"></canvas>
-</div>
+<?php if(method_exists($facilities, 'links')): ?>
+    <div style="margin:18px 0; text-align:center;">
+        <?php echo e($facilities->appends(request()->query())->links()); ?>
 
-<!-- Modals -->
+    </div>
+<?php endif; ?>
+
+
 <?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-    const ctx = document.getElementById('energyTrendChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode($trendLabels ?? [], 15, 512) ?>,
-            datasets: [{
-                label: 'kWh Consumption',
-                data: <?php echo json_encode($trendData ?? [], 15, 512) ?>,
-                borderColor:'#2563eb',
-                backgroundColor:'rgba(37,99,235,0.2)',
-                fill:true,
-                tension:0.2,
-                pointRadius:5
-            }]
-        },
-        options:{
-            responsive:true,
-            plugins:{
-                legend:{display:true},
-                tooltip:{mode:'index', intersect:false}
+document.addEventListener('DOMContentLoaded', function () {
+
+    const ctx = document.getElementById('energyTrendChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($trendLabels ?? [], 15, 512) ?>,
+                datasets: [{
+                    label: 'kWh Consumption',
+                    data: <?php echo json_encode($trendData ?? [], 15, 512) ?>,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
             },
-            scales:{
-                y:{beginAtZero:true},
-                x:{title:{display:true, text:'Month'}}
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
             }
-        }
-    });
+        });
+    }
 });
 
-// Reset Baseline
-function openResetBaselineModal(facilityId){
+function openResetBaselineModal(facilityId) {
     document.getElementById('reset_facility_id').value = facilityId;
-    document.getElementById('resetBaselineModal').style.display='flex';
+    document.getElementById('resetBaselineModal').style.display = 'flex';
 }
 
-document.getElementById('resetBaselineForm')?.addEventListener('submit', function(e){
-    e.preventDefault();
-    const id = document.getElementById('reset_facility_id').value;
-    const reason = document.getElementById('reset_reason').value;
-
-    fetch(`/modules/facilities/${id}/reset-baseline`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'<?php echo e(csrf_token()); ?>'},
-        body:JSON.stringify({reason})
-    }).then(res=>res.json()).then(data=>{
-        alert(data.message||'Baseline reset!');
-        document.getElementById('resetBaselineModal').style.display='none';
-        location.reload();
-    });
-});
-
-// Engineer Approval Toggle
-function toggleEngineerApproval(facilityId){
+function toggleEngineerApproval(facilityId) {
     fetch(`/modules/facilities/${facilityId}/toggle-engineer`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'<?php echo e(csrf_token()); ?>'}
-    }).then(res=>res.json()).then(data=>{
-        alert(data.message||'Engineer approval toggled!');
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || 'Updated');
         location.reload();
     });
 }

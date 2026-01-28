@@ -24,11 +24,16 @@ class DashboardController extends Controller
         } else {
             $totalFacilities = Facility::count();
         }
-        $totalKwh = EnergyRecord::whereMonth('created_at', now()->month)->sum('kwh_consumed');
-        $totalCost = Bill::whereMonth('created_at', now()->month)->sum('total_bill');
-        $activeAlerts = EnergyRecord::where('alert_flag', 1)->count();
+        $totalKwh = EnergyRecord::whereMonth('created_at', now()->month)->sum('actual_kwh');
+        $totalCost = EnergyRecord::whereMonth('created_at', now()->month)->sum('energy_cost');
+        // Count records with alert set to 'Medium' or 'High' for active alerts
+        $activeAlerts = EnergyRecord::whereIn('alert', ['Medium', 'High'])
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
         $ongoingMaintenance = Maintenance::where('maintenance_status', 'Ongoing')->count();
         $complianceStatus = EnergyEfficiency::where('rating', 'Low')->count() > 0 ? 'Pending' : 'Compliant';
+
 
         // 2. Charts
         $energyChartLabels = [];
@@ -39,10 +44,41 @@ class DashboardController extends Controller
             $month = now()->subMonths(6 - $i);
             $label = $month->format('M');
             $energyChartLabels[] = $label;
-            $energyChartData[] = EnergyRecord::whereMonth('created_at', $month->month)->sum('kwh_consumed');
+            $energyChartData[] = EnergyRecord::whereMonth('created_at', $month->month)->sum('actual_kwh');
             $costChartLabels[] = $label;
             $costChartData[] = Bill::whereMonth('created_at', $month->month)->sum('total_bill');
         }
+
+        // 2b. Top Energy-Consuming Facilities (current month)
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        $topFacilities = EnergyRecord::with('facility')
+            ->selectRaw('facility_id, SUM(actual_kwh) as monthly_kwh')
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->groupBy('facility_id')
+            ->orderByDesc('monthly_kwh')
+            ->take(5)
+            ->get()
+            ->map(function($rec) {
+                $facility = $rec->facility;
+                $avgKwh = $facility ? ($facility->average_monthly_kwh ?? 0) : 0;
+                $status = '-';
+                if ($avgKwh > 0) {
+                    if ($rec->monthly_kwh > $avgKwh * 1.2) {
+                        $status = 'High';
+                    } elseif ($rec->monthly_kwh > $avgKwh) {
+                        $status = 'Medium';
+                    } else {
+                        $status = 'Normal';
+                    }
+                }
+                return (object) [
+                    'name' => $facility ? $facility->name : 'Unknown',
+                    'monthly_kwh' => $rec->monthly_kwh,
+                    'status' => $status,
+                ];
+            });
 
         // 3. Recent Activity (last 8 actions) - Filter by facility for Staff
         $recentLogs = [];
@@ -89,7 +125,8 @@ class DashboardController extends Controller
         $alerts = [];
         
         // High energy usage alerts (Staff only see their facility, Admin/Energy Officer see all)
-        $highUsageQuery = EnergyRecord::where('alert_flag', 1)->orderByDesc('created_at');
+        // High usage = alert is 'High' or 'Medium'
+        $highUsageQuery = EnergyRecord::whereIn('alert', ['Medium', 'High'])->orderByDesc('created_at');
         if ($userFacilityId) {
             $highUsageQuery->where('facility_id', $userFacilityId);
         }
@@ -121,6 +158,7 @@ class DashboardController extends Controller
             'costChartData' => $costChartData,
             'recentLogs' => $recentLogs,
             'alerts' => $alerts,
+            'topFacilities' => $topFacilities,
         ]);
     }
 }

@@ -81,54 +81,7 @@ function closeDeleteMonthlyRecordModal() {
     <div class="modal-content" style="max-width:420px;background:#fff;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;position:relative;">
         <button class="modal-close" onclick="closeAddMonthlyRecordModal()" style="position:absolute;top:18px;right:18px;background:none;border:none;font-size:1.7rem;color:#6366f1;cursor:pointer;">&times;</button>
         <h2 style="margin-bottom:18px;font-size:1.5rem;font-weight:700;color:#2563eb;text-align:left;">Add Monthly Record</h2>
-        <form id="addMonthlyRecordForm" action="{{ url('/modules/energy/records') }}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
-            @csrf
-            <input type="hidden" name="facility_id" value="{{ $selectedFacility->id ?? ($facilities[0]->id ?? '') }}">
-            <div style="display:flex;gap:10px;">
-                <label style="flex:1;font-weight:500;color:#222;">Month
-                    <select name="month" required style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-                        <option value="">Select Month</option>
-                        @foreach($months as $num => $label)
-                            <option value="{{ $num }}" @if($num == now()->month) selected @endif>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label style="flex:1;font-weight:500;color:#222;">Year
-                    <input type="number" name="year" placeholder="Year" required value="{{ now()->year }}" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-                </label>
-            </div>
-            <div style="display:flex;gap:10px;align-items:flex-end;">
-                <div style="flex:1;">
-                    <!-- Average kWh display removed as requested -->
-                    @php
-                        if (!isset($avgKwh)) {
-                            $avgKwh = isset($selectedFacility) ? ($selectedFacility->average_monthly_kwh ?? 0) : (isset($facilities[0]) ? ($facilities[0]->average_monthly_kwh ?? 0) : 0);
-                        }
-                    @endphp
-                    <label style="font-weight:500;color:#222;">Average kWh
-                        <input type="number" name="average_monthly_kwh" id="average_monthly_kwh_input" placeholder="Average kWh" step="0.01" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;" value="{{ $selectedFacility->energyProfiles->last()?->average_monthly_kwh ?? 0 }}" readonly>
-                    </label>
-                </div>
-                <label style="flex:1;font-weight:500;color:#222;">kWh Consumed
-                    <input type="number" name="actual_kwh" id="actual_kwh_input" placeholder="kWh Consumed" step="0.01" required style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-                </label>
-            </div>
-            <div style="display:flex;gap:10px;">
-                <label style="flex:1;font-weight:500;color:#222;">Rate per kWh
-                    <input type="number" name="rate_per_kwh" placeholder="Rate per kWh" step="0.01" required value="12.50" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-                </label>
-                <label style="flex:1;font-weight:500;color:#222;">Energy Cost
-                    <input type="number" name="energy_cost" placeholder="Energy Cost" step="0.01" readonly style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-                </label>
-            </div>
-            <label style="font-weight:500;color:#222;">Meralco Bill Picture (optional)
-                <input type="file" name="meralco_bill_picture" accept="image/*" style="width:100%;padding:10px 0;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;margin-top:4px;">
-            </label>
-            <div style="display:flex;gap:12px;margin-top:8px;">
-                <button type="button" onclick="closeAddMonthlyRecordModal()" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
-                <button type="submit" style="width:100%;padding:10px 0;border-radius:8px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1.1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);">Add Record</button>
-            </div>
-        </form>
+        <!-- Form removed as requested -->
     </div>
 </div>
 
@@ -136,9 +89,7 @@ function closeDeleteMonthlyRecordModal() {
 function closeAddEnergyProfileModal() {
     document.getElementById('addEnergyProfileModal').classList.remove('show-modal');
 }
-function closeResetBaselineModal() {
-    document.getElementById('resetBaselineModal').classList.remove('show-modal');
-}
+ // Script removed as requested
 function closeAddMonthlyRecordModal() {
     document.getElementById('addMonthlyRecordModal').classList.remove('show-modal');
 }

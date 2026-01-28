@@ -14,11 +14,8 @@ return new class extends Migration {
             $table->string('username')->unique();
             $table->string('password');
             $table->string('role')->default('user');
-            $table->string('department')->nullable();
-            $table->string('contact_number')->nullable();
             $table->string('status')->default('active');
             $table->timestamps();
-            $table->timestamp('last_login')->nullable();
         });
     }
 

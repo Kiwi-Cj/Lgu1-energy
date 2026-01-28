@@ -6,8 +6,10 @@
 		<h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin:0;">Billing Management</h2>
 		<p class="text-muted" style="margin:0;">View, filter, and manage all bills per facility and month. Track payment status and billing details easily.</p>
 	</div>
-	<a href="{{ route('modules.billing.create') }}" class="btn btn-primary" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:7px;padding:7px 22px;font-size:1rem;box-shadow:0 2px 8px rgba(31,38,135,0.10);text-decoration:none;">+ Add New Bill</a>
+	<button type="button" onclick="openAddBillModal()" class="btn btn-primary" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:7px;padding:7px 22px;font-size:1rem;box-shadow:0 2px 8px rgba(31,38,135,0.10);">+ Add New Bill</button>
 </div>
+
+@include('modules.billing.partials.modals')
 <div class="row" style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:2rem;">
 	<div class="card" style="flex:1 1 180px;min-width:180px;background:#f5f8ff;padding:18px 14px;border-radius:12px;box-shadow:0 2px 8px rgba(55,98,200,0.08);">
 		<div style="font-size:1.05rem;font-weight:500;color:#3762c8;">Total Facilities Billed</div>

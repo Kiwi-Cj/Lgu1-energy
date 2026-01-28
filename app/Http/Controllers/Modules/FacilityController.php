@@ -8,8 +8,73 @@ use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\BaselineResetLog;
 
+
 class FacilityController extends Controller
 {
+
+    /**
+     * Update the specified facility in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $facility = Facility::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
+            'department' => 'nullable|string|max:255',
+            'address' => 'required|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'floor_area' => 'nullable|numeric|min:0',
+            'floors' => 'nullable|integer|min:0',
+            'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'operating_hours' => 'nullable|string|max:255',
+            'status' => 'required|in:active,inactive,maintenance',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+        ]);
+
+        // Handle image upload if present
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/facility_images', $imageName);
+            $validated['image'] = 'facility_images/' . $imageName;
+        }
+
+        $facility->update($validated);
+
+        return redirect()->route('facilities.show', $facility->id)->with('success', 'Facility updated successfully.');
+    }
+    /**
+     * Store a newly created facility in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
+            'department' => 'nullable|string|max:255',
+            'address' => 'required|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'floor_area' => 'nullable|numeric|min:0',
+            'floors' => 'nullable|integer|min:0',
+            'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'operating_hours' => 'nullable|string|max:255',
+            'status' => 'required|in:active,inactive,maintenance',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+        ]);
+
+        // Handle image upload if present
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/facility_images', $imageName);
+            $validated['image'] = 'facility_images/' . $imageName;
+        }
+
+        $facility = Facility::create($validated);
+
+        return redirect()->route('facilities.index')->with('success', 'Facility added successfully.');
+    }
     /**
      * Show the form for editing the specified facility.
      */
@@ -18,31 +83,29 @@ class FacilityController extends Controller
         $facility = Facility::findOrFail($id);
         return view('modules.facilities.edit', compact('facility'));
     }
-    /* =========================
-            public function show($id)
-            {
-                $facility = Facility::findOrFail($id);
+    public function show($id)
+    {
+        $facility = Facility::findOrFail($id);
 
-                // Try to get first3months_data
-                $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
-                $avgKwh = null;
-                $showAvg = false;
-                if ($first3mo) {
-                    $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-                    $showAvg = true;
-                } else {
-                    // Fallback: use last 3 energyReadings
-                    $readings = $facility->energyReadings()->orderBy('year')->orderBy('month')->take(3)->pluck('kwh');
-                    if ($readings->count() === 3) {
-                        $avgKwh = $readings->avg();
-                        $showAvg = true;
-                    }
-                }
-
-                return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg'));
+        // Try to get first3months_data
+        $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+        $avgKwh = null;
+        $showAvg = false;
+        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
+            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
+            $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+            $showAvg = true;
+        } else {
+            // Fallback: use last 3 energyReadings
+            $readings = method_exists($facility, 'energyReadings') ? $facility->energyReadings()->orderBy('year')->orderBy('month')->take(3)->pluck('kwh') : collect();
+            if ($readings->count() === 3) {
+                $avgKwh = $readings->avg();
+                $showAvg = true;
             }
-        ROLE HELPERS
-    ========================== */
+        }
+
+        return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg'));
+    }
     private function isSuperAdmin()
     {
         return auth()->check() && strtolower(auth()->user()->role) === 'super admin';

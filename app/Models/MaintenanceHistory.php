@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToFacility;
 
 class MaintenanceHistory extends Model
 {
@@ -26,5 +27,4 @@ class MaintenanceHistory extends Model
         return $this->belongsTo(Facility::class);
     }
 
-    use App\Models\Traits\BelongsToFacility;
 }

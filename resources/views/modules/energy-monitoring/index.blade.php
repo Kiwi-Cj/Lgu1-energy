@@ -1,160 +1,261 @@
 @extends('layouts.qc-admin')
 @section('title', 'Energy Monitoring Dashboard')
-@section('content')
 
+@section('content')
 @php
     $userRole = strtolower(auth()->user()->role ?? '');
 @endphp
 
+
 <h2 style="font-size:2rem; font-weight:700; margin-bottom:1.5rem;">Energy Monitoring Dashboard</h2>
 
-<!-- Summary Cards -->
-<div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:2rem;">
-    <div style="flex:1 1 180px; background:#f5f8ff; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(55,98,200,0.08);">
+<!-- OVERVIEW CARDS -->
+<div style="width:100%; display:flex; gap:24px; flex-wrap:wrap; margin-bottom:2.5rem;">
+    <div style="flex:1 1 220px; background:#f5f8ff; padding:20px; border-radius:14px;">
         <div style="font-weight:500; color:#3762c8;">🏢 Total Facilities</div>
-        <div style="font-weight:700; font-size:1.8rem;">{{ $totalFacilities ?? '-' }}</div>
+        <div style="font-weight:700; font-size:2rem;">{{ $totalFacilities ?? '-' }}</div>
     </div>
-    <div style="flex:1 1 180px; background:#f0fdf4; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(34,197,94,0.08);">
-        <div style="font-weight:500; color:#22c55e;">🟢 Active</div>
-        <div style="font-weight:700; font-size:1.8rem;">{{ $activeFacilities ?? '-' }}</div>
+
+    <div style="flex:1 1 220px; background:#fff0f3; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#e11d48;">
+            🚨 Facilities with <b>HIGH</b> Alert
+        </div>
+        <div style="font-weight:700; font-size:2rem; color:#e11d48;">
+            {{ $highAlertCount ?? 0 }}
+        </div>
     </div>
-    <div style="flex:1 1 180px; background:#fff7ed; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(234,179,8,0.08);">
-        <div style="font-weight:500; color:#f59e42;">🛠 Maintenance</div>
-        <div style="font-weight:700; font-size:1.8rem;">{{ $maintenanceFacilities ?? '-' }}</div>
+
+    <div style="flex:1 1 220px; background:#e0f2fe; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#0284c7;">
+            ⚡ Avg kWh vs Baseline (This Month)
+        </div>
+        <div style="font-weight:700; font-size:2rem;">
+            {{ $avgKwhVsBaseline ?? '-' }}
+        </div>
     </div>
-    <div style="flex:1 1 180px; background:#fff0f3; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(225,29,72,0.08);">
-        <div style="font-weight:500; color:#e11d48;">🚫 Inactive</div>
-        <div style="font-weight:700; font-size:1.8rem;">{{ $inactiveFacilities ?? '-' }}</div>
-    </div>
-    <div style="flex:1 1 180px; background:#e0f2fe; padding:18px; border-radius:14px; box-shadow:0 2px 8px rgba(14,165,233,0.08);">
-        <div style="font-weight:500; color:#0284c7;">⚡ Avg Monthly kWh</div>
-        <div style="font-weight:700; font-size:1.8rem;">{{ round($avgMonthlyKwh ?? 0,2) }}</div>
+
+    <div style="flex:1 1 220px; background:#f0fdf4; padding:20px; border-radius:14px;">
+        <div style="font-weight:500; color:#22c55e;">
+            � Total Energy Cost (This Month)
+        </div>
+        <div style="font-weight:700; font-size:2rem; color:#22c55e;">
+            ₱{{ number_format($totalEnergyCost ?? 0, 2) }}
+        </div>
     </div>
 </div>
 
-<!-- Facility Table -->
-<div style="overflow-x:auto; margin-bottom:2rem;">
-<table style="width:100%; border-collapse:collapse;">
-    <thead style="background:#f3f4f6; color:#111;">
-        <tr>
-            <th style="padding:10px 12px; text-align:left;">Facility</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Floor Area</th>
-            <th>Baseline kWh</th>
-            <th>Trend</th>
-            <th>EUI (kWh/m²)</th>
-            <th>Last Maint</th>
-            <th>Next Maint</th>
-            <th>Alerts</th>
-            @if($userRole !== 'staff') <th>Actions</th> @endif
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($facilities as $facility)
-            <tr style="border-bottom:1px solid #e5e7eb;">
-                <td>{{ $facility->name }}</td>
-                <td>{{ $facility->type }}</td>
-                <td>{{ $facility->status }}</td>
-                <td>{{ $facility->floor_area ?? '-' }}</td>
-                <td>{{ $facility->baseline_kwh ?? '-' }}</td>
-                <td>{{ $facility->trend_analysis ?? '-' }}</td>
-                <td>{{ $facility->monthly_eui ?? '-' }}</td>
-                <td>{{ $facility->last_maintenance ?? '-' }}</td>
-                <td>{{ $facility->next_maintenance ?? '-' }}</td>
-                <td>
-                    @if($facility->alert_level)
-                        <span style="color:red; font-weight:600;">{{ $facility->alert_level }}</span>
-                    @else
-                        -
-                    @endif
-                </td>
+<!-- FACILITY TABLE (Dynamic: search + pagination) -->
+<form method="GET" action="" style="margin-bottom:18px; display:flex; gap:10px; align-items:center;">
+    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search facility..." style="border-radius:8px; border:1px solid #c3cbe5; padding:8px 14px; font-size:1rem; width:220px;">
+    <button type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-weight:600; font-size:1rem; cursor:pointer;">Search</button>
+    @if(request('search'))
+        <a href="{{ url()->current() }}" style="margin-left:8px; color:#e11d48; text-decoration:underline; font-size:0.98rem;">Clear</a>
+    @endif
+</form>
+<div style="background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(31,38,135,0.08); margin-bottom:1.2rem;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.93rem;">
+        <thead style="background:#f1f5f9;">
+            <tr style="text-align:center;">
+                <th style="padding:6px 8px; text-align:center;">Facility</th>
+                <th style="padding:6px 8px; text-align:center;">Type</th>
+                <th style="padding:6px 8px; text-align:center;">Status</th>
+                <th style="padding:6px 8px; text-align:center;">Month</th>
+                <th style="padding:6px 8px; text-align:center;">Floor Area</th>
+                <th style="padding:6px 8px; text-align:center;">Baseline kWh</th>
+                <th style="padding:6px 8px; text-align:center;">Trend</th>
+                <th style="padding:6px 8px; text-align:center;">EUI (kWh/m²)</th>
+                <th style="padding:6px 8px; text-align:center;">Last Maint</th>
+                <th style="padding:6px 8px; text-align:center;">Next Maint</th>
+                <th style="padding:6px 8px; text-align:center;">Alerts</th>
                 @if($userRole !== 'staff')
-                <td style="display:flex; gap:6px;">
-                    <a href="{{ url('/modules/facilities/'.$facility->id.'/energy-profile') }}" title="View"><i class="fa fa-eye"></i></a>
-                    <button onclick="openResetBaselineModal({{ $facility->id }})" title="Reset Baseline"><i class="fa fa-repeat"></i></button>
-                    <button onclick="toggleEngineerApproval({{ $facility->id }})" title="Toggle Approval"><i class="fa fa-check-circle"></i></button>
-                </td>
+                    <th style="padding:6px 8px; text-align:center;">Actions</th>
                 @endif
             </tr>
+        </thead>
+        <tbody>
+        @forelse($facilities as $facility)
+            @php 
+                $record = $facility->energyRecords->first(); 
+                $currentMonth = date('n');
+                $currentYear = date('Y');
+                $trendAnalysis = '-';
+                $alertLevel = '-';
+                $eui = null;
+                $hasCurrentMonth = $record && $record->month == $currentMonth && $record->year == $currentYear;
+            @endphp
+            @if($hasCurrentMonth)
+                @php
+                    $actualKwh = $record->actual_kwh ?? 0;
+                    $floorArea = $facility->floor_area;
+                    $eui = (isset($floorArea) && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
+
+                    // Trend and Alert Logic
+                    $previousRecord = \App\Models\EnergyRecord::where('facility_id', $facility->id)
+                        ->where(function($q) use ($record) {
+                            $q->where('year', '<', $record->year)
+                              ->orWhere(function($q2) use ($record){
+                                  $q2->where('year', $record->year)
+                                     ->where('month', '<', $record->month);
+                              });
+                        })
+                        ->orderBy('year', 'desc')
+                        ->orderBy('month', 'desc')
+                        ->first();
+
+                    if($previousRecord){
+                        $trend = $previousRecord->actual_kwh > 0 
+                            ? round((($record->actual_kwh - $previousRecord->actual_kwh)/$previousRecord->actual_kwh)*100, 2) 
+                            : null;
+                        $trendAnalysis = $trend !== null ? $trend . '%' : '-';
+
+                        // Facility size alert thresholds
+                        $size = $facility->size_label ?? 'Medium'; // Small, Medium, Large, Extra Large
+                        $alert = 'Low';
+
+                        if($trend !== null){
+                            if($size === 'Small'){
+                                if($trend > 30) $alert = 'High';
+                                elseif($trend > 15) $alert = 'Medium';
+                            } elseif($size === 'Medium'){
+                                if($trend > 20) $alert = 'High';
+                                elseif($trend > 10) $alert = 'Medium';
+                            } elseif($size === 'Large' || $size === 'Extra Large'){
+                                if($trend > 15) $alert = 'High';
+                                elseif($trend > 5) $alert = 'Medium';
+                            }
+                        }
+                        $alertLevel = $alert;
+                    }
+                @endphp
+                <tr style="border-bottom:1px solid #e5e7eb; text-align:center; background:{{ $loop->even ? '#f8fafc' : '#fff' }}; font-size:0.93rem;">
+                    <td style="padding:6px 8px; text-align:center;">{{ $facility->name }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $facility->type }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $facility->status }}</td>
+                    <td style="padding:6px 8px; text-align:center;">
+                        @php
+                            $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        @endphp
+                        {{ isset($record->month) ? $monthsArr[$record->month-1] : '-' }}
+                    </td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $facility->floor_area ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $facility->average_monthly_kwh ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $trendAnalysis }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $eui !== null ? $eui : '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $record->last_maintenance ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center;">{{ $record->next_maintenance ?? '-' }}</td>
+
+                    <td style="padding:6px 8px; text-align:center;">
+                        @if($alertLevel === 'High')
+                            <span style="color:#e11d48; font-weight:600;">High</span>
+                        @elseif($alertLevel === 'Medium')
+                            <span style="color:#f59e42; font-weight:600;">Medium</span>
+                        @elseif($alertLevel === 'Low')
+                            <span style="color:#22c55e; font-weight:600;">Low</span>
+                        @else
+                            -
+                        @endif
+                    </td>
+
+                    @if($userRole !== 'staff')
+                    <td style="padding:12px; height:100%; text-align:center; vertical-align:middle;">
+                        <div style="display:inline-flex; gap:10px; justify-content:center; align-items:center;">
+                            <a href="{{ url('/modules/facilities/'.$facility->id.'/energy-profile') }}" title="View"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#2563eb1a; color:#2563eb; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; text-decoration:none;"
+                                onmouseover="this.style.background='#2563eb';this.style.color='#fff'" onmouseout="this.style.background='#2563eb1a';this.style.color='#2563eb'">
+                                <i class="fa fa-eye" style="font-size:1rem;"></i>
+                            </a>
+                            <button onclick="openResetBaselineModal({{ $facility->id }})" title="Reset Baseline"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#f59e421a; color:#f59e42; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; cursor:pointer;"
+                                onmouseover="this.style.background='#f59e42';this.style.color='#fff'" onmouseout="this.style.background='#f59e421a';this.style.color='#f59e42'">
+                                <i class="fa fa-repeat" style="font-size:1rem;"></i>
+                            </button>
+                            <button onclick="toggleEngineerApproval({{ $facility->id }})" title="Toggle Approval"
+                                style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#22c55e1a; color:#22c55e; border-radius:50%; font-size:1rem; transition:background 0.18s, color 0.18s; border:none; cursor:pointer;"
+                                onmouseover="this.style.background='#22c55e';this.style.color='#fff'" onmouseout="this.style.background='#22c55e1a';this.style.color='#22c55e'">
+                                <i class="fa fa-check-circle" style="font-size:1rem;"></i>
+                            </button>
+                            <!-- 🔥 ADDED: CREATE ENERGY ACTION -->
+                            @if($alertLevel === 'High' || $alertLevel === 'Medium')
+                            <a href="{{ url('/energy-actions/create?facility='.$facility->id) }}"
+                               title="Create Energy Action"
+                               style="width:28px;height:28px;border-radius:50%;
+                                      background:#e11d481a;color:#e11d48;
+                                      display:flex;align-items:center;justify-content:center;
+                                      text-decoration:none;">
+                                <i class="fa fa-bolt"></i>
+                            </a>
+                            @endif
+                        </div>
+                    </td>
+                    @endif
+                </tr>
+            @endif
         @empty
             <tr>
-                <td colspan="11" style="text-align:center; padding:20px;">No facilities found.</td>
+                <td colspan="11" style="padding:20px; text-align:center;">
+                    No facilities found.
+                </td>
             </tr>
         @endforelse
-    </tbody>
-</table>
+        </tbody>
+
+    </table>
 </div>
 
-<!-- Trend Chart -->
-<div style="margin-bottom:2rem;">
-    <canvas id="energyTrendChart" style="width:100%; max-width:800px; height:300px;"></canvas>
-</div>
+@if(method_exists($facilities, 'links'))
+    <div style="margin:18px 0; text-align:center;">
+        {{ $facilities->appends(request()->query())->links() }}
+    </div>
+@endif
 
-<!-- Modals -->
+
 @include('modules.facilities.partials.modals')
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-    const ctx = document.getElementById('energyTrendChart').getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: @json($trendLabels ?? []),
-            datasets: [{
-                label: 'kWh Consumption',
-                data: @json($trendData ?? []),
-                borderColor:'#2563eb',
-                backgroundColor:'rgba(37,99,235,0.2)',
-                fill:true,
-                tension:0.2,
-                pointRadius:5
-            }]
-        },
-        options:{
-            responsive:true,
-            plugins:{
-                legend:{display:true},
-                tooltip:{mode:'index', intersect:false}
+document.addEventListener('DOMContentLoaded', function () {
+
+    const ctx = document.getElementById('energyTrendChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: @json($trendLabels ?? []),
+                datasets: [{
+                    label: 'kWh Consumption',
+                    data: @json($trendData ?? []),
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
             },
-            scales:{
-                y:{beginAtZero:true},
-                x:{title:{display:true, text:'Month'}}
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
             }
-        }
-    });
+        });
+    }
 });
 
-// Reset Baseline
-function openResetBaselineModal(facilityId){
+function openResetBaselineModal(facilityId) {
     document.getElementById('reset_facility_id').value = facilityId;
-    document.getElementById('resetBaselineModal').style.display='flex';
+    document.getElementById('resetBaselineModal').style.display = 'flex';
 }
 
-document.getElementById('resetBaselineForm')?.addEventListener('submit', function(e){
-    e.preventDefault();
-    const id = document.getElementById('reset_facility_id').value;
-    const reason = document.getElementById('reset_reason').value;
-
-    fetch(`/modules/facilities/${id}/reset-baseline`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
-        body:JSON.stringify({reason})
-    }).then(res=>res.json()).then(data=>{
-        alert(data.message||'Baseline reset!');
-        document.getElementById('resetBaselineModal').style.display='none';
-        location.reload();
-    });
-});
-
-// Engineer Approval Toggle
-function toggleEngineerApproval(facilityId){
+function toggleEngineerApproval(facilityId) {
     fetch(`/modules/facilities/${facilityId}/toggle-engineer`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}
-    }).then(res=>res.json()).then(data=>{
-        alert(data.message||'Engineer approval toggled!');
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || 'Updated');
         location.reload();
     });
 }

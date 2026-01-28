@@ -10,9 +10,28 @@
     <h2 style="font-size:2rem;font-weight:700;color:#222;margin:0;">Facilities</h2>
     <div style="display:flex; gap:12px;">
         <?php if($userRole !== 'staff'): ?>
-            <button type="button" id="btnAddFacility" style="background: linear-gradient(90deg,#2563eb,#6366f1); color:#fff; font-weight:600; border:none; border-radius:10px; padding:10px 28px; font-size:1.1rem; box-shadow:0 2px 8px rgba(31,38,135,0.10);">+ Add Facility</button>
-            
+            <button type="button" id="btnAddFacilityTop" style="background: linear-gradient(90deg,#2563eb,#6366f1); color:#fff; font-weight:600; border:none; border-radius:10px; padding:10px 28px; font-size:1.1rem; box-shadow:0 2px 8px rgba(31,38,135,0.10); transition:background 0.18s;">+ Add Facility</button>
+            <style>
+            #btnAddFacilityTop:hover, #btnAddFacilityTop:focus {
+                background:linear-gradient(90deg,#1d4ed8,#6366f1);
+            }
+            </style>
         <?php endif; ?>
+
+    <?php if($userRole !== 'staff'): ?>
+        <!-- Floating Add Facility Button (hidden if top button is visible) -->
+        <button type="button" id="fabAddFacility" title="Add Facility" style="position:fixed;bottom:38px;right:38px;z-index:10001;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;border:none;border-radius:50%;width:62px;height:62px;box-shadow:0 4px 18px rgba(37,99,235,0.18);display:flex;align-items:center;justify-content:center;font-size:2.1rem;cursor:pointer;transition:background 0.18s;display:none;">
+            <span style="font-size:2.2rem;line-height:1;">+</span>
+        </button>
+        <style>
+        #fabAddFacility:hover, #fabAddFacility:focus {
+            background:linear-gradient(90deg,#1d4ed8,#6366f1);
+        }
+        @media (max-width: 600px) {
+            #fabAddFacility { right:16px; bottom:16px; width:52px; height:52px; font-size:1.6rem; }
+        }
+        </style>
+    <?php endif; ?>
     </div>
 </div>
 
@@ -52,17 +71,14 @@
             <?php endif; ?>
             <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:8px;color:#222;"><?php echo e($facility->name ?? '-'); ?></h3>
             <div style="color:#6366f1;font-weight:500;margin-bottom:6px;"><?php echo e($facility->type ?? '-'); ?></div>
-            <div style="font-size:0.97rem;color:#2563eb;font-weight:500;margin-bottom:6px;text-transform:capitalize;">Size: <?php echo e($facility->dynamicSize ?? $facility->size ?? '-'); ?></div>
             <div style="font-size:0.98rem;color:#555;margin-bottom:10px;"><?php echo e($facility->address ?? '-'); ?></div>
             <div class="facility-icons" style="display:flex;gap:10px;align-items:center;z-index:2;">
                 <a href="<?php echo e(url('/modules/facilities/' . $facility->id . '/energy-profile')); ?>" class="facility-icon-link" style="color:#f59e42;font-size:1.25rem;" title="View Energy Profile" onclick="event.stopPropagation();"><i class="fa fa-bolt"></i></a>
-                <a href="<?php echo e(route('energy.records')); ?>?facility_id=<?php echo e($facility->id); ?>" class="facility-icon-link" style="color:#2563eb;font-size:1.25rem;" title="View Monthly Records" onclick="event.stopPropagation();"><i class="fa fa-calendar-alt"></i></a>
-                <button type="button" class="btn-show-3mo-avg facility-icon-link" data-facility-id="<?php echo e($facility->id); ?>" style="background:none;color:#6366f1;font-size:1.25rem;padding:0 6px;border:none;cursor:pointer;" title="Show 3-Month Avg kWh" onclick="event.stopPropagation();">
-                    <i class="fa fa-chart-line"></i>
-                </button>
+                <a href="<?php echo e(route('facilities.monthly-records', $facility->id)); ?>" class="facility-icon-link" style="color:#2563eb;font-size:1.25rem;" title="View Monthly Records" onclick="event.stopPropagation();"><i class="fa fa-calendar-alt"></i></a>
+                <a href="<?php echo e(url('/facilities/first3months?facility_id=' . $facility->id)); ?>" class="facility-icon-link" style="color:#0ea5e9;font-size:1.25rem;" title="First 3 Months Data" onclick="event.stopPropagation();">
+                    <i class="fa fa-calendar-plus"></i>
+                </a>
                 <?php if($userRole !== 'staff'): ?>
-                    <a href="#" class="action-btn-edit facility-icon-link" data-facility='<?php echo json_encode($facility, 15, 512) ?>' style="color:#6366f1;font-size:1.2rem;" title="Edit Facility" onclick="event.stopPropagation();"><i class="fa fa-pen"></i></a>
-                    
                     <?php if($userRole === 'engineer' || $userRole === 'super admin'): ?>
                         <button onclick="event.stopPropagation();toggleEngineerApproval(<?php echo e($facility->id); ?>)" class="facility-icon-link" style="color:#22c55e;font-size:1.2rem;background:none;border:none;" title="Engineer Approval"><i class="fa fa-check-circle"></i></button>
                     <?php endif; ?>
@@ -100,20 +116,7 @@
 
 
 <!-- Modal for 3-Month Average kWh (rendered only once, outside the loop) -->
-<div id="modal3MoAvg" class="modal" style="display:none;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:32px 28px;border-radius:16px;min-width:320px;box-shadow:0 8px 32px rgba(31,38,135,0.13);position:relative;">
-        <button class="modal-close" onclick="document.getElementById('modal3MoAvg').style.display='none'" style="position:absolute;top:18px;right:18px;background:none;border:none;font-size:1.7rem;color:#6366f1;cursor:pointer;">&times;</button>
-        <h3 style="font-size:1.3rem;font-weight:700;color:#2563eb;margin-bottom:18px;">3-Month Average kWh</h3>
-        <div id="avg3MoContent" style="font-size:1.1rem;color:#222;"></div>
-        <div id="add3MoBtnContainer" style="margin-top:22px;text-align:right;">
-            <a href="#" class="btn btn-primary btn-add-3mo-data" style="background:#2563eb;color:#fff;padding:8px 22px;border-radius:7px;font-weight:600;font-size:1rem;text-decoration:none;">+ Add First 3 Months Data</a>
-        </div>
-        <div id="show3MoBtnContainer" style="margin-top:12px;text-align:right;display:none;">
-            <button type="button" class="btn btn-secondary btn-show-3mo-data" style="background:#6366f1;color:#fff;padding:7px 18px;border-radius:7px;font-weight:600;font-size:0.98rem;border:none;">Show 3-Months Data</button>
-        </div>
-        <div id="threeMoDataTable" style="margin-top:18px;display:none;"></div>
-    </div>
-</div>
+<!-- 3-Month Average Modal removed -->
 
 <!-- Modals -->
 <?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?> 
@@ -140,145 +143,39 @@
 </style>
 
 <script>
-// Make only the card or the icon clickable, not both
 document.addEventListener('DOMContentLoaded', function() {
+    // Move modal to end of body for stacking
+    const modal = document.getElementById('addFacilityModal');
+    if (modal && modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
+    }
+    // Add Facility button logic (top)
+    const btnAddFacilityTop = document.getElementById('btnAddFacilityTop');
+    if (btnAddFacilityTop) {
+        btnAddFacilityTop.addEventListener('click', function() {
+            modal.style.display = 'flex';
+            setTimeout(()=>{
+                document.getElementById('add_name')?.focus();
+            }, 100);
+        });
+    }
+    // Add Facility button logic (FAB)
+    const fabAddFacility = document.getElementById('fabAddFacility');
+    if (fabAddFacility) {
+        fabAddFacility.addEventListener('click', function() {
+            modal.style.display = 'flex';
+            setTimeout(()=>{
+                document.getElementById('add_name')?.focus();
+            }, 100);
+        });
+    }
     document.querySelectorAll('.facility-card-link').forEach(link => {
         link.addEventListener('click', function(e) {
             // Only trigger if not clicking on an icon
-            // (Icons already have stopPropagation on click)
-        });
-    });
-    const addModal = document.getElementById('addFacilityModal');
-    const editModal = document.getElementById('editFacilityModal');
-    const resetModal = document.getElementById('resetBaselineModal');
-
-    // Add First 3 Months Data button in modal: pass facility_id in query
-    document.querySelector('.btn-add-3mo-data')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        // Find the last opened facility id (from last modal trigger)
-        const lastFacilityId = window.last3MoFacilityId || null;
-        let url = "<?php echo e(route('facilities.first3months.create')); ?>";
-        if (lastFacilityId) url += `?facility_id=${lastFacilityId}`;
-        window.location.href = url;
-    });
-
-    // Auto-open 3-Month Avg modal if show3mo param is present in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const show3mo = urlParams.get('show3mo');
-    if (show3mo) {
-        // Find the button for this facility and trigger click
-        const btn = document.querySelector(`.btn-show-3mo-avg[data-facility-id='${show3mo}']`);
-        if (btn) {
-            setTimeout(() => btn.click(), 400); // slight delay to ensure DOM is ready
-        }
-    }
-
-    // 3-Month Avg Icon Button Logic (global, not per facility)
-    document.querySelectorAll('.btn-show-3mo-avg').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const facilityId = this.dataset.facilityId;
-            window.last3MoFacilityId = facilityId;
-            fetch(`/api/facilities/${facilityId}/3mo-avg`)
-                .then(res => res.json())
-                .then(data => {
-                    // Show average or not enough data
-                    document.getElementById('avg3MoContent').textContent = data.avg_kwh !== null ? `First 3 months average: ${data.avg_kwh} kWh` : 'Not enough data (need 3 months).';
-                    // Show/hide Add button if data exists
-                    const addBtnContainer = document.getElementById('add3MoBtnContainer');
-                    const showBtnContainer = document.getElementById('show3MoBtnContainer');
-                    const dataTable = document.getElementById('threeMoDataTable');
-                    if (data.avg_kwh !== null) {
-                        addBtnContainer.style.display = 'none';
-                        showBtnContainer.style.display = 'block';
-                    } else {
-                        addBtnContainer.style.display = 'block';
-                        showBtnContainer.style.display = 'none';
-                        dataTable.style.display = 'none';
-                    }
-                    dataTable.style.display = 'none';
-                    document.getElementById('modal3MoAvg').style.display = 'flex';
-                });
-            // Show 3-Months Data button logic
-            document.querySelector('.btn-show-3mo-data')?.addEventListener('click', function() {
-                const facilityId = window.last3MoFacilityId;
-                fetch(`/api/facilities/${facilityId}/first3months-data`)
-                    .then(res => res.json())
-                    .then(data => {
-                        const dataTable = document.getElementById('threeMoDataTable');
-                        if (data && data.month1 !== undefined) {
-                            dataTable.innerHTML = `
-                                <table style='width:100%;border-collapse:collapse;margin-bottom:10px;'>
-                                    <thead>
-                                        <tr style='background:#f1f5f9;'>
-                                            <th style='padding:8px 0;'>Month</th>
-                                            <th style='padding:8px 0;'>kWh</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td style='text-align:center;font-weight:600;'>Month 1</td><td style='text-align:center;'>${data.month1}</td></tr>
-                                        <tr><td style='text-align:center;font-weight:600;'>Month 2</td><td style='text-align:center;'>${data.month2}</td></tr>
-                                        <tr><td style='text-align:center;font-weight:600;'>Month 3</td><td style='text-align:center;'>${data.month3}</td></tr>
-                                        <tr><td colspan='2' style='text-align:center;padding-top:10px;'>
-                                            <button class='btn-delete-3mo-data' style='background:#e11d48;color:#fff;padding:4px 18px;border-radius:5px;border:none;font-size:1rem;'>Delete</button>
-                                        </td></tr>
-                                    <!-- Modal for Delete 3-Months Data Confirmation -->
-                                    <div id="modalDelete3MoData" class="modal" style="display:none;align-items:center;justify-content:center;z-index:10000;">
-                                        <div style="background:#fff;padding:32px 28px;border-radius:16px;min-width:320px;box-shadow:0 8px 32px rgba(225,29,72,0.13);position:relative;max-width:90vw;">
-                                            <button class="modal-close" onclick="document.getElementById('modalDelete3MoData').style.display='none'" style="position:absolute;top:18px;right:18px;background:none;border:none;font-size:1.7rem;color:#e11d48;cursor:pointer;">&times;</button>
-                                            <h3 style="font-size:1.2rem;font-weight:700;color:#e11d48;margin-bottom:18px;">Delete 3-Months Data</h3>
-                                            <div style="font-size:1.05rem;color:#222;margin-bottom:18px;">Are you sure you want to delete the 3-months data for this facility? This action cannot be undone.</div>
-                                            <div style="display:flex;gap:16px;justify-content:flex-end;">
-                                                <button id="btnCancelDelete3MoData" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:8px 22px;">Cancel</button>
-                                                <button id="btnConfirmDelete3MoData" style="background:#e11d48;color:#fff;font-weight:600;border:none;border-radius:8px;padding:8px 22px;">Delete</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    </tbody>
-                                </table>
-                            `;
-                            dataTable.style.display = 'block';
-                        } else {
-                            dataTable.innerHTML = '<div style="color:#e11d48;text-align:center;">No 3-months data found.</div>';
-                            dataTable.style.display = 'block';
-                        }
-                        // Attach delete handler with custom modal
-                        const delBtn = dataTable.querySelector('.btn-delete-3mo-data');
-                        if (delBtn) {
-                            delBtn.onclick = function() {
-                                window._delete3MoFacilityId = facilityId;
-                                document.getElementById('modalDelete3MoData').style.display = 'flex';
-                            }
-                        }
-                    // Delete 3-Months Data Modal logic
-                    document.getElementById('btnCancelDelete3MoData')?.addEventListener('click', function() {
-                        document.getElementById('modalDelete3MoData').style.display = 'none';
-                    });
-                    document.getElementById('btnConfirmDelete3MoData')?.addEventListener('click', function() {
-                        const facilityId = window._delete3MoFacilityId;
-                        if (!facilityId) return;
-                        fetch(`/api/facilities/${facilityId}/first3months-data`, {
-                            method: 'DELETE',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' }
-                        })
-                        .then(res => res.json())
-                        .then(resp => {
-                            if (resp.success) {
-                                document.getElementById('modalDelete3MoData').style.display = 'none';
-                                document.getElementById('modal3MoAvg').style.display = 'none';
-                                location.reload();
-                            } else {
-                                alert('Failed to delete 3-months data.');
-                            }
-                        });
-                    });
-                    });
-            });
         });
     });
 
-    // Open Add
-    document.getElementById('btnAddFacility')?.addEventListener('click',()=>addModal.style.display='flex');
+    // 3-Month Avg Icon Button Logic removed
 
     // Close modals
     document.querySelectorAll('.modal-close').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.modal').style.display='none'));
@@ -295,24 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-function openEditFacilityModal(f){
-    const m=document.getElementById('editFacilityModal'); m.style.display='flex';
-    document.getElementById('edit_facility_id').value=f.id||'';
-    document.getElementById('edit_name').value=f.name||'';
-    document.getElementById('edit_type').value=f.type||'';
-    document.getElementById('edit_department').value=f.department||'';
-    document.getElementById('edit_address').value=f.address||'';
-    document.getElementById('edit_barangay').value=f.barangay||'';
-    document.getElementById('edit_floor_area').value=f.floor_area||'';
-    document.getElementById('edit_floors').value=f.floors||'';
-    document.getElementById('edit_year_built').value=f.year_built||'';
-    document.getElementById('edit_operating_hours').value=f.operating_hours||'';
-    document.getElementById('edit_status').value=f.status||'';
-    const preview=document.getElementById('edit_image_preview');
-    preview.innerHTML=f.image ? `<img src='/storage/${f.image}' style='width:100%;max-width:180px;border-radius:8px;'>` : '';
-    document.getElementById('editFacilityForm').action=`/modules/facilities/${f.id}`;
-}
 
 // Reset baseline
 function openResetBaselineModal(id){ document.getElementById('reset_facility_id').value=id; document.getElementById('resetBaselineModal').style.display='flex'; }

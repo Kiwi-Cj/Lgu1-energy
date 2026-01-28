@@ -11,6 +11,12 @@ class User extends Authenticatable
 {
     use Notifiable;
 
+    // OTP relationship
+    public function otps()
+    {
+        return $this->hasMany(\App\Models\Otp::class);
+    }
+
     // Add your fillable, hidden, casts, etc. as needed
     protected $fillable = [
         'full_name',
@@ -23,14 +29,7 @@ class User extends Authenticatable
         'status',
         'last_login',
         'facility_id', // Facility assignment for Staff users
-        'otp_code',
-        'otp_expires_at',
-        'otp_verified',
     ];
-        protected $casts = [
-            'otp_expires_at' => 'datetime',
-            'otp_verified' => 'boolean',
-        ];
     protected $hidden = [
         'password', 'remember_token',
     ];

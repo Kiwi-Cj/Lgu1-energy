@@ -24,15 +24,35 @@ class OtpVerificationController extends Controller
             'otp_code' => 'required|string|max:10',
         ]);
         $user = User::find($request->user_id);
-        if (!$user || !$user->otp_code || $user->otp_code !== $request->otp_code || !$user->otp_expires_at || now()->gt($user->otp_expires_at)) {
+        $otp = \App\Models\Otp::where('user_id', $user->id)
+            ->where('code', $request->otp_code)
+            ->where('expires_at', '>', now())
+            ->where('used', false)
+            ->latest()
+            ->first();
+        if (!$otp) {
             return redirect()->back()->with('error', 'Invalid or expired OTP.');
         }
-        $user->otp_verified = true;
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
-        $user->save();
+        $otp->used = true;
+        $otp->save();
         Auth::login($user);
         $request->session()->forget('otp_user_id');
         return redirect('/modules/dashboard/index');
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $user = User::where('email', $request->email)->firstOrFail();
+
+        if ($request->otp == $user->otp_code && now()->lessThan($user->otp_expires_at)) {
+            // OTP valid
+            $user->otp_code = null;
+            $user->otp_expires_at = null;
+            $user->save();
+
+            return response()->json(['message' => 'OTP verified successfully']);
+        } else {
+            return response()->json(['message' => 'Invalid or expired OTP'], 422);
+        }
     }
 }

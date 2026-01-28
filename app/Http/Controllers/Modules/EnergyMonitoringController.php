@@ -1,60 +1,49 @@
 <?php
+
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Facility;
-use App\Models\EnergyRecord;
 
 class EnergyMonitoringController extends Controller
 {
+    /**
+     * Display the Energy Monitoring Dashboard with dynamic total facilities card and facility table.
+     */
     public function index()
     {
-        $totalKwh = EnergyRecord::sum('kwh_consumed');
-        $peakLoad = EnergyRecord::max('kwh_consumed');
-        $activeFacilities = Facility::where('status', 1)->count();
-        $recentUsages = EnergyRecord::with('facility')->orderByDesc('year')->orderByDesc('month')->limit(10)->get();
-        return view('modules.energy.index', compact('totalKwh', 'peakLoad', 'activeFacilities', 'recentUsages'));
-    }
-
-    public function show($id)
-    {
-        $record = \App\Models\EnergyRecord::with('facility')->findOrFail($id);
-        return view('modules.energy.show', compact('record'));
-    }
-
-    public function create()
-    {
-        $facilities = \App\Models\Facility::all();
-        return view('modules.energy.create', compact('facilities'));
-    }
-
-    public function store(\Illuminate\Http\Request $request)
-    {
-        $validated = $request->validate([
-            'facility_id' => 'required|exists:facilities,id',
-            'month' => 'required',
-            'year' => 'required',
-            'kwh_consumed' => 'required|numeric',
-            'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
-        ]);
-
-        // Prevent duplicate entry for the same facility, month, and year
-        $exists = \App\Models\EnergyRecord::where('facility_id', $validated['facility_id'])
-            ->where('month', $validated['month'])
-            ->where('year', $validated['year'])
-            ->exists();
-        if ($exists) {
-            return redirect()->back()->withInput()->withErrors(['duplicate' => 'An energy record for this facility and month/year already exists.']);
+        // Get the total number of facilities dynamically
+        $totalFacilities = Facility::count();
+        // Get all facilities for the table
+        $facilities = Facility::all();
+        // Count facilities with a 'High' alert in the current month
+        $currentMonth = date('n');
+        $currentYear = date('Y');
+        $highAlertCount = 0;
+        foreach ($facilities as $facility) {
+            $record = $facility->energyRecords()
+                ->where('month', $currentMonth)
+                ->where('year', $currentYear)
+                ->where('alert', 'High')
+                ->first();
+            if ($record) {
+                $highAlertCount++;
+            }
+            // Attach last maintenance from MaintenanceHistory
+            $lastMaint = \App\Models\MaintenanceHistory::where('facility_id', $facility->id)
+                ->whereNotNull('completed_date')
+                ->orderByDesc('completed_date')
+                ->first();
+            // Attach next maintenance from Maintenance (Ongoing)
+            $nextMaint = \App\Models\Maintenance::where('facility_id', $facility->id)
+                ->where('maintenance_status', 'Ongoing')
+                ->orderBy('scheduled_date', 'asc')
+                ->first();
+            if ($facility->energyRecords->count() > 0) {
+                $facility->energyRecords->first()->last_maintenance = $lastMaint ? $lastMaint->completed_date : null;
+                $facility->energyRecords->first()->next_maintenance = $nextMaint ? $nextMaint->scheduled_date : null;
+            }
         }
-
-        $data = $validated;
-        if ($request->hasFile('meralco_bill_picture')) {
-            $path = $request->file('meralco_bill_picture')->store('meralco_bills', 'public');
-            $data['meralco_bill_picture'] = $path;
-        }
-
-        \App\Models\EnergyRecord::create($data);
-        return redirect()->route('modules.energy.index')->with('success', 'Energy record added!');
+        return view('modules.energy-monitoring.index', compact('totalFacilities', 'facilities', 'highAlertCount'));
     }
 }
