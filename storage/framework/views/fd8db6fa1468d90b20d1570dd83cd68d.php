@@ -7,7 +7,7 @@
         </button>
         <img src="<?php echo e(asset('img/logocityhall.png')); ?>" class="otp-logo" alt="LGU Logo">
         <h2 class="otp-title">Verify Your Identity</h2>
-        <div id="otpTimer" class="otp-timer">05:00</div>
+        <div id="otpTimer" class="otp-timer">03:00</div>
         <p class="otp-desc">Enter the One-Time Password (OTP) sent to your email.</p>
         <form id="otpModalAutoForm" method="POST" action="<?php echo e(route('otp.verify.submit')); ?>">
             <?php echo csrf_field(); ?>
@@ -252,7 +252,7 @@ function resendOtpAuto() {
 }
 
 let otpInterval;
-const OTP_DURATION = 300; // 5 minutes in seconds
+const OTP_DURATION = 180; // 3 minutes in seconds
 const OTP_TIMER_KEY = 'otp_timer_start';
 function getOtpSecondsLeft() {
     const start = parseInt(localStorage.getItem(OTP_TIMER_KEY), 10);

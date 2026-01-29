@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Energy Monitoring Dashboard'); ?>
 
 <?php $__env->startSection('content'); ?>

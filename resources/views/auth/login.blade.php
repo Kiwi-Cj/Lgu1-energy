@@ -78,7 +78,21 @@ body::before {
                 <span class="icon">🔒</span>
             </div>
 
-            <button class="btn-primary" type="submit" id="loginBtn">Sign In</button>
+            <button class="btn-primary" type="submit" id="loginBtn">
+                <span id="loginBtnText">Sign In</span>
+                <span id="loginBtnLoading" style="display:none;margin-left:8px;">
+                    <svg width="18" height="18" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#fff">
+                        <g fill="none" fill-rule="evenodd">
+                            <g transform="translate(1 1)" stroke-width="2">
+                                <circle stroke-opacity=".3" cx="18" cy="18" r="18"/>
+                                <path d="M36 18c0-9.94-8.06-18-18-18">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
+                                </path>
+                            </g>
+                        </g>
+                    </svg>
+                </span>
+            </button>
 
             <!-- Registration link removed -->
         </form>
@@ -109,8 +123,12 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const btn = document.getElementById('loginBtn');
+    const btnText = document.getElementById('loginBtnText');
+    const btnLoading = document.getElementById('loginBtnLoading');
     const errorDiv = document.getElementById('loginError');
     btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline-block';
     errorDiv.style.display = 'none';
     errorDiv.textContent = '';
 
@@ -149,6 +167,8 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         errorDiv.style.display = 'block';
     }
     btn.disabled = false;
+    btnText.style.display = '';
+    btnLoading.style.display = 'none';
 });
 
 // Always hide OTP modal on page load

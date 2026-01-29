@@ -11,7 +11,7 @@
 			<span style="display:inline-block; font-size: 2.2em; font-weight: bold; letter-spacing: 2px; color: #2d7d46; background: #f6f6f6; padding: 12px 32px; border-radius: 8px;">{{ $otp }}</span>
 		</div>
 		<p style="font-size: 15px; color: #333; margin: 0 0 16px 0;">
-			⏳ This code will expire in <b>{{ config('otp.expire_minutes', 10) }} minutes</b> for your security.
+			⏳ This code will expire in <b>{{ config('otp.expire_minutes', 3) }} minutes</b> for your security.
 		</p>
 		<p style="font-size: 15px; color: #333; margin: 0 0 16px 0;">
 			If you did not request this OTP, please ignore this email. If you need further assistance, feel free to contact our support team.

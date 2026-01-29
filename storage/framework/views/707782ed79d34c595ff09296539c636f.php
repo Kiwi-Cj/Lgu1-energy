@@ -1,4 +1,3 @@
-
  <?php $__env->startSection('title', 'Monthly Records'); ?>
   <?php $__env->startSection('content'); ?>
 
