@@ -58,24 +58,29 @@ body::before {
 <div class="wrapper">
     <div class="card">  
 
-        <img src="{{ asset('img/logocityhall.png') }}" class="icon-top">
+        <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" style="border-radius:50%;box-shadow:0 2px 8px rgba(49,46,129,0.10);width:110px;height:110px;object-fit:cover;">
 
-        <h2 class="title">LGU Login</h2>
+        <h2 class="title">Energy Efficiency</h2>
         <p class="subtitle">Secure access to community maintenance services.</p>
 
         <div id="loginError" style="display:none;margin-bottom:16px;padding:10px 16px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-weight:500;text-align:center;"></div>
-        <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off">
+        <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <!-- Hidden fake fields to prevent browser autofill/saving real credentials (must be first in form) -->
+                <input type="text" name="fakeusernameremembered" style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="username">
+                <input type="password" name="fakepasswordremembered" style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="new-password">
             @csrf
             <div class="input-box">
                 <label>Email Address</label>
-                <input type="email" name="email" id="loginEmail" placeholder="name@lgu.gov.ph" required autocomplete="off" autocapitalize="off" spellcheck="false">
-                <span class="icon">📧</span>
+                <input type="email" name="email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="username-no-autofill" autocapitalize="off" spellcheck="false">
+                                <!-- More anti-autofill: random autocomplete value -->
+
             </div>
 
             <div class="input-box">
                 <label>Password</label>
                 <input type="password" name="password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password" autocapitalize="off" spellcheck="false">
-                <span class="icon">🔒</span>
+                                <!-- More anti-autofill: random autocomplete value -->
+
             </div>
 
             <button class="btn-primary" type="submit" id="loginBtn">

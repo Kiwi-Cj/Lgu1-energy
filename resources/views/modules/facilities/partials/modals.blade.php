@@ -1,3 +1,4 @@
+
 <style>
 .delete-modal-btn {
     transition: background 0.2s, color 0.2s;
@@ -65,6 +66,16 @@
         <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Add Facility</h2>
         <div style="font-size:1.02rem;color:#64748b;margin-bottom:18px;">Enter new facility details below.</div>
         <form id="addFacilityForm" action="/facilities" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
+            @if ($errors->any())
+                <div style="background:#fee2e2;color:#b91c1c;padding:10px 16px;border-radius:8px;font-size:1.05rem;margin-bottom:8px;">
+                    <strong>There were some problems with your input:</strong>
+                    <ul style="margin:8px 0 0 18px;padding:0;">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             @csrf
             <div style="display:flex;gap:12px;">
                 <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
@@ -132,7 +143,27 @@
 <!-- Edit Facility Modal -->
 <div id="editFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;">
     <div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;">
-        <button class="modal-close" type="button" style="top:12px;right:12px;">&times;</button>
+        <style>
+            /* Center modal within main content */
+            #editFacilityModal.modal {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 99999 !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                pointer-events: auto !important;
+                width: auto;
+                height: auto;
+                background: rgba(0,0,0,0.18);
+            }
+            /* If you want to restrict modal to a specific container, add position:relative to that container */
+        </style>
+        <button class="modal-close" type="button" style="position:absolute;top:18px;right:18px;width:32px;height:32px;border:none;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#64748b;box-shadow:0 2px 8px #0001;cursor:pointer;transition:background 0.2s;" onclick="document.getElementById('editFacilityModal').style.display='none'" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
         <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Edit Facility</h2>
         <div style="font-size:1.02rem;color:#64748b;margin-bottom:18px;">Update facility details below.</div>
         <form id="editFacilityForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
@@ -233,9 +264,18 @@
         <form id="deleteFacilityForm" method="POST" style="display:flex;flex-direction:column;gap:16px;">
             @csrf
             @method('DELETE')
-            <input type="hidden" id="delete_facility_id" name="facility_id">
             <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Yes, Delete</button>
             <button type="button" class="delete-modal-btn cancel" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;">Cancel</button>
         </form>
     </div>
 </div>
+<script>
+// Call this function and pass the facility ID before showing the modal
+function openDeleteFacilityModal(facilityId) {
+    var form = document.getElementById('deleteFacilityForm');
+    if (form) {
+        form.action = '/modules/facilities/' + facilityId;
+    }
+    document.getElementById('deleteFacilityModal').style.display = 'flex';
+}
+</script>

@@ -13,7 +13,7 @@ class EnergyProfileController extends Controller
             'electric_meter_no' => 'required',
             'utility_provider' => 'required',
             'contract_account_no' => 'required',
-            'average_monthly_kwh' => 'required|numeric',
+            'baseline_kwh' => 'required|numeric',
             'main_energy_source' => 'required',
             'backup_power' => 'required',
             'number_of_meters' => 'required|integer',
@@ -33,7 +33,7 @@ class EnergyProfileController extends Controller
             'electric_meter_no' => 'required',
             'utility_provider' => 'required',
             'contract_account_no' => 'required',
-            'average_monthly_kwh' => 'required|numeric',
+            'baseline_kwh' => 'required|numeric',
             'main_energy_source' => 'required',
             'backup_power' => 'required',
             'number_of_meters' => 'required|integer',
@@ -65,5 +65,15 @@ class EnergyProfileController extends Controller
         $profile->delete();
         return redirect()->route('modules.facilities.show', $facilityId)
             ->with('success', 'Energy profile deleted successfully!');
+    }
+    /**
+     * Toggle engineer approval for an energy profile.
+     */
+    public function toggleEngineerApproval($facilityId, $profileId)
+    {
+        $profile = EnergyProfile::findOrFail($profileId);
+        $profile->engineer_approved = !$profile->engineer_approved;
+        $profile->save();
+        return redirect()->back()->with('success', 'Engineer approval status updated.');
     }
 }

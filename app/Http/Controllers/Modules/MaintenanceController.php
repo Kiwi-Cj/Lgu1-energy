@@ -54,8 +54,9 @@ class MaintenanceController extends Controller
 
     public function store(Request $request)
     {
+        // If maintenance_id is present, update. Otherwise, insert new.
+        $isUpdate = $request->filled('maintenance_id');
         $rules = [
-            'maintenance_id' => 'required|integer|exists:maintenance,id',
             'maintenance_type' => 'required|string',
             'scheduled_date' => 'nullable|date',
             'assigned_to' => 'nullable|string',
@@ -63,19 +64,40 @@ class MaintenanceController extends Controller
             'maintenance_status' => 'required|string',
             'completed_date' => 'nullable|date',
         ];
+        if ($isUpdate) {
+            $rules['maintenance_id'] = 'required|integer|exists:maintenance,id';
+        } else {
+            $rules['facility_id'] = 'required|integer|exists:facilities,id';
+            $rules['issue_type'] = 'required|string';
+            $rules['trigger_month'] = 'required|string';
+        }
         if ($request->maintenance_status === 'Completed') {
             $rules['completed_date'] = 'required|date';
         }
         $validated = $request->validate($rules);
 
-        $maintenance = \App\Models\Maintenance::findOrFail($validated['maintenance_id']);
-        $maintenance->maintenance_type = $validated['maintenance_type'];
-        $maintenance->scheduled_date = $validated['scheduled_date'];
-        $maintenance->assigned_to = $validated['assigned_to'];
-        $maintenance->remarks = $validated['remarks'];
-        $maintenance->maintenance_status = $validated['maintenance_status'];
-        $maintenance->completed_date = $validated['completed_date'];
-        $maintenance->save();
+        if ($isUpdate) {
+            $maintenance = \App\Models\Maintenance::findOrFail($validated['maintenance_id']);
+            $maintenance->maintenance_type = $validated['maintenance_type'];
+            $maintenance->scheduled_date = $validated['scheduled_date'];
+            $maintenance->assigned_to = $validated['assigned_to'];
+            $maintenance->remarks = $validated['remarks'];
+            $maintenance->maintenance_status = $validated['maintenance_status'];
+            $maintenance->completed_date = $validated['completed_date'];
+            $maintenance->save();
+        } else {
+            $maintenance = \App\Models\Maintenance::create([
+                'facility_id' => $validated['facility_id'],
+                'issue_type' => $validated['issue_type'],
+                'trigger_month' => $validated['trigger_month'],
+                'maintenance_type' => $validated['maintenance_type'],
+                'scheduled_date' => $validated['scheduled_date'],
+                'assigned_to' => $validated['assigned_to'],
+                'remarks' => $validated['remarks'],
+                'maintenance_status' => $validated['maintenance_status'],
+                'completed_date' => $validated['completed_date'],
+            ]);
+        }
 
         // If marked as Completed, move to history and delete from active
         if ($maintenance->maintenance_status === 'Completed') {

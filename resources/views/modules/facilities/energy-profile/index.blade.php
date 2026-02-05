@@ -53,6 +53,7 @@
                     <th style="padding:10px 14px;">Backup Power</th>
                     <th style="padding:10px 14px;">Transformer Capacity</th>
                     <th style="padding:10px 14px;">Number of Meters</th>
+                    <th style="padding:10px 14px;">Baseline Source</th>
                     <th style="padding:10px 14px;">Actions</th>
                 </tr>
             </thead>
@@ -62,26 +63,46 @@
                         <td style="padding:10px 14px;">{{ $profile->electric_meter_no }}</td>
                         <td style="padding:10px 14px;">{{ $profile->utility_provider }}</td>
                         <td style="padding:10px 14px;">{{ $profile->contract_account_no }}</td>
-                        <td style="padding:10px 14px;">{{ $profile->average_monthly_kwh }}</td>
+                        <td style="padding:10px 14px;">{{ $profile->baseline_kwh }}</td>
                         <td style="padding:10px 14px;">{{ $profile->main_energy_source }}</td>
                         <td style="padding:10px 14px;">{{ $profile->backup_power }}</td>
                         <td style="padding:10px 14px;">{{ $profile->transformer_capacity ?? '-' }}</td>
                         <td style="padding:10px 14px;">{{ $profile->number_of_meters }}</td>
-                        <td style="padding:10px 14px;display:flex;gap:8px;">
-                            <button type="button" title="Edit" onclick="editEnergyProfile(this)" 
-                                data-id="{{ $profile->id }}" 
-                                data-electric_meter_no="{{ $profile->electric_meter_no }}"
-                                data-utility_provider="{{ $profile->utility_provider }}"
-                                data-contract_account_no="{{ $profile->contract_account_no }}"
-                                data-average_monthly_kwh="{{ $profile->average_monthly_kwh }}"
-                                data-main_energy_source="{{ $profile->main_energy_source }}"
-                                data-backup_power="{{ $profile->backup_power }}"
-                                data-transformer_capacity="{{ $profile->transformer_capacity }}"
-                                data-number_of_meters="{{ $profile->number_of_meters }}"
-                                style="background:none;border:none;color:#2563eb;font-size:1.2rem;cursor:pointer;"><i class="fa fa-edit"></i></button>
+                        <td style="padding:10px 14px;">{{ $profile->baseline_source ?? '-' }}</td>
+                        <td style="padding:10px 14px;display:flex;gap:8px;align-items:center;position:relative;">
+                            @php
+                                $role = strtolower(auth()->user()->role ?? '');
+                            @endphp
+                            @if($role === 'engineer' || $role === 'super admin')
+                                <form method="POST" action="{{ route('energy-profile.toggle-approval', ['facility' => $facilityModel->id, 'profile' => $profile->id]) }}" style="display:inline;position:relative;">
+                                    @csrf
+                                    <button type="submit" title="Toggle Engineer Approval" style="background:none;border:none;cursor:pointer;position:relative;">
+                                        <span style="font-size:1.5rem;">
+                                            @if($profile->engineer_approved)
+                                                <i class="fa fa-check-circle" style="color:#22c55e;"></i>
+                                            @else
+                                                <i class="fa fa-times-circle" style="color:#e11d48;"></i>
+                                            @endif
+                                        </span>
+                                        <span class="approval-tooltip" style="display:none;position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#222;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.95rem;font-weight:500;white-space:nowrap;z-index:10;">@if($profile->engineer_approved) Approved @else Not Approved @endif</span>
+                                    </button>
+                                </form>
+                            @else
+                                <span style="font-size:1.5rem;position:relative;">
+                                    @if($profile->engineer_approved)
+                                        <i class="fa fa-check-circle" style="color:#22c55e;"></i>
+                                    @else
+                                        <i class="fa fa-times-circle" style="color:#e11d48;"></i>
+                                    @endif
+                                    <span class="approval-tooltip" style="display:none;position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#222;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.95rem;font-weight:500;white-space:nowrap;z-index:10;">@if($profile->engineer_approved) Approved @else Not Approved @endif</span>
+                                </span>
+                            @endif
                             <button type="button" title="Delete" onclick="deleteEnergyProfile(this)" 
                                 data-id="{{ $profile->id }}" 
-                                style="background:none;border:none;color:#e11d48;font-size:1.2rem;cursor:pointer;"><i class="fa fa-trash"></i></button>
+                                style="background:none;border:none;color:#e11d48;font-size:1.2rem;cursor:pointer;position:relative;">
+                                <i class="fa fa-trash"></i>
+                                <span class="delete-tooltip" style="display:none;position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#222;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.95rem;font-weight:500;white-space:nowrap;z-index:10;">Delete</span>
+                            </button>
                         </td>
                     </tr>
                 @empty
@@ -105,7 +126,7 @@ function editEnergyProfile(btn) {
     modal.querySelector('#edit_electric_meter_no').value = btn.dataset.electric_meter_no;
     modal.querySelector('#edit_utility_provider').value = btn.dataset.utility_provider;
     modal.querySelector('#edit_contract_account_no').value = btn.dataset.contract_account_no;
-    modal.querySelector('#edit_average_monthly_kwh').value = btn.dataset.average_monthly_kwh;
+    modal.querySelector('#edit_baseline_kwh').value = btn.dataset.baseline_kwh;
     modal.querySelector('#edit_main_energy_source').value = btn.dataset.main_energy_source;
     modal.querySelector('#edit_backup_power').value = btn.dataset.backup_power;
     modal.querySelector('#edit_transformer_capacity').value = btn.dataset.transformer_capacity;

@@ -1,4 +1,4 @@
 <?php
 return [
-    'expire_minutes' => env('OTP_EXPIRE_MINUTES', 3),
+    'expire_minutes' => env('OTP_EXPIRE_MINUTES', 1),
 ];

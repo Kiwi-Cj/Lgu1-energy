@@ -19,8 +19,8 @@ class UsersController extends Controller
         }
         // Super admin has full access (no block)
 
-        // Get all users with their assigned facility (if any)
-        $users = User::with('facility')->get();
+        // Get all users with their assigned facilities (many-to-many)
+        $users = User::with('facilities')->get();
         $facilities = Facility::all();
         $totalUsers = $users->count();
         $activeUsers = $users->where('status', 'active')->count();
@@ -37,7 +37,7 @@ class UsersController extends Controller
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
-        $user = User::with('facility')->findOrFail($id);
+        $user = User::with('facilities')->findOrFail($id);
         $facilities = Facility::all();
         return view('modules.users.edit', compact('user', 'facilities'));
     }
@@ -57,20 +57,20 @@ class UsersController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|string|in:super admin,admin,staff,energy_officer',
             'status' => 'required|string|in:active,inactive',
-            'facility_id' => 'nullable|exists:facilities,id',
+            'facility_id' => 'array',
+            'facility_id.*' => 'nullable|exists:facilities,id',
             'department' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string|max:20',
         ]);
 
-        // Only assign facility_id if role is staff
-        if (strtolower($validated['role']) !== 'staff') {
-            $validated['facility_id'] = null;
-        }
-
+        $facilityIds = $request->input('facility_id', []);
         $validated['password'] = Hash::make($validated['password']);
+        unset($validated['facility_id']);
 
-        User::create($validated);
-
+        $user = User::create($validated);
+        if (strtolower($validated['role']) === 'staff') {
+            $user->facilities()->sync($facilityIds);
+        }
         return redirect()->route('users.index')
             ->with('success', 'User created successfully!');
     }
@@ -91,18 +91,21 @@ class UsersController extends Controller
             'username' => 'nullable|string|max:255|unique:users,username,' . $id,
             'role' => 'required|string|in:super admin,admin,staff,energy_officer',
             'status' => 'required|string|in:active,inactive',
-            'facility_id' => 'nullable|exists:facilities,id',
+            'facility_id' => 'array',
+            'facility_id.*' => 'nullable|exists:facilities,id',
             'department' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string|max:20',
         ]);
 
-        // Only assign facility_id if role is staff
-        if (strtolower($validated['role']) !== 'staff') {
-            $validated['facility_id'] = null;
-        }
+        $facilityIds = $request->input('facility_id', []);
+        unset($validated['facility_id']);
 
         $user->update($validated);
-        
+        if (strtolower($validated['role']) === 'staff') {
+            $user->facilities()->sync($facilityIds);
+        } else {
+            $user->facilities()->sync([]);
+        }
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully!');
     }

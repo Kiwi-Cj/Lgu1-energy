@@ -24,6 +24,7 @@ class EnergyRecord extends Model
         'facility_id',
         'year',
         'month',
+        'day',
         'actual_kwh',
         'energy_cost',
         'rate_per_kwh',
@@ -42,7 +43,7 @@ class EnergyRecord extends Model
     // Calculate alert flag based on 10% above average
     public function calculateAlertFlag()
     {
-        $avg = $this->facility->average_monthly_kwh ?? 0;
+        $avg = $this->facility->baseline_kwh ?? 0;
         $threshold = $avg * 1.1;
         return $this->actual_kwh > $threshold ? 1 : 0;
     }
@@ -50,7 +51,7 @@ class EnergyRecord extends Model
     // kWh vs average
     public function getKwhVsAvgAttribute()
     {
-        $avg = $this->facility->average_monthly_kwh ?? 0;
+        $avg = $this->facility->baseline_kwh ?? 0;
         return $this->actual_kwh - $avg;
     }
 

@@ -3,27 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title','LGU Employee Portal')</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 
 <style>
+/* ===== HEADER ===== */
+.top-header{
+    position:fixed;
+    top:0;
+    left:260px;
+    right:0;
+    height:70px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(18px);
+    box-shadow:0 4px 25px rgba(0,0,0,.12);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 32px;
+    z-index:90;
+}
+
+.header-left h1{
+    font-size:1.4rem;
+    font-weight:600;
+    color:#1f2937;
+}
+.header-sub{
+    font-size:.85rem;
+    color:#6b7280;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:18px;
+}
+
+.header-user{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:.9rem;
+    color:#374151;
+}
+
+.header-user i{
+    font-size:1.4rem;
+    color:#3762c8;
+}
+
+.header-right .notif-btn:hover .fa-bell {
+    color: #ef4444;
+    transition: color 0.18s;
+}
+.header-right .notif-btn:hover span {
+    transform: scale(1.15);
+    transition: transform 0.18s;
+}
+
+/* Dark header */
+body.dark-mode .top-header{
+    background:rgba(24,24,27,.96);
+}
+body.dark-mode .header-left h1,
+body.dark-mode .header-user{
+    color:#f9fafb;
+}
+body.dark-mode .header-sub{
+    color:#9ca3af;
+}
+
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
 
 /* ===== BACKGROUND ===== */
-body{
-    min-height:100vh;
-    background:url('/assets/img/cityhall.jpeg') center/cover no-repeat fixed;
-    overflow-x:hidden;
+body {
+    min-height: 100vh;
+    background: #f4f6fa;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
-body::before{
-    content:"";
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.35);
-    backdrop-filter:blur(6px);
-    z-index:0;
+body::before {
+    display: none;
 }
 
 /* ===== SIDEBAR ===== */
@@ -126,41 +192,38 @@ body.dark-mode .dark-toggle{
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
-    margin-left: 260px;
-    padding: 0;
-    position: relative;
-    z-index: 10;
-    height: 100vh;
+    margin-left: 260px;          /* space for sidebar */
+    padding-top: 49px;           /* space for header */
+    min-height: calc(100vh - 0px);
+    background: #f5f5f5;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    position: relative;
+    min-width: 0;
+    flex: 1 1 auto;
+    height: calc(100vh - 70px);
+    overflow: hidden;
 }
-.main-header {
-    background: #2c3e50;
-    color: #fff;
-    padding: 18px 32px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-left: 8px solid #2c3e50;
-    margin-left: -32px;
-    position: sticky;
-    top: 0;
-    z-index: 20;
-}
+
 .main-content-inner {
     width: 100%;
-    max-width: 1100px;
-    margin: auto;
-    background: #fff;
-    border-radius: 18px;
-    padding: 32px;
-    box-shadow: 0 6px 24px rgba(0,0,0,.12);
+    background: #e9f1f7;
+    border-radius: 0;
+    box-shadow: 0 4px 24px rgba(55,98,200,0.10);
+    padding: 32px 28px;
+    margin: 0;
+    transition: box-shadow 0.2s;
     flex: 1 1 auto;
-    overflow-y: auto;
-    height: calc(100vh - 70px);
-    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
     align-items: stretch;
+    height: 100%;
+    overflow-y: auto;
+    min-height: 0;
+}
+.main-content-inner:focus-within, .main-content-inner:hover {
+    box-shadow: 0 8px 32px rgba(55,98,200,0.16);
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -196,18 +259,26 @@ body.dark-mode .dark-toggle{
 
     .main-content{
         margin-left:0;
-        padding:14px;
+        padding:0;
     }
     .main-content-inner{
-        padding:18px;
-        border-radius:14px;
+        padding: 12px 4px;
+        margin: 0;
+        max-width: none;
+        width: 100%;
+        border-radius: 12px;
+        text-align: left;
     }
 }
 
 @media(max-width:480px){
     .main-content-inner{
-        padding:14px;
-        border-radius:12px;
+        padding: 0 2px;
+        margin: 0;
+        max-width: none;
+        width: 100%;
+        border-radius: 0;
+        text-align: left;
     }
     h1{font-size:1.5rem}
     h2{font-size:1.3rem}
@@ -217,6 +288,66 @@ body.dark-mode .dark-toggle{
 </head>
 
 <body>
+
+<!-- ===== MODERN HEADER ===== -->
+<header class="top-header">
+    <div class="header-left" style="display:flex;align-items:center;gap:16px;">
+        <div>
+            <h1>Energy System</h1>
+            <div class="header-sub">LGU Employee Portal</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <form action="#" method="get" style="display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:6px 12px;border-radius:8px;">
+            <input type="text" placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:1rem;">
+            <button type="submit" style="background:none;border:none;color:#3762c8;font-size:1.1rem;cursor:pointer;"><i class="fa fa-search"></i></button>
+        </form>
+
+        <!-- Notification Bell -->
+        <button class="notif-btn" id="notifBtn" style="background:none;border:none;color:#3762c8;font-size:1.5rem;cursor:pointer;position:relative;" title="Notifications">
+            <i class="fa fa-bell"></i>
+            <span id="notifCount" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:12px;{{ ($unreadNotifCount ?? 0) > 0 ? '' : 'display:none;' }}">{{ $unreadNotifCount ?? 0 }}</span>
+        </button>
+        <div id="notifDropdown" style="display:none;position:absolute;right:60px;top:60px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:320px;max-width:90vw;z-index:999;max-height:380px;overflow-y:auto;">
+            <div style="padding:12px 16px;border-bottom:1px solid #eee;font-size:0.97rem;font-weight:600;color:#3762c8;">Notifications</div>
+            <div id="notifList" style="max-height:320px;overflow-y:auto;">
+                @forelse($notifications ?? [] as $notif)
+                    <a href="#" class="notif-item" data-id="{{ $notif->id }}" style="display:block;padding:12px 16px;border-bottom:1px solid #eee;font-size:0.95rem;{{ $notif->read_at ? 'background:#f3f4f6;' : '' }};color:inherit;text-decoration:none;cursor:pointer;">
+                        <strong>{{ $notif->title }}</strong><br>
+                        <span style="color:#ef4444;">{{ $notif->message }}</span>
+                        <div style="font-size:0.85rem;color:#888;margin-top:2px;">{{ $notif->created_at->diffForHumans() }}</div>
+                    </a>
+                @empty
+                    <div id="notifEmpty" style="padding:16px;text-align:center;color:#888;font-size:0.95rem;">No notifications</div>
+                @endforelse
+            </div>
+        </div>
+
+        <button id="darkToggleHeader" style="background:none;border:none;color:#3762c8;font-size:1.4rem;cursor:pointer;" title="Toggle dark mode">
+            <i id="darkModeIcon" class="fa fa-moon"></i>
+        </button>
+        <div class="header-user" style="position:relative;">
+            <button id="userMenuBtn" style="background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <i class="fa fa-user-circle"></i>
+                <span>{{ $user->full_name ?? $user->name ?? 'Admin' }}</span>
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div id="userDropdown" style="display:none;position:absolute;right:0;top:120%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:160px;z-index:999;">
+                <div style="padding:12px 16px;border-bottom:1px solid #eee;">
+                    <strong>{{ $user->full_name ?? $user->name ?? 'Admin' }}</strong><br>
+                    <small style="color:#666;">{{ ucfirst($role ?? 'User') }}</small>
+                </div>
+                <a href="{{ route('profile.show') }}" style="display:block;padding:10px 16px;color:#222;text-decoration:none;font-size:0.97rem;">
+                    <i class="fa fa-user" style="margin-right:8px;color:#3762c8;"></i> My Profile
+                </a>
+                <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                    @csrf
+                    <button class="logout-btn" style="width:100%;border-radius:0 0 8px 8px;">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
 
 <!-- HAMBURGER BUTTON -->
 <button class="sidebar-hamburger" id="hamburger">
@@ -228,7 +359,7 @@ body.dark-mode .dark-toggle{
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
         <div class="site-logo">
-            <img src="/img/logocityhall.png" alt="Logo">
+            <img src="/img/logocityhall.jpg" alt="Logo" style="border-radius:50%;object-fit:cover;width:60px;height:60px;box-shadow:0 2px 8px rgba(49,46,129,0.10);">
         </div>
         <div class="sidebar-divider"></div>
 
@@ -254,6 +385,7 @@ body.dark-mode .dark-toggle{
                             <li><a href="{{ route('energy.dashboard') }}" class="nav-link">Dashboard</a></li>
                             <li><a href="{{ route('energy.trend') }}" class="nav-link">Trend Analysis</a></li>
                             <li><a href="{{ route('energy.exportReport') }}" class="nav-link">Export COA Report</a></li>
+                            <li><a href="{{ route('energy-incidents.index') }}" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incident Records</a></li>
                         </ul>
                     </li>
                 @endif
@@ -272,7 +404,6 @@ body.dark-mode .dark-toggle{
                     </a>
                     <ul class="nav-submenu">
                         <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
-                        <li><a href="/modules/reports/billing" class="nav-link">Billing Report</a></li>
                         <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
                     </ul>
                 </li>
@@ -287,6 +418,7 @@ body.dark-mode .dark-toggle{
         </ul>
     </div>
 
+  
     <div class="user-info">
         Welcome, {{ $user->full_name ?? $user->name ?? 'Admin' }}<br>
         <small style="color:#666;font-size:0.85rem;">{{ ucfirst($role ?? 'User') }}</small>
@@ -298,160 +430,204 @@ body.dark-mode .dark-toggle{
     </div>
 </div>
 
-
-<!-- ===== MAIN CONTENT ===== -->
+<!-- ===== MAIN CONTENT (SIDEBAR + HEADER + CONTENT) ===== -->
 <div class="main-content">
-    <div class="main-header" style="background:rgba(44,62,80,.92); color:#fff; padding:10px 28px; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-left:8px solid #2c3e50; margin-left:-32px; position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; min-height:48px; margin-bottom:14px;">
-        <div style="display:flex; align-items:center; gap:12px; min-width:160px; justify-content:flex-end;">
-            <!-- Reserved space for header title (QC Admin Panel) -->
-        </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-            <button id="notifBtn" title="Notifications" style="background:none; border:none; color:#fff; font-size:1.35rem; cursor:pointer; position:relative; padding:6px; border-radius:50%; transition:background 0.15s, color 0.15s;">
-                <i class="fa-regular fa-bell" id="notifBell" style="transition: color 0.2s;"></i>
-                @php $alerts = $alerts ?? []; @endphp
-                <span id="notifDot" style="{{ !empty($alerts) && count($alerts) > 0 ? 'display:flex;' : 'display:none;' }} align-items:center; justify-content:center; position:absolute; top:-4px; right:-4px; min-width:14px; height:14px; background:#e74c3c; color:#fff; font-size:0.72em; font-weight:700; border-radius:50%; box-shadow:0 0 4px 1px #e74c3c99; border:1.5px solid #fff; padding:0 3px; text-align:center; line-height:1; z-index:2;">
-                    {{ !empty($alerts) && count($alerts) > 0 ? count($alerts) : '' }}
-                </span>
-            </button>
-            <button id="darkToggleHeader" class="dark-toggle" title="Toggle dark mode" style="margin:0; background:none; border:none; color:#fff; font-size:1.5rem; padding:7px; border-radius:50%; transition:background 0.18s, color 0.18s; display:flex; align-items:center; justify-content:center;">
-                <span id="darkModeIconWrap" style="display:inline-block; transition:transform 0.3s cubic-bezier(.4,2,.6,1);">
-                    <i id="darkModeIcon" class="fa-regular fa-moon"></i>
-                </span>
-            </button>
-            <div class="user-menu" style="position:relative; margin-left:10px;">
-                @php
-                    $user = auth()->user();
-                    $userName = $user->full_name ?? $user->name ?? 'User';
-                    $initial = strtoupper(mb_substr($userName,0,1));
-                @endphp
-                <button id="userMenuBtn" style="display:flex; align-items:center; background:none; border:none; color:#fff; cursor:pointer; padding:4px 10px 4px 4px; border-radius:18px; transition:background 0.15s; gap:8px;">
-                    <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; background:#3762c8; color:#fff; border-radius:50%; font-weight:600; font-size:1.1rem; letter-spacing:1px;">{{ $initial }}</span>
-                    <span style="font-size:1rem; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $userName }}</span>
-                    <i class="fa fa-caret-down" style="font-size:1rem;"></i>
-                </button>
-                <div id="userDropdown" style="display:none; position:absolute; right:0; top:110%; min-width:160px; background:#fff; color:#222; border-radius:10px; box-shadow:0 4px 18px rgba(0,0,0,0.13); z-index:100; padding:8px 0;">
-                    <a href="/modules/users/profile" style="display:block; padding:10px 18px; color:#222; text-decoration:none; font-size:0.98rem; border-radius:6px 6px 0 0; transition:background 0.13s;">Profile</a>
-                    <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                        @csrf
-                        <button type="submit" style="width:100%; text-align:left; background:none; border:none; color:#e74c3c; padding:10px 18px; font-size:0.98rem; border-radius:0 0 6px 6px; cursor:pointer; transition:background 0.13s;">Logout</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <!-- User dropdown styles moved to head -->
-    </style>
-    <style>
-    .user-menu:focus-within #userDropdown,
-    #userMenuBtn.active + #userDropdown {
-        display: block !important;
-    }
-    #userDropdown a:hover, #userDropdown button:hover {
-        background: #f2f4fa;
-    }
-    /* Professional minimalist notif/dark mode */
-    #notifBtn, #darkToggleHeader {
-        outline: none;
-    }
-    #notifBtn:hover, #notifBtn:focus, #darkToggleHeader:hover, #darkToggleHeader:focus {
-        background: rgba(255,255,255,0.08);
-        color: #f9d423;
-    }
-    #notifBtn:active, #darkToggleHeader:active {
-        background: rgba(255,255,255,0.16);
-        color: #ff4e50;
-    }
-    #notifDot {
-        transition: background 0.2s, box-shadow 0.2s;
-    }
-    #darkModeIcon {
-        transition: color 0.3s, transform 0.3s cubic-bezier(.4,2,.6,1);
-    }
-    .dark-mode #darkModeIcon {
-        color: #f9d423;
-        transform: rotate(-180deg) scale(1.15);
-    }
-    </style>
-    </div>
+    
     <div class="main-content-inner">
         @yield('content')
     </div>
 </div>
 
+<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+<script src="/js/echo.js"></script>
 <script>
-const sidebar=document.getElementById('sidebar');
-const hamburger=document.getElementById('hamburger');
-const backdrop=document.getElementById('backdrop');
-
-hamburger.onclick=()=>{sidebar.classList.add('open');backdrop.style.display='block'}
-backdrop.onclick=()=>{sidebar.classList.remove('open');backdrop.style.display='none'}
-
-// Submenu toggle
-document.querySelectorAll('.submenu-toggle').forEach(btn=>{
-    btn.onclick=e=>{
-        e.preventDefault();
-        const menu=btn.nextElementSibling;
-        menu.style.display=menu.style.display==='block'?'none':'block';
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure dark mode persists across all content
+    if(localStorage.getItem('darkMode')==='on'){
+        document.body.classList.add('dark-mode');
     }
-});
 
-// User dropdown logic
-const userMenuBtn = document.getElementById('userMenuBtn');
-const userDropdown = document.getElementById('userDropdown');
-if(userMenuBtn && userDropdown){
-    userMenuBtn.onclick = (e) => {
-        e.stopPropagation();
-        userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-        userMenuBtn.classList.toggle('active');
-    };
-    document.addEventListener('click', (e) => {
-        if (!userMenuBtn.contains(e.target)) {
-            userDropdown.style.display = 'none';
-            userMenuBtn.classList.remove('active');
+    const sidebar=document.getElementById('sidebar');
+    const hamburger=document.getElementById('hamburger');
+    const backdrop=document.getElementById('backdrop');
+
+    hamburger.onclick=()=>{sidebar.classList.add('open');backdrop.style.display='block'}
+    backdrop.onclick=()=>{sidebar.classList.remove('open');backdrop.style.display='none'}
+
+    // Submenu toggle
+    document.querySelectorAll('.submenu-toggle').forEach(btn=>{
+        btn.onclick=e=>{
+            e.preventDefault();
+            const menu=btn.nextElementSibling;
+            menu.style.display=menu.style.display==='block'?'none':'block';
         }
     });
-}
-// Dark mode
-const toggle=document.getElementById('darkToggle');
-const toggleHeader=document.getElementById('darkToggleHeader');
-const notifBtn=document.getElementById('notifBtn');
-const notifDot=document.getElementById('notifDot');
-if(localStorage.getItem('darkMode')==='on'){
-    document.body.classList.add('dark-mode');
-}
-// Notification dot visibility is now handled by blade (alerts count)
-// Professional dark mode icon toggle
-function updateDarkModeIcon() {
-    const icon = document.getElementById('darkModeIcon');
-    if (!icon) return;
-    if (document.body.classList.contains('dark-mode')) {
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-        icon.title = 'Light Mode';
-    } else {
-        icon.classList.remove('fa-sun');
-        icon.classList.add('fa-moon');
-        icon.title = 'Dark Mode';
+
+    // User dropdown logic
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userDropdown = document.getElementById('userDropdown');
+    if(userMenuBtn && userDropdown){
+        userMenuBtn.onclick = (e) => {
+            e.stopPropagation();
+            userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+            userMenuBtn.classList.toggle('active');
+        };
+        document.addEventListener('click', (e) => {
+            if (!userMenuBtn.contains(e.target)) {
+                userDropdown.style.display = 'none';
+                userMenuBtn.classList.remove('active');
+            }
+        });
+    }
+    // Dark mode
+    const toggleHeader=document.getElementById('darkToggleHeader');
+    function updateDarkModeIcon() {
+        const icon = document.getElementById('darkModeIcon');
+        if (!icon) return;
+        if (document.body.classList.contains('dark-mode')) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+            icon.title = 'Light Mode';
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+            icon.title = 'Dark Mode';
+        }
+    }
+    updateDarkModeIcon();
+    if(toggleHeader){
+        toggleHeader.onclick=()=>{
+            document.body.classList.toggle('dark-mode');
+            const on=document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode',on?'on':'off');
+            updateDarkModeIcon();
+        };
+    }
+    // Notification dropdown logic
+    const notifBtn = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifCount = document.getElementById('notifCount');
+    const notifList = document.getElementById('notifList');
+    const notifEmpty = document.getElementById('notifEmpty');
+
+
+    function updateNotifBadge(count) {
+        if (count > 0) {
+            notifCount.style.display = 'inline-block';
+            notifCount.innerText = count;
+        } else {
+            notifCount.style.display = 'none';
+            notifCount.innerText = 0;
+        }
+    }
+    // Set initial badge count from backend
+    updateNotifBadge(parseInt(document.getElementById('notifCount').innerText) || 0);
+
+    function addNotification(title, message, time) {
+        const html = `<div style="padding:12px 16px;border-bottom:1px solid #eee;font-size:0.95rem;">
+                        <strong>${title}</strong><br>
+                        <span style="color:#ef4444;">${message}</span>
+                        <div style="font-size:0.85rem;color:#888;margin-top:2px;">${time}</div>
+                      </div>`;
+        notifList.insertAdjacentHTML('afterbegin', html);
+        notifEmpty.style.display = 'none';
+        let count = parseInt(notifCount.innerText) || 0;
+        updateNotifBadge(count + 1);
+    }
+
+    notifBtn && notifBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown.style.display = notifDropdown.style.display === 'block' ? 'none' : 'block';
+        // Mark all as read when opening dropdown
+        if (notifDropdown.style.display === 'block') {
+            fetch("{{ route('notifications.markAllRead') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                },
+            }).then(r => {
+                if (r.ok) updateNotifBadge(0);
+            });
+        }
+    });
+    document.addEventListener('click', (e) => {
+        if (!notifBtn.contains(e.target) && !notifDropdown.contains(e.target)) {
+            notifDropdown.style.display = 'none';
+        }
+    });
+
+    // Optionally, load initial notifications from backend here
+    // Example: updateNotifBadge(0);
+    // Real-time notification listener (Laravel Echo + Pusher)
+    // This must be outside DOMContentLoaded if Echo is loaded after DOMContentLoaded
+    @if(auth()->check())
+    if (window.Echo) {
+        window.Echo.private(`App.Models.User.{{ auth()->id() }}`)
+            .notification((notif) => {
+                addNotification(notif.data.title, notif.data.message, 'Just now');
+            });
+    }
+    @endif
+        // Notification item click handler (future: link to details)
+        document.querySelectorAll('.notif-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Example: show alert or redirect
+                // alert('Notification clicked: ' + this.dataset.id);
+                // TODO: Implement redirect to details if needed
+            });
+        });
+    });
+    </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var timeoutMinutes = {{ env('SESSION_LIFETIME', 20) }};
+    if (timeoutMinutes > 0) {
+        var timeoutMs = timeoutMinutes * 60 * 1000;
+        var timer = setTimeout(autoLogout, timeoutMs);
+
+        function autoLogout() {
+            var csrf = document.querySelector('meta[name="csrf-token"]');
+            if (csrf && csrf.getAttribute('content')) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route('logout') }}';
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '_token';
+                input.value = csrf.getAttribute('content');
+
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                window.location.href = '{{ route('login') }}';
+            }
+        }
+
+        ['click','mousemove','keydown','scroll','touchstart'].forEach(function(evt) {
+            window.addEventListener(evt, function() {
+                clearTimeout(timer);
+                timer = setTimeout(autoLogout, timeoutMs);
+            });
+        });
+    }
+});
+// Session Timeout Modal logic
+function showSessionTimeoutModal() {
+    var modal = document.getElementById('sessionTimeoutModal');
+    if (modal) {
+        modal.style.display = 'flex';
     }
 }
-updateDarkModeIcon();
-if(toggle){
-    toggle.onclick=()=>{
-        document.body.classList.toggle('dark-mode');
-        const on=document.body.classList.contains('dark-mode');
-        localStorage.setItem('darkMode',on?'on':'off');
-        syncDarkModeButtons && syncDarkModeButtons();
-    };
-}
-if(toggleHeader){
-    toggleHeader.onclick=()=>{
-        document.body.classList.toggle('dark-mode');
-        const on=document.body.classList.contains('dark-mode');
-        localStorage.setItem('darkMode',on?'on':'off');
-        syncDarkModeButtons && syncDarkModeButtons();
-        updateDarkModeIcon();
-    };
-}
 </script>
-
-</body>
-</html>
+<!-- Session Timeout Modal -->
+<div id="sessionTimeoutModal" style="display:none;position:fixed;bottom:0;left:0;width:100vw;z-index:99999;align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:32px 28px;border-radius:16px;min-width:320px;max-width:98vw;box-shadow:0 8px 32px rgba(37,99,235,0.18);margin-bottom:32px;text-align:center;">
+        <div style="font-size:1.25rem;font-weight:700;color:#e11d48;margin-bottom:10px;">Session Timed Out</div>
+        <div style="color:#444;margin-bottom:18px;">Your session has expired due to inactivity. Please log in again to continue.</div>
+        <a href="/login" style="background:#3762c8;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;text-decoration:none;">Log In</a>
+    </div>
+</div>

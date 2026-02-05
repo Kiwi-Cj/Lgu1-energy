@@ -2,12 +2,15 @@
 @extends('layouts.qc-admin')
 @section('title', 'Facilities Needing Maintenance')
 @section('content')
-<div style="max-width:1100px;margin:0 auto;">
+<div style="width:100%;margin:0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
         <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin:0;">Facilities Needing Maintenance</h2>
-        <a href="{{ route('maintenance.history') }}" class="btn btn-primary" style="background:#2563eb;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(37,99,235,0.08);display:inline-block;">
-            <i class="fa fa-history" style="margin-right:7px;"></i> Maintenance History
-        </a>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button type="button" id="addMaintenanceBtn" class="btn btn-success" style="background:#22c55e;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(34,197,94,0.10);border:none;cursor:pointer;">+ Add Maintenance</button>
+            <a href="{{ route('maintenance.history') }}" class="btn btn-primary" style="background:#2563eb;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(37,99,235,0.08);display:inline-block;">
+                <i class="fa fa-history" style="margin-right:7px;"></i> Maintenance History
+            </a>
+        </div>
     </div>
     <div class="row" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:2rem;">
         <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff0f3;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);">
@@ -72,23 +75,42 @@
     <div id="scheduleModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);align-items:center;justify-content:center;">
         <div style="background:#fff;max-width:480px;width:95vw;max-height:90vh;overflow:auto;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:0 0 24px 0;position:relative;">
             <div style="padding:24px 32px 12px 32px;border-bottom:1px solid #e5e7eb;">
-                <div style="font-size:1.3rem;font-weight:700;">Schedule / Update Maintenance</div>
+                <div id="modalTitle" style="font-size:1.3rem;font-weight:700;">Schedule Maintenance</div>
             </div>
             <div style="padding:18px 32px;">
                 <form id="scheduleForm">
                     <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
                     <div style="margin-bottom:12px;">
                         <label style="font-weight:600;">Facility</label>
-                        <input type="text" id="modalFacility" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;background:#f3f4f6;" readonly>
+                        <select id="modalFacility" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                            <option value="" disabled selected hidden>Select Facility</option>
+                            @foreach(\App\Models\Facility::all() as $facility)
+                                <option value="{{ $facility->id }}">{{ $facility->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div style="margin-bottom:12px;display:flex;gap:12px;">
                         <div style="flex:1;">
                             <label style="font-weight:600;">Trigger Month</label>
-                            <input type="text" id="modalTriggerMonth" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;background:#f3f4f6;" readonly>
+                            <select id="modalTriggerMonth" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                                <option value="" disabled selected hidden>Select Month</option>
+                                @foreach(range(1,12) as $m)
+                                    <option value="{{ str_pad($m,2,'0',STR_PAD_LEFT) }}">{{ date('F', mktime(0,0,0,$m,1)) }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div style="flex:1;">
                             <label style="font-weight:600;">Issue Type</label>
-                            <input type="text" id="modalIssueType" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;background:#f3f4f6;" readonly>
+                            <input type="text" id="modalIssueType" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                        </div>
+                        <div style="flex:1;" id="efficiencyRatingGroup">
+                            <label style="font-weight:600;">Efficiency Rating</label>
+                            <select id="modalEfficiencyRating" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                                <option value="" disabled selected hidden>Select Rating</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
                         </div>
                     </div>
                     <div style="margin-bottom:12px;">
@@ -187,9 +209,30 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('modalMaintenanceId').value = idx;
             const cells = row.querySelectorAll('td');
             // Table columns: 0=Facility, 1=Issue Type, 2=Trigger Month, 3=Efficiency, 4=Status, 5=Scheduled Date, 6=Remarks, 7=Action
-            document.getElementById('modalFacility').value = cells[0]?.innerText || '';
+            // Set Facility select by matching text
+            const facilitySelect = document.getElementById('modalFacility');
+            for (let i = 0; i < facilitySelect.options.length; i++) {
+                if (facilitySelect.options[i].text === (cells[0]?.innerText || '')) {
+                    facilitySelect.selectedIndex = i;
+                    break;
+                }
+            }
             document.getElementById('modalIssueType').value = cells[1]?.innerText || '';
-            document.getElementById('modalTriggerMonth').value = cells[2]?.innerText || '';
+            // Set Trigger Month select by matching text or value
+            const monthSelect = document.getElementById('modalTriggerMonth');
+            let foundMonth = false;
+            for (let i = 0; i < monthSelect.options.length; i++) {
+                // Match by text (e.g., 'January') or by value (e.g., '01')
+                if (
+                    monthSelect.options[i].text.trim().toLowerCase() === (cells[2]?.innerText || '').trim().toLowerCase() ||
+                    monthSelect.options[i].value === (cells[2]?.innerText || '').trim()
+                ) {
+                    monthSelect.selectedIndex = i;
+                    foundMonth = true;
+                    break;
+                }
+            }
+            if (!foundMonth) monthSelect.selectedIndex = 0;
             document.getElementById('modalMaintType').value = row.getAttribute('data-maintenance_type') || 'Preventive';
             document.getElementById('modalScheduleDate').value = row.getAttribute('data-scheduled_date') || '';
             document.getElementById('modalAssignedTo').value = row.getAttribute('data-assigned_to') || '';
@@ -250,6 +293,13 @@ document.getElementById('scheduleForm').onsubmit = function(e) {
         completed_date: completedDate,
         _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     };
+    // If adding (not editing), include facility_id, trigger_month, and issue_type
+    if (!row) {
+        data.facility_id = document.getElementById('modalFacility').value;
+        data.trigger_month = document.getElementById('modalTriggerMonth').value;
+        data.issue_type = document.getElementById('modalIssueType').value;
+        data.efficiency_rating = document.getElementById('modalEfficiencyRating').value;
+    }
     fetch("{{ route('modules.maintenance.schedule') }}", {
         method: 'POST',
         headers: {
@@ -340,5 +390,47 @@ document.getElementById('scheduleForm').onsubmit = function(e) {
     });
     return false;
 };
+</script>
+<script>
+// Add Maintenance button logic
+document.getElementById('addMaintenanceBtn').addEventListener('click', function() {
+    // Reset modal fields for manual entry
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('modalMaintenanceId').value = '';
+    document.getElementById('modalFacility').disabled = false;
+    document.getElementById('modalTriggerMonth').disabled = false;
+    document.getElementById('modalIssueType').readOnly = false;
+    document.getElementById('modalFacility').value = '';
+    document.getElementById('modalIssueType').value = '';
+    document.getElementById('modalTriggerMonth').value = '';
+    document.getElementById('modalMaintType').value = 'Preventive';
+    document.getElementById('modalScheduleDate').value = '';
+    document.getElementById('modalAssignedTo').value = '';
+    document.getElementById('modalRemarks').value = '';
+    document.getElementById('modalStatus').value = 'Pending';
+    document.getElementById('modalCompletedDate').value = '';
+    document.getElementById('modalCompletedDate').disabled = true;
+    document.getElementById('modalTitle').innerText = 'Schedule Maintenance';
+    document.getElementById('efficiencyRatingGroup').style.display = '';
+    document.getElementById('scheduleModal').style.display = 'flex';
+});
+
+// When editing, set modal title to Update Maintenance and make fields readonly
+document.querySelectorAll('.schedule-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('modalTitle').innerText = 'Update Maintenance';
+        document.getElementById('modalFacility').disabled = true;
+        document.getElementById('modalTriggerMonth').disabled = true;
+        document.getElementById('modalIssueType').readOnly = true;
+        document.getElementById('efficiencyRatingGroup').style.display = 'none';
+    });
+});
+
+// When editing, set modal title to Update Maintenance
+document.querySelectorAll('.schedule-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('modalTitle').innerText = 'Update Maintenance';
+    });
+});
 </script>
 @endsection

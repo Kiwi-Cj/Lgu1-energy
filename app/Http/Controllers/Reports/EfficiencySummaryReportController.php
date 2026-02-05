@@ -12,21 +12,26 @@ class EfficiencySummaryReportController extends Controller
 {
     public function show(Request $request)
     {
-        // Get all facilities
         $facilities = Facility::all();
+        $selectedFacility = $request->input('facility_id');
+        $selectedRating = $request->input('rating');
+        $filteredFacilities = $facilities;
+        if ($selectedFacility) {
+            $filteredFacilities = $filteredFacilities->where('id', $selectedFacility);
+        }
         $efficiencyRows = [];
-        foreach ($facilities as $facility) {
-            // Get latest efficiency record by facility_id
+        foreach ($filteredFacilities as $facility) {
             $eff = EnergyEfficiency::where('facility_id', $facility->id)->orderByDesc('year')->orderByDesc('month')->first();
             $eui = $eff && $eff->eui !== null ? $eff->eui : '-';
             $rating = $eff && $eff->rating !== null ? $eff->rating : '-';
-            // Get last audit (maintenance completed)
+            if ($selectedRating && $selectedRating !== 'all' && $selectedRating !== $rating) {
+                continue;
+            }
             $lastAudit = Maintenance::where('facility_id', $facility->id)
                 ->whereNotNull('completed_date')
                 ->orderByDesc('completed_date')
                 ->first();
             $lastAuditDate = $lastAudit ? date('M d, Y', strtotime($lastAudit->completed_date)) : '-';
-            // Flag if last efficiency rating is Low or maintenance needed
             $flag = ($rating === 'Low') || ($lastAudit && $lastAudit->maintenance_status !== 'Completed');
             $efficiencyRows[] = [
                 'facility' => $facility->name,
@@ -36,6 +41,6 @@ class EfficiencySummaryReportController extends Controller
                 'flag' => $flag,
             ];
         }
-        return view('modules.reports.efficiency-summary', compact('efficiencyRows'));
+        return view('modules.reports.efficiency-summary', compact('efficiencyRows', 'facilities', 'selectedFacility', 'selectedRating'));
     }
 }

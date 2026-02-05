@@ -1,171 +1,262 @@
-<!-- Edit Facility Modal -->
-<div id="editFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:10050 !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
-	<div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;position:relative;">
-		<button class="modal-close" type="button" onclick="closeEditFacilityModal()" style="top:12px;right:12px;position:absolute;font-size:1.5rem;background:none;border:none;color:#2563eb;">&times;</button>
-		<h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Edit Facility</h2>
-		<form id="editFacilityForm" action="{{ route('facilities.update', $facility->id) }}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
-			@csrf
-			@method('PUT')
-			<div style="display:flex;gap:12px;">
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_name" style="font-weight:500;">Name</label>
-					<input type="text" id="edit_name" name="name" value="{{ $facility->name }}" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_type" style="font-weight:500;">Type</label>
-					<input type="text" id="edit_type" name="type" value="{{ $facility->type }}" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-			</div>
-			<div style="display:flex;gap:12px;">
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_department" style="font-weight:500;">Department</label>
-					<input type="text" id="edit_department" name="department" value="{{ $facility->department }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_address" style="font-weight:500;">Address</label>
-					<input type="text" id="edit_address" name="address" value="{{ $facility->address }}" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-			</div>
-			<div style="display:flex;gap:12px;">
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_barangay" style="font-weight:500;">Barangay</label>
-					<input type="text" id="edit_barangay" name="barangay" value="{{ $facility->barangay }}" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_floor_area" style="font-weight:500;">Floor Area</label>
-					<input type="number" id="edit_floor_area" name="floor_area" value="{{ $facility->floor_area }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-			</div>
-			<div style="display:flex;gap:12px;">
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_floors" style="font-weight:500;">Floors</label>
-					<input type="number" id="edit_floors" name="floors" value="{{ $facility->floors }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_year_built" style="font-weight:500;">Year Built</label>
-					<input type="number" id="edit_year_built" name="year_built" value="{{ $facility->year_built }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-			</div>
-			<div style="display:flex;gap:12px;">
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_operating_hours" style="font-weight:500;">Operating Hours</label>
-					<input type="text" id="edit_operating_hours" name="operating_hours" value="{{ $facility->operating_hours }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-				</div>
-				<div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-					<label for="edit_status" style="font-weight:500;">Status</label>
-					<select id="edit_status" name="status" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-						<option value="active" @if($facility->status=='active') selected @endif>Active</option>
-						<option value="inactive" @if($facility->status=='inactive') selected @endif>Inactive</option>
-						<option value="maintenance" @if($facility->status=='maintenance') selected @endif>Maintenance</option>
-					</select>
-				</div>
-			</div>
-			<div style="display:flex;flex-direction:column;gap:4px;">
-				<label for="edit_image" style="font-weight:500;">Image</label>
-				<input type="file" id="edit_image" name="image" accept="image/*" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-			</div>
-			<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-				<button type="submit" class="btn" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:7px;padding:7px 18px;font-size:0.98rem;min-width:90px;cursor:pointer;">Save</button>
-				<button type="button" class="btn" onclick="closeEditFacilityModal()" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:7px;padding:7px 18px;font-size:0.98rem;min-width:90px;cursor:pointer;">Cancel</button>
-			</div>
-		</form>
-	</div>
+@extends('layouts.qc-admin')
+@section('title','Facility Details')
+
+@section('content')
+
+<div style="width:100%;margin:40px 0;">
+<div style="background:linear-gradient(135deg,#f8fafc,#eef2ff);border-radius:26px;padding:40px;box-shadow:0 12px 40px rgba(37,99,235,.18);position:relative;width:100%;">
+
+<!-- BACK BUTTON -->
+<a href="{{ route('modules.facilities.index') }}" style="
+position:absolute;left:28px;top:-22px;
+background:#fff;padding:10px 22px;
+border-radius:14px;font-weight:800;
+color:#2563eb;text-decoration:none;
+box-shadow:0 4px 16px #2563eb33;">
+← Back
+</a>
+
+@php
+$imageUrl = null;
+if($facility->image){
+$imageUrl = str_starts_with($facility->image,'img/')
+? asset($facility->image)
+: asset('storage/'.$facility->image);
+}
+@endphp
+
+<!-- HEADER -->
+<div style="display:flex;gap:28px;align-items:center;margin-bottom:30px;">
+@if($imageUrl)
+<img src="{{ $imageUrl }}" style="width:160px;height:120px;border-radius:18px;
+object-fit:cover;box-shadow:0 6px 20px rgba(0,0,0,.2);">
+@else
+<div style="width:160px;height:120px;border-radius:18px;
+background:#e5e7eb;display:flex;
+align-items:center;justify-content:center;
+font-size:2.5rem;color:#9ca3af;">
+<i class="fa fa-image"></i>
 </div>
+@endif
+
+<div style="flex:1;">
+<h1 style="margin:0;font-size:2.2rem;font-weight:900;color:#1e293b;">
+	{{ $facility->name }}
+</h1>
+<div style="color:#6366f1;font-weight:700;margin-top:6px;">
+	{{ $facility->type }} • {{ $facility->department }}
+</div>
+<button type="button" onclick="openEditFacilityModal()" style="margin-top:18px;background:#2563eb;color:#fff;padding:8px 22px;border:none;border-radius:8px;font-weight:600;font-size:1.05rem;cursor:pointer;">
+	<i class="fa fa-edit" style="margin-right:6px;"></i> Edit Facility
+</button>
+
+<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+<span style="padding:6px 18px;border-radius:999px;
+font-weight:800;font-size:.9rem;
+background:
+{{ $facility->status=='active'?'#dcfce7':($facility->status=='maintenance'?'#fef3c7':'#fee2e2') }};
+color:
+{{ $facility->status=='active'?'#166534':($facility->status=='maintenance'?'#92400e':'#991b1b') }};">
+{{ ucfirst($facility->status) }}
+</span>
+
+@if($facility->engineer_approved ?? false)
+<span style="padding:6px 18px;border-radius:999px;
+font-weight:800;font-size:.9rem;
+background:#e0f2fe;color:#0369a1;">
+✔ Engineer Approved
+</span>
+@else
+<span style="padding:6px 18px;border-radius:999px;
+font-weight:800;font-size:.9rem;
+background:#f1f5f9;color:#64748b;">
+✖ Not Approved
+</span>
+@endif
+</div>
+</div>
+</div>
+
+
+<!-- DETAILS GRID -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:24px;">
+
+@php
+	$first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+	if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
+		&& $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
+		$baselineAvg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+	} else {
+		$baselineAvg = $facility->baseline_kwh;
+	}
+	$hasBaseline = $baselineAvg > 0;
+	$sizeLabel = '';
+	if ($hasBaseline) {
+		if ($baselineAvg <= 1000) {
+			$sizeLabel = 'Small';
+		} elseif ($baselineAvg <= 3000) {
+			$sizeLabel = 'Medium';
+		} elseif ($baselineAvg <= 10000) {
+			$sizeLabel = 'Large';
+		} else {
+			$sizeLabel = 'Extra Large';
+		}
+	}
+@endphp
+
+@foreach([
+	['📍','Address',$facility->address],
+	['🏘','Barangay',$facility->barangay],
+	['📐','Floor Area',$facility->floor_area.' sqm'],
+	['🏢','Floors',$facility->floors],
+	['📅','Year Built',$facility->year_built],
+	['⏱','Operating Hours',$facility->operating_hours],
+	['📊','Facility Size',$hasBaseline ? $sizeLabel : '-']
+] as $info)
+	<div style="background:#fff;padding:18px;border-radius:16px;display:flex;gap:14px;box-shadow:0 6px 18px rgba(0,0,0,.08);">
+		<div style="width:44px;height:44px;border-radius:14px;background:#2563eb1a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#2563eb;">
+			{{ $info[0] }}
+		</div>
+		<div>
+			<div style="font-size:.85rem;color:#64748b;font-weight:700;">{{ $info[1] }}</div>
+			<div style="font-size:1.05rem;font-weight:800;color:#1e293b;">{{ $info[2] ?: '-' }}</div>
+		</div>
+	</div>
+@endforeach
+</div>
+
+
+<!-- ENERGY PROFILE DETAILS -->
+@php
+$profile = $facility->energyProfiles()->latest()->first();
+@endphp
+<div style="margin-top:32px;padding:26px 32px;border-radius:22px;background:linear-gradient(135deg,#f8fafc,#e0f2fe);box-shadow:0 8px 28px rgba(37,99,235,.10);">
+	<h3 style="margin:0 0 18px;font-weight:900;color:#0ea5e9;font-size:1.18rem;display:flex;align-items:center;gap:8px;">
+		<i class="fa fa-id-card"></i> Energy Profile Details
+	</h3>
+	@if($profile)
+	<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;">
+		<div><span style="color:#64748b;font-weight:700;">Electric Meter No:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->electric_meter_no ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Utility Provider:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->utility_provider ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Contract Account No:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->contract_account_no ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Baseline kWh:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->baseline_kwh ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Main Energy Source:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->main_energy_source ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Backup Power:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->backup_power ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Transformer Capacity:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->transformer_capacity ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Number of Meters:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->number_of_meters ?? '-' }}</span></div>
+		<div><span style="color:#64748b;font-weight:700;">Engineer Approved:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->engineer_approved ? 'Yes' : 'No' }}</span></div>
+		<div>
+			<span style="color:#64748b;font-weight:700;">Baseline Locked:</span><br>
+			@php
+				$role = strtolower(auth()->user()->role ?? '');
+			@endphp
+			@if($role === 'staff')
+				<span style="display:inline-flex;align-items-center;gap:6px;font-weight:800;color:#0ea5e9;background:#e0f2fe;padding:6px 14px;border-radius:999px;" title="Baseline is locked for staff and cannot be changed.">
+					<i class="fa fa-lock"></i> Locked
+				</span>
+			@else
+				<span style="display:inline-flex;align-items-center;gap:6px;font-weight:800;color:#64748b;background:#f1f5f9;padding:6px 14px;border-radius:999px;" title="Baseline is editable for admin and super admin.">
+					<i class="fa fa-unlock"></i> Editable
+				</span>
+			@endif
+		</div>
+		<div><span style="color:#64748b;font-weight:700;">Baseline Source:</span><br><span style="font-weight:800;color:#1e293b;">{{ $profile->baseline_source ?? '-' }}</span></div>
+		@if($profile->bill_image)
+			<div><span style="color:#64748b;font-weight:700;">Bill Image:</span><br><img src="{{ asset('storage/'.$profile->bill_image) }}" alt="Bill Image" style="max-width:120px;border-radius:8px;box-shadow:0 2px 8px #2563eb22;"></div>
+		@endif
+	</div>
+	@else
+		<div style="color:#64748b;font-weight:700;">No energy profile data available for this facility.</div>
+	@endif
+</div>
+
+<!-- ENERGY SUMMARY -->
+<div style="
+margin-top:32px;padding:26px;border-radius:22px;
+background:linear-gradient(135deg,#eff6ff,#ffffff);
+box-shadow:0 10px 30px rgba(37,99,235,.15);">
+
+<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
+⚡ Energy Performance
+</h3>
+
+@if($showAvg)
+<div style="font-size:1.7rem;font-weight:900;color:#2563eb;">
+{{ number_format($avgKwh,2) }} kWh
+</div>
+<div style="font-size:.9rem;color:#475569;">
+Average consumption (first 3 months)
+</div>
+@else
+<div style="color:#b91c1c;font-weight:700;">
+⚠ Insufficient data (minimum 3 months required)
+</div>
+@endif
+</div>
+
+<!-- ACTIONS -->
+<div style="display:flex;gap:14px;justify-content:flex-end;margin-top:30px;">
+	<!-- Edit Facility button removed -->
+	<button onclick="openDeleteFacilityModal()" style="background:#e11d48;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;">🗑 Delete</button>
+</div>
+
+</div>
+</div>
+
+
+
+<!-- DELETE MODAL -->
+<div id="deleteFacilityModal" style="display:none;position:fixed;inset:0;
+background:rgba(0,0,0,.25);align-items:center;justify-content:center;z-index:9999;">
+<div style="background:#fff;padding:26px;border-radius:18px;width:320px;">
+<form method="POST" action="{{ route('facilities.destroy',$facility->id) }}">
+@csrf @method('DELETE')
+<p style="font-weight:700;color:#b91c1c;">Delete this facility?</p>
+<div style="display:flex;gap:10px;justify-content:flex-end;">
+<button style="background:#e11d48;color:#fff;padding:10px 18px;border:none;border-radius:8px;">Delete</button>
+<button type="button" onclick="closeDeleteFacilityModal()">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+
+<script>
+function openDeleteFacilityModal(){deleteFacilityModal.style.display='flex'}
+function closeDeleteFacilityModal(){deleteFacilityModal.style.display='none'}
+</script>
+
+@endsection
+@include('modules.facilities.partials.modals')
 
 <script>
 function openEditFacilityModal() {
+	var facility = @json($facility);
+	document.getElementById('edit_facility_id').value = facility.id || '';
+	document.getElementById('edit_name').value = facility.name || '';
+	document.getElementById('edit_type').value = facility.type || '';
+	document.getElementById('edit_department').value = facility.department || '';
+	document.getElementById('edit_address').value = facility.address || '';
+	document.getElementById('edit_barangay').value = facility.barangay || '';
+	document.getElementById('edit_floor_area').value = facility.floor_area || '';
+	document.getElementById('edit_floors').value = facility.floors || '';
+	document.getElementById('edit_year_built').value = facility.year_built || '';
+	document.getElementById('edit_operating_hours').value = facility.operating_hours || '';
+	document.getElementById('edit_status').value = facility.status || '';
+	// Set form action dynamically
+	document.getElementById('editFacilityForm').action = '/facilities/' + facility.id;
+	// Image preview
+	var preview = document.getElementById('edit_image_preview');
+	if (facility.image) {
+		let imageUrl = '';
+		if (facility.image.startsWith('img/')) {
+			imageUrl = '/' + facility.image;
+		} else {
+			imageUrl = '/storage/' + facility.image;
+		}
+		preview.innerHTML = '<img src="' + imageUrl + '" style="max-width:100%;max-height:120px;border-radius:10px;">';
+	} else {
+		preview.innerHTML = '<div style="width:100%;height:80px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:2rem;"><i class="fa fa-image"></i></div>';
+	}
 	document.getElementById('editFacilityModal').style.display = 'flex';
 }
-function closeEditFacilityModal() {
-	document.getElementById('editFacilityModal').style.display = 'none';
-}
 </script>
-@extends('layouts.qc-admin')
-@section('title', 'Facility Details')
-@section('content')
-
-<div class="facility-details-wrapper" style="max-width:600px;margin:0 auto;">
-   <div style="background:#fff;padding:38px 28px 32px 28px;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);">
-	   <div style="display:flex;align-items:center;gap:22px;margin-bottom:1.5rem;">
-		   @if($facility->image)
-			   <img src="{{ asset('storage/' . $facility->image) }}" alt="Facility" style="width:140px;height:100px;object-fit:cover;border-radius:10px;">
-		   @else
-			   <div style="width:140px;height:100px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:2.2rem;">
-				   <i class="fa fa-image" title="No Image"></i>
-			   </div>
-		   @endif
-		   <div style="flex:1;">
-			   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-				   <div>
-					   <h2 style="font-size:1.7rem;font-weight:700;color:#222;margin:0 0 8px 0;">{{ $facility->name ?? '-' }}</h2>
-					   <div style="color:#6366f1;font-weight:500;margin-bottom:4px;">{{ $facility->type ?? '-' }}</div>
-					   <div style="font-size:1rem;color:#555;">{{ $facility->department ?? '-' }}</div>
-				   </div>
-				   <a href="{{ url('/energy-actions?facility='.$facility->id) }}" title="Show Energy Actions"
-					  class="energy-action-icon-link" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;position:relative;top:-10px;">
-					   <span class="energy-action-icon" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:#2563eb1a;color:#2563eb;border-radius:50%;font-size:1.25rem;transition:background 0.18s, color 0.18s;">
-						   <i class="fa fa-bolt"></i>
-					   </span>
-					   <span class="energy-action-label" style="font-size:0.93rem;color:#2563eb;font-weight:600;margin-top:2px;position:absolute;top:36px;left:50%;transform:translateX(-50%);background:#fff;padding:2px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(55,98,200,0.10);opacity:0;pointer-events:none;transition:opacity 0.18s;white-space:nowrap;">Show Energy Action</span>
-				   </a>
-				   <style>
-				   .energy-action-icon-link:hover .energy-action-label {
-					   opacity: 1 !important;
-				   }
-				   </style>
-			   </div>
-		   </div>
-	   </div>
-	   <div style="margin-bottom:1.1rem;"><strong>Address:</strong> {{ $facility->address ?? '-' }}</div>
-	   <div style="margin-bottom:1.1rem;"><strong>Barangay:</strong> {{ $facility->barangay ?? '-' }}</div>
-	   <div style="display:flex;gap:18px;margin-bottom:1.1rem;">
-		   <div><strong>Floor Area:</strong> {{ $facility->floor_area ?? '-' }} sqm</div>
-		   <div><strong>Floors:</strong> {{ $facility->floors ?? '-' }}</div>
-	   </div>
-	   <div style="display:flex;gap:18px;margin-bottom:1.1rem;">
-		   <div><strong>Year Built:</strong> {{ $facility->year_built ?? '-' }}</div>
-		   <div><strong>Operating Hours:</strong> {{ $facility->operating_hours ?? '-' }}</div>
-	   </div>
-	   <div style="margin-bottom:1.1rem;"><strong>Status:</strong> <span style="color:#2563eb;font-weight:600;">{{ ucfirst($facility->status) ?? '-' }}</span></div>
-
-	   <div style="margin: 24px 0 0 0; font-size:1.15rem;">
-		   <strong>Average kWh (First 3 Months):</strong>
-		   @if($showAvg)
-			   <span style="color:#2563eb;font-weight:600;">{{ number_format($avgKwh, 2) }} kWh</span>
-		   @else
-			   <span style="color:#e11d48;font-weight:500;">Insufficient data (at least 3 months required)</span>
-		   @endif
-	   </div>
-
-	   <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:2.2rem;">
-		   <button type="button" onclick="openEditFacilityModal()" class="btn" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;border-radius:8px;padding:10px 22px;cursor:pointer;">Edit</button>
-		   <button type="button" onclick="openDeleteFacilityModal({{ $facility->id }})" style="background:#e11d48;color:#fff;font-weight:600;border:none;border-radius:8px;padding:10px 22px;cursor:pointer;">Delete</button>
-	   </div>
-   </div>
-</div>
-
-<!-- Delete Facility Modal -->
-<div id="deleteFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
-    <div class="modal-content" style="max-width:350px;background:#fff7f7;border-radius:18px;box-shadow:0 8px 32px rgba(225,29,72,0.13);padding:32px 28px;">
-        <button class="modal-close" type="button" onclick="closeDeleteFacilityModal()" style="top:12px;right:12px;position:absolute;font-size:1.5rem;background:none;border:none;color:#e11d48;">&times;</button>
-        <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>
-        <div style="font-size:0.98rem;color:#b91c1c;margin-bottom:18px;">Are you sure you want to delete this facility? This action cannot be undone.</div>
-        <form id="deleteFacilityForm" method="POST" action="{{ route('facilities.destroy', $facility->id) }}" style="display:flex;flex-direction:column;gap:16px;">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="energy-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;background:#e11d48;color:#fff;">Yes, Delete</button>
-            <button type="button" class="energy-modal-btn cancel" onclick="closeDeleteFacilityModal()" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;background:#f3f4f6;color:#222;">Cancel</button>
-        </form>
-    </div>
-</div>
-<script>
-function openDeleteFacilityModal(id) {
-    document.getElementById('deleteFacilityModal').style.display = 'flex';
-}
-function closeDeleteFacilityModal() {
-    document.getElementById('deleteFacilityModal').style.display = 'none';
-}
-</script>
-
-	
-@endsection

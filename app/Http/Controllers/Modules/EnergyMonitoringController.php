@@ -12,21 +12,30 @@ class EnergyMonitoringController extends Controller
      */
     public function index()
     {
-        // Get the total number of facilities dynamically
         $totalFacilities = Facility::count();
-        // Get all facilities for the table
         $facilities = Facility::all();
-        // Count facilities with a 'High' alert in the current month
         $currentMonth = date('n');
         $currentYear = date('Y');
         $highAlertCount = 0;
+        $totalEnergyCost = \App\Models\EnergyRecord::where('month', $currentMonth)
+            ->where('year', $currentYear)
+            ->sum('energy_cost');
+
+        // Total actual kWh consumption for current month
+        $totalActualKwh = \App\Models\EnergyRecord::where('month', $currentMonth)
+            ->where('year', $currentYear)
+            ->sum('actual_kwh');
+
+        // Total baseline kWh for current month (sum of each facility's baseline_kwh)
+        $totalAverageKwh = \App\Models\Facility::sum('baseline_kwh');
         foreach ($facilities as $facility) {
-            $record = $facility->energyRecords()
+            // Attach current month's record
+            $facility->currentMonthRecord = $facility->energyRecords()
                 ->where('month', $currentMonth)
                 ->where('year', $currentYear)
-                ->where('alert', 'High')
                 ->first();
-            if ($record) {
+            // Count high alerts (if you have an alert field/logic)
+            if ($facility->currentMonthRecord && ($facility->currentMonthRecord->alert ?? null) === 'High') {
                 $highAlertCount++;
             }
             // Attach last maintenance from MaintenanceHistory
@@ -39,11 +48,14 @@ class EnergyMonitoringController extends Controller
                 ->where('maintenance_status', 'Ongoing')
                 ->orderBy('scheduled_date', 'asc')
                 ->first();
-            if ($facility->energyRecords->count() > 0) {
-                $facility->energyRecords->first()->last_maintenance = $lastMaint ? $lastMaint->completed_date : null;
-                $facility->energyRecords->first()->next_maintenance = $nextMaint ? $nextMaint->scheduled_date : null;
+            if ($facility->currentMonthRecord) {
+                $facility->currentMonthRecord->last_maintenance = $lastMaint ? $lastMaint->completed_date : null;
+                $facility->currentMonthRecord->next_maintenance = $nextMaint ? $nextMaint->scheduled_date : null;
             }
         }
-        return view('modules.energy-monitoring.index', compact('totalFacilities', 'facilities', 'highAlertCount'));
+        $user = auth()->user();
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-monitoring.index', compact('totalFacilities', 'facilities', 'highAlertCount', 'totalEnergyCost', 'notifications', 'unreadNotifCount'));
     }
 }

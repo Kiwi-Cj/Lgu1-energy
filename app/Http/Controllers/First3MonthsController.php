@@ -38,7 +38,10 @@ class First3MonthsController extends Controller
         if ($facilityId) {
             $facilityModel = Facility::find($facilityId);
         }
-        return view('modules.facilities.first3months', compact('facilityModel'));
+        $user = auth()->user();
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.facilities.first3months', compact('facilityModel', 'notifications', 'unreadNotifCount'));
     }
 
     public function store(Request $request)

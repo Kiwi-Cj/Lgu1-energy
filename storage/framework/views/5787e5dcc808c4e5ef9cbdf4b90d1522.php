@@ -7,7 +7,7 @@
 ?>
 
 <div class="facilities-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-    <h2 style="font-size:2rem;font-weight:700;color:#222;margin:0;">Facilities</h2>
+    <h1 style="font-size:2.2rem;font-weight:700;color:#3762c8;margin:0;">Facilities</h1>
     <div style="display:flex; gap:12px;">
         <?php if($userRole !== 'staff'): ?>
             <button type="button" id="btnAddFacilityTop" style="background: linear-gradient(90deg,#2563eb,#6366f1); color:#fff; font-weight:600; border:none; border-radius:10px; padding:10px 28px; font-size:1.1rem; box-shadow:0 2px 8px rgba(31,38,135,0.10); transition:background 0.18s;">+ Add Facility</button>
@@ -38,37 +38,53 @@
 <!-- Facility Summary Cards -->
 <div class="facility-summary-cards" style="display:flex;gap:24px;margin-bottom:2.2rem;flex-wrap:wrap;">
     <div class="card" style="flex:1 1 220px;min-width:220px;background:#f5f8ff;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(55,98,200,0.08);">
-        <div style="font-size:1.1rem;font-weight:500;color:#3762c8;">🏢 Total Facilities</div>
-        <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($totalFacilities ?? '-'); ?></div>
+        <div style="font-size:1.13rem;font-weight:700;color:#3762c8;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:1.25rem;">🏢</span> Total Facilities
+        </div>
+        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($totalFacilities ?? '-'); ?></div>
     </div>
     <div class="card" style="flex:1 1 220px;min-width:220px;background:#f0fdf4;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(34,197,94,0.08);">
-        <div style="font-size:1.1rem;font-weight:500;color:#22c55e;">🟢 Active Facilities</div>
-        <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($activeFacilities ?? '-'); ?></div>
+        <div style="font-size:1.13rem;font-weight:700;color:#22c55e;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:1.25rem;">🟢</span> Active Facilities
+        </div>
+        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($activeFacilities ?? '-'); ?></div>
     </div>
     <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff7ed;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(234,179,8,0.08);">
-        <div style="font-size:1.1rem;font-weight:500;color:#f59e42;">🛠 Maintenance</div>
-        <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($maintenanceFacilities ?? '-'); ?></div>
+        <div style="font-size:1.13rem;font-weight:700;color:#f59e0b;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:1.25rem;">🛠</span> Maintenance
+        </div>
+        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($maintenanceFacilities ?? '-'); ?></div>
     </div>
     <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff0f3;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);">
-        <div style="font-size:1.1rem;font-weight:500;color:#e11d48;">🚫 Inactive Facilities</div>
-        <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($inactiveFacilities ?? '-'); ?></div>
+        <div style="font-size:1.13rem;font-weight:700;color:#e11d48;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:1.25rem;">🚫</span> Inactive Facilities
+        </div>
+        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($inactiveFacilities ?? '-'); ?></div>
     </div>
 </div>
 
 <!-- Facilities List -->
-<div class="facilities-list" style="display:flex;flex-wrap:wrap;gap:28px;">
+<div class="facilities-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px;">
     <?php $__empty_1 = true; $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <div class="facility-card" style="background:#fff;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,0.08);padding:22px 18px;width:320px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;">
+        <div class="facility-card" style="background:#fff;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,0.08);padding:22px 18px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;min-width:0;">
+            <a href="<?php echo e(route('modules.facilities.show', $facility->id)); ?>" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;"></a>
             <?php
-                $imageUrl = $facility->image ? asset('storage/'.$facility->image) : null;
+                $imageUrl = null;
+                if ($facility->image) {
+                    if (strpos($facility->image, 'img/') === 0) {
+                        $imageUrl = asset($facility->image);
+                    } else {
+                        $imageUrl = asset('storage/'.$facility->image);
+                    }
+                }
             ?>
-            <?php if($imageUrl): ?>
-                <img src="<?php echo e($imageUrl); ?>" alt="Facility" style="width:100%;height:140px;object-fit:cover;border-radius:10px;margin-bottom:18px;">
-            <?php else: ?>
-                <div style="width:100%;height:140px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:2.2rem;margin-bottom:18px;">
-                    <i class="fa fa-image" title="No Image"></i>
-                </div>
-            <?php endif; ?>
+            <div style="width:100%;aspect-ratio:4/1;border-radius:18px;margin-bottom:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.10);background:linear-gradient(135deg,#f1f5f9,#e2e8f0);display:flex;align-items:center;justify-content:center;">
+                <?php if($imageUrl): ?>
+                    <img src="<?php echo e($imageUrl); ?>" alt="<?php echo e($facility->name); ?>" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
+                <?php else: ?>
+                    <i class="fa fa-image" title="No Image" style="color:#94a3b8;font-size:2.2rem;"></i>
+                <?php endif; ?>
+            </div>
             <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:8px;color:#222;"><?php echo e($facility->name ?? '-'); ?></h3>
             <div style="color:#6366f1;font-weight:500;margin-bottom:6px;"><?php echo e($facility->type ?? '-'); ?></div>
             <div style="font-size:0.98rem;color:#555;margin-bottom:10px;"><?php echo e($facility->address ?? '-'); ?></div>
@@ -80,11 +96,20 @@
                 </a>
                 <?php if($userRole !== 'staff'): ?>
                     <?php if($userRole === 'engineer' || $userRole === 'super admin'): ?>
-                        <button onclick="event.stopPropagation();toggleEngineerApproval(<?php echo e($facility->id); ?>)" class="facility-icon-link" style="color:#22c55e;font-size:1.2rem;background:none;border:none;" title="Engineer Approval"><i class="fa fa-check-circle"></i></button>
+                        <button onclick="event.stopPropagation();toggleEngineerApproval(<?php echo e($facility->id); ?>, this)" class="facility-icon-link" style="color:<?php echo e($facility->engineer_approved ? '#22c55e' : '#e11d48'); ?>;font-size:1.2rem;background:none;border:none;position:relative;" title="Engineer Approval">
+                            <?php if($facility->engineer_approved): ?>
+                                <i class="fa fa-check-circle"></i>
+                            <?php else: ?>
+                                <i class="fa fa-times-circle"></i>
+                            <?php endif; ?>
+                            <span class="approval-tooltip" style="display:none;position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#222;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.95rem;font-weight:500;white-space:nowrap;z-index:10;">
+                                <?php echo e($facility->engineer_approved ? 'Approved' : 'Not Approved'); ?>
+
+                            </span>
+                        </button>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
-            <a href="<?php echo e(route('modules.facilities.show', $facility->id)); ?>" class="facility-card-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;"></a>
         <style>
         .facility-card {
             position: relative;
@@ -121,6 +146,8 @@
 <!-- Modals -->
 <?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?> 
 
+
+
 <style>
 .modal { display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9999;align-items:center;justify-content:center; }
 .action-btn-delete {
@@ -149,6 +176,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modal && modal.parentNode !== document.body) {
         document.body.appendChild(modal);
     }
+    // Auto-open Add Facility modal if there are validation errors
+    <?php if($errors->any()): ?>
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    <?php endif; ?>
     // Add Facility button logic (top)
     const btnAddFacilityTop = document.getElementById('btnAddFacilityTop');
     if (btnAddFacilityTop) {
@@ -169,11 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         });
     }
-    document.querySelectorAll('.facility-card-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            // Only trigger if not clicking on an icon
-        });
-    });
+
 
     // 3-Month Avg Icon Button Logic removed
 
@@ -203,41 +232,66 @@ document.getElementById('resetBaselineForm')?.addEventListener('submit',function
         method:'POST',
         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'<?php echo e(csrf_token()); ?>'},
         body:JSON.stringify({reason})
-    }).then(res=>res.json()).then(data=>{ alert(data.message||'Baseline reset!'); document.getElementById('resetBaselineModal').style.display='none'; location.reload(); });
+    }).then(res=>res.json()).then(data=>{ showToast(data.message||'Baseline reset!', 'success'); document.getElementById('resetBaselineModal').style.display='none'; setTimeout(()=>location.reload(), 1200); });
 });
 
-// Engineer approval
-function toggleEngineerApproval(id){
-    fetch(`/modules/facilities/${id}/toggle-engineer-approval`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'<?php echo e(csrf_token()); ?>'}
-    }).then(res=>res.json()).then(data=>{ alert(data.message||'Engineer approval toggled!'); location.reload(); });
-}
 
-// Delete facility
-function openDeleteFacilityModal(id) {
-    document.getElementById('delete_facility_id').value = id;
-    document.getElementById('deleteFacilityModal').style.display = 'flex';
-}
-document.getElementById('deleteFacilityForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const id = document.getElementById('delete_facility_id').value;
-    const form = this;
-    fetch(`/facilities/${id}`, {
-        method: 'DELETE',
+</script>
+
+<script>
+// Engineer approval (global scope)
+function toggleEngineerApproval(facilityId, btn) {
+    fetch('/modules/facilities/' + facilityId + '/toggle-engineer-approval', {
+        method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
             'Accept': 'application/json',
         },
-    }).then(res => {
-        if (res.ok) {
-            document.getElementById('deleteFacilityModal').style.display = 'none';
-            location.reload();
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            btn.style.color = data.engineer_approved ? '#22c55e' : '#e11d48';
+            btn.querySelector('i').className = data.engineer_approved ? 'fa fa-check-circle' : 'fa fa-times-circle';
+            btn.querySelector('.approval-tooltip').textContent = data.engineer_approved ? 'Approved' : 'Not Approved';
+            btn.blur();
         } else {
-            alert('Failed to delete facility.');
+            alert(data.message || 'Action failed.');
         }
+    })
+    .catch(() => alert('Network error.'));
+}
+document.querySelectorAll('.facility-icon-link .approval-tooltip').forEach(function(tooltip){
+    var parent = tooltip.parentElement;
+    parent.addEventListener('mouseenter',function(){
+        tooltip.style.display='block';
+    });
+    parent.addEventListener('mouseleave',function(){
+        tooltip.style.display='none';
     });
 });
+</script>
+
+<!-- Toast Notification -->
+<div id="toastContainer" style="position:fixed;top:32px;right:32px;z-index:99999;display:flex;flex-direction:column;gap:12px;"></div>
+<script>
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.padding = '14px 28px';
+    toast.style.borderRadius = '8px';
+    toast.style.fontWeight = '600';
+    toast.style.fontSize = '1rem';
+    toast.style.boxShadow = '0 2px 12px rgba(55,98,200,0.10)';
+    toast.style.color = '#fff';
+    toast.style.background = type === 'success' ? 'linear-gradient(90deg,#22c55e,#16a34a)' : (type === 'error' ? 'linear-gradient(90deg,#e11d48,#be123c)' : 'linear-gradient(90deg,#2563eb,#6366f1)');
+    toast.style.opacity = '0.98';
+    toast.style.transition = 'opacity 0.3s';
+    container.appendChild(toast);
+    setTimeout(()=>{ toast.style.opacity = '0'; }, 1800);
+    setTimeout(()=>{ toast.remove(); }, 2200);
+}
 </script>
 
 <?php $__env->stopSection(); ?>

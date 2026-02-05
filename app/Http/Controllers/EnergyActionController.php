@@ -55,7 +55,7 @@ class EnergyActionController extends Controller
         $facilityId = $request->query('facility');
         $facility = Facility::findOrFail($facilityId);
         $latestRecord = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->first();
-        $baseline = $facility->average_monthly_kwh;
+        $baseline = $facility->baseline_kwh;
         $currentKwh = $latestRecord ? $latestRecord->actual_kwh : null;
         $deviation = ($baseline && $currentKwh) ? round((($currentKwh - $baseline) / $baseline) * 100, 2) : null;
         // Alert level logic

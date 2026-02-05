@@ -4,25 +4,56 @@
 
 @php
     $sortedRecords = $records->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
-    $baselineAvg = $facility->average_monthly_kwh;
+    $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+    if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
+        && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
+        $baselineAvg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+    } else {
+        $baselineAvg = $facility->baseline_kwh;
+    }
     $hasBaseline = $baselineAvg > 0;
 @endphp
+@php
+    $currentYear = date('Y');
+    $showAll = request('show_all') === '1';
+    $selectedYear = request('year') ?? ($showAll ? $currentYear - 1 : $currentYear);
+    $years = $records->pluck('year')->unique()->sortDesc()->values();
+    $filteredRecords = $records->where('year', $selectedYear);
+    $sortedRecords = $filteredRecords->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
+@endphp
 
-<div style="max-width:900px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 18px 0;">
-        <h2 style="font-size:2rem; font-weight:700; color:#222; margin:0;">Monthly Energy Records</h2>
+<div>
+
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div>
+            <span style="font-size:2rem; color:#2563eb; font-weight:700; letter-spacing:0.5px;">Facility: </span>
+            <span style="font-size:2rem; color:#222; font-weight:600;">{{ $facility->name }}</span>
+        </div>
         <button onclick="openAddModal()" class="btn btn-primary" style="background: linear-gradient(90deg,#2563eb,#6366f1); color:#fff; font-weight:600; border:none; border-radius:10px; padding:10px 22px; font-size:1.05rem; box-shadow:0 2px 8px rgba(31,38,135,0.10); transition:background 0.18s; @if(!$hasBaseline) opacity:0.5; pointer-events:none; @endif" @if(!$hasBaseline) disabled title="You need at least 3 months of data before adding monthly records." @endif>+ Monthly Energy Records</button>
     </div>
 
-    <!-- Average kWh Card -->
-    <div style="background:#f8fafc;border-radius:14px;padding:22px 28px;margin:28px 0 8px 0;box-shadow:0 2px 8px rgba(31,38,135,0.08);display:flex;align-items:center;gap:18px;">
-        <div style="font-size:1.15rem;font-weight:600;color:#222;">Average kWh (First 3 Months):</div>
-        @if($hasBaseline)
-            <div style="font-size:1.25rem;font-weight:700;color:#2563eb;">{{ number_format($baselineAvg, 2) }} kWh</div>
-        @else
-            <div style="font-size:1.08rem;color:#e11d48;font-weight:500;">Insufficient data (at least 3 months required)</div>
+    <div style="margin-bottom:10px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+        <h2 style="font-size:1.15rem; font-weight:700; color:#222; margin:0;">Monthly Energy Records</h2>
+        @if($showAll)
+        <form method="get" style="display: flex; align-items: center; gap: 8px;">
+            <input type="hidden" name="show_all" value="1">
+            <label for="year" style="font-weight:600; margin-right:4px;">Year:</label>
+            <select name="year" id="year" onchange="this.form.submit()" style="padding:6px 12px; border-radius:7px; border:1px solid #c3cbe5; font-size:1rem;">
+                @foreach($years as $year)
+                    @if($year != $currentYear)
+                        <option value="{{ $year }}" @if($year == $selectedYear) selected @endif>{{ $year }}</option>
+                    @endif
+                @endforeach
+            </select>
+        </form>
         @endif
     </div>
+
+
+
+    <!-- Average kWh Card -->
+
     @if(!$hasBaseline)
         <div style="margin-bottom:1.2rem;color:#e11d48;font-weight:500;">You need to enter first 3 months data before you can add a monthly energy record.</div>
     @endif
@@ -40,9 +71,15 @@
             }
         }
     @endphp
+
     @if($hasBaseline)
-    <div style="margin-bottom:18px;font-size:1.08rem;font-weight:600;color:#6366f1;">
-        Facility Size: <span style="font-weight:700;">{{ $sizeLabel }}</span>
+    <div style="margin-bottom:18px; display:flex; align-items:center; font-size:1.08rem;font-weight:600;color:#6366f1;">
+        <span>
+            Facility Size: <span style="font-weight:700;">{{ $sizeLabel }}</span>
+        </span>
+        <span style="margin-left:auto; font-size:1.08rem; color:#222; font-weight:600;">
+            Baseline kWh (First 3 Months): <span style="font-weight:700; color:#2563eb;">{{ number_format($baselineAvg, 2) }} kWh</span>
+        </span>
     </div>
     @endif
 
@@ -53,6 +90,7 @@
                 <tr style="text-align:center;">
                     <th style="padding:10px 14px; text-align:center;">Year</th>
                     <th style="padding:10px 14px; text-align:center;">Month</th>
+                    <th style="padding:10px 14px; text-align:center;">Day</th>
                     <th style="padding:10px 14px; text-align:center;">Actual kWh</th>
                     <th style="padding:10px 14px; text-align:center;">Average kWh</th>
                     <th style="padding:10px 14px; text-align:center;">Deviation (%)</th>
@@ -72,12 +110,13 @@
                         @endphp
                         {{ $months[$record->month - 1] ?? $record->month }}
                     </td>
+                    <td style="padding:10px 14px; text-align:center;">{{ $record->day ?? '-' }}</td>
                     <td style="padding:10px 14px; text-align:center;">{{ number_format($record->actual_kwh, 2) }}</td>
-                    <td style="padding:10px 14px; text-align:center;">{{ number_format($facility->average_monthly_kwh, 2) }}</td>
+                    <td style="padding:10px 14px; text-align:center;">{{ number_format($baselineAvg, 2) }}</td>
                     <td style="padding:10px 14px; text-align:center;">
                         @php
                             $actual = $record->actual_kwh;
-                            $baseline = $facility->average_monthly_kwh;
+                            $baseline = $baselineAvg;
                             $deviation = $baseline > 0 ? round((($actual - $baseline) / $baseline) * 100, 2) : null;
                         @endphp
                         {{ $deviation !== null ? $deviation . '%' : '' }}
@@ -154,7 +193,43 @@
                             <button type="button" title="Create Energy Action (Medium)" style="background: none; border: none; color: #f59e42; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal({{ $record->id }}, 'Medium')">
                                 <span style="font-size:1.3rem;">⚡</span>
                             </button>
+                         @elseif($alert === 'Low')
+                            <button type="button" title="View Recommendation (Low)" style="background: none; border: none; color: #22c55e; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal({{ $record->id }}, 'Low')">
+                                <span style="font-size:1.3rem;">💡</span>
+                            </button>
                         @endif
+                         <!-- Manual Add to Maintenance Button -->
+                        <button type="button" title="Add to Maintenance" style="background: none; border: none; color: #2563eb; font-size: 1.3rem; cursor: pointer;" onclick="openAddMaintenanceModal({{ $record->id }})">
+                            <span style="font-size:1.3rem;">🛠️</span>
+                        </button>
+                        <!-- ADD TO MAINTENANCE MODAL -->
+                        <div id="addMaintenanceModal" style="display:none;position:fixed;z-index:10070;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
+                            <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
+                                <div class="modal-content" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
+                                    <button type="button" onclick="closeAddMaintenanceModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
+                                    <h3 style="margin-bottom:12px;font-size:1.2rem;font-weight:700;color:#2563eb;">Add to Maintenance</h3>
+                                    <div id="addMaintenanceText" style="margin-bottom:18px;font-size:1.05rem;color:#222;">Add this monthly record to maintenance?</div>
+                                    <form id="addMaintenanceForm" method="POST" action="" style="display:flex;gap:10px;">
+                                        @csrf
+                                        <input type="hidden" name="record_id" id="maintenance_record_id" value="">
+                                        <button type="submit" style="background:#2563eb;color:#fff;padding:10px 0;border:none;border-radius:8px;font-weight:700;font-size:1.05rem;flex:1;">Add</button>
+                                        <button type="button" onclick="closeAddMaintenanceModal()" style="background:#f3f4f6;color:#222;padding:10px 0;border:none;border-radius:8px;font-weight:600;flex:1;">Cancel</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                        function openAddMaintenanceModal(recordId) {
+                            document.getElementById('addMaintenanceModal').style.display = 'flex';
+                            document.getElementById('maintenance_record_id').value = recordId;
+                            // Set the form action dynamically if needed
+                            document.getElementById('addMaintenanceForm').action = '/maintenance/add-from-record/' + recordId;
+                        }
+                        function closeAddMaintenanceModal() {
+                            document.getElementById('addMaintenanceModal').style.display = 'none';
+                        }
+                        </script>
                         <form id="deleteMonthlyRecordForm-{{ $record->id }}" action="{{ route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id]) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
@@ -185,9 +260,7 @@
                     const modal = document.getElementById('energyActionModal');
                     const title = document.getElementById('energyModalTitle');
                     const list  = document.getElementById('energyRecommendations');
-
                     list.innerHTML = '';
-
                     if (level === 'High') {
                         title.innerHTML = '⚠ High Energy Consumption';
                         list.innerHTML = `
@@ -196,15 +269,21 @@
                             <li>Notify facility manager</li>
                             <li>Schedule urgent maintenance</li>
                         `;
-                    } else {
+                    } else if (level === 'Medium') {
                         title.innerHTML = '⚡ Medium Energy Alert';
                         list.innerHTML = `
                             <li>Review monthly energy usage trends</li>
                             <li>Check operating hours of equipment</li>
                             <li>Apply basic energy-saving measures</li>
                         `;
+                    } else if (level === 'Low') {
+                        title.innerHTML = '💡 Low Deviation - Good Practice';
+                        list.innerHTML = `
+                            <li>Maintain current energy-saving practices</li>
+                            <li>Continue monitoring for unusual changes</li>
+                            <li>Encourage staff to sustain efficiency</li>
+                        `;
                     }
-
                     modal.style.display = 'flex';
                     setTimeout(() => { modal.classList.add('show'); }, 10);
                 }
@@ -224,6 +303,13 @@
             </tbody>
         </table>
     </div>
+    <div style="margin-top:18px; display: flex; align-items: center; justify-content: flex-end;">
+        @if(!$showAll)
+            <a href="?show_all=1" class="btn btn-secondary" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:10px;padding:10px 18px;font-size:1.01rem;box-shadow:0 2px 8px rgba(31,38,135,0.06);text-decoration:none;">Show Past Records</a>
+        @else
+            <a href="?" class="btn btn-secondary" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:10px;padding:10px 18px;font-size:1.01rem;box-shadow:0 2px 8px rgba(31,38,135,0.06);text-decoration:none;">Show Current Year Only</a>
+        @endif
+    </div>
 </div>
 
 
@@ -236,25 +322,33 @@
             <button type="button" onclick="closeAddModal()" style="position:absolute;top:12px;right:12px;font-size:1.5rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
             <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Add Monthly Record</h2>
             <div style="font-size:1.02rem;color:#64748b;margin-bottom:18px;">Enter new monthly record details below.</div>
+            @if($errors->has('duplicate'))
+                <div id="duplicateModal" style="display:flex;justify-content:center;align-items:center;position:fixed;z-index:10060;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
+                    <div class="modal-content" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
+                        <button type="button" onclick="closeDuplicateModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
+                        <h3 style="margin-bottom:12px;font-size:1.2rem;font-weight:700;color:#e11d48;">Existing Data</h3>
+                        <div style="margin-bottom:18px;font-size:1.05rem;color:#222;">{{ $errors->first('duplicate') }}</div>
+                        <div style="display:flex;gap:10px;">
+                            <button type="button" onclick="closeDuplicateModal()" style="background:#2563eb;color:#fff;padding:10px 0;border:none;border-radius:8px;font-weight:700;font-size:1.05rem;flex:1;">OK</button>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                function closeDuplicateModal() {
+                    document.getElementById('duplicateModal').style.display = 'none';
+                }
+                window.onload = function() {
+                    if(document.getElementById('duplicateModal')) {
+                        document.getElementById('addModal').style.display = 'block';
+                    }
+                };
+                </script>
+            @endif
             <form id="addMonthlyRecordForm" method="POST" action="{{ route('energy-records.store', ['facility' => $facility->id]) }}" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
                 @csrf
-                <div style="display:flex;gap:12px;">
-                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                        <label for="add_year" style="font-weight:500;">Year</label>
-                        <input type="number" id="add_year" name="year" required value="{{ date('Y') }}" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                    </div>
-                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                        <label for="add_month" style="font-weight:500;">Month</label>
-                        @php
-                            $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                            $currentMonth = date('n');
-                        @endphp
-                        <select id="add_month" name="month" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                            @foreach($months as $idx => $m)
-                                <option value="{{ $idx+1 }}" @if($currentMonth == $idx+1) selected @endif>{{ $m }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label for="add_date" style="font-weight:500;">Date</label>
+                    <input type="date" id="add_date" name="date" value="{{ date('Y-m-d') }}" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
                 </div>
                 <div style="display:flex;gap:12px;">
                     <div style="flex:1;display:flex;flex-direction:column;gap:4px;">

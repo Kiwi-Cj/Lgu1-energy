@@ -7,40 +7,29 @@
 @endphp
 
 
-<h2 style="font-size:2rem; font-weight:700; margin-bottom:1.5rem;">Energy Monitoring Dashboard</h2>
+<h1 style="font-size:2.2rem;font-weight:700;color:#3762c8;margin-bottom:1.5rem;">Energy Monitoring Dashboard</h1>
 
 <!-- OVERVIEW CARDS -->
 <div style="width:100%; display:flex; gap:24px; flex-wrap:wrap; margin-bottom:2.5rem;">
     <div style="flex:1 1 220px; background:#f5f8ff; padding:20px; border-radius:14px;">
         <div style="font-weight:500; color:#3762c8;">🏢 Total Facilities</div>
-        <div style="font-weight:700; font-size:2rem;">{{ $totalFacilities ?? '-' }}</div>
+        <div style="font-weight:700; font-size:2rem; color:#111;">{{ $totalFacilities ?? '-' }}</div>
     </div>
 
     <div style="flex:1 1 220px; background:#fff0f3; padding:20px; border-radius:14px;">
         <div style="font-weight:500; color:#e11d48;">
             🚨 Facilities with <b>HIGH</b> Alert
         </div>
-        <div style="font-weight:700; font-size:2rem; color:#e11d48;">
-            {{ $highAlertCount ?? 0 }}
-        </div>
+        <div style="font-weight:700; font-size:2rem; color:#111;">{{ $highAlertCount ?? 0 }}</div>
     </div>
 
-    <div style="flex:1 1 220px; background:#e0f2fe; padding:20px; border-radius:14px;">
-        <div style="font-weight:500; color:#0284c7;">
-            ⚡ Avg kWh vs Baseline (This Month)
-        </div>
-        <div style="font-weight:700; font-size:2rem;">
-            {{ $avgKwhVsBaseline ?? '-' }}
-        </div>
-    </div>
+    <!-- Trend analysis card removed -->
 
     <div style="flex:1 1 220px; background:#f0fdf4; padding:20px; border-radius:14px;">
         <div style="font-weight:500; color:#22c55e;">
             � Total Energy Cost (This Month)
         </div>
-        <div style="font-weight:700; font-size:2rem; color:#22c55e;">
-            ₱{{ number_format($totalEnergyCost ?? 0, 2) }}
-        </div>
+        <div style="font-weight:700; font-size:2rem;"><span style="color:#22c55e;">₱</span><span style="color:#111;">{{ number_format($totalEnergyCost ?? 0, 2) }}</span></div>
     </div>
 </div>
 
@@ -52,36 +41,34 @@
         <a href="{{ url()->current() }}" style="margin-left:8px; color:#e11d48; text-decoration:underline; font-size:0.98rem;">Clear</a>
     @endif
 </form>
-<div style="background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(31,38,135,0.08); margin-bottom:1.2rem;">
-    <table style="width:100%; border-collapse:collapse; font-size:0.93rem;">
+<div style="background:#fff; border-radius:18px; box-shadow:0 2px 8px rgba(31,38,135,0.08); margin-bottom:1.2rem; overflow:hidden;">
+    <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:0.93rem; border-radius:18px; overflow:hidden;">
         <thead style="background:#f1f5f9;">
             <tr style="text-align:center;">
-                <th style="padding:6px 8px; text-align:center;">Facility</th>
-                <th style="padding:6px 8px; text-align:center;">Type</th>
-                <th style="padding:6px 8px; text-align:center;">Status</th>
-                <th style="padding:6px 8px; text-align:center;">Month</th>
-                <th style="padding:6px 8px; text-align:center;">Floor Area</th>
-                <th style="padding:6px 8px; text-align:center;">Baseline kWh</th>
-                <th style="padding:6px 8px; text-align:center;">Trend</th>
-                <th style="padding:6px 8px; text-align:center;">EUI (kWh/m²)</th>
-                <th style="padding:6px 8px; text-align:center;">Last Maint</th>
-                <th style="padding:6px 8px; text-align:center;">Next Maint</th>
-                <th style="padding:6px 8px; text-align:center;">Alerts</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Facility</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Type</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Status</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Month</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Floor Area</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Baseline kWh</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Trend</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">EUI (kWh/m²)</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Last Maint</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Next Maint</th>
+                <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Alerts</th>
                 @if($userRole !== 'staff')
-                    <th style="padding:6px 8px; text-align:center;">Actions</th>
+                    <th style="padding:6px 8px; text-align:center; color:#222; font-weight:700;">Actions</th>
                 @endif
             </tr>
         </thead>
         <tbody>
         @forelse($facilities as $facility)
             @php 
-                $record = $facility->energyRecords->first(); 
-                $currentMonth = date('n');
-                $currentYear = date('Y');
+                $record = $facility->currentMonthRecord;
                 $trendAnalysis = '-';
                 $alertLevel = '-';
                 $eui = null;
-                $hasCurrentMonth = $record && $record->month == $currentMonth && $record->year == $currentYear;
+                $hasCurrentMonth = $record !== null;
             @endphp
             @if($hasCurrentMonth)
                 @php
@@ -128,21 +115,21 @@
                     }
                 @endphp
                 <tr style="border-bottom:1px solid #e5e7eb; text-align:center; background:{{ $loop->even ? '#f8fafc' : '#fff' }}; font-size:0.93rem;">
-                    <td style="padding:6px 8px; text-align:center;">{{ $facility->name }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $facility->type }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $facility->status }}</td>
-                    <td style="padding:6px 8px; text-align:center;">
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $facility->name }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $facility->type }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $facility->status }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">
                         @php
                             $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                         @endphp
                         {{ isset($record->month) ? $monthsArr[$record->month-1] : '-' }}
                     </td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $facility->floor_area ?? '-' }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $facility->average_monthly_kwh ?? '-' }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $trendAnalysis }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $eui !== null ? $eui : '-' }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $record->last_maintenance ?? '-' }}</td>
-                    <td style="padding:6px 8px; text-align:center;">{{ $record->next_maintenance ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $facility->floor_area ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $facility->baseline_kwh ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $trendAnalysis }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $eui !== null ? $eui : '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $record->last_maintenance ?? '-' }}</td>
+                    <td style="padding:6px 8px; text-align:center; color:#222;">{{ $record->next_maintenance ?? '-' }}</td>
 
                     <td style="padding:6px 8px; text-align:center;">
                         @if($alertLevel === 'High')

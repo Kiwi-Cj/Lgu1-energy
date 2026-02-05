@@ -1,0 +1,93 @@
+
+<?php $__env->startSection('title', 'Energy Report'); ?>
+<?php $__env->startSection('content'); ?>
+<div style="width:100%;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+            <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin-bottom:4px;">📘 Energy Consumption Report</h2>
+            <p style="color:#555;margin-bottom:0;">Detailed energy consumption data and trends for all facilities.</p>
+        </div>
+        <a href="<?php echo e(route('reports.energy-export', request()->all())); ?>" class="btn btn-success" style="padding:7px 22px;border-radius:7px;background:linear-gradient(90deg,#22c55e,#16a34a);color:#fff;font-weight:600;border:none;font-size:1rem;box-shadow:0 2px 6px rgba(34,197,94,0.07);text-decoration:none;">
+            ⬇️ Export
+        </a>
+    </div>
+	
+	<!-- FILTERS -->
+	<form method="GET" action="" style="margin-bottom:24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+		<div style="display:flex;flex-direction:column;">
+			<label for="facility_id" style="font-weight:700;margin-bottom:4px;">Facility</label>
+            <select name="facility_id" id="facility_id" class="form-control" style="min-width:170px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="">All Facilities</option>
+                <?php $__currentLoopData = $facilities ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($facility->id); ?>" <?php echo e((request('facility_id') == $facility->id) ? 'selected' : ''); ?>><?php echo e($facility->name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+		</div>
+        <div style="display:flex;flex-direction:column;">
+            <label for="year" style="font-weight:700;margin-bottom:4px;">Year</label>
+                <select name="year" id="year" class="form-control" style="min-width:100px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                    <?php $__currentLoopData = $years ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($year); ?>" <?php echo e(request('year', date('Y')) == $year ? 'selected' : ''); ?>><?php echo e($year); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+        </div>
+        <div style="display:flex;flex-direction:column;">
+            <label for="month" style="font-weight:700;margin-bottom:4px;">Month</label>
+            <select name="month" id="month" class="form-control" style="min-width:100px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                <option value="">All Months</option>
+                <?php
+                    $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec'];
+                ?>
+                <?php $__currentLoopData = $months; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $num=>$name): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($num); ?>" <?php echo e(request('month') == $num ? 'selected' : ''); ?>><?php echo e($name); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </div>
+		<div style="display:flex;flex-direction:column;justify-content:flex-end;">
+			<button type="submit" class="btn btn-primary" style="padding:7px 22px;border-radius:7px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);margin-top:24px;">Filter</button>
+		</div>
+	</form>
+		<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+    <thead style="background:#e9effc;">
+        <tr>
+            <th style="padding:12px;text-align:left;">Facility</th>
+            <th style="padding:12px;text-align:left;">Month</th>
+            <th style="padding:12px;text-align:right;">Actual kWh</th>
+            <th style="padding:12px;text-align:right;">Baseline kWh</th>
+            <th style="padding:12px;text-align:right;">Variance</th>
+            <th style="padding:12px;text-align:center;">Trend</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <?php $__empty_1 = true; $__currentLoopData = $energyRows ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <tr style="border-top:1px solid #e5e7eb;">
+            <td style="padding:10px;"><?php echo e($row['facility']); ?></td>
+            <td style="padding:10px;"><?php echo e($row['month']); ?></td>
+            <td style="padding:10px;text-align:right;"><?php echo e($row['actual_kwh']); ?></td>
+            <td style="padding:10px;text-align:right;"><?php echo e($row['baseline_kwh']); ?></td>
+            <td style="padding:10px;text-align:right;"><?php echo e($row['variance']); ?></td>
+            <td style="padding:10px;text-align:center;">
+    <?php if($row['trend'] === 'up'): ?>
+        <span style="color:#dc2626;font-weight:700;">↑ Increasing</span>
+    <?php elseif($row['trend'] === 'down'): ?>
+        <span style="color:#16a34a;font-weight:700;">↓ Decreasing</span>
+    <?php else: ?>
+        <span style="color:#6b7280;font-weight:700;">→ Stable</span>
+    <?php endif; ?>
+</td>
+
+        </tr>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+        <tr>
+            <td colspan="6" style="padding:14px;text-align:center;color:#6b7280;">
+                No energy data found.
+            </td>
+        </tr>
+        <?php endif; ?>
+    </tbody>
+</table>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.qc-admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/reports/energy.blade.php ENDPATH**/ ?>

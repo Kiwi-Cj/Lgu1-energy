@@ -26,15 +26,18 @@ class AuthenticatedSessionController extends Controller
     {
         $request->ensureIsNotRateLimited();
         $user = \App\Models\User::where('email', $request->email)->first();
-        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password) || strtolower($user->status) !== 'active') {
             \Illuminate\Support\Facades\RateLimiter::hit($request->throttleKey());
             session()->forget(['otp_user_id']);
+            $errorMsg = !$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)
+                ? trans('auth.failed')
+                : 'Your account is inactive. Please contact the administrator.';
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
-                    'message' => trans('auth.failed')
+                    'message' => $errorMsg
                 ], 422);
             }
-            return back()->withErrors(['email' => trans('auth.failed')]);
+            return back()->withErrors(['email' => $errorMsg]);
         }
         session(['otp_user_id' => $user->id]);
         $otp = rand(100000, 999999);

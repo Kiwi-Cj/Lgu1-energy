@@ -24,6 +24,8 @@ class EnergyRecordObserver
                 ->where('trigger_month', $triggerMonth)
                 ->delete();
         }
+        // Delete related incidents with this energy_record_id
+        \App\Models\EnergyIncident::where('energy_record_id', $record->id)->delete();
     }
     public function saved(EnergyRecord $record)
     {
@@ -34,18 +36,44 @@ class EnergyRecordObserver
             $avg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
         } else {
             $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-            $avg = $profile ? $profile->average_monthly_kwh : null;
+            $avg = $profile ? $profile->baseline_kwh : null;
         }
         $variance = ($record->actual_kwh && $avg !== null) ? $record->actual_kwh - $avg : 0;
         $eui = ($record->actual_kwh && $facility && $facility->floor_area) ? round($record->actual_kwh / $facility->floor_area, 2) : 0; // Never null
         $percent = ($avg && $avg != 0) ? ($record->actual_kwh / $avg) * 100 : 0;
-        // Inverted: High: <60%, Medium: 60% to <80%, Low: >=80%
-        if ($percent < 60) {
-            $ratingVal = 'High';
+
+        // ALERT LOGIC
+        $size = 'small';
+        if ($avg > 3000) {
+            $size = 'extra_large';
+        } elseif ($avg > 1500) {
+            $size = 'large';
+        } elseif ($avg > 500) {
+            $size = 'medium';
+        }
+        $deviation = ($record->actual_kwh && $avg) ? (($record->actual_kwh - $avg) / $avg) * 100 : null;
+        $alert = null;
+        if ($deviation !== null) {
+            if ($size === 'small') {
+                $alert = $deviation > 30 ? 'High' : ($deviation > 15 ? 'Medium' : 'Low');
+            } elseif ($size === 'medium') {
+                $alert = $deviation > 20 ? 'High' : ($deviation > 10 ? 'Medium' : 'Low');
+            } elseif ($size === 'large') {
+                $alert = $deviation > 15 ? 'High' : ($deviation > 5 ? 'Medium' : 'Low');
+            } else /* extra_large */ {
+                $alert = $deviation > 10 ? 'High' : ($deviation > 3 ? 'Medium' : 'Low');
+            }
+        }
+
+        // CORRECTED: High alert = Low efficiency, else use percent
+        if ($alert === 'High') {
+            $ratingVal = 'Low';
+        } elseif ($percent < 60) {
+            $ratingVal = 'Low';
         } elseif ($percent >= 60 && $percent < 80) {
             $ratingVal = 'Medium';
         } else {
-            $ratingVal = 'Low';
+            $ratingVal = 'High';
         }
 
         // Check for trend: last 3 months increasing
@@ -107,6 +135,61 @@ class EnergyRecordObserver
                 $maintenance->efficiency_rating = $ratingVal;
                 $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
                 $maintenance->save();
+            }
+        }
+
+        // --- INCIDENT LOGIC: Create EnergyIncident if High alert ---
+        // Compute deviation and alert level (same as in Blade)
+        $deviation = ($avg && $avg != 0) ? round((($record->actual_kwh - $avg) / $avg) * 100, 2) : null;
+        $size = 'Medium';
+        if ($avg <= 1000) {
+            $size = 'Small';
+        } elseif ($avg <= 3000) {
+            $size = 'Medium';
+        } elseif ($avg <= 10000) {
+            $size = 'Large';
+        } else {
+            $size = 'Extra Large';
+        }
+        $alert = null;
+        if ($deviation !== null) {
+            if ($size === 'Small') {
+                $alert = $deviation > 30 ? 'High' : ($deviation > 15 ? 'Medium' : 'Low');
+            } elseif ($size === 'Medium') {
+                $alert = $deviation > 20 ? 'High' : ($deviation > 10 ? 'Medium' : 'Low');
+            } elseif ($size === 'Large') {
+                $alert = $deviation > 15 ? 'High' : ($deviation > 5 ? 'Medium' : 'Low');
+            } else /* Extra Large */ {
+                $alert = $deviation > 10 ? 'High' : ($deviation > 3 ? 'Medium' : 'Low');
+            }
+        }
+        if ($alert === 'High' && $facility) {
+            // Update if exists, else create, always set energy_record_id, month, year, size, and deviation_percent
+            $incident = \App\Models\EnergyIncident::where('facility_id', $facility->id)
+                ->where('description', 'like', '%High energy consumption detected for this billing period.%')
+                ->where('date_detected', now()->toDateString())
+                ->where('month', $record->month)
+                ->where('year', $record->year)
+                ->first();
+            if (!$incident) {
+                \App\Models\EnergyIncident::create([
+                    'facility_id' => $facility->id,
+                    'energy_record_id' => $record->id,
+                    'month' => $record->month,
+                    'year' => $record->year,
+                    'size' => $size,
+                    'deviation_percent' => $deviation,
+                    'description' => 'High energy consumption detected for this billing period.',
+                    'status' => 'Open',
+                    'date_detected' => now()->toDateString(),
+                ]);
+            } else {
+                $incident->energy_record_id = $record->id;
+                $incident->month = $record->month;
+                $incident->year = $record->year;
+                $incident->size = $size;
+                $incident->deviation_percent = $deviation;
+                $incident->save();
             }
         }
     }

@@ -1,4 +1,5 @@
 
+
 <div style="max-width: 480px; margin: 40px auto; border: 1px solid #eee; border-radius: 8px; background: #fff; font-family: Arial, sans-serif; box-shadow: 0 2px 8px #0001;">
 	<div style="text-align:center; padding: 32px 24px 0 24px;">
 		<img src="{{ asset('img/logocityhall.png') }}" alt="Energy System Logo" style="max-width: 90px; margin-bottom: 12px;">

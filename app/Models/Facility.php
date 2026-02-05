@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,6 +7,13 @@ use Carbon\Carbon;
 
 class Facility extends Model
 {
+    use HasFactory;
+
+    // Many-to-many: Facility can have many users
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'facility_user', 'facility_id', 'user_id');
+    }
     use HasFactory;
 
     protected $table = 'facilities';
@@ -28,6 +34,7 @@ class Facility extends Model
         'baseline_status',
         'baseline_kwh',
         'baseline_start_date',
+        'engineer_approved', // <-- Added for engineer approval
     ];
 
     /* =======================
@@ -96,12 +103,12 @@ class Facility extends Model
     }
 
     /**
-     * Computed facility size based on average monthly kWh
-     * (avoids conflict with DB column `size`)
+    * Computed facility size based on baseline kWh
+    * (avoids conflict with DB column `size`)
      */
     public function getComputedSizeAttribute()
     {
-        $baseline = $this->average_monthly_kwh ?? 0;
+        $baseline = $this->baseline_kwh ?? 0;
 
         if ($baseline < 1500) {
             return 'SMALL';
@@ -114,19 +121,14 @@ class Facility extends Model
         }
     }
 
+    // Removed: getAverageMonthlyKwhAttribute (use baseline_kwh instead)
+
     /**
-     * Computed average monthly kWh from latest EnergyProfile
+     * Get engineer approval status for facility (from its own column).
      */
-    public function getAverageMonthlyKwhAttribute()
+    public function getEngineerApprovedAttribute()
     {
-        // Always use first3months_data if available, even if DB value is zero
-        $first3mo = \DB::table('first3months_data')->where('facility_id', $this->id)->first();
-        if ($first3mo) {
-            $avg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-            return round($avg, 2);
-        }
-        $profile = $this->energyProfiles()->latest()->first();
-        return $profile ? $profile->average_monthly_kwh : 0;
+        return (bool) $this->attributes['engineer_approved'] ?? false;
     }
 
     /* =======================
@@ -134,7 +136,7 @@ class Facility extends Model
      ======================= */
 
     /**
-     * Auto-update latest EnergyProfile average
+     * Auto-update latest EnergyProfile aMAverage
      * when 3 records exist
      */
     public function updateProfileAverageFromRecords()
@@ -151,7 +153,7 @@ class Facility extends Model
             $profile = $this->energyProfiles()->latest()->first();
             if ($profile) {
                 $profile->update([
-                    'average_monthly_kwh' => $avg
+                    'baseline_kwh' => $avg
                 ]);
             }
         }
@@ -174,5 +176,18 @@ class Facility extends Model
         if (!$reading) return false;
 
         return $reading->kwh > ($this->baseline_kwh * 1.2);
+    }
+
+    /**
+     * Always get baseline_kwh from first 3 months data if available, else fallback to DB column
+     */
+    public function getBaselineKwhAttribute($value)
+    {
+        $first3mo = \DB::table('first3months_data')->where('facility_id', $this->id)->first();
+        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
+            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
+            return (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+        }
+        return $value;
     }
 }

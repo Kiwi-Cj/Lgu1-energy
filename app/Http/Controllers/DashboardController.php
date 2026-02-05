@@ -24,8 +24,9 @@ class DashboardController extends Controller
         } else {
             $totalFacilities = Facility::count();
         }
-        $totalKwh = EnergyRecord::whereMonth('created_at', now()->month)->sum('actual_kwh');
-        $totalCost = EnergyRecord::whereMonth('created_at', now()->month)->sum('energy_cost');
+        $currentYear = now()->year;
+        $totalKwh = EnergyRecord::where('year', $currentYear)->sum('actual_kwh');
+        $totalCost = EnergyRecord::where('year', $currentYear)->sum('energy_cost');
         // Count records with alert set to 'Medium' or 'High' for active alerts
         $activeAlerts = EnergyRecord::whereIn('alert', ['Medium', 'High'])
             ->whereMonth('created_at', now()->month)
@@ -38,15 +39,18 @@ class DashboardController extends Controller
         // 2. Charts
         $energyChartLabels = [];
         $energyChartData = [];
+        $baselineChartData = [];
         $costChartLabels = [];
         $costChartData = [];
         for ($i = 1; $i <= 6; $i++) {
             $month = now()->subMonths(6 - $i);
             $label = $month->format('M');
             $energyChartLabels[] = $label;
-            $energyChartData[] = EnergyRecord::whereMonth('created_at', $month->month)->sum('actual_kwh');
+            $energyChartData[] = EnergyRecord::where('year', $currentYear)->where('month', $month->month)->sum('actual_kwh');
+            // Dynamic baseline: sum of all facilities' baseline_kwh
+            $baselineChartData[] = Facility::all()->sum('baseline_kwh');
             $costChartLabels[] = $label;
-            $costChartData[] = Bill::whereMonth('created_at', $month->month)->sum('total_bill');
+            $costChartData[] = EnergyRecord::where('year', $currentYear)->where('month', $month->month)->sum('energy_cost');
         }
 
         // 2b. Top Energy-Consuming Facilities (current month)
@@ -54,15 +58,15 @@ class DashboardController extends Controller
         $currentYear = now()->year;
         $topFacilities = EnergyRecord::with('facility')
             ->selectRaw('facility_id, SUM(actual_kwh) as monthly_kwh')
-            ->whereMonth('created_at', $currentMonth)
-            ->whereYear('created_at', $currentYear)
+            ->where('year', $currentYear)
+            ->where('month', $currentMonth)
             ->groupBy('facility_id')
             ->orderByDesc('monthly_kwh')
             ->take(5)
             ->get()
             ->map(function($rec) {
                 $facility = $rec->facility;
-                $avgKwh = $facility ? ($facility->average_monthly_kwh ?? 0) : 0;
+                $avgKwh = $facility ? ($facility->baseline_kwh ?? 0) : 0;
                 $status = '-';
                 if ($avgKwh > 0) {
                     if ($rec->monthly_kwh > $avgKwh * 1.2) {
@@ -145,6 +149,47 @@ class DashboardController extends Controller
             $alerts[] = '🔴 Pending maintenance – ' . ($m->facility->name ?? 'Facility');
         }
 
+        // --- Dynamic kWh Trend Calculation (6 months) ---
+        $monthsToCompare = 6;
+        $currentMonths = collect();
+        $previousMonths = collect();
+        for ($i = 1; $i <= $monthsToCompare; $i++) {
+            $currentMonths->push([
+                'year' => now()->subMonths($monthsToCompare - $i)->year,
+                'month' => now()->subMonths($monthsToCompare - $i)->month
+            ]);
+            $previousMonths->push([
+                'year' => now()->subMonths($monthsToCompare * 2 - $i)->year,
+                'month' => now()->subMonths($monthsToCompare * 2 - $i)->month
+            ]);
+        }
+        $currentKwh = $currentMonths->sum(function($m) {
+            return EnergyRecord::where('year', $m['year'])->where('month', $m['month'])->sum('actual_kwh');
+        });
+        $previousKwh = $previousMonths->sum(function($m) {
+            return EnergyRecord::where('year', $m['year'])->where('month', $m['month'])->sum('actual_kwh');
+        });
+        if ($previousKwh > 0) {
+            $kwhTrend = (($currentKwh - $previousKwh) / $previousKwh) * 100;
+            $kwhTrend = ($kwhTrend >= 0 ? '+' : '') . number_format($kwhTrend, 1) . '%';
+        } else {
+            $kwhTrend = '';
+        }
+
+        // Insert alerts as notifications (if not already present)
+        foreach ($alerts as $alertMsg) {
+            // Check if this alert already exists for the user (avoid duplicates)
+            $exists = $user->notifications()->where('message', $alertMsg)->whereNull('read_at')->exists();
+            if (!$exists) {
+                $user->notifications()->create([
+                    'title' => 'System Alert',
+                    'message' => $alertMsg,
+                    'type' => 'alert',
+                ]);
+            }
+        }
+        $notifications = $user->notifications()->orderByDesc('created_at')->take(10)->get();
+        $unreadCount = $user->notifications()->whereNull('read_at')->count();
         return view('modules.dashboard.index', [
             'totalFacilities' => $totalFacilities,
             'totalKwh' => $totalKwh,
@@ -154,11 +199,15 @@ class DashboardController extends Controller
             'complianceStatus' => $complianceStatus,
             'energyChartLabels' => $energyChartLabels,
             'energyChartData' => $energyChartData,
+            'baselineChartData' => $baselineChartData,
             'costChartLabels' => $costChartLabels,
             'costChartData' => $costChartData,
             'recentLogs' => $recentLogs,
             'alerts' => $alerts,
             'topFacilities' => $topFacilities,
+            'kwhTrend' => $kwhTrend,
+            'notifications' => $notifications,
+            'unreadNotifCount' => $unreadCount,
         ]);
     }
 }

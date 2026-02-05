@@ -1,255 +1,258 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Creative - Start Bootstrap Theme</title>
-        <!-- Favicon-->
-        <link rel="icon" type="image/x-icon" href="<?php echo e(asset('assets/favicon.ico')); ?>" />
-        <!-- Bootstrap Icons-->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
-        <!-- Google fonts-->
-        <link href="https://fonts.googleapis.com/css?family=Merriweather+Sans:400,700" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic" rel="stylesheet" type="text/css" />
-        <!-- SimpleLightbox plugin CSS-->
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/SimpleLightbox/2.1.0/simpleLightBox.min.css" rel="stylesheet" />
-        <!-- Core theme CSS (includes Bootstrap)-->
-        <link href="<?php echo e(asset('css/styles.css')); ?>" rel="stylesheet" />
-    </head>
-    <body id="page-top">
-        <!-- Navigation-->
-        <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
-            <div class="container px-4 px-lg-5">
-                <a class="navbar-brand" href="#page-top">LGU Citizen Portal</a>
-                <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarResponsive">
-                    <ul class="navbar-nav ms-auto my-2 my-lg-0">
-                        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#portfolio">Requests</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                    </ul>
-                </div>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Energy System Portal</title>
+    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('img/logocityhall.png')); ?>" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f4f6fa;
+        }
+        .navbar {
+            background: rgba(255,255,255,0.98);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .navbar-brand img {
+            height: 38px;
+            margin-right: 10px;
+        }
+        .hero-section {
+            min-height: 90vh;
+            background: url('<?php echo e(asset('img/energy illustration.jpg')); ?>') center center/cover no-repeat;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-section h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            animation: fadeInDown 1s;
+        }
+        .hero-section p {
+            font-size: 1.25rem;
+            margin-bottom: 32px;
+            color: #e0e7ef;
+            animation: fadeInUp 1.2s;
+        }
+        .hero-section .btn-primary {
+            padding: 14px 38px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(55,98,200,0.12);
+            animation: fadeInUp 1.4s;
+        }
+        .hero-illustration {
+            width: 100%;
+            max-width: 480px;
+            margin: 40px auto 0 auto;
+            animation: fadeIn 2s;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .features-section {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            margin-top: -60px;
+            padding: 48px 0 32px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #3762c8;
+            margin-bottom: 18px;
+        }
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .partners-section {
+            background: #f8fafc;
+            padding: 32px 0 24px 0;
+        }
+        .partner-logo {
+            max-height: 48px;
+            margin: 0 24px;
+            opacity: 0.8;
+            filter: grayscale(1);
+            transition: filter 0.2s, opacity 0.2s;
+        }
+        .partner-logo:hover {
+            filter: grayscale(0);
+            opacity: 1;
+        }
+        .testimonials-section {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+            margin-top: 40px;
+            padding: 40px 0 32px 0;
+        }
+        .testimonial {
+            font-size: 1.08rem;
+            color: #374151;
+            margin-bottom: 18px;
+        }
+        .testimonial-author {
+            font-weight: 600;
+            color: #3762c8;
+            font-size: 1rem;
+        }
+        .footer {
+            background: #22223b;
+            color: #e0e7ef;
+            padding: 32px 0 18px 0;
+            text-align: center;
+            font-size: 1rem;
+            margin-top: 48px;
+        }
+        .footer a { color: #a5b4fc; text-decoration: underline; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light sticky-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src="<?php echo e(asset('img/logocityhall.png')); ?>" alt="Logo">
+            <span class="fw-bold" style="font-size:1.25rem;">Energy System Portal</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#partners">Partners</a></li>
+                <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<section class="hero-section">
+    <div class="container">
+        <h1>Energy System Portal</h1>
+        <p>Monitor, analyze, and manage your energy records and facilities in one secure, user-friendly platform.</p>
+        <a href="#features" class="btn btn-primary">Explore Features</a>
+    </div>
+</section>
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3 text-center">
+                <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                <div class="feature-title">Energy Monitoring</div>
+                <div class="text-muted">Track and analyze energy usage across all facilities in real time.</div>
             </div>
-        </nav>
-        <!-- Masthead-->
-        <header class="masthead">
-            <div class="container px-4 px-lg-5 h-100">
-                <div class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
-                    <div class="col-lg-8 align-self-end">
-                        <h1 class="text-white font-weight-bold">Welcome to LGU Infrastructure And Utilities Services</h1>
-                        <hr class="divider" />
-                    </div>
-                    <div class="col-lg-8 align-self-baseline">
-                        <p class="text-white-75 mb-5">Access community infrastructure maintenance requests and track progress securely.</p>
-                        <a class="btn btn-primary btn-xl" href="#about">Find Out More</a>
-                    </div>
-                </div>
+            <div class="col-md-3 text-center">
+                <div class="feature-icon"><i class="fa-solid fa-building"></i></div>
+                <div class="feature-title">Facility Management</div>
+                <div class="text-muted">Manage, maintain, and optimize all energy-related facilities efficiently.</div>
             </div>
-        </header>
-        <!-- About-->
-        <section class="page-section bg-primary" id="about">
-            <div class="container px-4 px-lg-5">
-                <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <div class="col-lg-8 text-center">
-                        <h2 class="text-white mt-0">About LGU</h2>
-                        <hr class="divider divider-light" />
-                        <p class="text-white-75 mb-4">The LGU Infrastructure and Utilities Service is dedicated to managing, maintaining, and improving essential public facilities to ensure safe, reliable, and efficient community services. Our goal is to streamline maintenance operations, enhance infrastructure responsiveness, and provide residents with transparent access to service updates and support.</p>
-                        <a class="btn btn-light btn-xl" href="#services">Request Service</a>
-                    </div>
-                </div>
+            <div class="col-md-3 text-center">
+                <div class="feature-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="feature-title">Reports & Analytics</div>
+                <div class="text-muted">Generate reports and gain insights for better decision-making.</div>
             </div>
-        </section>
-        <!-- Services-->
-        <section class="page-section" id="services">
-            <div class="container px-4 px-lg-5">
-                <h2 class="text-center mt-0">Community Facilities & Services</h2>
-                <hr class="divider" />
-                <div class="row gx-4 gx-lg-5">
-                    <div class="col-lg-3 col-md-6 text-center">
-                        <div class="mt-5">
-                            <div class="mb-2"><i class="bi-globe fs-1 text-primary"></i></div>
-                            <h3 class="h4 mb-2">Efficient Service</h3>
-                            <p class="text-muted mb-0">Known for quick and responsive handling of public concerns.</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 text-center">
-                        <div class="mt-5">
-                            <div class="mb-2"><i class="bi-laptop fs-1 text-primary"></i></div>
-                            <h3 class="h4 mb-2">Strong Management</h3>
-                            <p class="text-muted mb-0">The city actively invests in road improvements, and utilities.</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 text-center">
-                        <div class="mt-5">
-                            <div class="mb-2"><i class="bi-heart fs-1 text-primary"></i></div>
-                            <h3 class="h4 mb-2">Sustainability</h3>
-                            <p class="text-muted mb-0">Supports eco-friendly programs such as waste management and green spaces.</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 text-center">
-                        <div class="mt-5">
-                            <div class="mb-2"><i class="bi-phone fs-1 text-primary"></i></div>
-                            <h3 class="h4 mb-2">Digital Innovation</h3>
-                            <p class="text-muted mb-0">Embraces technology through online processing, and automated monitoring.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Portfolio-->
-        <div id="portfolio">
-            <div class="container-fluid p-0">
-                <div class="row g-0">
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/1.jpg" title="Quezon City Hall">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/1.jpg" alt="..." />
-                            <div class="portfolio-box-caption">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">Quezon City Hall</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/2.jpg" title="Quezon City Council Legislative Building">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/2.jpg" alt="..." />
-                            <div class="portfolio-box-caption">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">Quezon City Council Legislative Building</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/3.jpg" title="Quezon City Public Library – Main">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/3.jpg" alt="..." />
-                            <div class="portfolio-box-caption">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">Quezon City Public Library – Main</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/4.jpg" title="QC MICE Center / Convention Center">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/4.jpg" alt="..." />
-                            <div class="portfolio-box-caption">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">QC MICE Center / Convention Center</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/5.jpg" title="Quezon City Hall Public Plaza & Parking">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/5.jpg" alt="..." />
-                            <div class="portfolio-box-caption">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">Quezon City Hall Public Plaza & Parking</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a class="portfolio-box" href="assets/img/portfolio/fullsize/6.jpg" title="Citizen One‑Stop Service Center QC">
-                            <img class="img-fluid" src="assets/img/portfolio/thumbnails/6.jpg" alt="..." />
-                            <div class="portfolio-box-caption p-3">
-                                <div class="project-category text-white-50">Facility</div>
-                                <div class="project-name">Citizen One‑Stop Service Center QC</div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+            <div class="col-md-3 text-center">
+                <div class="feature-icon"><i class="fa-solid fa-user-shield"></i></div>
+                <div class="feature-title">Secure Access</div>
+                <div class="text-muted">Role-based access for staff and administrators with strong security.</div>
             </div>
         </div>
-        <!-- Contact-->
-        <section class="page-section" id="contact">
-            <div class="container px-4 px-lg-5">
-                <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <div class="col-lg-8 col-xl-6 text-center">
-                        <h2 class="mt-0">Let's Get In Touch!</h2>
-                        <hr class="divider" />
-                        <p class="text-muted mb-5">Have a concern or inquiry for Quezon City services? Send us a message and our team will respond as soon as possible to assist you.</p>
-                    </div>
-                </div>
-                <div class="row gx-4 gx-lg-5 justify-content-center mb-5">
-                    <div class="col-lg-6">
-                        <!-- * * * * * * * * * * * * * * *-->
-                        <!-- * * SB Forms Contact Form * *-->
-                        <!-- * * * * * * * * * * * * * * *-->
-                        <!-- This form is pre-integrated with SB Forms.-->
-                        <!-- To make this form functional, sign up at-->
-                        <!-- https://startbootstrap.com/solution/contact-forms-->
-                        <!-- to get an API token!-->
-                        <form id="contactForm" data-sb-form-api-token="API_TOKEN">
-                            <!-- Name input-->
-                            <div class="form-floating mb-3">
-                                <input class="form-control" id="name" type="text" placeholder="Enter your name..." data-sb-validations="required" />
-                                <label for="name">Full name</label>
-                                <div class="invalid-feedback" data-sb-feedback="name:required">A name is required.</div>
-                            </div>
-                            <!-- Email address input-->
-                            <div class="form-floating mb-3">
-                                <input class="form-control" id="email" type="email" placeholder="name@example.com" data-sb-validations="required,email" />
-                                <label for="email">Email address</label>
-                                <div class="invalid-feedback" data-sb-feedback="email:required">An email is required.</div>
-                                <div class="invalid-feedback" data-sb-feedback="email:email">Email is not valid.</div>
-                            </div>
-                            <!-- Phone number input-->
-                            <div class="form-floating mb-3">
-                                <input class="form-control" id="phone" type="tel" placeholder="(123) 456-7890" data-sb-validations="required" />
-                                <label for="phone">Phone number</label>
-                                <div class="invalid-feedback" data-sb-feedback="phone:required">A phone number is required.</div>
-                            </div>
-                            <!-- Message input-->
-                            <div class="form-floating mb-3">
-                                <textarea class="form-control" id="message" type="text" placeholder="Enter your message here..." style="height: 10rem" data-sb-validations="required"></textarea>
-                                <label for="message">Message</label>
-                                <div class="invalid-feedback" data-sb-feedback="message:required">A message is required.</div>
-                            </div>
-                            <!-- Submit success message-->
-                            <!---->
-                            <!-- This is what your users will see when the form-->
-                            <!-- has successfully submitted-->
-                            <div class="d-none" id="submitSuccessMessage">
-                                <div class="text-center mb-3">
-                                    <div class="fw-bolder">Form submission successful!</div>
-                                    To activate this form, sign up at
-                                    <br />
-                                    <a href="https://startbootstrap.com/solution/contact-forms">https://startbootstrap.com/solution/contact-forms</a>
-                                </div>
-                            </div>
-                            <!-- Submit error message-->
-                            <!---->
-                            <!-- This is what your users will see when there is-->
-                            <!-- an error submitting the form-->
-                            <div class="d-none" id="submitErrorMessage"><div class="text-center text-danger mb-3">Error sending message!</div></div>
-                            <!-- Submit Button-->
-                            <div class="d-grid"><button class="btn btn-primary btn-xl disabled" id="submitButton" type="submit">Submit</button></div>
-                        </form>
-                    </div>
-                </div>
-                <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <div class="col-lg-4 text-center mb-5 mb-lg-0">
-                        <i class="bi-phone fs-2 mb-3 text-muted"></i>
-                        <div>+1 (555) 123-4567</div>
-                    </div>
-                </div>
+    </div>
+</section>
+<section class="partners-section" id="partners">
+    <div class="container text-center">
+        <h3 class="mb-4">Our Partners</h3>
+        <div class="d-flex flex-wrap justify-content-center align-items-center gap-4">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_Meralco.png" class="partner-logo" alt="Meralco" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Department_of_Energy_%28DOE%29.png" class="partner-logo" alt="DOE" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Quezon_City_Logo.png" class="partner-logo" alt="Quezon City" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Philippine_Energy_Regulatory_Commission_%28ERC%29.png" class="partner-logo" alt="ERC" loading="lazy">
+        </div>
+    </div>
+</section>
+<section class="testimonials-section" id="testimonials">
+    <div class="container">
+        <h3 class="text-center mb-5">What Our Users Say</h3>
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="testimonial">“The Energy System Portal made our facility monitoring so much easier and more transparent. Highly recommended!”</div>
+                <div class="testimonial-author">— Facility Manager, City Hall</div>
             </div>
-        </section>
-        <!-- Footer-->
-        <footer class="bg-light py-5">
-            <div class="container px-4 px-lg-5"><div class="small text-center text-muted">© 2025 LGU Citizen Portal · All Rights Reserved</div></div>
-        </footer>
-        <!-- Bootstrap core JS-->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-        <!-- SimpleLightbox plugin JS-->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/SimpleLightbox/2.1.0/simpleLightbox.min.js"></script>
-        <!-- Core theme JS-->
-        <script src="js/scripts.js"></script>
-        <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
-        <!-- * *                               SB Forms JS                               * *-->
-        <!-- * * Activate your form at https://startbootstrap.com/solution/contact-forms * *-->
-        <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
-        <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
-    </body>
+            <div class="col-md-4">
+                <div class="testimonial">“We love the analytics and reporting features. It helps us make data-driven decisions for energy savings.”</div>
+                <div class="testimonial-author">— Energy Officer, Public School</div>
+            </div>
+            <div class="col-md-4">
+                <div class="testimonial">“Secure and easy to use. Our staff can now access records anytime, anywhere.”</div>
+                <div class="testimonial-author">— Admin, Local Government</div>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="container my-5" id="contact">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 text-center">
+            <h2 class="mb-3">Get in Touch</h2>
+            <p class="mb-4 text-muted">Have a concern or inquiry? Send us a message and our team will respond as soon as possible to assist you.</p>
+            <form>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" placeholder="Full Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="email" class="form-control" placeholder="Email Address" required>
+                    </div>
+                    <div class="col-12">
+                        <textarea class="form-control" rows="4" placeholder="Your Message" required></textarea>
+                    </div>
+                    <div class="col-12 d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+<footer class="footer">
+    <div class="container">
+        <div class="mb-2">© 2026 Energy System Portal · All Rights Reserved</div>
+        <div>For support, email <a href="mailto:support@energysystem.com">support@energysystem.com</a> or call <a href="tel:+15551234567">+1 (555) 123-4567</a></div>
+        <div class="mt-2">
+            <a href="#" class="me-3"><i class="fab fa-facebook fa-lg"></i></a>
+            <a href="#" class="me-3"><i class="fab fa-twitter fa-lg"></i></a>
+            <a href="#"><i class="fab fa-linkedin fa-lg"></i></a>
+        </div>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
 <?php /**PATH C:\xampp\htdocs\energy-system\resources\views/welcome.blade.php ENDPATH**/ ?>

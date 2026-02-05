@@ -36,8 +36,8 @@ class FacilityController extends Controller
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/facility_images', $imageName);
-            $validated['image'] = 'facility_images/' . $imageName;
+            $image->move(public_path('img'), $imageName);
+            $validated['image'] = 'img/' . $imageName;
         }
 
         $facility->update($validated);
@@ -67,8 +67,8 @@ class FacilityController extends Controller
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/facility_images', $imageName);
-            $validated['image'] = 'facility_images/' . $imageName;
+            $image->move(public_path('img'), $imageName);
+            $validated['image'] = 'img/' . $imageName;
         }
 
         $facility = Facility::create($validated);
@@ -81,12 +81,17 @@ class FacilityController extends Controller
     public function edit($id)
     {
         $facility = Facility::findOrFail($id);
-        return view('modules.facilities.edit', compact('facility'));
+        $user = auth()->user();
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.facilities.edit', compact('facility', 'notifications', 'unreadNotifCount'));
     }
     public function show($id)
     {
         $facility = Facility::findOrFail($id);
-
+        $user = auth()->user();
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         // Try to get first3months_data
         $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
         $avgKwh = null;
@@ -103,8 +108,7 @@ class FacilityController extends Controller
                 $showAvg = true;
             }
         }
-
-        return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg'));
+        return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg', 'notifications', 'unreadNotifCount'));
     }
     private function isSuperAdmin()
     {
@@ -179,12 +183,17 @@ class FacilityController extends Controller
             return $facility;
         });
 
+        $user = auth()->user();
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.facilities.index', [
             'facilities' => $facilitiesWithAvg,
             'totalFacilities' => $facilities->count(),
             'activeFacilities' => $facilities->where('status', 'active')->count(),
             'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
             'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
+            'notifications' => $notifications,
+            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 
@@ -204,22 +213,26 @@ class FacilityController extends Controller
         \Log::info('modalDetail called', ['facility_id' => $id]);
 
         // BASELINE
+        // Always use first3months_data for baseline if available and valid
+        $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
         $avgKwh = null;
-        if ($profile && $profile->average_monthly_kwh && $profile->baseline_locked) {
-            $avgKwh = $profile->average_monthly_kwh;
+        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
+            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
+            $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+        } elseif ($profile && $profile->baseline_kwh && $profile->baseline_locked) {
+            $avgKwh = $profile->baseline_kwh;
         } elseif ($energyRecords->count() >= 3) {
             $avgKwh = round($energyRecords->take(3)->avg('kwh_consumed'), 2);
-
             if ($profile) {
                 $profile->update([
-                    'average_monthly_kwh' => $avgKwh,
+                    'baseline_kwh' => $avgKwh,
                     'baseline_locked' => true,
                     'baseline_source' => 'computed',
                 ]);
             } else {
                 try {
                     $created = $facility->energyProfiles()->create([
-                        'average_monthly_kwh' => $avgKwh,
+                        'baseline_kwh' => $avgKwh,
                         'baseline_locked' => true,
                         'baseline_source' => 'computed',
                         'electric_meter_no' => 'N/A',
@@ -304,22 +317,26 @@ class FacilityController extends Controller
             ->orderBy('scheduled_date', 'asc')->first();
 
         return response()->json([
-            'facility' => $facility->name,
-            'barangay' => $facility->barangay,
-            'baseline_kwh' => $avgKwh,
-            'baseline_status' => $profile && $profile->baseline_locked ? 'Approved Baseline' : 'Temporary Baseline',
-            'engineer_approved' => $profile ? (bool)$profile->engineer_approved : false,
-            'trend_labels' => $trendLabels,
-            'trend_data' => $trendData,
-            'trend_analysis' => $trendAnalysis,
-            'usage' => $usageRows,
-            'monthly_eui' => $monthlyEui,
-            'annual_eui' => $annualEui,
-            'last_maintenance' => $lastMaint ? $lastMaint->completed_date : null,
-            'next_maintenance' => $nextMaint ? $nextMaint->scheduled_date : null,
-            'recommendations' => $recommendations,
-            'disclaimer' => 'System-generated analysis. Subject to validation by assigned LGU personnel.',
-        ]);
+                'facility' => $facility->name,
+                'type' => $facility->type,
+                'address' => $facility->address,
+                'barangay' => $facility->barangay,
+                'status' => $facility->status,
+                'baseline_kwh' => $avgKwh,
+                'baseline_status' => $profile && $profile->baseline_locked ? 'Approved Baseline' : 'Temporary Baseline',
+                'engineer_approved' => $profile ? (bool)$profile->engineer_approved : false,
+                'trend_labels' => $trendLabels,
+                'trend_data' => $trendData,
+                'trend_analysis' => $trendAnalysis,
+                'usage' => $usageRows,
+                'monthly_eui' => $monthlyEui,
+                'annual_eui' => $annualEui,
+                'last_maintenance' => $lastMaint ? $lastMaint->completed_date : null,
+                'next_maintenance' => $nextMaint ? $nextMaint->scheduled_date : null,
+                'recommendations' => $recommendations,
+                'disclaimer' => 'System-generated analysis. Subject to validation by assigned LGU personnel.',
+                'image_url' => $facility->image ? (strpos($facility->image, 'img/') === 0 ? asset($facility->image) : asset('storage/'.$facility->image)) : null,
+            ]);
     }
 
     /* =========================
@@ -362,7 +379,7 @@ class FacilityController extends Controller
 
         if ($profile) {
             $profile->update([
-                'average_monthly_kwh' => null,
+                'baseline_kwh' => null,
                 'baseline_locked' => false,
                 'baseline_source' => null,
             ]);
@@ -381,27 +398,20 @@ class FacilityController extends Controller
     }
 
     /* =========================
-        ENGINEER APPROVAL TOGGLE
+        ENGINEER APPROVAL TOGGLE (FACILITY)
     ========================== */
     public function toggleEngineerApproval($id)
     {
-        $profile = Facility::findOrFail($id)->energyProfiles()->latest()->first();
-
-        if (!$profile) {
-            return response()->json(['success' => false, 'message' => 'No energy profile found.'], 404);
-        }
-
+        $facility = Facility::findOrFail($id);
         if (!$this->isEngineer() && !$this->isSuperAdmin()) {
             return response()->json(['success' => false, 'message' => 'Only engineers or super admins can approve.'], 403);
         }
-
-        $profile->engineer_approved = !$profile->engineer_approved;
-        $profile->save();
-
+        $facility->engineer_approved = !$facility->engineer_approved;
+        $facility->save();
         return response()->json([
             'success' => true,
             'message' => 'Engineer approval status toggled.',
-            'engineer_approved' => $profile->engineer_approved
+            'engineer_approved' => $facility->engineer_approved
         ]);
     }
 
@@ -417,7 +427,7 @@ class FacilityController extends Controller
 
         $report = $facilities->map(function($f) use ($month, $year) {
             $record = $f->energyRecords()->where('month', $month)->where('year', $year)->first();
-            $avg = $f->energyProfiles()->latest()->first()?->average_monthly_kwh;
+            $avg = $f->energyProfiles()->latest()->first()?->baseline_kwh;
 
             return [
                 'facility' => $f->name,

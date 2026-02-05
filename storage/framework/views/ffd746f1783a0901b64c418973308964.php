@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Energy Actions'); ?>
 <?php $__env->startSection('content'); ?>
 <?php

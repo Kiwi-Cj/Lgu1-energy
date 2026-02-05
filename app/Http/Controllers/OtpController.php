@@ -89,6 +89,12 @@ class OtpController extends Controller
         }
 
         $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user || strtolower($user->status) !== 'active') {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json(['message' => 'Your account is inactive. Please contact the administrator.'], 401);
+            }
+            return back()->withErrors(['otp' => 'Your account is inactive. Please contact the administrator.']);
+        }
         \Log::info('OTP USER LOOKUP', ['user' => $user ? $user->toArray() : null]);
 
         if (!$user) {

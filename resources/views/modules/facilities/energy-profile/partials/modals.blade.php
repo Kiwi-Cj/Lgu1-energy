@@ -10,7 +10,7 @@
 </style>
 
 <!-- ADD ENERGY PROFILE MODAL -->
-<div id="addEnergyProfileModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:9999;">
+<div id="addEnergyProfileModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:9999;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(30,41,59,0.18);">
 	<div class="modal-content" style="max-width:520px;background:#fff;border-radius:18px;padding:32px 28px;position:relative;">
 		<button class="modal-close" type="button" onclick="closeAddEnergyProfileModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
 
@@ -42,11 +42,11 @@
 					<input type="text" name="contract_account_no" required style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
 				</div>
 				<div style="flex:1;">
-					<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Average Monthly kWh</label>
-					<input type="number" name="average_monthly_kwh" value="{{ isset($avgKwh) ? number_format($avgKwh, 2, '.', '') : '' }}" readonly style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
-					@if(empty($avgKwh))
-						<div style="font-size:0.97rem;color:#b91c1c;margin-top:2px;">No average kWh available for this facility.</div>
-					@endif
+                    <label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Baseline kWh</label>
+                    <input type="number" name="baseline_kwh" value="{{ isset($avgKwh) ? number_format($avgKwh, 2, '.', '') : '' }}" readonly style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+                    @if(empty($avgKwh))
+                        <div style="font-size:0.97rem;color:#b91c1c;margin-top:2px;">No baseline kWh available for this facility.</div>
+                    @endif
 				</div>
 			</div>
 			<div style="display:flex;gap:14px;">
@@ -88,6 +88,18 @@
 					<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Number of Meters</label>
 					<input type="number" name="number_of_meters" required style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
 				</div>
+			</div>
+			<div>
+				<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Baseline Source</label>
+				<select name="baseline_source" required style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+					<option value="">Select Source</option>
+					<option value="historical_data">Historical Data</option>
+					<option value="manual_entry">Manual Entry</option>
+					<option value="utility_bill">Utility Bill</option>
+					<option value="system_estimate">System Estimate</option>
+					<option value="initial_survey">Initial Survey</option>
+					<option value="other">Other</option>
+				</select>
 			</div>
 			<div style="display:flex;gap:12px;margin-top:8px;">
 				<button type="button" class="energy-modal-btn cancel" onclick="closeAddEnergyProfileModal()" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>

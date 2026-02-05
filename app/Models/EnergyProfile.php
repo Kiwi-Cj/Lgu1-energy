@@ -15,12 +15,13 @@ class EnergyProfile extends Model
         'electric_meter_no',
         'utility_provider',
         'contract_account_no',
-        'average_monthly_kwh',
+        'baseline_kwh',
         'main_energy_source',
         'backup_power',
         'transformer_capacity',
         'number_of_meters',
         'bill_image', // allow saving bill_image if present
+        'baseline_source',
     ];
 
 

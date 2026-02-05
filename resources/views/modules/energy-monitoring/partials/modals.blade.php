@@ -59,7 +59,7 @@ function closeDeleteMonthlyRecordModal() {
             <input type="text" name="electric_meter_no" placeholder="Electric Meter No." required>
             <input type="text" name="utility_provider" placeholder="Utility Provider" required>
             <input type="text" name="contract_account_no" placeholder="Contract Account No." required>
-            <input type="number" name="average_monthly_kwh" placeholder="Average Monthly kWh" required>
+            <input type="number" name="baseline_kwh" placeholder="Baseline kWh" required>
             <button type="submit">Add</button>
         </form>
     </div>
@@ -97,14 +97,14 @@ document.querySelector('.btn-add-monthly-record')?.addEventListener('click', fun
     document.getElementById('addMonthlyRecordModal').classList.add('show-modal');
 });
 
-// Map of facility_id to average_monthly_kwh (from backend)
+// Map of facility_id to baseline_kwh (from backend)
 const facilityAverages = {
 @foreach($facilities as $facility)
-    {{ $facility->id }}: {{ $facility->energyProfiles->last()?->average_monthly_kwh ?? 0 }},
+    {{ $facility->id }}: {{ $facility->energyProfiles->last()?->baseline_kwh ?? 0 }},
 @endforeach
 };
 const facilitySelect = document.querySelector('select[name="facility_id"]');
-const avgInput = document.getElementById('average_monthly_kwh_input');
+const avgInput = document.getElementById('baseline_kwh_input');
 if (facilitySelect && avgInput) {
     facilitySelect.addEventListener('change', function() {
         const avg = facilityAverages[this.value] || '';

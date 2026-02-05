@@ -23,7 +23,7 @@ class EnergyDemoSeeder extends Seeder
                 'electric_meter_no' => 'EM-' . rand(1000, 9999),
                 'utility_provider' => 'Meralco',
                 'contract_account_no' => 'CA-' . rand(10000, 99999),
-                'average_monthly_kwh' => rand(800, 1200),
+                'baseline_kwh' => rand(800, 1200),
                 'main_energy_source' => 'Meralco',
                 'backup_power' => 'Generator',
                 'number_of_meters' => rand(1, 3),

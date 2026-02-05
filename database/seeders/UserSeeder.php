@@ -11,6 +11,10 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
+        // Disable foreign key checks, truncate users, then re-enable
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('users')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         DB::table('users')->insert([
             [
                 'full_name' => 'Admin User',
@@ -27,7 +31,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'full_name' => 'Super Admin',
-                'email' => 'superadmin@example.com',
+                'email' => 'johnchristianvaldez23@gmail.com',
                 'username' => 'superadmin',
                 'password' => Hash::make('superadmin123'),
                 'role' => 'super admin',

@@ -1,7 +1,7 @@
 @extends('layouts.qc-admin')
 @section('title', 'Efficiency Summary Report')
 @section('content')
-<div style="max-width:1100px;margin:0 auto;">
+<div style="width:100%;margin:0;">
     <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin-bottom:18px;">⚡ 3️⃣ Efficiency Summary Report</h2>
     <p style="color:#555;margin-bottom:24px;">Summary of energy efficiency across all facilities.</p>
     <!-- FILTERS -->
@@ -11,18 +11,17 @@
             <select name="facility_id" id="facility_id" class="form-control" style="min-width:170px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
                 <option value="">All Facilities</option>
                 @foreach($facilities ?? [] as $facility)
-                    <option value="{{ $facility->id }}" @if(request('facility_id') == $facility->id) selected @endif>{{ $facility->name }}</option>
+                    <option value="{{ $facility->id }}" {{ (isset($selectedFacility) && $selectedFacility == $facility->id) ? 'selected' : '' }}>{{ $facility->name }}</option>
                 @endforeach
             </select>
         </div>
         <div style="display:flex;flex-direction:column;">
             <label for="rating" style="font-weight:700;margin-bottom:4px;">Rating</label>
             <select name="rating" id="rating" class="form-control" style="min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                <option value="" disabled selected hidden>Select Rating</option>
-                <option value="all" @if(request('rating') == 'all' || request('rating') == '') selected @endif>All Ratings</option>
-                <option value="High" @if(request('rating') == 'High') selected @endif>High</option>
-                <option value="Medium" @if(request('rating') == 'Medium') selected @endif>Medium</option>
-                <option value="Low" @if(request('rating') == 'Low') selected @endif>Low</option>
+                <option value="all" {{ (isset($selectedRating) && ($selectedRating == 'all' || $selectedRating == '')) ? 'selected' : '' }}>All Ratings</option>
+                <option value="High" {{ (isset($selectedRating) && $selectedRating == 'High') ? 'selected' : '' }}>High</option>
+                <option value="Medium" {{ (isset($selectedRating) && $selectedRating == 'Medium') ? 'selected' : '' }}>Medium</option>
+                <option value="Low" {{ (isset($selectedRating) && $selectedRating == 'Low') ? 'selected' : '' }}>Low</option>
             </select>
         </div>
         <div style="display:flex;flex-direction:column;justify-content:flex-end;">

@@ -5,9 +5,9 @@
         <button class="otp-close" onclick="closeOtpModalAuto()" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
-        <img src="{{ asset('img/logocityhall.png') }}" class="otp-logo" alt="LGU Logo">
+        <img src="{{ asset('img/logocityhall.jpg') }}" class="otp-logo" alt="LGU Logo">
         <h2 class="otp-title">Verify Your Identity</h2>
-        <div id="otpTimer" class="otp-timer">03:00</div>
+        <div id="otpTimer" class="otp-timer">01:00</div>
         <p class="otp-desc">Enter the One-Time Password (OTP) sent to your email.</p>
         <form id="otpModalAutoForm" method="POST" action="{{ route('otp.verify.submit') }}">
             @csrf
@@ -15,7 +15,7 @@
             <input type="text" name="otp" maxlength="6" required autocomplete="one-time-code" placeholder="Enter 6-digit code" class="otp-input pro">
             <button type="submit" id="otpVerifyBtn" class="otp-btn pro">Verify OTP</button>
         </form>
-        <button type="button" id="otpResendBtn" class="otp-btn pro" style="margin-top:8px;background:#e0e7ef;color:#2563eb;" onclick="resendOtpAuto()">Resend OTP</button>
+        <button type="button" id="otpResendBtn" class="otp-btn pro" style="margin-top:8px;background:#e0e7ef;color:#2563eb;" onclick="resendOtpAuto()" disabled>Resend OTP</button>
         <div id="otpResendMsg" class="otp-success" style="display:none;margin-top:10px;"></div>
         </form>
         <div id="otpExpiredMsg" class="otp-error" style="display:none">OTP expired. Please request a new code.</div>
@@ -185,29 +185,33 @@ h2 {
 
 
 <script>
-
 let resendCooldown = false;
 let resendTimeout;
 let resendInterval;
 const RESEND_COOLDOWN = 60; // seconds
 
-
 function resendOtpAuto() {
     if (resendCooldown) return;
     const btn = document.getElementById('otpResendBtn');
-    const email = document.getElementById('otpModalAutoEmail').value;
+    const emailInput = document.getElementById('otpModalAutoEmail');
     const msgDiv = document.getElementById('otpResendMsg');
+    if (!btn || !emailInput || !msgDiv) return;
     btn.disabled = true;
     btn.textContent = 'Sending...';
     msgDiv.style.display = 'none';
+    let csrfToken = '';
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+        csrfToken = csrfMeta.getAttribute('content');
+    }
     fetch('/otp/resend', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            'X-CSRF-TOKEN': csrfToken,
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: emailInput.value }),
         credentials: 'same-origin'
     })
     .then(res => res.json())
@@ -251,8 +255,9 @@ function resendOtpAuto() {
     });
 }
 
+
 let otpInterval;
-const OTP_DURATION = 180; // 3 minutes in seconds
+const OTP_DURATION = 60; // 1 minute in seconds
 const OTP_TIMER_KEY = 'otp_timer_start';
 function getOtpSecondsLeft() {
     const start = parseInt(localStorage.getItem(OTP_TIMER_KEY), 10);
@@ -289,6 +294,7 @@ function startOtpTimer() {
     const timer = document.getElementById('otpTimer');
     const btn = document.getElementById('otpVerifyBtn');
     const expired = document.getElementById('otpExpiredMsg');
+    const resendBtn = document.getElementById('otpResendBtn');
 
     clearInterval(otpInterval);
     btn.disabled = false;
@@ -300,6 +306,11 @@ function startOtpTimer() {
         let m = Math.floor(secondsLeft / 60);
         let s = secondsLeft % 60;
         timer.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        if (resendBtn) {
+            resendBtn.disabled = secondsLeft > 0;
+            resendBtn.style.background = secondsLeft > 0 ? '#cbd5e1' : '#e0e7ef';
+            resendBtn.style.color = secondsLeft > 0 ? '#64748b' : '#2563eb';
+        }
         if (secondsLeft <= 0) {
             clearInterval(otpInterval);
             timer.textContent = 'OTP expired';

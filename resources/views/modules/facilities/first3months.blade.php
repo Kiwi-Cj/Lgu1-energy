@@ -180,7 +180,7 @@ function editEnergyProfile(btn) {
 	document.getElementById('edit_electric_meter_no').value = btn.getAttribute('data-electric_meter_no');
 	document.getElementById('edit_utility_provider').value = btn.getAttribute('data-utility_provider');
 	document.getElementById('edit_contract_account_no').value = btn.getAttribute('data-contract_account_no');
-	document.getElementById('edit_average_monthly_kwh').value = btn.getAttribute('data-average_monthly_kwh');
+    document.getElementById('edit_baseline_kwh').value = btn.getAttribute('data-baseline_kwh');
 	document.getElementById('edit_main_energy_source').value = btn.getAttribute('data-main_energy_source');
 	document.getElementById('edit_backup_power').value = btn.getAttribute('data-backup_power');
 	document.getElementById('edit_transformer_capacity').value = btn.getAttribute('data-transformer_capacity');
