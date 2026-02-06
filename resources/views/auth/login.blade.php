@@ -48,20 +48,26 @@ body::before {
 
 <body>
 
+
 <header class="nav">
-    <div class="nav-logo">🏛️ Local Government Unit Portal</div>
+    <div class="nav-logo" style="font-size:1.45rem;font-weight:700;letter-spacing:1px;color:#fff;">
+        Energy Efficiency System
+    </div>
     <div class="nav-links">
-        <a href="">Home</a>
+        <a href="/">Home</a>
     </div>
 </header>
 
 <div class="wrapper">
     <div class="card">  
 
-        <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" style="border-radius:50%;box-shadow:0 2px 8px rgba(49,46,129,0.10);width:110px;height:110px;object-fit:cover;">
 
-        <h2 class="title">Energy Efficiency</h2>
-        <p class="subtitle">Secure access to community maintenance services.</p>
+        <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" style="border-radius:50%;box-shadow:0 2px 8px rgba(49,46,129,0.10);width:110px;height:110px;object-fit:cover;">
+        <h2 class="title" style="font-size:2rem;font-weight:700;color:#111;margin:18px 0 0 0;">Energy Efficiency</h2>
+        <div style="font-size:1.15rem;color:#222;margin-bottom:10px;font-weight:400;text-align:center;line-height:1.35;">
+            Smart energy management.<br>
+            Secure maintenance access.
+        </div>
 
         <div id="loginError" style="display:none;margin-bottom:16px;padding:10px 16px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-weight:500;text-align:center;"></div>
         <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -116,7 +122,7 @@ body::before {
     </div>
 
     <div class="footer-logo">
-        © 2025 LGU Citizen Portal · All Rights Reserved
+        © 2025 Energy Efficiency System · All Rights Reserved
     </div>
 
 </footer>
