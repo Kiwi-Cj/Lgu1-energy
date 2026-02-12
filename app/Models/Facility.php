@@ -30,7 +30,7 @@ class Facility extends Model
         'year_built',
         'operating_hours',
         'status',
-        'image',
+        'image_path',
         'baseline_status',
         'baseline_kwh',
         'baseline_start_date',

@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         \App\Models\Facility::factory()->count(5)->create();
         $this->call([
-            UserSeeder::class,
+            UsersTableSeeder::class,
             // NotificationSeeder::class, // Removed as requested
             // EnergyRecordSeeder::class, // Removed because it does not exist
         ]);

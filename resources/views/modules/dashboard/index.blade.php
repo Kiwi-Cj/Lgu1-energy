@@ -1,226 +1,281 @@
 @extends('layouts.qc-admin')
+@section('title', 'Dashboard Overview')
 
 @section('content')
+<style>
+    /* --- Shared Dashboard UI Aesthetic --- */
+    .report-card-container {
+        background: #fff; 
+        border-radius: 18px; 
+        box-shadow: 0 2px 12px rgba(31,38,135,0.06); 
+        padding: 30px;
+        margin-bottom: 2rem;
+        font-family: 'Inter', sans-serif;
+    }
 
-<!-- 🔹 PAGE HEADER (Facility-style) -->
-<div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-    <div>
-        <h1 style="font-size:2.2rem;font-weight:700;color:#3762c8;margin:0;">LGU Energy Efficiency & Conservation Management System</h1>
-        <div style="font-size:1.2rem;color:#555;">Dashboard Overview</div>
-        <div style="margin-top:4px;font-size:0.95rem;color:#777;">
-            Reporting Period: <strong>{{ $reportStart ?? 'January 2025' }}</strong> – <strong>{{ $reportEnd ?? 'March 2025' }}</strong>
-        </div>
-        <div style="font-size:0.9rem;color:#888;">
-            {{ date('F j, Y') }} | Role: {{ Auth::user()->role ?? 'User' }}
-        </div>
-    </div>
-</div>
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        padding: 24px;
+        border-radius: 16px;
+        transition: transform 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.02);
+    }
 
-<!-- 🔹 SUMMARY KPI CARDS -->
-<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:2rem;">
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
 
-    <div class="card" style="flex:1;min-width:220px;background:#f5f8ff;box-shadow:0 4px 16px rgba(55,98,200,0.08);padding:24px 20px 20px 20px;border-radius:18px;">
-        <div style="color:#3762c8;font-weight:700;letter-spacing:0.5px;">🏢 Total Facilities</div>
-        <div style="font-size:2.2rem;font-weight:800;color:#3762c8;">{{ $totalFacilities ?? 0 }}</div>
-    </div>
+    .chart-container {
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 18px;
+        border: 1px solid #f1f5f9;
+        height: 100%;
+    }
 
-    <div class="card" style="flex:1;min-width:220px;background:#f0fdf4;box-shadow:0 4px 16px rgba(34,197,94,0.08);padding:24px 20px 20px 20px;border-radius:18px;">
-        <div style="color:#22c55e;font-weight:700;letter-spacing:0.5px;">⚡ Total Energy Consumption</div>
-        <div style="font-size:2.2rem;font-weight:800;color:#22c55e;">
-            {{ number_format($totalKwh ?? 0) }} kWh
-        </div>
-        <div style="font-size:1rem;color:#16a34a;opacity:0.85;">
-            @if(!empty($kwhTrend) && $kwhTrend !== '+0.0%' && $kwhTrend !== '0.0%' && $kwhTrend !== '+0%' && $kwhTrend !== '0%')
-                {{ $kwhTrend }} vs last period
-            @endif
-        </div>
-    </div>
+    .table-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 0; /* Let the header/body handle padding */
+    }
 
-    <div class="card" style="flex:1;min-width:220px;background:#fff7ed;box-shadow:0 4px 16px rgba(245,158,11,0.08);padding:24px 20px 20px 20px;border-radius:18px;">
-        <div style="color:#f59e0b;font-weight:700;letter-spacing:0.5px;">💰 Total Energy Cost</div>
-        <div style="font-size:2.2rem;font-weight:800;color:#f59e0b;">
-            ₱{{ number_format($totalCost ?? 0, 2) }}
-        </div>
-    </div>
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
 
-    <div class="card" style="flex:1;min-width:220px;background:#fff0f3;box-shadow:0 4px 16px rgba(225,29,72,0.08);padding:24px 20px 20px 20px;border-radius:18px;">
-        <div style="color:#e11d48;font-weight:700;letter-spacing:0.5px;">🚨 Active Alerts</div>
-        <div style="font-size:2.2rem;font-weight:800;color:#e11d48;">
-            {{ $activeAlerts ?? 0 }}
-        </div>
-    </div>
-</div>
+    .custom-table thead th {
+        padding: 16px;
+        color: #3762c8;
+        font-weight: 700;
+        text-align: left;
+        background: #f8fafc;
+        border-bottom: 2px solid #e9effc;
+    }
 
-<!-- 🔹 ENERGY PERFORMANCE OVERVIEW (ENHANCED CHARTS) -->
-<div style="margin-bottom:2rem;">
-    <h3 style="font-size:1.3rem;font-weight:700;color:#3762c8;margin-bottom:12px;">
-        Energy Performance Overview
-    </h3>
+    .custom-table tbody tr td {
+        padding: 16px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #475569;
+    }
 
-    <div style="display:flex;gap:28px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:420px;background:#fff;padding:18px;border-radius:12px;">
-            <strong style="color:#222;text-shadow:0 1px 2px rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.15);">Monthly Energy Consumption (Actual vs Baseline)</strong>
-            <div style="height:220px;">
-                <canvas id="energyChart"></canvas>
+    .custom-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .custom-table tbody tr:hover {
+        background: #fcfdfe;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 1024px) {
+        .chart-grid { flex-direction: column; }
+        .chart-item { width: 100% !important; }
+    }
+</style>
+
+<div style="width:100%; margin:0 auto;">
+    <div class="report-card-container">
+        
+        <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2.5rem;">
+            <div>
+                <h1 style="font-size:1.8rem; font-weight:800; color:#1e293b; margin:0; letter-spacing:-0.5px;">⚡ Energy Efficiency Overview</h1>
+                <p style="font-size:1rem; color:#64748b; margin-top:4px;">Real-time monitoring and analytics for LGU facilities.</p>
+                <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px; display:flex; align-items:center; gap:10px;">
+                    <i class="fa fa-calendar"></i>
+                    <span>Period: <strong>{{ now()->subMonths(5)->format('F') }}</strong> – <strong>{{ now()->format('F Y') }}</strong></span>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <span style="background:#eef2ff; color:#4f46e5; padding:10px 18px; border-radius:12px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; border: 1px solid #e0e7ff;">
+                    <i class="fa fa-shield"></i> {{ Auth::user()->role ?? 'Administrator' }}
+                </span>
             </div>
         </div>
 
-        <div style="flex:1;min-width:420px;background:#fff;padding:18px;border-radius:12px;">
-            <strong style="color:#222;text-shadow:0 1px 2px rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.15);">Energy Cost Trend</strong>
-            <div style="height:220px;">
-                <canvas id="costChart"></canvas>
+        <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:2.5rem;">
+            <div class="stat-card" style="background:#f0f7ff;">
+                <div style="color:#3762c8; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Total Facilities</div>
+                <div style="font-size:2rem; font-weight:800; color:#1e3a8a;">{{ $totalFacilities ?? 0 }}</div>
             </div>
+
+            <div class="stat-card" style="background:#f0fdf4;">
+                <div style="color:#16a34a; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Net Consumption</div>
+                <div style="font-size:2rem; font-weight:800; color:#14532d;">{{ number_format($totalKwh ?? 0) }} <small style="font-size:0.9rem;">kWh</small></div>
+                <div style="font-size:0.8rem; font-weight:700; color:#166534; margin-top:5px;">
+                    <i class="fa fa-caret-up"></i> {{ $kwhTrend ?? '0%' }} <span style="font-weight:500; opacity:0.8;">vs last period</span>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background:#fffbeb;">
+                <div style="color:#d97706; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Total Expenditure</div>
+                <div style="font-size:2rem; font-weight:800; color:#78350f;">₱{{ number_format($totalCost ?? 0, 0) }}</div>
+            </div>
+
+            <div class="stat-card" style="background:#fef2f2;">
+                <div style="color:#dc2626; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">System Alerts</div>
+                <div style="font-size:2rem; font-weight:800; color:#7f1d1d;">{{ $activeAlerts ?? 0 }}</div>
+            </div>
+        </div>
+
+        <div class="chart-grid" style="display:flex; gap:24px; margin-bottom:2.5rem;">
+            <div class="chart-item" style="flex:1;">
+                <div class="chart-container">
+                    <h3 style="font-size:1rem; font-weight:800; color:#334155; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                        <span style="width:8px; height:8px; background:#3762c8; border-radius:50%;"></span>
+                        Actual vs Baseline Consumption
+                    </h3>
+                    <div style="height:320px;"><canvas id="energyChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-item" style="flex:1;">
+                <div class="chart-container">
+                    <h3 style="font-size:1rem; font-weight:800; color:#334155; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                        <span style="width:8px; height:8px; background:#e11d48; border-radius:50%;"></span>
+                        Monthly Cost Trend
+                    </h3>
+                    <div style="height:320px;"><canvas id="costChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap:24px;">
+            
+            <div style="border: 1px solid #f1f5f9; border-radius: 18px; overflow: hidden;">
+                <div style="padding: 20px; border-bottom: 1px solid #f1f5f9; background: #fff;">
+                    <h3 style="font-size:1rem; font-weight:800; color:#1e293b; margin:0;">🔥 High Consumption Hubs</h3>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Facility Name</th>
+                                <th style="text-align:center;">kWh Usage</th>
+                                <th style="text-align:center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse(($topFacilities ?? collect())->take(5) as $facility)
+                            <tr>
+                                <td style="font-weight:700; color:#334155;">{{ $facility->name }}</td>
+                                <td style="text-align:center; font-weight:800; color:#1e293b;">{{ number_format($facility->monthly_kwh) }}</td>
+                                <td style="text-align:center;">
+                                    @php
+                                        $status = $facility->status ?? 'Normal';
+                                        $bg = $status == 'High' ? '#fef2f2' : ($status == 'Medium' ? '#fffbeb' : '#f0fdf4');
+                                        $text = $status == 'High' ? '#dc2626' : ($status == 'Medium' ? '#d97706' : '#16a34a');
+                                    @endphp
+                                    <span style="background:{{ $bg }}; color:{{ $text }}; padding:5px 12px; border-radius:100px; font-size:0.75rem; font-weight:800; text-transform:uppercase;">
+                                        {{ $status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="3" style="text-align:center; padding:30px; color:#94a3b8;">No records found for this period.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="border: 1px solid #f1f5f9; border-radius: 18px; padding: 24px; background: #fff;">
+                <h3 style="font-size:1rem; font-weight:800; color:#e11d48; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    <i class="fa fa-bell"></i> Critical Notifications
+                </h3>
+                
+                <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+                    @forelse(collect($alerts ?? [])->take(3) as $alert)
+                        <div style="background:#fff1f2; border-left:4px solid #e11d48; padding:15px; border-radius:10px; color:#9f1239; font-size:0.85rem; font-weight:600; display:flex; align-items:center; gap:10px;">
+                            <i class="fa fa-exclamation-triangle"></i> {{ $alert }}
+                        </div>
+                    @empty
+                        <div style="padding:20px; text-align:center; background:#f8fafc; border-radius:12px; color:#94a3b8; font-size:0.9rem;">
+                            <i class="fa fa-check-circle" style="color:#22c55e;"></i> All systems operational.
+                        </div>
+                    @endforelse
+                </div>
+
+                <h4 style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px; border-top: 1px solid #f1f5f9; padding-top:20px;">Recent Activity Logs</h4>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    @forelse(collect($recentLogs ?? [])->take(4) as $log)
+                        <div style="font-size:0.85rem; color:#475569; display:flex; gap:10px;">
+                            <span style="color:#cbd5e1;">•</span> {{ $log }}
+                        </div>
+                    @empty
+                        <div style="font-size:0.85rem; color:#94a3b8;">No activity logged today.</div>
+                    @endforelse
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
-<!-- 🔹 TOP ENERGY CONSUMERS -->
-<div style="margin-bottom:2rem;">
-    <h3 style="font-size:1.3rem;font-weight:700;color:#3762c8;margin-bottom:12px;">
-        🔥 Top Energy-Consuming Facilities
-    </h3>
-
-    <div style="background:#f5f8ff;border-radius:18px;box-shadow:0 4px 16px rgba(55,98,200,0.08);padding:18px 12px 12px 12px;overflow-x:auto;">
-        <table style="width:100%;border-collapse:separate;border-spacing:0 6px;">
-            <thead>
-                <tr style="background:#e3eaff;">
-                    <th style="padding:12px 10px;text-align:left;color:#3762c8;font-weight:700;font-size:1.05rem;letter-spacing:0.5px;border-top-left-radius:10px;">Facility</th>
-                    <th style="padding:12px 10px;color:#3762c8;font-weight:700;font-size:1.05rem;letter-spacing:0.5px;">Monthly kWh</th>
-                    <th style="padding:12px 10px;color:#3762c8;font-weight:700;font-size:1.05rem;letter-spacing:0.5px;border-top-right-radius:10px;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse(($topFacilities ?? collect())->take(5) as $facility)
-                    <tr style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(55,98,200,0.04);transition:background 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#fff'">
-                        <td style="padding:12px 10px;border-radius:8px 0 0 8px;font-weight:600;color:#222;">{{ $facility->name }}</td>
-                        <td style="padding:12px 10px;text-align:center;font-weight:700;color:#222;">{{ number_format($facility->monthly_kwh) }}</td>
-                        <td style="padding:12px 10px;text-align:center;border-radius:0 8px 8px 0;">
-                            @if($facility->status === 'High')
-                                <span style="background:#fff0f3;color:#e11d48;font-weight:700;padding:4px 14px;border-radius:16px;font-size:0.98rem;">High</span>
-                            @elseif($facility->status === 'Medium')
-                                <span style="background:#fff7ed;color:#f59e0b;font-weight:700;padding:4px 14px;border-radius:16px;font-size:0.98rem;">Medium</span>
-                            @elseif($facility->status === 'Normal')
-                                <span style="background:#f0fdf4;color:#22c55e;font-weight:700;padding:4px 14px;border-radius:16px;font-size:0.98rem;">Normal</span>
-                            @else
-                                <span style="color:#888;">-</span>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="3" style="padding:14px;color:#888;text-align:center;background:#fff;border-radius:8px;">
-                            No data available.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- 🔹 RECENT SYSTEM ACTIVITY -->
-<div style="margin-bottom:2rem;">
-    <h3 style="font-size:1.3rem;font-weight:700;color:#3762c8;">Recent System Activity</h3>
-    <ul style="padding-left:18px;color:#444;">
-        @forelse(collect($recentLogs ?? [])->take(5) as $log)
-            <li>{{ $log }}</li>
-        @empty
-            <li style="color:#888;">No recent activity recorded.</li>
-        @endforelse
-    </ul>
-</div>
-
-<!-- 🔹 ALERTS -->
-<div style="margin-bottom:2rem;">
-    <h3 style="font-size:1.3rem;font-weight:700;color:#e11d48;">
-        Alerts & Notifications
-    </h3>
-
-    <ul style="padding-left:18px;">
-        @forelse(collect($alerts ?? [])->take(5) as $alert)
-            <li style="color:#e11d48;">{{ $alert }}</li>
-        @empty
-            <li style="color:#888;">No alerts generated.</li>
-        @endforelse
-    </ul>
-</div>
-
-
-
-<!-- 🔹 CHART.JS (DIRECT LOAD – ENHANCED CHARTS) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Shared chart options for cleaner look
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { family: 'Inter', weight: 600 } } }
+        },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9', drawBorder: false }, ticks: { font: { family: 'Inter' } } },
+            x: { grid: { display: false }, ticks: { font: { family: 'Inter' } } }
+        }
+    };
 
-    // Monthly Energy Consumption Chart
     const energyCtx = document.getElementById('energyChart').getContext('2d');
     new Chart(energyCtx, {
         type: 'bar',
         data: {
-            labels: {!! json_encode($energyChartLabels ?? ['Jan','Feb','Mar','Apr','May']) !!},
+            labels: {!! json_encode($energyChartLabels ?? ['Jan','Feb','Mar','Apr','May','Jun']) !!},
             datasets: [
                 {
-                    label: 'Actual kWh',
-                    data: {!! json_encode($energyChartData ?? [1200,1500,1100,1700,1600]) !!},
-                    backgroundColor: 'rgba(55,98,200,0.85)',
+                    label: 'Actual Usage (kWh)',
+                    data: {!! json_encode($energyChartData ?? [1200,1500,1100,1700,1600,1400]) !!},
+                    backgroundColor: '#3762c8',
                     borderRadius: 8,
-                    barThickness: 36
+                    barThickness: 20
                 },
                 {
-                    label: 'Baseline kWh',
-                    data: {!! json_encode($baselineChartData ?? [1000,1400,1050,1500,1450]) !!},
+                    label: 'Efficiency Baseline',
+                    data: {!! json_encode($baselineChartData ?? [1000,1400,1050,1500,1450,1350]) !!},
                     type: 'line',
                     borderColor: '#22c55e',
                     borderWidth: 3,
-                    tension: 0.35,
-                    pointRadius: 4,
+                    tension: 0.4,
+                    pointRadius: 0,
                     fill: false
                 }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.dataset.label + ': ' + ctx.raw.toLocaleString() + ' kWh';
-                        }
-                    }
-                }
-            },
-            scales: { y: { beginAtZero: true } }
-        }
+        options: commonOptions
     });
 
-    // Energy Cost Trend Chart
     const costCtx = document.getElementById('costChart').getContext('2d');
     new Chart(costCtx, {
         type: 'line',
         data: {
-            labels: {!! json_encode($costChartLabels ?? ['Jan','Feb','Mar','Apr','May']) !!},
+            labels: {!! json_encode($costChartLabels ?? ['Jan','Feb','Mar','Apr','May','Jun']) !!},
             datasets: [{
-                label: 'Energy Cost (₱)',
-                data: {!! json_encode($costChartData ?? [5000,6200,4800,7100,6600]) !!},
+                label: 'Monthly Cost (₱)',
+                data: {!! json_encode($costChartData ?? [5000,6200,4800,7100,6600,5800]) !!},
                 borderColor: '#e11d48',
-                backgroundColor: 'rgba(225,29,72,0.15)',
+                backgroundColor: 'rgba(225,29,72,0.05)',
                 fill: true,
-                tension: 0.3,
+                tension: 0.4,
                 pointRadius: 4,
-                pointHoverRadius: 6
+                pointBackgroundColor: '#e11d48'
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } },
-            scales: { y: { beginAtZero: true } }
-        }
+        options: commonOptions
     });
-
 });
 </script>
-
 @endsection

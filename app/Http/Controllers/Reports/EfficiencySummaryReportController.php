@@ -12,7 +12,9 @@ class EfficiencySummaryReportController extends Controller
 {
     public function show(Request $request)
     {
-        $facilities = Facility::all();
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $facilities = ($role === 'staff') ? $user->facilities : Facility::all();
         $selectedFacility = $request->input('facility_id');
         $selectedRating = $request->input('rating');
         $filteredFacilities = $facilities;
@@ -41,6 +43,10 @@ class EfficiencySummaryReportController extends Controller
                 'flag' => $flag,
             ];
         }
-        return view('modules.reports.efficiency-summary', compact('efficiencyRows', 'facilities', 'selectedFacility', 'selectedRating'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.reports.efficiency-summary', compact('efficiencyRows', 'facilities', 'selectedFacility', 'selectedRating', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 }

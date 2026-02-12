@@ -1,3 +1,35 @@
+<?php
+	// Ensure notifications and unreadNotifCount are available for the notification bell
+	$user = auth()->user();
+	$notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+	$unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+?>
+
+<?php if(session('success')): ?>
+<div id="successAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
+    <div style="background:#dcfce7;color:#166534;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #16a34a22;display:flex;align-items:center;gap:10px;">
+        <i class="fa fa-check-circle" style="color:#22c55e;font-size:1.3rem;"></i>
+        <span><?php echo e(session('success')); ?></span>
+    </div>
+</div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+<div id="errorAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
+    <div style="background:#fee2e2;color:#b91c1c;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #e11d4822;display:flex;align-items:center;gap:10px;">
+        <i class="fa fa-times-circle" style="color:#e11d48;font-size:1.3rem;"></i>
+        <span><?php echo e(session('error')); ?></span>
+    </div>
+</div>
+<?php endif; ?>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+        var success = document.getElementById('successAlert');
+        var error = document.getElementById('errorAlert');
+        if (success) setTimeout(() => success.style.display = 'none', 3000);
+        if (error) setTimeout(() => error.style.display = 'none', 3000);
+});
+</script>
+
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">

@@ -39,9 +39,10 @@ class First3MonthsController extends Controller
             $facilityModel = Facility::find($facilityId);
         }
         $user = auth()->user();
+        $role = strtolower($user->role ?? '');
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.facilities.first3months', compact('facilityModel', 'notifications', 'unreadNotifCount'));
+        return view('modules.facilities.first3months', compact('facilityModel', 'notifications', 'unreadNotifCount') + ['role' => $role, 'user' => $user]);
     }
 
     public function store(Request $request)

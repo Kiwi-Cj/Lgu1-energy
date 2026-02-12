@@ -35,10 +35,12 @@ class FacilityController extends Controller
         // Handle image upload if present
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('img'), $imageName);
-            $validated['image'] = 'img/' . $imageName;
+            $path = $image->store('facility_images', 'public');
+            $validated['image_path'] = $path;
         }
+
+        // Remove 'image' from validated to avoid mass assignment error
+        unset($validated['image']);
 
         $facility->update($validated);
 
@@ -66,10 +68,12 @@ class FacilityController extends Controller
         // Handle image upload if present
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path('img'), $imageName);
-            $validated['image'] = 'img/' . $imageName;
+            $path = $image->store('facility_images', 'public');
+            $validated['image_path'] = $path;
         }
+
+        // Remove 'image' from validated to avoid mass assignment error
+        unset($validated['image']);
 
         $facility = Facility::create($validated);
 
@@ -81,17 +85,12 @@ class FacilityController extends Controller
     public function edit($id)
     {
         $facility = Facility::findOrFail($id);
-        $user = auth()->user();
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.facilities.edit', compact('facility', 'notifications', 'unreadNotifCount'));
+        return view('modules.facilities.edit', compact('facility'));
     }
     public function show($id)
     {
         $facility = Facility::findOrFail($id);
-        $user = auth()->user();
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+
         // Try to get first3months_data
         $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
         $avgKwh = null;
@@ -108,7 +107,8 @@ class FacilityController extends Controller
                 $showAvg = true;
             }
         }
-        return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg', 'notifications', 'unreadNotifCount'));
+
+        return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg'));
     }
     private function isSuperAdmin()
     {
@@ -133,7 +133,8 @@ class FacilityController extends Controller
         $user = auth()->user();
 
         if ($this->isStaff()) {
-            $facilities = Facility::where('id', $user->facility_id)->get();
+            // Get all facilities assigned to this staff via facility_user pivot
+            $facilities = $user->facilities ?? collect();
         } else {
             $facilities = Facility::all();
         }
@@ -183,17 +184,12 @@ class FacilityController extends Controller
             return $facility;
         });
 
-        $user = auth()->user();
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.facilities.index', [
             'facilities' => $facilitiesWithAvg,
             'totalFacilities' => $facilities->count(),
             'activeFacilities' => $facilities->where('status', 'active')->count(),
             'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
             'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
-            'notifications' => $notifications,
-            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 

@@ -137,7 +137,7 @@
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="<?php echo e(asset('img/logocityhall.png')); ?>" alt="Logo">
+            <img src="<?php echo e(asset('img/logocityhall.jpg')); ?>" alt="Logo">
             <span class="fw-bold" style="font-size:1.25rem;">Energy System Portal</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">

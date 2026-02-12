@@ -1,8 +1,16 @@
 <?php $__env->startSection('title', 'Users'); ?>
+
+
+
 <?php $__env->startSection('content'); ?>
+
 <?php
+	// Ensure notifications and unreadNotifCount are available for the notification bell
 	$user = auth()->user();
 	$role = strtolower($user?->role ?? '');
+	$notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+	$unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+	$isSuperAdmin = strtolower($user->role ?? '') === 'super admin';
 ?>
 
 
@@ -223,6 +231,9 @@
 						   <label for="um_role">Role *</label>
 						   <select id="um_role" name="role" required onchange="toggleUserModalFacility()">
 							   <option value="">Select Role</option>
+							   <?php if($isSuperAdmin): ?>
+								 <option value="super admin">Super Admin</option>
+							   <?php endif; ?>
 							   <option value="admin">Admin</option>
 							   <option value="staff">Staff</option>
 							   <option value="energy_officer">Energy Officer</option>

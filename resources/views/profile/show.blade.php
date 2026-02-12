@@ -1,4 +1,12 @@
+
 @extends('layouts.qc-admin')
+
+@php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+@endphp
 
 @section('content')
 
@@ -41,7 +49,7 @@
             <div><label style="color:#64748b;font-size:0.98rem;">Last Login</label><div style="font-size:1.08rem;">{{ auth()->user()->last_login_at ?? 'N/A' }}</div></div>
             <div><label style="color:#64748b;font-size:0.98rem;">2FA / OTP</label><div style="font-size:1.08rem;">{{ auth()->user()->otp_enabled ? 'Enabled' : 'Disabled' }}</div></div>
             <div style="grid-column:1/-1;text-align:right;">
-                <a href="/profile/change-password" style="color:#2563eb;font-weight:600;font-size:1.05rem;text-decoration:underline;">Change Password</a>
+
             </div>
         </div>
     </section>
@@ -53,7 +61,7 @@
             <div><i class="fa fa-eye" style="color:#3762c8;margin-right:8px;"></i>View Energy Records</div>
             <div><i class="fa fa-plus-circle" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->can_create_actions ? '✔' : '✖' }} Create Energy Actions</div>
             <div><i class="fa fa-check-circle" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->can_approve_actions ? '✔' : '✖' }} Approve Actions</div>
-            <div><i class="fa fa-file-invoice" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->can_view_billing ? '✔' : '✖' }} View Billing</div>
+                <!-- Billing feature removed -->
             <div><i class="fa fa-cogs" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->is_admin ? '✔' : '✖' }} Admin Settings</div>
         </div>
         <small style="color:#6b7280;">Permissions are read-only</small>
@@ -65,7 +73,7 @@
         <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 12px;align-items:center;">
             <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Energy Alerts</label>
             <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Incident Updates</label>
-            <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Billing Notifications</label>
+                <!-- Billing Notifications removed -->
             <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Due Date Reminders</label>
             <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Email</label>
             <label style="font-size:1.05rem;"><input type="checkbox" disabled style="margin-right:7px;"> SMS</label>

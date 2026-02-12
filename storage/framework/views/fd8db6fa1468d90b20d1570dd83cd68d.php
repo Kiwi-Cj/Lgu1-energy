@@ -54,8 +54,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 0 8px 32px rgba(37,99,235,0.13), 0 1.5px 8px rgba(30,41,59,0.07);
-    border: 1.5px solid #e0e7ef;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid #e0e7ef;
     animation: pop 0.25s cubic-bezier(.4,2,.6,1);
     transition: box-shadow 0.18s;
 }
@@ -341,7 +341,7 @@ document.getElementById('otpModalAutoForm').addEventListener('submit', async fun
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')),
                 'Accept': 'application/json',
             },
             body: JSON.stringify({ email, otp }),

@@ -15,7 +15,7 @@
         </ul>
     </li>
     <li><a href="/modules/consumption"><span class="menu-icon">⚡</span><span>Energy Consumption</span></a></li>
-    <li><a href="/modules/billing"><span class="menu-icon">💰</span><span>Billing & Cost Analysis</span></a></li>
+    <!-- Billing & Cost Analysis menu removed -->
     <li><a href="/modules/projects"><span class="menu-icon">🏗️</span><span>Energy Efficiency Projects</span></a></li>
     <li><a href="/modules/alerts"><span class="menu-icon">🤖</span><span>AI Alerts & Recommendations</span></a></li>
     <li><a href="/modules/reports"><span class="menu-icon">📈</span><span>Reports & Analytics</span></a></li>

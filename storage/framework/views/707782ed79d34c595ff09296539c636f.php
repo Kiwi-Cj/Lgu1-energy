@@ -1,16 +1,36 @@
- <?php $__env->startSection('title', 'Monthly Records'); ?>
-  <?php $__env->startSection('content'); ?>
+<?php $__env->startSection('title', 'Monthly Records'); ?>
+<?php $__env->startSection('content'); ?>
+<style>
+    .report-card {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 2px 8px rgba(31,38,135,0.08);
+        margin-bottom: 1.2rem;
+        padding: 24px;
+    }
+</style>
+<?php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+?>
 
 <?php
     $sortedRecords = $records->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
-    $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
-    if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
-        && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
-        $baselineAvg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+    // Use baseline_kwh from record if set, else fallback to energy profile/facility
+    $energyProfile = \App\Models\EnergyProfile::where('facility_id', $facility->id)->latest()->first();
+    $hasBaseline = false;
+    if ($sortedRecords->count() > 0 && $sortedRecords->first()->baseline_kwh !== null) {
+        $baselineAvg = floatval($sortedRecords->first()->baseline_kwh);
+        $hasBaseline = $baselineAvg > 0;
+    } elseif ($energyProfile && is_numeric($energyProfile->baseline_kwh) && $energyProfile->baseline_kwh > 0) {
+        $baselineAvg = floatval($energyProfile->baseline_kwh);
+        $hasBaseline = true;
     } else {
         $baselineAvg = $facility->baseline_kwh;
+        $hasBaseline = $baselineAvg > 0;
     }
-    $hasBaseline = $baselineAvg > 0;
 ?>
 <?php
     $currentYear = date('Y');
@@ -20,6 +40,34 @@
     $filteredRecords = $records->where('year', $selectedYear);
     $sortedRecords = $filteredRecords->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
 ?>
+
+
+<div class="report-card">
+<?php if(session('success')): ?>
+<div id="successAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
+    <div style="background:#dcfce7;color:#166534;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #16a34a22;display:flex;align-items:center;gap:10px;">
+        <i class="fa fa-check-circle" style="color:#22c55e;font-size:1.3rem;"></i>
+        <span><?php echo e(session('success')); ?></span>
+    </div>
+</div>
+<?php endif; ?>
+<?php if(session('error')): ?>
+<div id="errorAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
+    <div style="background:#fee2e2;color:#b91c1c;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #e11d4822;display:flex;align-items:center;gap:10px;">
+        <i class="fa fa-times-circle" style="color:#e11d48;font-size:1.3rem;"></i>
+        <span><?php echo e(session('error')); ?></span>
+    </div>
+</div>
+<?php endif; ?>
+<!-- ...existing content... -->
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+        var success = document.getElementById('successAlert');
+        var error = document.getElementById('errorAlert');
+        if (success) setTimeout(() => success.style.display = 'none', 3000);
+        if (error) setTimeout(() => error.style.display = 'none', 3000);
+});
+</script>
 
 <div>
 
@@ -51,10 +99,10 @@
 
 
 
-    <!-- Average kWh Card -->
+    <!-- Baseline kWh Card -->
 
     <?php if(!$hasBaseline): ?>
-        <div style="margin-bottom:1.2rem;color:#e11d48;font-weight:500;">You need to enter first 3 months data before you can add a monthly energy record.</div>
+        <div style="margin-bottom:1.2rem;color:#e11d48;font-weight:500;">You need to set a baseline kWh in the energy profile before you can add a monthly energy record.</div>
     <?php endif; ?>
     <?php
         $sizeLabel = '';
@@ -71,15 +119,24 @@
         }
     ?>
 
-    <?php if($hasBaseline): ?>
-    <div style="margin-bottom:18px; display:flex; align-items:center; font-size:1.08rem;font-weight:600;color:#6366f1;">
-        <span>
-            Facility Size: <span style="font-weight:700;"><?php echo e($sizeLabel); ?></span>
-        </span>
-        <span style="margin-left:auto; font-size:1.08rem; color:#222; font-weight:600;">
-            Baseline kWh (First 3 Months): <span style="font-weight:700; color:#2563eb;"><?php echo e(number_format($baselineAvg, 2)); ?> kWh</span>
-        </span>
-    </div>
+    <?php if($hasBaseline && $energyProfile && !$energyProfile->engineer_approved): ?>
+        <div style="margin-bottom:18px; display:flex; align-items:center; font-size:1.08rem;font-weight:600;color:#6366f1;">
+            <span>
+                Facility Size: <span style="font-weight:700;"><?php echo e($sizeLabel); ?></span>
+            </span>
+            <span style="margin-left:auto; font-size:1.08rem; color:#222; font-weight:600;">
+                Baseline kWh: <span style="font-weight:700; color:#2563eb;">Pending approval</span>
+            </span>
+        </div>
+    <?php elseif($hasBaseline): ?>
+        <div style="margin-bottom:18px; display:flex; align-items:center; font-size:1.08rem;font-weight:600;color:#6366f1;">
+            <span>
+                Facility Size: <span style="font-weight:700;"><?php echo e($sizeLabel); ?></span>
+            </span>
+            <span style="margin-left:auto; font-size:1.08rem; color:#222; font-weight:600;">
+                Baseline kWh (<?php echo e($energyProfile && $energyProfile->baseline_source ? $energyProfile->baseline_source : 'Energy Profile'); ?>): <span style="font-weight:700; color:#2563eb;"><?php echo e(number_format($baselineAvg, 2)); ?> kWh</span>
+            </span>
+        </div>
     <?php endif; ?>
 
     <!-- Monthly Records Table -->
@@ -91,7 +148,7 @@
                     <th style="padding:10px 14px; text-align:center;">Month</th>
                     <th style="padding:10px 14px; text-align:center;">Day</th>
                     <th style="padding:10px 14px; text-align:center;">Actual kWh</th>
-                    <th style="padding:10px 14px; text-align:center;">Average kWh</th>
+                    <th style="padding:10px 14px; text-align:center;">Baseline kWh</th>
                     <th style="padding:10px 14px; text-align:center;">Deviation (%)</th>
                     <th style="padding:10px 14px; text-align:center;">Alert</th>
                     <th style="padding:10px 14px; text-align:center;">Energy Cost</th>
@@ -124,48 +181,73 @@
                     </td>
                     <td style="padding:10px 14px; text-align:center;">
                         <?php
+                            // LevelAlert Table
+                            // Level 1: Normal / Low (Green)
+                            // Level 2: Warning / Moderate (Yellow)
+                            // Level 3: High (Orange)
+                            // Level 4: Critical / Excessive (Red)
+                            // Level 5: Extreme / Danger (Dark Red / Maroon)
+                            $alert = '';
+                            $alertColor = '#22c55e'; // default green
+                            $alertLabel = 'Normal';
                             if ($deviation === null) {
                                 $alert = '';
-                            } elseif ($sizeLabel === 'Small') {
-                                if ($deviation > 30) {
-                                    $alert = 'High';
-                                } elseif ($deviation > 15) {
-                                    $alert = 'Medium';
-                                } else {
-                                    $alert = 'Low';
-                                }
-                            } elseif ($sizeLabel === 'Medium') {
-                                if ($deviation > 20) {
-                                    $alert = 'High';
-                                } elseif ($deviation > 10) {
-                                    $alert = 'Medium';
-                                } else {
-                                    $alert = 'Low';
-                                }
-                            } elseif ($sizeLabel === 'Large' || $sizeLabel === 'Extra Large') {
-                                if ($deviation > 15) {
-                                    $alert = 'High';
-                                } elseif ($deviation > 5) {
-                                    $alert = 'Medium';
-                                } else {
-                                    $alert = 'Low';
-                                }
+                                $alertColor = '#64748b';
+                                $alertLabel = '';
                             } else {
-                                if ($deviation > 20) {
-                                    $alert = 'High';
-                                } elseif ($deviation > 10) {
-                                    $alert = 'Medium';
+                                // Fetch thresholds from settings for each size
+                                $thresholds = [];
+                                if ($sizeLabel === 'Small') {
+                                    $thresholds = [
+                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_small', 80),
+                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_small', 50),
+                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_small', 30),
+                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_small', 15),
+                                    ];
+                                } elseif ($sizeLabel === 'Medium') {
+                                    $thresholds = [
+                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_medium', 60),
+                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_medium', 40),
+                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_medium', 20),
+                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_medium', 10),
+                                    ];
+                                } elseif ($sizeLabel === 'Large') {
+                                    $thresholds = [
+                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_large', 30),
+                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_large', 20),
+                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_large', 12),
+                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_large', 5),
+                                    ];
+                                } elseif ($sizeLabel === 'Extra Large') {
+                                    $thresholds = [
+                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_xlarge', 20),
+                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_xlarge', 12),
+                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_xlarge', 7),
+                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_xlarge', 3),
+                                    ];
                                 } else {
-                                    $alert = 'Low';
+                                    $thresholds = [
+                                        'level5' => 60,
+                                        'level4' => 40,
+                                        'level3' => 20,
+                                        'level2' => 10,
+                                    ];
+                                }
+                                if ($deviation > $thresholds['level5']) {
+                                    $alert = 'Level 5'; $alertColor = '#7c1d1d'; $alertLabel = 'Extreme / level 5';
+                                } elseif ($deviation > $thresholds['level4']) {
+                                    $alert = 'Level 4'; $alertColor = '#e11d48'; $alertLabel = 'Critical / level 4';
+                                } elseif ($deviation > $thresholds['level3']) {
+                                    $alert = 'Level 3'; $alertColor = '#f59e42'; $alertLabel = 'High / level 3';
+                                } elseif ($deviation > $thresholds['level2']) {
+                                    $alert = 'Level 2'; $alertColor = '#fde047'; $alertLabel = 'Warning / level 2';
+                                } else {
+                                    $alert = 'Level 1'; $alertColor = '#22c55e'; $alertLabel = 'Normal / Low';
                                 }
                             }
                         ?>
-                        <?php if($alert === 'High'): ?>
-                            <span style="color:#e11d48;font-weight:600;">High</span>
-                        <?php elseif($alert === 'Medium'): ?>
-                            <span style="color:#f59e42;font-weight:600;">Medium</span>
-                        <?php elseif($alert === 'Low'): ?>
-                            <span style="color:#22c55e;font-weight:600;">Low</span>
+                        <?php if($alert): ?>
+                            <span style="color:<?php echo e($alertColor); ?>;font-weight:700;"><?php echo e($alertLabel); ?></span>
                         <?php else: ?>
                             <span style="color:#64748b;">&nbsp;</span>
                         <?php endif; ?>
@@ -181,7 +263,9 @@
                     </td>
                     <td style="padding:10px 14px; text-align:center;">
                         <?php if($record->bill_image): ?>
-                            <a href="<?php echo e(asset('storage/' . $record->bill_image)); ?>" target="_blank" style="color:#2563eb;text-decoration:underline;">View</a>
+                            <a href="<?php echo e(asset('storage/' . $record->bill_image)); ?>" target="_blank" style="display:inline-block;">
+                                <img src="<?php echo e(asset('storage/' . $record->bill_image)); ?>" alt="Bill Image" style="max-width:60px;max-height:60px;border-radius:7px;box-shadow:0 2px 8px #2563eb22;object-fit:cover;">
+                            </a>
                         <?php else: ?>
                             &nbsp;
                         <?php endif; ?>
@@ -200,38 +284,7 @@
                                 <span style="font-size:1.3rem;">💡</span>
                             </button>
                         <?php endif; ?>
-                         <!-- Manual Add to Maintenance Button -->
-                        <button type="button" title="Add to Maintenance" style="background: none; border: none; color: #2563eb; font-size: 1.3rem; cursor: pointer;" onclick="openAddMaintenanceModal(<?php echo e($record->id); ?>)">
-                            <span style="font-size:1.3rem;">🛠️</span>
-                        </button>
-                        <!-- ADD TO MAINTENANCE MODAL -->
-                        <div id="addMaintenanceModal" style="display:none;position:fixed;z-index:10070;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
-                            <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
-                                <div class="modal-content" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
-                                    <button type="button" onclick="closeAddMaintenanceModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
-                                    <h3 style="margin-bottom:12px;font-size:1.2rem;font-weight:700;color:#2563eb;">Add to Maintenance</h3>
-                                    <div id="addMaintenanceText" style="margin-bottom:18px;font-size:1.05rem;color:#222;">Add this monthly record to maintenance?</div>
-                                    <form id="addMaintenanceForm" method="POST" action="" style="display:flex;gap:10px;">
-                                        <?php echo csrf_field(); ?>
-                                        <input type="hidden" name="record_id" id="maintenance_record_id" value="">
-                                        <button type="submit" style="background:#2563eb;color:#fff;padding:10px 0;border:none;border-radius:8px;font-weight:700;font-size:1.05rem;flex:1;">Add</button>
-                                        <button type="button" onclick="closeAddMaintenanceModal()" style="background:#f3f4f6;color:#222;padding:10px 0;border:none;border-radius:8px;font-weight:600;flex:1;">Cancel</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <script>
-                        function openAddMaintenanceModal(recordId) {
-                            document.getElementById('addMaintenanceModal').style.display = 'flex';
-                            document.getElementById('maintenance_record_id').value = recordId;
-                            // Set the form action dynamically if needed
-                            document.getElementById('addMaintenanceForm').action = '/maintenance/add-from-record/' + recordId;
-                        }
-                        function closeAddMaintenanceModal() {
-                            document.getElementById('addMaintenanceModal').style.display = 'none';
-                        }
-                        </script>
+                       
                         <form id="deleteMonthlyRecordForm-<?php echo e($record->id); ?>" action="<?php echo e(route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id])); ?>" method="POST" style="display:inline;">
                             <?php echo csrf_field(); ?>
                             <?php echo method_field('DELETE'); ?>
@@ -361,6 +414,10 @@
                         <label for="add_rate_per_kwh" style="font-weight:500;">Rate per kWh</label>
                         <input type="number" step="0.01" id="add_rate_per_kwh" name="rate_per_kwh" value="12.00" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
                     </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label for="add_baseline_kwh" style="font-weight:500;">Baseline kWh</label>
+                    <input type="number" step="0.01" id="add_baseline_kwh" name="baseline_kwh" value="<?php echo e(isset($baselineAvg) ? number_format($baselineAvg, 2, '.', '') : ''); ?>" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
                     <label for="add_energy_cost" style="font-weight:500;">Energy Cost</label>

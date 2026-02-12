@@ -11,17 +11,41 @@ class EnergyIncidentController extends Controller
     public function index()
     {
         // Fetch actual incident records from the energy_incidents table
+        // Filter by reporting period: current and previous 5 months
+        $monthsRange = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthsRange[] = [
+                'year' => $date->year,
+                'month' => $date->month
+            ];
+        }
         $incidents = \App\Models\EnergyIncident::with('facility')
+            ->where(function($q) use ($monthsRange) {
+                foreach ($monthsRange as $m) {
+                    $q->orWhere(function($sub) use ($m) {
+                        $sub->whereYear('date_detected', $m['year'])->whereMonth('date_detected', $m['month']);
+                    });
+                }
+            })
             ->orderByDesc('date_detected')
             ->orderByDesc('created_at')
             ->paginate(20);
-        return view('modules.energy-incident.incidents', compact('incidents'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-incident.incidents', compact('incidents', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function create()
     {
         $facilities = \App\Models\Facility::all();
-        return view('modules.energy-incident.create', compact('facilities'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-incident.create', compact('facilities', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function store(Request $request)
@@ -59,12 +83,20 @@ class EnergyIncidentController extends Controller
 
     public function show(EnergyIncident $energyIncident)
     {
-        return view('modules.energy-incident.show', compact('energyIncident'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-incident.show', compact('energyIncident', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function edit(EnergyIncident $energyIncident)
     {
-        return view('modules.energy-incident.edit', compact('energyIncident'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-incident.edit', compact('energyIncident', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function update(Request $request, EnergyIncident $energyIncident)
@@ -104,6 +136,10 @@ class EnergyIncidentController extends Controller
             ->orderByDesc('date_detected')
             ->orderByDesc('created_at')
             ->get();
-        return view('modules.energy-incident.history', compact('histories'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.energy-incident.history', compact('histories', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 }

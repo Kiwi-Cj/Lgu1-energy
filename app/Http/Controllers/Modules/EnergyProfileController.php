@@ -18,6 +18,7 @@ class EnergyProfileController extends Controller
             'backup_power' => 'required',
             'number_of_meters' => 'required|integer',
             'transformer_capacity' => 'nullable',
+            'baseline_source' => 'nullable|string',
         ]);
 
         $profile = \App\Models\EnergyProfile::findOrFail($profileId);
@@ -38,6 +39,7 @@ class EnergyProfileController extends Controller
             'backup_power' => 'required',
             'number_of_meters' => 'required|integer',
             'transformer_capacity' => 'nullable',
+            'baseline_source' => 'nullable|string',
         ]);
 
         $validated['facility_id'] = $facilityId;

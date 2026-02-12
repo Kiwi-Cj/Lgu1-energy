@@ -12,22 +12,32 @@ class EnergyMonitoringController extends Controller
      */
     public function index()
     {
-        $totalFacilities = Facility::count();
-        $facilities = Facility::all();
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        if ($role === 'staff') {
+            $facilities = $user->facilities;
+            $totalFacilities = $facilities->count();
+        } else {
+            $facilities = Facility::all();
+            $totalFacilities = $facilities->count();
+        }
         $currentMonth = date('n');
         $currentYear = date('Y');
         $highAlertCount = 0;
+        $facilityIds = ($role === 'staff') ? $facilities->pluck('id')->toArray() : null;
         $totalEnergyCost = \App\Models\EnergyRecord::where('month', $currentMonth)
             ->where('year', $currentYear)
+            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
             ->sum('energy_cost');
 
         // Total actual kWh consumption for current month
         $totalActualKwh = \App\Models\EnergyRecord::where('month', $currentMonth)
             ->where('year', $currentYear)
+            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
             ->sum('actual_kwh');
 
         // Total baseline kWh for current month (sum of each facility's baseline_kwh)
-        $totalAverageKwh = \App\Models\Facility::sum('baseline_kwh');
+        $totalAverageKwh = $facilityIds ? \App\Models\Facility::whereIn('id', $facilityIds)->sum('baseline_kwh') : \App\Models\Facility::sum('baseline_kwh');
         foreach ($facilities as $facility) {
             // Attach current month's record
             $facility->currentMonthRecord = $facility->energyRecords()
@@ -53,9 +63,8 @@ class EnergyMonitoringController extends Controller
                 $facility->currentMonthRecord->next_maintenance = $nextMaint ? $nextMaint->scheduled_date : null;
             }
         }
-        $user = auth()->user();
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.energy-monitoring.index', compact('totalFacilities', 'facilities', 'highAlertCount', 'totalEnergyCost', 'notifications', 'unreadNotifCount'));
+        return view('modules.energy-monitoring.index', compact('totalFacilities', 'facilities', 'highAlertCount', 'totalEnergyCost', 'notifications', 'unreadNotifCount') + ['role' => $role, 'user' => $user]);
     }
 }

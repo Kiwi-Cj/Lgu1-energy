@@ -1,194 +1,421 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LGU | Login</title>
-<link rel="stylesheet" href="{{ asset('css/style - Copy.css') }}">
-<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>LGU | Energy Efficiency System</title>
 
-body {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 
-    /* NEW — background image + blur */
-    background: url("{{ asset('img/cityhall.jpeg') }}") center/cover no-repeat fixed;
-    position: relative;
-    overflow: hidden;
-}
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #6366f1;
+            --accent: #0ea5e9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
 
-/* NEW — Blur overlay */
-body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
 
-    backdrop-filter: blur(6px); /* actual blur */
-    background: rgba(0, 0, 0, 0.35); /* dark overlay */
-    z-index: 0; /* keeps blur behind content */
-}
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-color: #0f172a; /* Fallback color */
+        }
 
-/* Make content appear ABOVE blur */
-.nav, .wrapper {
-    position: relative;
-    z-index: 1;
-}
+        /* Modern Blurred Background */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), 
+                        url('{{ asset("img/cityhall.jpeg") }}') center/cover no-repeat;
+            filter: blur(8px);
+            transform: scale(1.1); /* Prevents white edges on blur */
+            z-index: -1;
+        }
 
-/* Make content appear ABOVE blur */
-.footer, .wrapper {
-    position: relative;
-    z-index: 1;
-}
-</style>
+        /* Transparent Glass Navbar */
+        .nav {
+            height: 80px;
+            padding: 0 5%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+
+        .nav-logo img {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* Center Content */
+        .wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Modern Glass Card */
+        .card {
+            width: 100%;
+            max-width: 410px;
+            padding: 38px 34px 32px 34px;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .icon-top {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* Form Styling */
+        .input-box {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-box label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            margin-left: 4px;
+        }
+
+        .input-box input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .input-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Modern Gradient Button */
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(100deg, var(--primary), var(--secondary), var(--accent));
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.08rem;
+            margin-top: 12px;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.18);
+            transition: background 0.18s, box-shadow 0.18s, filter 0.18s, transform 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            filter: grayscale(0.2) brightness(0.95);
+        }
+
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.22);
+            filter: brightness(1.08);
+        }
+
+        .login-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .modern-spinner {
+            animation: spinner-rotate 0.9s linear infinite;
+            margin-right: 6px;
+        }
+        @keyframes spinner-rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-links {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 12px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+        }
+
+        .footer-logo {
+            font-size: 0.85rem;
+        }
+
+        /* Error Message */
+        #loginError {
+            background: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #ffe4e6;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 32px 24px;
+                border-radius: 20px;
+            }
+            .nav {
+                padding: 0 20px;
+            }
+            .nav-text {
+                display: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-
 <header class="nav">
-    <div class="nav-logo" style="font-size:1.45rem;font-weight:700;letter-spacing:1px;color:#fff;">
-        Energy Efficiency System
-    </div>
+    <a href="/" class="nav-logo">
+        <img src="{{ asset('img/logocityhall.jpg') }}" alt="Logo">
+        <span>Energy System Portal</span>
+    </a>
     <div class="nav-links">
         <a href="/">Home</a>
     </div>
 </header>
 
 <div class="wrapper">
-    <div class="card">  
-
-
-        <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" style="border-radius:50%;box-shadow:0 2px 8px rgba(49,46,129,0.10);width:110px;height:110px;object-fit:cover;">
-        <h2 class="title" style="font-size:2rem;font-weight:700;color:#111;margin:18px 0 0 0;">Energy Efficiency</h2>
-        <div style="font-size:1.15rem;color:#222;margin-bottom:10px;font-weight:400;text-align:center;line-height:1.35;">
-            Smart energy management.<br>
-            Secure maintenance access.
+    <div class="card">
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 8px;">
+            <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" alt="LGU Logo" style="box-shadow:0 4px 16px rgba(37,99,235,0.10);">
         </div>
+      
+        <div class="subtitle">Sign in to your LGU Energy Efficiency System account</div>
+        <div id="loginError" style="display:none;margin-bottom:20px;padding:12px;border-radius:12px;font-weight:500;"></div>
 
-        <div id="loginError" style="display:none;margin-bottom:16px;padding:10px 16px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-weight:500;text-align:center;"></div>
-        <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" autocapitalize="off" spellcheck="false">
-                <!-- Hidden fake fields to prevent browser autofill/saving real credentials (must be first in form) -->
-                <input type="text" name="fakeusernameremembered" style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="username">
-                <input type="password" name="fakepasswordremembered" style="position:absolute;top:-9999px;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="new-password">
+        <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" style="margin-top: 10px;">
+
             @csrf
-            <div class="input-box">
-                <label>Email Address</label>
-                <input type="email" name="email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="username-no-autofill" autocapitalize="off" spellcheck="false">
-                                <!-- More anti-autofill: random autocomplete value -->
+            <!-- Hidden fields to confuse autofill -->
+            <input type="text" name="username_fake" style="display:none" tabindex="-1" autocomplete="username">
+            <input type="password" name="password_fake" style="display:none" tabindex="-1" autocomplete="new-password">
 
+
+            <div class="input-box">
+                <label for="loginEmail">Email Address</label>
+                <input type="email" name="login_email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="new-email" autocapitalize="off" spellcheck="false" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
             </div>
 
             <div class="input-box">
-                <label>Password</label>
-                <input type="password" name="password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password" autocapitalize="off" spellcheck="false">
-                                <!-- More anti-autofill: random autocomplete value -->
-
+                <label for="loginPassword">Password</label>
+                <input type="password" name="login_password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
             </div>
 
-            <button class="btn-primary" type="submit" id="loginBtn">
-                <span id="loginBtnText">Sign In</span>
-                <span id="loginBtnLoading" style="display:none;margin-left:8px;">
-                    <svg width="18" height="18" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#fff">
-                        <g fill="none" fill-rule="evenodd">
-                            <g transform="translate(1 1)" stroke-width="2">
-                                <circle stroke-opacity=".3" cx="18" cy="18" r="18"/>
-                                <path d="M36 18c0-9.94-8.06-18-18-18">
-                                    <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
-                                </path>
-                            </g>
-                        </g>
-                    </svg>
+            <button type="submit" class="login-btn d-flex align-items-center justify-content-center gap-2" id="loginBtn" style="position:relative;overflow:hidden;">
+                <span id="loginBtnText" style="display:inline-block;">Sign In to Dashboard</span>
+                <span id="loginBtnLoading" style="display:none;align-items:center;gap:8px;">
+                    <svg class="modern-spinner" width="22" height="22" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;"><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" opacity="0.2"/><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 60" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 22 22" to="360 22 22" dur="0.9s" repeatCount="indefinite"/></circle></svg>
+                    Authenticating...
                 </span>
             </button>
-
-            <!-- Registration link removed -->
         </form>
+        <div style="margin-top:18px;font-size:0.97rem;color:var(--text-muted);">
+            <span style="opacity:0.7;">Forgot your password?</span> <a href="#" style="color:var(--primary);font-weight:600;text-decoration:none;">Contact admin</a>
+        </div>
     </div>
 </div>
+
 @include('auth.partials.otp-modal-auto')
-    </div>
-</div>
 
 <footer class="footer">
-
     <div class="footer-links">
         <a href="#">Privacy Policy</a>
-        <a href="#">About</a>
-        <a href="#">Help</a>
+        <a href="#">About System</a>
+        <a href="#">Technical Support</a>
     </div>
-
     <div class="footer-logo">
-        © 2025 Energy Efficiency System · All Rights Reserved
+        © 2026 Energy Efficiency System · Local Government Unit
     </div>
-
 </footer>
 
 <script src="{{ asset('js/scripts.js') }}"></script>
 <script>
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const btn = document.getElementById('loginBtn');
-    const btnText = document.getElementById('loginBtnText');
-    const btnLoading = document.getElementById('loginBtnLoading');
-    const errorDiv = document.getElementById('loginError');
-    btn.disabled = true;
-    btnText.style.display = 'none';
-    btnLoading.style.display = 'inline-block';
-    errorDiv.style.display = 'none';
-    errorDiv.textContent = '';
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('loginBtn');
+        const btnText = document.getElementById('loginBtnText');
+        const btnLoading = document.getElementById('loginBtnLoading');
+        const errorDiv = document.getElementById('loginError');
 
-    // DEBUG: Log CSRF token value
-    const csrfToken = document.querySelector('input[name="_token"]').value;
-    console.log('CSRF Token:', csrfToken);
+        // Loading State
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline-block';
+        errorDiv.style.display = 'none';
 
-    try {
-        const response = await fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-            credentials: 'same-origin'
-        });
-        const data = await response.json();
-        if (response.ok) {
-            // If OTP modal should show, open it
-            if (data.show_otp_modal) {
-                openOtpModalAuto(email);
-            } else if (data.redirect) {
-                window.location.href = data.redirect;
+        const csrfToken = document.querySelector('input[name="_token"]').value;
+
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+                credentials: 'same-origin'
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                if (data.show_otp_modal) {
+                    openOtpModalAuto(email);
+                } else if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    window.location.reload();
+                }
             } else {
-                window.location.reload();
+                errorDiv.textContent = data.message || 'The credentials you entered are incorrect.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btnText.style.display = '';
+                btnLoading.style.display = 'none';
             }
-        } else {
-            // Show error message
-            errorDiv.textContent = data.message || 'Invalid credentials.';
+        } catch (err) {
+            errorDiv.textContent = 'Connection error. Please check your internet.';
             errorDiv.style.display = 'block';
+            btn.disabled = false;
+            btnText.style.display = '';
+            btnLoading.style.display = 'none';
         }
-    } catch (err) {
-        errorDiv.textContent = 'An error occurred. Please try again.';
-        errorDiv.style.display = 'block';
-    }
-    btn.disabled = false;
-    btnText.style.display = '';
-    btnLoading.style.display = 'none';
-});
+    });
 
-// Always hide OTP modal on page load
-window.addEventListener('DOMContentLoaded', function() {
-    var otpModal = document.getElementById('otpModalAuto');
-    if (otpModal) {
-        otpModal.style.display = 'none';
-    }
-});
+    window.addEventListener('DOMContentLoaded', () => {
+        const otpModal = document.getElementById('otpModalAuto');
+        if (otpModal) otpModal.style.display = 'none';
+
+        // Patch: Reset login button if OTP modal is closed (user clicks back/close)
+        window.closeOtpModalAuto = function() {
+            document.getElementById('otpModalAuto').style.display = 'none';
+            if (window.otpInterval) clearInterval(window.otpInterval);
+            // Reset login button state
+            const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('loginBtnText');
+            const btnLoading = document.getElementById('loginBtnLoading');
+            if (btn && btnText && btnLoading) {
+                btn.disabled = false;
+                btnText.style.display = '';
+                btnLoading.style.display = 'none';
+            }
+        }
+    });
 </script>
 </body>
 </html>

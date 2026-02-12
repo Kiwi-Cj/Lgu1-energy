@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Facility;
 use App\Models\EnergyEfficiency;
 use App\Models\EnergyRecord;
-use App\Models\Bill;
+// use App\Models\Bill; // removed
 
 class DashboardSummaryController extends Controller
 {
@@ -24,14 +24,8 @@ class DashboardSummaryController extends Controller
         }
         $totalKwh = $energyQuery->sum('kwh_consumed');
 
-        $billQuery = Bill::query();
-        if ($request->filled('date_start')) {
-            $billQuery->whereRaw("CONCAT(year, '-', LPAD(month,2,'0')) >= ?", [$request->date_start]);
-        }
-        if ($request->filled('date_end')) {
-            $billQuery->whereRaw("CONCAT(year, '-', LPAD(month,2,'0')) <= ?", [$request->date_end]);
-        }
-        $totalCost = $billQuery->sum('total_bill');
+            // Bill query removed
+            $totalCost = 0;
 
         $lowEfficiencyCount = EnergyEfficiency::where('rating', 'Low')
             ->whereIn('facility_id', Facility::where('status', 'Active')->pluck('id'))

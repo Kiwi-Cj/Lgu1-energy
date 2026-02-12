@@ -47,8 +47,16 @@ class MaintenanceController extends Controller
                 'remarks' => $row->remarks ?? '-',
             ];
         }
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.maintenance.history', [
             'historyRows' => $historyRows,
+            'role' => $role,
+            'user' => $user,
+            'notifications' => $notifications,
+            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 
@@ -140,7 +148,13 @@ class MaintenanceController extends Controller
 
 public function index()
     {
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
         $query = \App\Models\Maintenance::with('facility');
+        if ($facilityIds) {
+            $query->whereIn('facility_id', $facilityIds);
+        }
         if (request()->filled('facility_id')) {
             $query->where('facility_id', request('facility_id'));
         }
@@ -162,7 +176,8 @@ public function index()
         $reflaggedCount = 0;
 
         foreach ($maintenance as $row) {
-            // Summary counts
+            // Only count if facility is assigned (for staff)
+            if ($facilityIds && !in_array($row->facility_id, $facilityIds)) continue;
             if (in_array($row->maintenance_status, ['Pending','Ongoing'])) $needingCount++;
             if ($row->maintenance_status === 'Pending') $pendingCount++;
             if ($row->maintenance_status === 'Ongoing') $ongoingCount++;
@@ -231,6 +246,18 @@ public function index()
         $pending = $maintenance->where('maintenance_status','Pending')->pluck('facility_id')->unique();
         $reflaggedCount = $completed->intersect($pending)->count();
 
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $facilities = ($role === 'staff') ? $user->facilities : Facility::orderBy('name')->get();
+        // Filter notifications for staff: only those related to assigned facilities
+        if ($role === 'staff') {
+            // Only filter by user, not by facility_id (column does not exist in notifications)
+            $notifications = $user->notifications()->orderByDesc('created_at')->take(10)->get();
+            $unreadNotifCount = $user->notifications()->whereNull('read_at')->count();
+        } else {
+            $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+            $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        }
         return view('modules.maintenance.index', [
             'maintenanceRows' => $maintenanceRows,
             'needingCount' => $needingCount,
@@ -238,6 +265,11 @@ public function index()
             'ongoingCount' => $ongoingCount,
             'completedCount' => $completedCount,
             'reflaggedCount' => $reflaggedCount,
+            'role' => $role,
+            'user' => $user,
+            'facilities' => $facilities,
+            'notifications' => $notifications,
+            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 }

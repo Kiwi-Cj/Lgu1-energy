@@ -10,7 +10,11 @@ class SettingsController extends Controller
     public function index()
     {
         $settings = Setting::all()->groupBy('group');
-        return view('modules.settings.index', compact('settings'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.settings.index', compact('settings', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function update(Request $request)

@@ -1,5 +1,13 @@
 
 <?php $__env->startSection('title', 'Energy Efficiency Analysis'); ?>
+
+<?php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+?>
+
 <?php $__env->startSection('content'); ?>
 <div style="width:100%;margin:0;">
     <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin-bottom:18px;">Energy Efficiency Analysis</h2>
@@ -124,7 +132,6 @@
         </table>
     </div>
 </div>
-
 
 
 

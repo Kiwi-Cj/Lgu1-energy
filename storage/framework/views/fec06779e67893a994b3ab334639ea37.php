@@ -36,7 +36,7 @@ document.getElementById('deleteEnergyProfileForm')?.addEventListener('submit', f
         if(data.success) {
             location.reload();
         } else {
-            alert('Delete failed.');
+            // alert removed for production
         }
     });
 });

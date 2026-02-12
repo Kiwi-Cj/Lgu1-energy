@@ -1,5 +1,13 @@
 
 <?php $__env->startSection('title', 'Energy'); ?>
+
+<?php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+?>
+
 <?php $__env->startSection('content'); ?>
 
         <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;">
@@ -30,7 +38,6 @@
             </div>
             <div id="incident-modal-<?php echo e($incident->id); ?>" class="incident-modal" style="display:none;">
                 <div class="incident-modal-content">
-                    <button class="incident-modal-close" onclick="closeIncidentModal(<?php echo e($incident->id); ?>)">&times;</button>
                     <h3 style="margin-top:0;margin-bottom:24px;font-size:1.5rem;font-weight:700;">Incident Details</h3>
                     <div style="margin-bottom:20px;"><b>Facility:</b> <?php echo e($incident->facility->name ?? '-'); ?></div>
                     <div style="margin-bottom:20px;"><b>Month/Year:</b> <?php echo e($monthLabel); ?>/<?php echo e($yearNum ?? '-'); ?></div>
@@ -81,7 +88,6 @@
     <?php if($incident->facility): ?>
         <div id="facility-modal-<?php echo e($incident->facility->id); ?>" class="incident-modal" style="display:none;">
             <div class="incident-modal-content">
-                <button class="incident-modal-close" onclick="closeFacilityModal(<?php echo e($incident->facility->id); ?>)">&times;</button>
                 <h3 style="margin-top:0;margin-bottom:24px;font-size:1.3rem;font-weight:700;color:#2563eb;">Facility Details</h3>
                 <div style="margin-bottom:18px;"><b>Name:</b> <?php echo e($incident->facility->name ?? '-'); ?></div>
                 <div style="margin-bottom:18px;"><b>Type:</b> <?php echo e($incident->facility->type ?? '-'); ?></div>

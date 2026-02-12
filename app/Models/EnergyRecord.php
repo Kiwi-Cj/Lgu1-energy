@@ -30,6 +30,7 @@ class EnergyRecord extends Model
         'rate_per_kwh',
         'recorded_by',
         'bill_image', // optional bill image
+        'baseline_kwh',
     ];
 
 

@@ -12,14 +12,24 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="space-y-6" enctype="multipart/form-data">
         @csrf
         @method('patch')
 
+        <div class="flex items-center gap-6 mb-4">
+            <div>
+                <img src="{{ $user->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e8f0; box-shadow: 0 2px 8px #0001; background: #fff;">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label for="profile_photo" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Change Photo</label>
+                <input id="profile_photo" name="profile_photo" type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                <x-input-error class="mt-2" :messages="$errors->get('profile_photo')" />
+            </div>
+        </div>
         <div>
-            <x-input-label for="name" :value="__('Name')" class="font-semibold text-gray-800 dark:text-gray-200" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            <x-input-label for="full_name" :value="__('Full Name')" class="font-semibold text-gray-800 dark:text-gray-200" />
+            <x-text-input id="full_name" name="full_name" type="text" class="mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100" :value="old('full_name', $user->full_name)" required autofocus autocomplete="name" />
+            <x-input-error class="mt-2" :messages="$errors->get('full_name')" />
         </div>
 
         <div>

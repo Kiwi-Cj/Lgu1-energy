@@ -43,11 +43,8 @@
 				</div>
 				<div style="flex:1;">
                     <label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Baseline kWh</label>
-                    <input type="number" name="baseline_kwh" value="{{ isset($avgKwh) ? number_format($avgKwh, 2, '.', '') : '' }}" readonly style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
-                    @if(empty($avgKwh))
-                        <div style="font-size:0.97rem;color:#b91c1c;margin-top:2px;">No baseline kWh available for this facility.</div>
-                    @endif
-				</div>
+                    <input type="number" name="baseline_kwh" step="0.01" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+                </div>
 			</div>
 			<div style="display:flex;gap:14px;">
 				<div style="flex:1;">

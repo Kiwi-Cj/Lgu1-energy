@@ -1,5 +1,12 @@
 @extends('layouts.qc-admin')
 
+@php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+@endphp
+
 @section('content')
 <div class="container" style="padding:2.5rem 0;max-width:900px;">
     <!-- Header -->
@@ -44,11 +51,25 @@
             </div>
 
             <!-- Buttons -->
-            <div style="margin-top:2.5rem;display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center;">
-                <button type="submit" class="btn btn-success" style="padding:14px 32px;font-size:1.13rem;font-weight:700;letter-spacing:0.5px;border-radius:10px;box-shadow:0 2px 8px #22c55e22;display:flex;align-items:center;gap:0.7rem;">
+            <div style="margin-top:1.2rem;display:flex;gap:10px;align-items:center;">
+                <a href="#" onclick="exportCOAPdf(this);return false;" class="btn btn-danger" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #e11d480a;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-file-pdf"></i> Download PDF
+                </a>
+                <button type="submit" class="btn btn-success" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #22c55e0a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </button>
             </div>
+            <script>
+            function exportCOAPdf(btn) {
+                const form = btn.closest('form');
+                const from = form.querySelector('[name=from_date]').value;
+                const to = form.querySelector('[name=to_date]').value;
+                const facility = form.querySelector('[name=facility_id]').value;
+                let url = `{{ url('/modules/energy/export-pdf') }}?from_date=${from}&to_date=${to}`;
+                if (facility) url += `&facility_id=${facility}`;
+                window.location.href = url;
+            }
+            </script>
         </form>
     </div>
 

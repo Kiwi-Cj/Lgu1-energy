@@ -15,6 +15,9 @@ use App\Http\Controllers\EnergyActionController;
 use App\Http\Controllers\First3MonthsController;
 use App\Http\Controllers\Modules\EnergyMonitoringController;
 
+// Restored for sidebar compatibility: energy.dashboard now points to energy-monitoring index (controller, so $facilities is set)
+Route::get('/modules/energy-monitoring/index', [\App\Http\Controllers\Modules\EnergyMonitoringController::class, 'index'])->name('energy.dashboard');
+
 // OTP routes (should NOT be inside auth middleware)
 Route::get('/otp/request', [\App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
 Route::post('/otp/send', [\App\Http\Controllers\OtpController::class, 'sendOtp'])->name('otp.send');
@@ -37,7 +40,8 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 			   'date' => 'required|date',
 			   'actual_kwh' => 'required|numeric',
 			   'energy_cost' => 'nullable|numeric',
-			   'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+			   'bill_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+			   'baseline_kwh' => 'nullable|numeric',
 		   ]);
 		   $date = date_create($validated['date']);
 		   $validated['year'] = $date->format('Y');
@@ -53,9 +57,16 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 		   if ($exists) {
 			   return redirect()->back()->withInput()->withErrors(['duplicate' => 'An energy record for this facility and month/year already exists.']);
 		   }
-		   if ($request->hasFile('meralco_bill_picture')) {
-			   $path = $request->file('meralco_bill_picture')->store('meralco_bills', 'public');
-			   $validated['meralco_bill_picture'] = $path;
+		   if ($request->hasFile('bill_image')) {
+			   $path = $request->file('bill_image')->store('meralco_bills', 'public');
+			   $validated['bill_image'] = $path;
+		   }
+		   // Make sure baseline_kwh is set (from input or fallback)
+		   if (!isset($validated['baseline_kwh']) || $validated['baseline_kwh'] === null || $validated['baseline_kwh'] === '') {
+			   // Try to get from latest energy profile or facility
+			   $facility = \App\Models\Facility::find($facilityId);
+			   $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+			   $validated['baseline_kwh'] = $profile && $profile->baseline_kwh !== null ? $profile->baseline_kwh : ($facility ? $facility->baseline_kwh : null);
 		   }
 		   \App\Models\EnergyRecord::create($validated);
 		   return redirect()->back()->with('success', 'Monthly record added!');
@@ -75,13 +86,17 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 	Route::patch('/profile', function (\Illuminate\Http\Request $request) {
 		$user = auth()->user();
 		$validated = $request->validate([
-			'name' => 'required|string|max:255',
+			'full_name' => 'required|string|max:255',
 			'email' => 'required|email|max:255',
-			// Add more fields as needed
+			'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
 		]);
-		$user->name = $validated['name'];
+		$user->full_name = $validated['full_name'];
 		$user->email = $validated['email'];
-		// Add more fields as needed
+		if ($request->hasFile('profile_photo')) {
+			$file = $request->file('profile_photo');
+			$path = $file->store('profile_photos', 'public');
+			$user->profile_photo_path = $path;
+		}
 		$user->save();
 		return redirect()->route('profile.edit')->with('status', 'profile-updated');
 	})->name('profile.update');
@@ -97,85 +112,10 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 			return redirect()->route('profile.edit')->withErrors(['password' => 'Incorrect password.'], 'userDeletion');
 		}
 		// Log out and delete user
-		auth()->logout();
 		$user->delete();
-		return redirect('/')->with('status', 'account-deleted');
+		auth()->logout();
+		return redirect('/')->with('status', 'Your account has been deleted.');
 	})->name('profile.destroy');
-
-	// First 3 Months Data Entry for Facilities
-	Route::get('/facilities/first3months', [First3MonthsController::class, 'create'])->name('facilities.first3months.create');
-	Route::post('/facilities/first3months', [First3MonthsController::class, 'store'])->name('facilities.first3months.store');
-	Route::delete('/facilities/first3months/{facility_id}/{month_no}', [First3MonthsController::class, 'delete'])->name('facilities.first3months.delete');
-				// Energy Monitoring - Energy Profile page
-			// Placeholder route for energy-profiles.store to resolve RouteNotFoundException
-			Route::post('/modules/energy-profiles', function() {
-				// Implement storing logic here
-				return redirect()->back()->with('success', 'Energy profile stored (placeholder).');
-			})->name('energy-profiles.store');
-		// Placeholder route for facilities.exportReport to resolve RouteNotFoundException
-		Route::get('/modules/facilities/export-report', function() {
-			return 'Export report for facilities (placeholder).';
-		})->name('facilities.exportReport');
-	// Redirect /modules/energy/dashboard to /modules/energy-monitoring for compatibility
-	Route::get('/modules/energy/dashboard', function() {
-		return redirect()->route('modules.energy-monitoring.index');
-	})->name('energy.dashboard');
-
-	Route::get('/modules/energy/records', function(\Illuminate\Http\Request $request) {
-		$facilities = \App\Models\Facility::all();
-		$query = \App\Models\EnergyRecord::with('facility');
-		if ($request->has('facility_id') && $request->facility_id) {
-			$query->where('facility_id', $request->facility_id);
-		}
-		$monthlyRecords = $query->get();
-		return view('modules.energy-monitoring.records', compact('facilities', 'monthlyRecords'));
-	})->name('energy.records');
-
-	// Monthly Records per Facility (CORRECT ROUTE)
-	Route::get('/modules/energy/records/{facility}', function($facilityId) {
-		$facility = \App\Models\Facility::findOrFail($facilityId);
-		$records = \App\Models\EnergyRecord::where('facility_id', $facilityId)->orderByDesc('year')->orderByDesc('month')->get();
-		return view('modules.energy-monitoring.records', compact('facility', 'records'));
-	})->name('energy.records');
-
-	// Handle Add Monthly Record POST
-	Route::post('/modules/energy/records', function(\Illuminate\Http\Request $request) {
-		   $validated = $request->validate([
-			   'facility_id' => 'required|exists:facilities,id',
-			   'month' => 'required|integer|min:1|max:12',
-			   'year' => 'required|integer',
-			   'actual_kwh' => 'required|numeric',
-			'baseline_kwh' => 'nullable|numeric',
-			   'rate_per_kwh' => 'required|numeric',
-			   'energy_cost' => 'nullable|numeric',
-			   'meralco_bill_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
-		   ]);
-		// Prevent duplicate entry for the same facility, month, and year
-		$exists = \App\Models\EnergyRecord::where('facility_id', $validated['facility_id'])
-			->where('month', $validated['month'])
-			->where('year', $validated['year'])
-			->exists();
-		if ($exists) {
-			return redirect()->back()->withInput()->withErrors(['duplicate' => 'An energy record for this facility and month/year already exists.']);
-		}
-		   $data = $validated;
-		   // Set baseline_kwh to 0 if not set
-		   if (!isset($data['baseline_kwh']) || $data['baseline_kwh'] === null) {
-			   $data['baseline_kwh'] = 0;
-		   }
-		   // Calculate deviation_percent
-		$data['deviation_percent'] = (isset($data['baseline_kwh']) && $data['baseline_kwh'] != 0)
-			? round((($data['actual_kwh'] - $data['baseline_kwh']) / $data['baseline_kwh']) * 100, 2)
-			   : 0;
-		   // Calculate energy_cost
-		   $data['energy_cost'] = $data['actual_kwh'] * $data['rate_per_kwh'];
-		   if ($request->hasFile('meralco_bill_picture')) {
-			   $path = $request->file('meralco_bill_picture')->store('meralco_bills', 'public');
-			   $data['meralco_bill_picture'] = $path;
-		   }
-		   \App\Models\EnergyRecord::create($data);
-		   return redirect()->route('modules.energy.index')->with('success', 'Energy record added!');
-	});
 
 	use App\Models\Facility;
 	use App\Models\EnergyRecord;
@@ -228,6 +168,9 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 		$facilities = \App\Models\Facility::orderBy('name')->get();
 		return view('modules.energy.export-report', compact('facilities'));
 	})->name('energy.exportReport');
+
+	Route::get('/modules/energy/export-pdf', [\App\Http\Controllers\Reports\EnergyReportController::class, 'exportPdf'])->name('modules.energy.export-pdf');
+
 // Removed unmatched closing brace here
 // Users & Roles Management - Admin/Energy Officer only
 use Illuminate\Http\Request as HttpRequest;
@@ -297,13 +240,7 @@ require __DIR__.'/reports.php';
 require __DIR__.'/energy-incidents.php';
 
 // Public welcome page route
-Route::get('/modules/dashboard/index', function() {
-	if (!auth()->check() || empty(auth()->user()->role)) {
-		return redirect('/login')->with('error', 'You do not have permission to access the dashboard.');
-	}
-	// All users with a role can access
-	return app(\App\Http\Controllers\DashboardController::class)->index();
-})->name('dashboard.index');
+Route::get('/modules/dashboard/index', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
 
 // Energy Monitoring Dashboard (Controller-based, for dynamic cards)
 Route::get('/modules/energy-monitoring', [EnergyMonitoringController::class, 'index'])->name('modules.energy-monitoring.index');
@@ -356,7 +293,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 	Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');
 	// Facility modal detail for AJAX
 	Route::get('/modules/facilities/{facility}/modal-detail', [\App\Http\Controllers\Modules\FacilityController::class, 'modalDetail'])->name('modules.facilities.modal-detail');
-	Route::get('/modules/energy-efficiency-analysis', [\App\Http\Controllers\Modules\EnergyEfficiencyAnalysisController::class, 'index'])->name('modules.energy-efficiency-analysis.index');
+	// Route for EnergyEfficiencyAnalysisController removed
 	// Annual Energy Summary Excel Export (CSV fallback)
 	Route::get('/modules/energy/annual/export-excel', function(\Illuminate\Http\Request $request) {
 		$years = range(date('Y'), date('Y')-10);

@@ -44,4 +44,13 @@ namespace App\Models;
         {
             return $this->belongsToMany(Facility::class, 'facility_user', 'user_id', 'facility_id');
         }
+
+        // Accessor for profile photo URL
+        public function getProfilePhotoUrlAttribute()
+        {
+            if ($this->profile_photo_path) {
+                return asset('storage/' . $this->profile_photo_path);
+            }
+            return asset('img/default-avatar.png');
+        }
     }

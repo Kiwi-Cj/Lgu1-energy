@@ -1,438 +1,433 @@
 <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 
 <?php $__env->startSection('title', 'Facilities Needing Maintenance'); ?>
+
+<?php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+    $userRole = strtolower($user->role ?? '');
+?>
+
 <?php $__env->startSection('content'); ?>
-<div style="width:100%;margin:0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <h2 style="font-size:2rem;font-weight:700;color:#3762c8;margin:0;">Facilities Needing Maintenance</h2>
-        <div style="display:flex;gap:12px;align-items:center;">
-            <button type="button" id="addMaintenanceBtn" class="btn btn-success" style="background:#22c55e;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(34,197,94,0.10);border:none;cursor:pointer;">+ Add Maintenance</button>
-            <a href="<?php echo e(route('maintenance.history')); ?>" class="btn btn-primary" style="background:#2563eb;color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(37,99,235,0.08);display:inline-block;">
-                <i class="fa fa-history" style="margin-right:7px;"></i> Maintenance History
+<style>
+    /* Report Card Container */
+    .report-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        padding: 30px;
+        border: 1px solid #eef2f6;
+        margin-bottom: 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .page-header h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+    .page-header h2 span { color: #2563eb; }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-box {
+        padding: 24px 20px;
+        border-radius: 14px;
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .stat-box:hover { transform: translateY(-3px); }
+    .stat-label { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .stat-value { font-size: 2.2rem; font-weight: 800; margin-top: 10px; color: #1e293b; }
+
+    /* Filter Section */
+    .filter-section {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 25px;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .filter-group select, .filter-group input {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        min-width: 160px;
+        background: #fff;
+        font-size: 0.95rem;
+    }
+    .btn-filter {
+        background: linear-gradient(90deg,#2563eb,#6366f1);
+        color: #fff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-filter:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Table Styling */
+    .maint-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .maint-table { width: 100%; border-collapse: collapse; background: #fff; text-align: center; }
+    .maint-table thead { background: #f1f5f9; }
+    .maint-table th { padding: 15px; font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .maint-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
+    .maint-table tr:hover { background-color: #f8fafc; }
+
+    /* Modal Backdrop */
+    .modal-overlay {
+        display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.6); align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    }
+    .modal-content {
+        background: #fff; max-width: 500px; width: 95vw; border-radius: 20px; 
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2); overflow: hidden;
+    }
+</style>
+
+
+<?php if(session('success')): ?>
+<div id="successAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;">
+    <div style="background:#dcfce7;color:#166534;padding:16px 24px;border-radius:12px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:10px;">
+        <i class="fa fa-check-circle" style="color:#22c55e; font-size: 1.2rem;"></i>
+        <span><?php echo e(session('success')); ?></span>
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="report-card">
+    <div class="page-header">
+        <h2>Facilities Needing <span>Maintenance</span></h2>
+        <div style="display:flex; gap:10px;">
+             <button id="addMaintenanceBtn" class="btn btn-primary" style="background:#10b981; color:#fff; padding:10px 20px; border-radius:10px; font-weight:700; border:none; cursor:pointer;">
+                <i class="fa fa-plus"></i> Add Manual
+            </button>
+            <a href="<?php echo e(route('maintenance.history')); ?>" style="background:#2563eb; color:#fff; padding:10px 20px; border-radius:10px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                <i class="fa fa-history"></i> History
             </a>
         </div>
     </div>
-    <div class="row" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:2rem;">
-        <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff0f3;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);">
-            <div style="font-size:1.1rem;font-weight:500;color:#e11d48;">🔴 Facilities Needing Maintenance</div>
-            <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($needingCount ?? 0); ?></div>
+
+    <div class="stats-grid">
+        <div class="stat-box" style="background: #fff1f2;">
+            <div class="stat-label" style="color: #e11d48;">🔴 Needing Maint.</div>
+            <div class="stat-value"><?php echo e($needingCount ?? 0); ?></div>
         </div>
-        <div class="card" style="flex:1 1 220px;min-width:220px;background:#fef9c3;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(234,179,8,0.08);">
-            <div style="font-size:1.1rem;font-weight:500;color:#eab308;">🟡 Pending Maintenance</div>
-            <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($pendingCount ?? 0); ?></div>
+        <div class="stat-box" style="background: #fefce8;">
+            <div class="stat-label" style="color: #a16207;">🟡 Pending</div>
+            <div class="stat-value"><?php echo e($pendingCount ?? 0); ?></div>
         </div>
-        <div class="card" style="flex:1 1 220px;min-width:220px;background:#f0fdf4;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(34,197,94,0.08);">
-            <div style="font-size:1.1rem;font-weight:500;color:#22c55e;">🔧 Ongoing Maintenance</div>
-            <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($ongoingCount ?? 0); ?></div>
+        <div class="stat-box" style="background: #f0fdf4;">
+            <div class="stat-label" style="color: #15803d;">🔧 Ongoing</div>
+            <div class="stat-value"><?php echo e($ongoingCount ?? 0); ?></div>
         </div>
-        <div class="card" style="flex:1 1 220px;min-width:220px;background:#e0f7fa;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(0,188,212,0.08);">
-            <div style="font-size:1.1rem;font-weight:500;color:#0097a7;">✅ Completed Maintenance</div>
-            <div style="font-size:2rem;font-weight:700;margin:8px 0;"><?php echo e($completedCount ?? 0); ?></div>
+        <div class="stat-box" style="background: #ecfeff;">
+            <div class="stat-label" style="color: #0e7490;">✅ Completed</div>
+            <div class="stat-value"><?php echo e($completedCount ?? 0); ?></div>
         </div>
     </div>
-    <!-- FILTERS -->
-    <form method="GET" action="" style="margin-bottom:24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
-        <div style="display:flex;flex-direction:column;">
-            <label for="facility_id" style="font-weight:700;margin-bottom:4px;">Facility</label>
-            <select name="facility_id" id="facility_id" class="form-control" style="min-width:170px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;" required>
-                <option value="" disabled selected hidden>Select Facility</option>
-                <?php $__currentLoopData = \App\Models\Facility::all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+
+    <form method="GET" action="" class="filter-section">
+        <div class="filter-group">
+            <label>Facility</label>
+            <select name="facility_id" id="facility_id">
+                <option value="" disabled selected>Select Facility</option>
+                <?php $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e($facility->id); ?>" <?php if(request('facility_id') == $facility->id): ?> selected <?php endif; ?>><?php echo e($facility->name); ?></option>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
         </div>
-        <div style="display:flex;flex-direction:column;">
-            <label for="month" style="font-weight:700;margin-bottom:4px;">Month</label>
-            <select name="month" id="month" class="form-control" style="min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                <option value="" disabled selected hidden>Select Month</option>
+        <div class="filter-group">
+            <label>Month</label>
+            <select name="month" id="month">
+                <option value="" disabled selected>Select Month</option>
                 <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e(str_pad($m,2,'0',STR_PAD_LEFT)); ?>" <?php if(request('month') == str_pad($m,2,'0',STR_PAD_LEFT)): ?> selected <?php endif; ?>><?php echo e(date('F', mktime(0,0,0,$m,1))); ?></option>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
         </div>
-        <div style="display:flex;flex-direction:column;">
-            <label for="maintenance_type" style="font-weight:700;margin-bottom:4px;">Type</label>
-            <select name="maintenance_type" id="maintenance_type" class="form-control" style="min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                <option value="" disabled selected hidden>Select Type</option>
+        <div class="filter-group">
+            <label>Type</label>
+            <select name="maintenance_type" id="maintenance_type">
+                <option value="">All Types</option>
                 <option value="Preventive" <?php if(request('maintenance_type') == 'Preventive'): ?> selected <?php endif; ?>>Preventive</option>
                 <option value="Corrective" <?php if(request('maintenance_type') == 'Corrective'): ?> selected <?php endif; ?>>Corrective</option>
             </select>
         </div>
-        <div style="display:flex;flex-direction:column;">
-            <label for="status" style="font-weight:700;margin-bottom:4px;">Status</label>
-            <select name="status" id="status" class="form-control" style="min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+        <div class="filter-group">
+            <label>Status</label>
+            <select name="status" id="status">
                 <option value="">All Status</option>
                 <option value="Pending" <?php if(request('status') == 'Pending'): ?> selected <?php endif; ?>>Pending</option>
                 <option value="Ongoing" <?php if(request('status') == 'Ongoing'): ?> selected <?php endif; ?>>Ongoing</option>
                 <option value="Completed" <?php if(request('status') == 'Completed'): ?> selected <?php endif; ?>>Completed</option>
             </select>
         </div>
-        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
-            <button type="submit" class="btn btn-primary" style="padding:7px 22px;border-radius:7px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);margin-top:24px;">Filter</button>
-        </div>
+        <button type="submit" class="btn-filter">Filter</button>
     </form>
-    <!-- SCHEDULE MODAL -->
-    <div id="scheduleModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);align-items:center;justify-content:center;">
-        <div style="background:#fff;max-width:480px;width:95vw;max-height:90vh;overflow:auto;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:0 0 24px 0;position:relative;">
-            <div style="padding:24px 32px 12px 32px;border-bottom:1px solid #e5e7eb;">
-                <div id="modalTitle" style="font-size:1.3rem;font-weight:700;">Schedule Maintenance</div>
-            </div>
-            <div style="padding:18px 32px;">
-                <form id="scheduleForm">
-                    <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
-                    <div style="margin-bottom:12px;">
-                        <label style="font-weight:600;">Facility</label>
-                        <select id="modalFacility" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                            <option value="" disabled selected hidden>Select Facility</option>
-                            <?php $__currentLoopData = \App\Models\Facility::all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($facility->id); ?>"><?php echo e($facility->name); ?></option>
+
+    <div class="maint-table-wrapper">
+        <table class="maint-table">
+            <thead>
+                <tr>
+                    <th>Facility</th>
+                    <th>Issue Type</th>
+                    <th>Trigger Month</th>
+                    <th>Efficiency</th>
+                    <th>Status</th>
+                    <th>Scheduled</th>
+                    <th>Remarks</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $__empty_1 = true; $__currentLoopData = $maintenanceRows ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <tr data-id="<?php echo e($row['id'] ?? $i); ?>" 
+                    data-maintenance_type="<?php echo e($row['maintenance_type'] ?? ''); ?>" 
+                    data-scheduled_date="<?php echo e($row['scheduled_date'] ?? ''); ?>" 
+                    data-assigned_to="<?php echo e($row['assigned_to'] ?? ''); ?>" 
+                    data-completed_date="<?php echo e($row['completed_date'] ?? ''); ?>">
+                    <td style="font-weight:700;"><?php echo e($row['facility']); ?></td>
+                    <td><?php echo e($row['issue_type']); ?></td>
+                    <td><?php echo e($row['trigger_month']); ?></td>
+                    <td><?php echo e($row['efficiency_rating']); ?></td>
+                    <td><span style="padding:4px 10px; background:#f1f5f9; border-radius:20px; font-size:0.8rem; font-weight:700;"><?php echo e($row['maintenance_status']); ?></span></td>
+                    <td><?php echo e($row['scheduled_date']); ?></td>
+                    <td style="color:#64748b;"><?php echo e($row['remarks'] ?? '-'); ?></td>
+                    <td><?php echo str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']); ?></td>
+                </tr>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr><td colspan="8" style="padding:40px; color:#94a3b8;">No facilities needing maintenance found.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="scheduleModal" class="modal-overlay">
+    <div class="modal-content">
+        <div style="padding:20px 30px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+            <div id="modalTitle" style="font-size:1.2rem; font-weight:800; color:#1e293b;">Schedule Maintenance</div>
+            <button onclick="closeScheduleModal()" style="background:none; border:none; font-size:1.5rem; color:#94a3b8; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:30px;">
+            <form id="scheduleForm">
+                <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
+                
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">FACILITY</label>
+                    <select id="modalFacility" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                        <option value="" disabled selected>Select Facility</option>
+                        <?php $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($facility->id); ?>"><?php echo e($facility->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">TRIGGER MONTH</label>
+                        <select id="modalTriggerMonth" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e(str_pad($m,2,'0',STR_PAD_LEFT)); ?>"><?php echo e(date('F', mktime(0,0,0,$m,1))); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
-                    <div style="margin-bottom:12px;display:flex;gap:12px;">
-                        <div style="flex:1;">
-                            <label style="font-weight:600;">Trigger Month</label>
-                            <select id="modalTriggerMonth" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                                <option value="" disabled selected hidden>Select Month</option>
-                                <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e(str_pad($m,2,'0',STR_PAD_LEFT)); ?>"><?php echo e(date('F', mktime(0,0,0,$m,1))); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
-                        <div style="flex:1;">
-                            <label style="font-weight:600;">Issue Type</label>
-                            <input type="text" id="modalIssueType" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                        </div>
-                        <div style="flex:1;" id="efficiencyRatingGroup">
-                            <label style="font-weight:600;">Efficiency Rating</label>
-                            <select id="modalEfficiencyRating" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                                <option value="" disabled selected hidden>Select Rating</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">ISSUE TYPE</label>
+                        <input type="text" id="modalIssueType" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
                     </div>
-                    <div style="margin-bottom:12px;">
-                        <label style="font-weight:600;">Maintenance Type</label>
-                        <select id="modalMaintType" name="maintenance_type" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                </div>
+
+                <div id="efficiencyRatingGroup" style="margin-bottom:15px;">
+                    <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">EFFICIENCY RATING</label>
+                    <select id="modalEfficiencyRating" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">TYPE & DATE</label>
+                    <div style="display:flex; gap:10px;">
+                        <select id="modalMaintType" style="flex:1; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
                             <option value="Preventive">Preventive</option>
                             <option value="Corrective">Corrective</option>
                         </select>
+                        <input type="date" id="modalScheduleDate" style="flex:1; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
                     </div>
-                    <div style="margin-bottom:12px;">
-                        <label style="font-weight:600;">Scheduled Date</label>
-                        <input type="date" name="scheduled_date" id="modalScheduleDate" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">ASSIGNED TO</label>
+                    <input type="text" id="modalAssignedTo" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">REMARKS</label>
+                    <textarea id="modalRemarks" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; min-height:60px;"></textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">STATUS</label>
+                        <select id="modalStatus" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+                            <option value="Pending">Pending</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Completed">Completed</option>
+                        </select>
                     </div>
-                    <div style="margin-bottom:12px;">
-                        <label style="font-weight:600;">Assigned To</label>
-                        <input type="text" name="assigned_to" id="modalAssignedTo" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
+                    <div>
+                        <label style="font-weight:700; font-size:0.75rem; color:#475569; display:block; margin-bottom:5px;">COMPLETED DATE</label>
+                        <input type="date" id="modalCompletedDate" disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
                     </div>
-                    <div style="margin-bottom:12px;">
-                        <label style="font-weight:600;">Remarks</label>
-                        <textarea name="remarks" id="modalRemarks" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;min-height:60px;"></textarea>
-                    </div>
-                    <div style="margin-bottom:12px;display:flex;gap:12px;">
-                        <div style="flex:1;">
-                            <label style="font-weight:600;">Status</label>
-                            <select id="modalStatus" name="maintenance_status" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;">
-                                <option value="Pending">Pending</option>
-                                <option value="Ongoing">Ongoing</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-                        <div style="flex:1;">
-                            <label style="font-weight:600;">Completed Date</label>
-                            <input type="date" name="completed_date" id="modalCompletedDate" class="form-control" style="width:100%;padding:8px 10px;border-radius:7px;border:1px solid #c3cbe5;font-size:1rem;" disabled>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:12px;justify-content:flex-end;">
-                        <button type="button" onclick="closeScheduleModal()" style="padding:7px 22px;border-radius:7px;background:#e5e7eb;color:#222;font-weight:600;border:none;font-size:1rem;">Cancel</button>
-                        <button type="submit" style="padding:7px 22px;border-radius:7px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1rem;">Save</button>
-                    </div>
-                </form>
-            </div>
-            <button onclick="closeScheduleModal()" style="position:absolute;top:12px;right:18px;background:none;border:none;font-size:1.5rem;color:#888;cursor:pointer;">&times;</button>
+                </div>
+
+                <div style="display:flex; gap:12px; justify-content:flex-end;">
+                    <button type="button" onclick="closeScheduleModal()" style="padding:10px 20px; border-radius:8px; background:#f1f5f9; color:#475569; font-weight:700; border:none; cursor:pointer;">Cancel</button>
+                    <button type="submit" style="padding:10px 25px; border-radius:8px; background:#2563eb; color:#fff; font-weight:700; border:none; cursor:pointer;">Save Data</button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <div style="overflow-x:auto;">
-    <table class="table" style="width:100%;margin-top:12px;background:#fff;border-radius:14px;overflow:hidden;text-align:center;box-shadow:0 2px 12px rgba(55,98,200,0.07);border-collapse:separate;border-spacing:0;">
-        <thead style="background:#e9effc;">
-            <tr style="font-size:1.05rem;">
-                <th style="padding:14px 10px;">Facility Name</th>
-                <th style="padding:14px 10px;">Issue Type</th>
-                <th style="padding:14px 10px;">Trigger Month</th>
-                <th style="padding:14px 10px;">Efficiency Rating</th>
-                <th style="padding:14px 10px;">Maintenance Status</th>
-                <th style="padding:14px 10px;">Scheduled Date</th>
-                <th style="padding:14px 10px;">Remarks</th>
-                <th style="padding:14px 10px;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php $__empty_1 = true; $__currentLoopData = $maintenanceRows ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-            <tr data-id="<?php echo e($row['id'] ?? $i); ?>" data-maintenance_type="<?php echo e($row['maintenance_type'] ?? ''); ?>" data-scheduled_date="<?php echo e($row['scheduled_date'] ?? ''); ?>" data-assigned_to="<?php echo e($row['assigned_to'] ?? ''); ?>" data-completed_date="<?php echo e($row['completed_date'] ?? ''); ?>" style="background:<?php if($loop->index%2==0): ?>#f9fafb;<?php else: ?>#fff;<?php endif; ?>;transition:background 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='<?php echo e($loop->index%2==0 ? '#f9fafb' : '#fff'); ?>'">
-                <td style="padding:12px 8px;font-weight:500;"><?php echo e($row['facility']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['issue_type']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['trigger_month']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['efficiency_rating']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['maintenance_status']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['scheduled_date']); ?></td>
-                <td style="padding:12px 8px;"><?php echo e($row['remarks'] ?? '-'); ?></td>
-                <td style="padding:12px 8px;"><?php echo str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']); ?></td>
-            </tr>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-            <tr><td colspan="8" class="text-center" style="padding:18px 0;">No facilities needing maintenance.</td></tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-    </div>
 </div>
+
 <script>
-// Open modal on schedule button click
 document.addEventListener('DOMContentLoaded', function() {
-        // Enable Completed Date only if status is Completed
-        document.getElementById('modalStatus').addEventListener('change', function() {
-            if (this.value === 'Completed') {
-                document.getElementById('modalCompletedDate').disabled = false;
-            } else {
-                document.getElementById('modalCompletedDate').disabled = true;
-                document.getElementById('modalCompletedDate').value = '';
-            }
-        });
+    // Alert handling
+    const alert = document.getElementById('successAlert');
+    if (alert) setTimeout(() => { alert.style.opacity = '0'; setTimeout(() => alert.remove(), 500); }, 3000);
+
+    // Toggle completed date based on status
+    document.getElementById('modalStatus').addEventListener('change', function() {
+        const compDate = document.getElementById('modalCompletedDate');
+        compDate.disabled = (this.value !== 'Completed');
+        if (compDate.disabled) compDate.value = '';
+    });
+
+    // Schedule/Edit button click
     document.querySelectorAll('.schedule-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const row = this.closest('tr');
             const idx = Array.from(row.parentNode.children).indexOf(row);
-            document.getElementById('modalMaintenanceId').value = idx;
             const cells = row.querySelectorAll('td');
-            // Table columns: 0=Facility, 1=Issue Type, 2=Trigger Month, 3=Efficiency, 4=Status, 5=Scheduled Date, 6=Remarks, 7=Action
-            // Set Facility select by matching text
-            const facilitySelect = document.getElementById('modalFacility');
-            for (let i = 0; i < facilitySelect.options.length; i++) {
-                if (facilitySelect.options[i].text === (cells[0]?.innerText || '')) {
-                    facilitySelect.selectedIndex = i;
-                    break;
-                }
+
+            document.getElementById('modalTitle').innerText = 'Update Maintenance';
+            document.getElementById('modalMaintenanceId').value = idx;
+            
+            // Prefill logic
+            const facilityName = cells[0].innerText.trim();
+            const facSelect = document.getElementById('modalFacility');
+            for(let i=0; i<facSelect.options.length; i++) {
+                if(facSelect.options[i].text === facilityName) facSelect.selectedIndex = i;
             }
-            document.getElementById('modalIssueType').value = cells[1]?.innerText || '';
-            // Set Trigger Month select by matching text or value
-            const monthSelect = document.getElementById('modalTriggerMonth');
-            let foundMonth = false;
-            for (let i = 0; i < monthSelect.options.length; i++) {
-                // Match by text (e.g., 'January') or by value (e.g., '01')
-                if (
-                    monthSelect.options[i].text.trim().toLowerCase() === (cells[2]?.innerText || '').trim().toLowerCase() ||
-                    monthSelect.options[i].value === (cells[2]?.innerText || '').trim()
-                ) {
-                    monthSelect.selectedIndex = i;
-                    foundMonth = true;
-                    break;
-                }
-            }
-            if (!foundMonth) monthSelect.selectedIndex = 0;
+            facSelect.disabled = true;
+
+            document.getElementById('modalIssueType').value = cells[1].innerText;
+            document.getElementById('modalIssueType').readOnly = true;
+            
+            document.getElementById('modalTriggerMonth').disabled = true;
+            document.getElementById('efficiencyRatingGroup').style.display = 'none';
+
             document.getElementById('modalMaintType').value = row.getAttribute('data-maintenance_type') || 'Preventive';
             document.getElementById('modalScheduleDate').value = row.getAttribute('data-scheduled_date') || '';
             document.getElementById('modalAssignedTo').value = row.getAttribute('data-assigned_to') || '';
-            document.getElementById('modalRemarks').value = cells[6]?.innerText || '';
-            document.getElementById('modalStatus').value = cells[4]?.innerText || 'Pending';
+            document.getElementById('modalRemarks').value = cells[6].innerText !== '-' ? cells[6].innerText : '';
+            document.getElementById('modalStatus').value = cells[4].innerText.trim();
             document.getElementById('modalCompletedDate').value = row.getAttribute('data-completed_date') || '';
-            // Enable/disable completed date
-            if (document.getElementById('modalStatus').value === 'Completed') {
-                document.getElementById('modalCompletedDate').disabled = false;
-            } else {
-                document.getElementById('modalCompletedDate').disabled = true;
-            }
+            document.getElementById('modalCompletedDate').disabled = (document.getElementById('modalStatus').value !== 'Completed');
+
             document.getElementById('scheduleModal').style.display = 'flex';
         });
     });
+
+    // Add Manual Button
+    document.getElementById('addMaintenanceBtn').addEventListener('click', function() {
+        document.getElementById('scheduleForm').reset();
+        document.getElementById('modalTitle').innerText = 'Schedule Maintenance';
+        document.getElementById('modalMaintenanceId').value = '';
+        document.getElementById('modalFacility').disabled = false;
+        document.getElementById('modalTriggerMonth').disabled = false;
+        document.getElementById('modalIssueType').readOnly = false;
+        document.getElementById('efficiencyRatingGroup').style.display = 'block';
+        document.getElementById('scheduleModal').style.display = 'flex';
+    });
+
+    // Form Submission
+    document.getElementById('scheduleForm').onsubmit = function(e) {
+        e.preventDefault();
+        const status = document.getElementById('modalStatus').value;
+        const compDate = document.getElementById('modalCompletedDate').value;
+
+        if (status === 'Completed' && !compDate) {
+            alert('Completed Date is required!');
+            return false;
+        }
+
+        const idx = document.getElementById('modalMaintenanceId').value;
+        const tableBody = document.querySelector('.maint-table tbody');
+        const row = idx !== '' ? tableBody.children[idx] : null;
+
+        const data = {
+            maintenance_id: row ? row.getAttribute('data-id') : '',
+            facility_id: document.getElementById('modalFacility').value,
+            trigger_month: document.getElementById('modalTriggerMonth').value,
+            issue_type: document.getElementById('modalIssueType').value,
+            efficiency_rating: document.getElementById('modalEfficiencyRating').value,
+            maintenance_type: document.getElementById('modalMaintType').value,
+            scheduled_date: document.getElementById('modalScheduleDate').value,
+            assigned_to: document.getElementById('modalAssignedTo').value,
+            remarks: document.getElementById('modalRemarks').value,
+            maintenance_status: status,
+            completed_date: compDate,
+            _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        };
+
+        fetch("<?php echo e(route('modules.maintenance.schedule')); ?>", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': data._token },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(resp => {
+            if (resp.success) {
+                location.reload();
+            }
+        });
+    };
 });
+
 function closeScheduleModal() {
     document.getElementById('scheduleModal').style.display = 'none';
-    // Optionally reset modal fields
-    document.getElementById('scheduleForm').reset();
-    document.getElementById('modalCompletedDate').disabled = true;
 }
-// Handle form submit (AJAX or normal post)
-document.getElementById('scheduleForm').onsubmit = function(e) {
-    e.preventDefault();
-    const idx = document.getElementById('modalMaintenanceId').value;
-    const table = document.querySelector('table tbody');
-    const row = table && table.children[idx];
-    // Gather form data
-    const status = document.getElementById('modalStatus').value;
-    const completedDate = document.getElementById('modalCompletedDate').value;
-    if (status === 'Completed' && !completedDate) {
-        const notif = document.createElement('div');
-        notif.innerText = 'Completed Date is required when status is Completed!';
-        notif.style.position = 'fixed';
-        notif.style.top = '30px';
-        notif.style.right = '30px';
-        notif.style.background = '#e11d48';
-        notif.style.color = '#fff';
-        notif.style.padding = '16px 32px';
-        notif.style.borderRadius = '8px';
-        notif.style.fontWeight = 'bold';
-        notif.style.fontSize = '1.1rem';
-        notif.style.zIndex = 99999;
-        notif.style.boxShadow = '0 2px 12px rgba(225,29,72,0.15)';
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 2000);
-        document.getElementById('modalCompletedDate').focus();
-        return false;
-    }
-    const data = {
-        maintenance_id: row ? row.getAttribute('data-id') : '',
-        maintenance_type: document.getElementById('modalMaintType').value,
-        scheduled_date: document.getElementById('modalScheduleDate').value,
-        assigned_to: document.getElementById('modalAssignedTo').value,
-        remarks: document.getElementById('modalRemarks').value,
-        maintenance_status: status,
-        completed_date: completedDate,
-        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    };
-    // If adding (not editing), include facility_id, trigger_month, and issue_type
-    if (!row) {
-        data.facility_id = document.getElementById('modalFacility').value;
-        data.trigger_month = document.getElementById('modalTriggerMonth').value;
-        data.issue_type = document.getElementById('modalIssueType').value;
-        data.efficiency_rating = document.getElementById('modalEfficiencyRating').value;
-    }
-    fetch("<?php echo e(route('modules.maintenance.schedule')); ?>", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': data._token
-        },
-        body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(resp => {
-        if (resp.success && row) {
-            // Update row visually (column order: Facility, Issue Type, Trigger Month, Efficiency, Status, Scheduled, Remarks, Action)
-            row.children[0].innerText = resp.maintenance.facility || row.children[0].innerText;
-            row.children[1].innerText = resp.maintenance.issue_type || row.children[1].innerText;
-            row.children[2].innerText = resp.maintenance.trigger_month || row.children[2].innerText;
-            row.children[3].innerText = resp.maintenance.efficiency_rating || row.children[3].innerText;
-            row.children[4].innerText = resp.maintenance.maintenance_status || row.children[4].innerText;
-            row.children[5].innerText = resp.maintenance.scheduled_date || '-';
-            row.children[6].innerText = resp.maintenance.remarks || '-';
-            // Update row data attributes for modal prefill
-            row.setAttribute('data-maintenance_type', resp.maintenance.maintenance_type || '');
-            row.setAttribute('data-scheduled_date', resp.maintenance.scheduled_date || '');
-            row.setAttribute('data-assigned_to', resp.maintenance.assigned_to || '');
-            row.setAttribute('data-completed_date', resp.maintenance.completed_date || '');
-            // Change action button to Edit after scheduling
-            row.children[7].innerHTML = '<button class="btn btn-sm schedule-btn" style="background:#6366f1;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Edit Maintenance"><i class="fa fa-edit"></i> Edit</button>';
-            // Re-bind the click event for the new Edit button
-            row.querySelector('.schedule-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                const idx = Array.from(row.parentNode.children).indexOf(row);
-                document.getElementById('modalMaintenanceId').value = idx;
-                const cells = row.querySelectorAll('td');
-                document.getElementById('modalFacility').value = cells[0]?.innerText || '';
-                document.getElementById('modalIssueType').value = cells[1]?.innerText || '';
-                document.getElementById('modalTriggerMonth').value = cells[2]?.innerText || '';
-                document.getElementById('modalMaintType').value = row.getAttribute('data-maintenance_type') || 'Preventive';
-                document.getElementById('modalScheduleDate').value = row.getAttribute('data-scheduled_date') || '';
-                document.getElementById('modalAssignedTo').value = row.getAttribute('data-assigned_to') || '';
-                document.getElementById('modalRemarks').value = cells[6]?.innerText || '';
-                document.getElementById('modalStatus').value = cells[4]?.innerText || 'Pending';
-                document.getElementById('modalCompletedDate').value = row.getAttribute('data-completed_date') || '';
-                if (document.getElementById('modalStatus').value === 'Completed') {
-                    document.getElementById('modalCompletedDate').disabled = false;
-                } else {
-                    document.getElementById('modalCompletedDate').disabled = true;
-                }
-                document.getElementById('scheduleModal').style.display = 'flex';
-            });
-        }
-        closeScheduleModal();
-        // Show a user-friendly notification
-        const notif = document.createElement('div');
-        notif.innerText = 'Maintenance scheduled!';
-        notif.style.position = 'fixed';
-        notif.style.top = '30px';
-        notif.style.right = '30px';
-        notif.style.background = '#22c55e';
-        notif.style.color = '#fff';
-        notif.style.padding = '16px 32px';
-        notif.style.borderRadius = '8px';
-        notif.style.fontWeight = 'bold';
-        notif.style.fontSize = '1.1rem';
-        notif.style.zIndex = 99999;
-        notif.style.boxShadow = '0 2px 12px rgba(34,197,94,0.15)';
-        document.body.appendChild(notif);
-        setTimeout(() => {
-            notif.remove();
-            window.location.reload();
-        }, 1200);
-    })
-    .catch(() => {
-        const notif = document.createElement('div');
-        notif.innerText = 'Error saving maintenance.';
-        notif.style.position = 'fixed';
-        notif.style.top = '30px';
-        notif.style.right = '30px';
-        notif.style.background = '#e11d48';
-        notif.style.color = '#fff';
-        notif.style.padding = '16px 32px';
-        notif.style.borderRadius = '8px';
-        notif.style.fontWeight = 'bold';
-        notif.style.fontSize = '1.1rem';
-        notif.style.zIndex = 99999;
-        notif.style.boxShadow = '0 2px 12px rgba(225,29,72,0.15)';
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 2000);
-    });
-    return false;
-};
-</script>
-<script>
-// Add Maintenance button logic
-document.getElementById('addMaintenanceBtn').addEventListener('click', function() {
-    // Reset modal fields for manual entry
-    document.getElementById('scheduleForm').reset();
-    document.getElementById('modalMaintenanceId').value = '';
-    document.getElementById('modalFacility').disabled = false;
-    document.getElementById('modalTriggerMonth').disabled = false;
-    document.getElementById('modalIssueType').readOnly = false;
-    document.getElementById('modalFacility').value = '';
-    document.getElementById('modalIssueType').value = '';
-    document.getElementById('modalTriggerMonth').value = '';
-    document.getElementById('modalMaintType').value = 'Preventive';
-    document.getElementById('modalScheduleDate').value = '';
-    document.getElementById('modalAssignedTo').value = '';
-    document.getElementById('modalRemarks').value = '';
-    document.getElementById('modalStatus').value = 'Pending';
-    document.getElementById('modalCompletedDate').value = '';
-    document.getElementById('modalCompletedDate').disabled = true;
-    document.getElementById('modalTitle').innerText = 'Schedule Maintenance';
-    document.getElementById('efficiencyRatingGroup').style.display = '';
-    document.getElementById('scheduleModal').style.display = 'flex';
-});
-
-// When editing, set modal title to Update Maintenance and make fields readonly
-document.querySelectorAll('.schedule-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.getElementById('modalTitle').innerText = 'Update Maintenance';
-        document.getElementById('modalFacility').disabled = true;
-        document.getElementById('modalTriggerMonth').disabled = true;
-        document.getElementById('modalIssueType').readOnly = true;
-        document.getElementById('efficiencyRatingGroup').style.display = 'none';
-    });
-});
-
-// When editing, set modal title to Update Maintenance
-document.querySelectorAll('.schedule-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.getElementById('modalTitle').innerText = 'Update Maintenance';
-    });
-});
 </script>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.qc-admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/maintenance/index.blade.php ENDPATH**/ ?>

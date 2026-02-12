@@ -1,5 +1,13 @@
 @extends('layouts.qc-admin')
 @section('title', 'Energy')
+
+@php
+    // Ensure notifications and unreadNotifCount are available for the notification bell
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+@endphp
+
 @section('content')
 
         <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;">
@@ -30,7 +38,6 @@
             </div>
             <div id="incident-modal-{{ $incident->id }}" class="incident-modal" style="display:none;">
                 <div class="incident-modal-content">
-                    <button class="incident-modal-close" onclick="closeIncidentModal({{ $incident->id }})">&times;</button>
                     <h3 style="margin-top:0;margin-bottom:24px;font-size:1.5rem;font-weight:700;">Incident Details</h3>
                     <div style="margin-bottom:20px;"><b>Facility:</b> {{ $incident->facility->name ?? '-' }}</div>
                     <div style="margin-bottom:20px;"><b>Month/Year:</b> {{ $monthLabel }}/{{ $yearNum ?? '-' }}</div>
@@ -77,7 +84,6 @@
     @if($incident->facility)
         <div id="facility-modal-{{ $incident->facility->id }}" class="incident-modal" style="display:none;">
             <div class="incident-modal-content">
-                <button class="incident-modal-close" onclick="closeFacilityModal({{ $incident->facility->id }})">&times;</button>
                 <h3 style="margin-top:0;margin-bottom:24px;font-size:1.3rem;font-weight:700;color:#2563eb;">Facility Details</h3>
                 <div style="margin-bottom:18px;"><b>Name:</b> {{ $incident->facility->name ?? '-' }}</div>
                 <div style="margin-bottom:18px;"><b>Type:</b> {{ $incident->facility->type ?? '-' }}</div>

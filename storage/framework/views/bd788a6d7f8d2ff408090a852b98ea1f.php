@@ -1,5 +1,4 @@
 
-
 <?php $__env->startSection('title', 'First 3 Months Data'); ?>
 <?php $__env->startSection('content'); ?>
 
@@ -160,102 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div> <!-- end #mainContentWrapper -->
 
 <?php $__env->stopSection(); ?>
-
-
-<?php
-	// Compute average kWh for this facility from first3months_data
-	$first3mo = \DB::table('first3months_data')->where('facility_id', $facilityModel->id ?? null)->first();
-	$avgKwh = null;
-	if ($first3mo) {
-		$avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-	}
-?>
-<?php echo $__env->make('modules.facilities.energy-profile.partials.modals', ['avgKwh' => $avgKwh], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('modules.facilities.energy-profile.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php echo $__env->make('modules.facilities.energy-profile.partials.delete-modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-
-
-
-<script>
-function editEnergyProfile(btn) {
-	// Populate modal fields from data attributes
-	document.getElementById('edit_energy_profile_id').value = btn.getAttribute('data-id');
-	document.getElementById('edit_electric_meter_no').value = btn.getAttribute('data-electric_meter_no');
-	document.getElementById('edit_utility_provider').value = btn.getAttribute('data-utility_provider');
-	document.getElementById('edit_contract_account_no').value = btn.getAttribute('data-contract_account_no');
-    document.getElementById('edit_baseline_kwh').value = btn.getAttribute('data-baseline_kwh');
-	document.getElementById('edit_main_energy_source').value = btn.getAttribute('data-main_energy_source');
-	document.getElementById('edit_backup_power').value = btn.getAttribute('data-backup_power');
-	document.getElementById('edit_transformer_capacity').value = btn.getAttribute('data-transformer_capacity');
-	document.getElementById('edit_number_of_meters').value = btn.getAttribute('data-number_of_meters');
-	// Bill image is not set here (file input cannot be set for security reasons)
-	document.getElementById('editEnergyProfileModal').classList.add('show-modal');
-}
-
-function deleteEnergyProfile(btn) {
-    var facilityId = <?php echo e(isset($facilityModel) ? $facilityModel->id : 'null'); ?>;
-    var profileId = btn.getAttribute('data-id');
-    if(!facilityId || !profileId) {
-        alert('Missing facility or profile ID.');
-        return;
-    }
-    if(confirm('Are you sure you want to delete this energy profile?')) {
-        fetch(`/modules/facilities/${facilityId}/energy-profile/${profileId}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.success) {
-                alert('Energy profile deleted!');
-                location.reload();
-            } else {
-                alert('Delete failed.');
-            }
-        });
-    }
-}
-
-function closeEditEnergyProfileModal() {
-	document.getElementById('editEnergyProfileModal').classList.remove('show-modal');
-}
-function closeDeleteEnergyProfileModal() {
-	document.getElementById('deleteEnergyProfileModal').classList.remove('show-modal');
-}
-function closeAddEnergyProfileModal() {
-	document.getElementById('addEnergyProfileModal').classList.remove('show-modal');
-}
-// Optionally, add openAddEnergyProfileModal() for the add button
-document.querySelector('.btn-add-energy-profile')?.addEventListener('click', function() {
-    document.getElementById('addEnergyProfileModal').classList.add('show-modal');
-    // Set facility_id if available
-    var facilityId = <?php echo e(isset($facilityModel) ? $facilityModel->id : 'null'); ?>;
-    if(facilityId) {
-        document.getElementById('add_energy_facility_id').value = facilityId;
-    }
-});
-
-function updateEnergyProfile(profileId, facilityId) {
-    const form = document.getElementById('editEnergyProfileForm');
-    const formData = new FormData(form);
-    fetch(`/modules/facilities/${facilityId}/energy-profile/${profileId}`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
-            'X-HTTP-Method-Override': 'PUT'
-        },
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            alert('Energy profile updated!');
-            location.reload();
-        } else {
-            alert('Update failed.');
-        }
-    });
-}
-
-</script>
 
 <?php echo $__env->make('layouts.qc-admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/facilities/first3months.blade.php ENDPATH**/ ?>

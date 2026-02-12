@@ -155,15 +155,21 @@ class EnergyController extends Controller
 
         $validated['created_by'] = auth()->id();
 
-        // Compute kwh_vs_avg and percent_change
+        // Map kwh_consumed to actual_kwh for DB
+        $validated['actual_kwh'] = $validated['kwh_consumed'];
+        unset($validated['kwh_consumed']);
+
+        // Use baseline_kwh from request if provided
+        $baselineInput = $request->input('baseline_kwh');
         $facility = \App\Models\Facility::find($validated['facility_id']);
         $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-        $avg = $profile ? $profile->baseline_kwh : null;
-        $kwh_vs_avg = ($avg !== null) ? $validated['kwh_consumed'] - $avg : null;
+        $avg = $baselineInput !== null && $baselineInput !== '' ? floatval($baselineInput) : ($profile ? $profile->baseline_kwh : ($facility ? $facility->baseline_kwh : null));
+        $kwh_vs_avg = ($avg !== null) ? $validated['actual_kwh'] - $avg : null;
         $percent_change = ($avg && $avg != 0) ? (($kwh_vs_avg / $avg) * 100) : null;
         $validated['kwh_vs_avg'] = $kwh_vs_avg;
         $validated['percent_change'] = $percent_change;
-    \App\Models\EnergyRecord::create($validated);
+        $validated['baseline_kwh'] = $avg;
+        \App\Models\EnergyRecord::create($validated);
 
     // Preserve filters after add (use filter fields from form if present)
     $params = [];
@@ -260,6 +266,10 @@ class EnergyController extends Controller
                 ->values()
                 ->toArray();
         }
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.energy.index', [
             'recentUsages' => $recentUsages,
             'totalKwh' => $totalKwh,
@@ -272,6 +282,10 @@ class EnergyController extends Controller
             'baselineKwh' => $baselineKwh,
             'graphYear' => $graphYear,
             'availableMonths' => $availableMonths,
+            'role' => $role,
+            'user' => $user,
+            'notifications' => $notifications,
+            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 
@@ -325,7 +339,7 @@ class EnergyController extends Controller
         foreach ($records as $record) {
             $facility = $record->facility;
             $facilityId = $facility ? $facility->id : null;
-            $baseline = $facility ? $facility->baseline_kwh : null;
+            $baseline = $record->baseline_kwh;
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
 
@@ -357,14 +371,18 @@ class EnergyController extends Controller
                 'facility' => $facility ? $facility->name : 'N/A',
                 'month' => $monthYear,
                 'actual_kwh' => number_format($actualKwh, 2),
-                'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : 'N/A',
-                'variance' => $variance !== null ? number_format($variance, 2) : 'N/A',
+                'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : '',
+                'variance' => $variance !== null ? number_format($variance, 2) : '',
                 'trend' => $trend,
             ];
         }
         
         $facilities = Facility::all();
         $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year');
-        return view('modules.reports.energy', compact('energyRows', 'facilities', 'years'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.reports.energy', compact('energyRows', 'facilities', 'years', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 }

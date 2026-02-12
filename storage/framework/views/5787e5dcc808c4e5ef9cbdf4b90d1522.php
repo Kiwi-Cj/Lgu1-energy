@@ -1,299 +1,257 @@
 
 <?php $__env->startSection('title', 'Facilities'); ?>
+
 <?php $__env->startSection('content'); ?>
-
-<?php
-    $userRole = strtolower(auth()->user()->role ?? '');
-?>
-
-<div class="facilities-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-    <h1 style="font-size:2.2rem;font-weight:700;color:#3762c8;margin:0;">Facilities</h1>
-    <div style="display:flex; gap:12px;">
-        <?php if($userRole !== 'staff'): ?>
-            <button type="button" id="btnAddFacilityTop" style="background: linear-gradient(90deg,#2563eb,#6366f1); color:#fff; font-weight:600; border:none; border-radius:10px; padding:10px 28px; font-size:1.1rem; box-shadow:0 2px 8px rgba(31,38,135,0.10); transition:background 0.18s;">+ Add Facility</button>
-            <style>
-            #btnAddFacilityTop:hover, #btnAddFacilityTop:focus {
-                background:linear-gradient(90deg,#1d4ed8,#6366f1);
-            }
-            </style>
-        <?php endif; ?>
-
-    <?php if($userRole !== 'staff'): ?>
-        <!-- Floating Add Facility Button (hidden if top button is visible) -->
-        <button type="button" id="fabAddFacility" title="Add Facility" style="position:fixed;bottom:38px;right:38px;z-index:10001;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;border:none;border-radius:50%;width:62px;height:62px;box-shadow:0 4px 18px rgba(37,99,235,0.18);display:flex;align-items:center;justify-content:center;font-size:2.1rem;cursor:pointer;transition:background 0.18s;display:none;">
-            <span style="font-size:2.2rem;line-height:1;">+</span>
-        </button>
-        <style>
-        #fabAddFacility:hover, #fabAddFacility:focus {
-            background:linear-gradient(90deg,#1d4ed8,#6366f1);
-        }
-        @media (max-width: 600px) {
-            #fabAddFacility { right:16px; bottom:16px; width:52px; height:52px; font-size:1.6rem; }
-        }
-        </style>
-    <?php endif; ?>
-    </div>
-</div>
-
-<!-- Facility Summary Cards -->
-<div class="facility-summary-cards" style="display:flex;gap:24px;margin-bottom:2.2rem;flex-wrap:wrap;">
-    <div class="card" style="flex:1 1 220px;min-width:220px;background:#f5f8ff;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(55,98,200,0.08);">
-        <div style="font-size:1.13rem;font-weight:700;color:#3762c8;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:1.25rem;">🏢</span> Total Facilities
-        </div>
-        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($totalFacilities ?? '-'); ?></div>
-    </div>
-    <div class="card" style="flex:1 1 220px;min-width:220px;background:#f0fdf4;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(34,197,94,0.08);">
-        <div style="font-size:1.13rem;font-weight:700;color:#22c55e;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:1.25rem;">🟢</span> Active Facilities
-        </div>
-        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($activeFacilities ?? '-'); ?></div>
-    </div>
-    <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff7ed;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(234,179,8,0.08);">
-        <div style="font-size:1.13rem;font-weight:700;color:#f59e0b;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:1.25rem;">🛠</span> Maintenance
-        </div>
-        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($maintenanceFacilities ?? '-'); ?></div>
-    </div>
-    <div class="card" style="flex:1 1 220px;min-width:220px;background:#fff0f3;padding:24px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);">
-        <div style="font-size:1.13rem;font-weight:700;color:#e11d48;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:1.25rem;">🚫</span> Inactive Facilities
-        </div>
-        <div style="font-size:2.3rem;font-weight:800;margin:8px 0;color:#222;"><?php echo e($inactiveFacilities ?? '-'); ?></div>
-    </div>
-</div>
-
-<!-- Facilities List -->
-<div class="facilities-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px;">
-    <?php $__empty_1 = true; $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-        <div class="facility-card" style="background:#fff;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,0.08);padding:22px 18px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;min-width:0;">
-            <a href="<?php echo e(route('modules.facilities.show', $facility->id)); ?>" style="display:block;position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;"></a>
-            <?php
-                $imageUrl = null;
-                if ($facility->image) {
-                    if (strpos($facility->image, 'img/') === 0) {
-                        $imageUrl = asset($facility->image);
-                    } else {
-                        $imageUrl = asset('storage/'.$facility->image);
-                    }
-                }
-            ?>
-            <div style="width:100%;aspect-ratio:4/1;border-radius:18px;margin-bottom:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.10);background:linear-gradient(135deg,#f1f5f9,#e2e8f0);display:flex;align-items:center;justify-content:center;">
-                <?php if($imageUrl): ?>
-                    <img src="<?php echo e($imageUrl); ?>" alt="<?php echo e($facility->name); ?>" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;">
-                <?php else: ?>
-                    <i class="fa fa-image" title="No Image" style="color:#94a3b8;font-size:2.2rem;"></i>
-                <?php endif; ?>
-            </div>
-            <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:8px;color:#222;"><?php echo e($facility->name ?? '-'); ?></h3>
-            <div style="color:#6366f1;font-weight:500;margin-bottom:6px;"><?php echo e($facility->type ?? '-'); ?></div>
-            <div style="font-size:0.98rem;color:#555;margin-bottom:10px;"><?php echo e($facility->address ?? '-'); ?></div>
-            <div class="facility-icons" style="display:flex;gap:10px;align-items:center;z-index:2;">
-                <a href="<?php echo e(url('/modules/facilities/' . $facility->id . '/energy-profile')); ?>" class="facility-icon-link" style="color:#f59e42;font-size:1.25rem;" title="View Energy Profile" onclick="event.stopPropagation();"><i class="fa fa-bolt"></i></a>
-                <a href="<?php echo e(route('facilities.monthly-records', $facility->id)); ?>" class="facility-icon-link" style="color:#2563eb;font-size:1.25rem;" title="View Monthly Records" onclick="event.stopPropagation();"><i class="fa fa-calendar-alt"></i></a>
-                <a href="<?php echo e(url('/facilities/first3months?facility_id=' . $facility->id)); ?>" class="facility-icon-link" style="color:#0ea5e9;font-size:1.25rem;" title="First 3 Months Data" onclick="event.stopPropagation();">
-                    <i class="fa fa-calendar-plus"></i>
-                </a>
-                <?php if($userRole !== 'staff'): ?>
-                    <?php if($userRole === 'engineer' || $userRole === 'super admin'): ?>
-                        <button onclick="event.stopPropagation();toggleEngineerApproval(<?php echo e($facility->id); ?>, this)" class="facility-icon-link" style="color:<?php echo e($facility->engineer_approved ? '#22c55e' : '#e11d48'); ?>;font-size:1.2rem;background:none;border:none;position:relative;" title="Engineer Approval">
-                            <?php if($facility->engineer_approved): ?>
-                                <i class="fa fa-check-circle"></i>
-                            <?php else: ?>
-                                <i class="fa fa-times-circle"></i>
-                            <?php endif; ?>
-                            <span class="approval-tooltip" style="display:none;position:absolute;left:50%;top:-32px;transform:translateX(-50%);background:#222;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.95rem;font-weight:500;white-space:nowrap;z-index:10;">
-                                <?php echo e($facility->engineer_approved ? 'Approved' : 'Not Approved'); ?>
-
-                            </span>
-                        </button>
-                    <?php endif; ?>
-                <?php endif; ?>
-            </div>
-        <style>
-        .facility-card {
-            position: relative;
-            overflow: visible;
-        }
-        .facility-card-link {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
-            text-decoration: none;
-            color: inherit;
-        }
-        .facility-icons {
-            z-index: 2;
-        }
-        .facility-icon-link {
-            z-index: 3;
-            position: relative;
-        }
-        .facility-icon-link:focus, .facility-icon-link:hover {
-            color: #1d4ed8 !important;
-        }
-        </style>
-        </div>
-    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-        <div style="width:100%;text-align:center;color:#94a3b8;font-size:1.1rem;padding:32px 0;">No facilities found.</div>
-    <?php endif; ?>
-</div>
-
-
-<!-- Modal for 3-Month Average kWh (rendered only once, outside the loop) -->
-<!-- 3-Month Average Modal removed -->
-
-<!-- Modals -->
-<?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?> 
-
-
-
 <style>
-.modal { display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9999;align-items:center;justify-content:center; }
-.action-btn-delete {
-    transition: background 0.2s, color 0.2s;
-}
-.action-btn-delete:hover, .action-btn-delete:focus {
-    background: #fee2e2;
-    color: #b91c1c !important;
-    border-radius: 6px;
-}
-.facility-card {
-    transition: box-shadow 0.18s, transform 0.18s, border 0.18s;
-    cursor: pointer;
-}
-.facility-card:hover {
-    box-shadow: 0 8px 32px rgba(37,99,235,0.18);
-    transform: translateY(-3px) scale(1.03);
-    background: #f0f6ff;
-}
+    /* --- Energy Report Inspired Aesthetic --- */
+    .report-card-container {
+        background: #fff; 
+        border-radius: 18px; 
+        box-shadow: 0 2px 12px rgba(31,38,135,0.06); 
+        padding: 30px;
+        margin-bottom: 2rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        gap: 20px;
+    }
+
+    /* Modern KPI Cards */
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        padding: 20px;
+        border-radius: 15px;
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover { transform: translateY(-5px); }
+
+    .card-icon-box {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 12px; font-size: 1rem;
+    }
+
+    /* Facility Grid & Cards */
+    .facility-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+        margin-top: 20px;
+    }
+
+    .facility-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .facility-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.1);
+        border-color: #dbeafe;
+    }
+
+    .image-wrapper {
+        width: 100%;
+        height: 170px;
+        overflow: hidden;
+        background: #f8fafc;
+        position: relative;
+    }
+
+    .image-wrapper img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .facility-card:hover .image-wrapper img { transform: scale(1.1); }
+
+    .content-padding { padding: 20px; flex-grow: 1; }
+
+    .type-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #6366f1;
+        background: #eef2ff;
+        padding: 4px 12px;
+        border-radius: 100px;
+        margin-bottom: 10px;
+        display: inline-block;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #2563eb, #6366f1);
+        color: #fff !important;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 700;
+        border: none;
+        transition: 0.3s;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn-gradient:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .action-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+    .action-icon.energy { background: #fff7ed; color: #f59e0b; }
+    .action-icon.records { background: #eff6ff; color: #3b82f6; }
+    .action-icon:hover { transform: scale(1.1); }
+
+    @media (max-width: 768px) {
+        .dashboard-header { flex-direction: column; align-items: stretch; text-align: center; }
+        .btn-gradient { justify-content: center; }
+    }
 </style>
 
+<div style="width:100%; margin:0 auto;">
+    <div class="report-card-container">
+        
+        <div class="dashboard-header">
+            <div>
+                <h2 style="font-size:1.8rem; font-weight:800; color:#3762c8; margin:0; letter-spacing:-0.5px;">📘 Facilities Management</h2>
+                <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
+            </div>
+            <div>
+                <?php if(strtolower(Auth::user()->role ?? '') !== 'energy_officer'): ?>
+                    <button type="button" id="btnAddFacilityTop" class="btn-gradient">
+                        <i class="fa fa-plus-circle"></i> Add New Facility
+                    </button>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:2rem;">
+            <div class="stat-card">
+                <div class="card-icon-box" style="background:#eff6ff; color:#3b82f6;"><i class="fa fa-building"></i></div>
+                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Total</div>
+                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;"><?php echo e($totalFacilities ?? 0); ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="card-icon-box" style="background:#f0fdf4; color:#22c55e;"><i class="fa fa-check-circle"></i></div>
+                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Active</div>
+                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;"><?php echo e($activeFacilities ?? 0); ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="card-icon-box" style="background:#fffbeb; color:#f59e0b;"><i class="fa fa-wrench"></i></div>
+                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Maintenance</div>
+                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;"><?php echo e($maintenanceFacilities ?? 0); ?></div>
+            </div>
+        </div>
+
+        <div class="facility-grid">
+            <?php $__empty_1 = true; $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <div class="facility-card">
+                    <div class="image-wrapper">
+                        <?php
+                            $imageUrl = $facility->image_path ? asset('storage/' . $facility->image_path) : 
+                                       ($facility->image ? (str_starts_with($facility->image, 'img/') ? asset($facility->image) : asset('storage/'.$facility->image)) : null);
+                        ?>
+                        <?php if($imageUrl): ?>
+                            <img src="<?php echo e($imageUrl); ?>" alt="<?php echo e($facility->name); ?>">
+                        <?php else: ?>
+                            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#cbd5e1;">
+                                <i class="fas fa-image fa-3x"></i>
+                            </div>
+                        <?php endif; ?>
+                        <a href="<?php echo e(route('modules.facilities.show', $facility->id)); ?>" style="position:absolute; inset:0; z-index:1;"></a>
+                    </div>
+
+                    <div class="content-padding">
+                        <span class="type-badge"><?php echo e($facility->type ?? 'General'); ?></span>
+                        <h3 style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0 0 8px 0; line-height:1.2;"><?php echo e($facility->name); ?></h3>
+                        <p style="font-size:0.88rem; color:#64748b; display:flex; align-items:flex-start; gap:6px; margin-bottom:12px;">
+                            <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i> <?php echo e(Str::limit($facility->address ?? 'No address provided', 50)); ?>
+
+                        </p>
+
+                        <div class="card-actions" style="position:relative; z-index:2;">
+                            <a href="<?php echo e(url('/modules/facilities/' . $facility->id . '/energy-profile')); ?>" class="action-icon energy" title="Energy Profile">
+                                <i class="fas fa-bolt"></i>
+                            </a>
+                            <a href="<?php echo e(route('facilities.monthly-records', $facility->id)); ?>" class="action-icon records" title="Monthly Records" style="background:#fef2f2; color:#e11d48;">
+                                <i class="fas fa-file-lines"></i>
+                            </a>
+                            <div style="margin-left:auto; display:flex; align-items:center;">
+                                <a href="<?php echo e(route('modules.facilities.show', $facility->id)); ?>" style="font-size:0.95rem; font-weight:700; color:#2563eb; text-transform:none; text-decoration:none; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px; transition:color 0.18s;" onmouseover="this.style.color='#1d4ed8'" onmouseout="this.style.color='#2563eb'">
+                                    View Details <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <div style="grid-column: 1/-1; text-align:center; padding:60px; background:#fff; border-radius:20px; border:2px dashed #cbd5e1;">
+                    <i class="fas fa-building fa-3x" style="color:#cbd5e1; margin-bottom:15px;"></i>
+                    <h3 style="color:#64748b;">No facilities found</h3>
+                    <p style="color:#94a3b8;">Start by adding a new facility to the system.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<?php if(strtolower(Auth::user()->role ?? '') !== 'energy_officer'): ?>
+    <button type="button" id="fabAddFacility" class="btn-gradient" style="position:fixed; bottom:40px; right:40px; width:60px; height:60px; border-radius:30px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; z-index:99; display:none;">
+        <i class="fas fa-plus"></i>
+    </button>
+<?php endif; ?>
+
+<?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Move modal to end of body for stacking
-    const modal = document.getElementById('addFacilityModal');
-    if (modal && modal.parentNode !== document.body) {
-        document.body.appendChild(modal);
-    }
-    // Auto-open Add Facility modal if there are validation errors
-    <?php if($errors->any()): ?>
-        if (modal) {
-            modal.style.display = 'flex';
+    window.addEventListener('scroll', function() {
+        const fab = document.getElementById('fabAddFacility');
+        if (fab) {
+            if (window.scrollY > 200) fab.style.display = 'flex';
+            else fab.style.display = 'none';
         }
-    <?php endif; ?>
-    // Add Facility button logic (top)
-    const btnAddFacilityTop = document.getElementById('btnAddFacilityTop');
-    if (btnAddFacilityTop) {
-        btnAddFacilityTop.addEventListener('click', function() {
-            modal.style.display = 'flex';
-            setTimeout(()=>{
-                document.getElementById('add_name')?.focus();
-            }, 100);
-        });
-    }
-    // Add Facility button logic (FAB)
-    const fabAddFacility = document.getElementById('fabAddFacility');
-    if (fabAddFacility) {
-        fabAddFacility.addEventListener('click', function() {
-            modal.style.display = 'flex';
-            setTimeout(()=>{
-                document.getElementById('add_name')?.focus();
-            }, 100);
-        });
-    }
+    });
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('addFacilityModal');
+        const openModal = () => { if(modal) modal.style.display = 'flex'; };
+        
+        document.getElementById('btnAddFacilityTop')?.addEventListener('click', openModal);
+        document.getElementById('fabAddFacility')?.addEventListener('click', openModal);
 
-    // 3-Month Avg Icon Button Logic removed
-
-    // Close modals
-    document.querySelectorAll('.modal-close').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.modal').style.display='none'));
-
-    // Outside click
-    window.addEventListener('click', e=>{ document.querySelectorAll('.modal').forEach(m=>{if(e.target===m)m.style.display='none';}); });
-
-    // Edit
-    document.querySelectorAll('.action-btn-edit').forEach(btn=>{
-        btn.addEventListener('click', e=>{
-            e.preventDefault();
-            const facility=JSON.parse(btn.dataset.facility);
-            openEditFacilityModal(facility);
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
         });
     });
-});
-
-// Reset baseline
-function openResetBaselineModal(id){ document.getElementById('reset_facility_id').value=id; document.getElementById('resetBaselineModal').style.display='flex'; }
-document.getElementById('resetBaselineForm')?.addEventListener('submit',function(e){
-    e.preventDefault();
-    const id=document.getElementById('reset_facility_id').value;
-    const reason=document.getElementById('reset_reason').value;
-    fetch(`/modules/facilities/${id}/reset-baseline`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'<?php echo e(csrf_token()); ?>'},
-        body:JSON.stringify({reason})
-    }).then(res=>res.json()).then(data=>{ showToast(data.message||'Baseline reset!', 'success'); document.getElementById('resetBaselineModal').style.display='none'; setTimeout(()=>location.reload(), 1200); });
-});
-
-
 </script>
-
-<script>
-// Engineer approval (global scope)
-function toggleEngineerApproval(facilityId, btn) {
-    fetch('/modules/facilities/' + facilityId + '/toggle-engineer-approval', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
-            'Accept': 'application/json',
-        },
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            btn.style.color = data.engineer_approved ? '#22c55e' : '#e11d48';
-            btn.querySelector('i').className = data.engineer_approved ? 'fa fa-check-circle' : 'fa fa-times-circle';
-            btn.querySelector('.approval-tooltip').textContent = data.engineer_approved ? 'Approved' : 'Not Approved';
-            btn.blur();
-        } else {
-            alert(data.message || 'Action failed.');
-        }
-    })
-    .catch(() => alert('Network error.'));
-}
-document.querySelectorAll('.facility-icon-link .approval-tooltip').forEach(function(tooltip){
-    var parent = tooltip.parentElement;
-    parent.addEventListener('mouseenter',function(){
-        tooltip.style.display='block';
-    });
-    parent.addEventListener('mouseleave',function(){
-        tooltip.style.display='none';
-    });
-});
-</script>
-
-<!-- Toast Notification -->
-<div id="toastContainer" style="position:fixed;top:32px;right:32px;z-index:99999;display:flex;flex-direction:column;gap:12px;"></div>
-<script>
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.padding = '14px 28px';
-    toast.style.borderRadius = '8px';
-    toast.style.fontWeight = '600';
-    toast.style.fontSize = '1rem';
-    toast.style.boxShadow = '0 2px 12px rgba(55,98,200,0.10)';
-    toast.style.color = '#fff';
-    toast.style.background = type === 'success' ? 'linear-gradient(90deg,#22c55e,#16a34a)' : (type === 'error' ? 'linear-gradient(90deg,#e11d48,#be123c)' : 'linear-gradient(90deg,#2563eb,#6366f1)');
-    toast.style.opacity = '0.98';
-    toast.style.transition = 'opacity 0.3s';
-    container.appendChild(toast);
-    setTimeout(()=>{ toast.style.opacity = '0'; }, 1800);
-    setTimeout(()=>{ toast.remove(); }, 2200);
-}
-</script>
-
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.qc-admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/facilities/index.blade.php ENDPATH**/ ?>

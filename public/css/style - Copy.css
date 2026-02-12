@@ -1,4 +1,5 @@
 /* SIDEBAR NAVIGATION */
+/* Sidebar: desktop default, collapsible on mobile */
 .sidebar-nav {
     width: 240px;
     background: #2c3e50;
@@ -12,6 +13,19 @@
     flex-direction: column;
     justify-content: space-between;
     z-index: 200;
+    transition: left 0.3s;
+}
+@media (max-width: 900px) {
+    .sidebar-nav {
+        width: 200px;
+        left: -200px;
+        position: fixed;
+        min-height: 100vh;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    }
+    .sidebar-nav.open {
+        left: 0;
+    }
 }
 .sidebar-top {
     padding: 24px 0 0 0;
@@ -75,17 +89,18 @@
 }
 
 /* MAIN CONTENT */
+/* Main content: responsive margin and padding */
 .main-content-wrapper {
     margin-left: 240px; /* same as sidebar width */
     padding: 32px 40px;
     min-height: 100vh;
     background: #f4f6fa;
-    transition: margin-left 0.2s;
+    transition: margin-left 0.2s, padding 0.2s;
 }
 @media (max-width: 900px) {
     .main-content-wrapper {
         margin-left: 0;
-        padding: 24px 8px;
+        padding: 16px 4vw;
     }
 }
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
@@ -105,24 +120,28 @@ body {
 }
 
 /* NAVIGATION */
+/* Nav: responsive padding */
 .nav {
     width: 100%;
     padding: 18px 60px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
-    background: rgba(255, 255, 255, 0.15);     /* softer glass */
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.25);  /* glowing border */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 4px 25px rgba(0,0,0,0.25);
-
     position: fixed;
     top: 0;
     left: 0;
     z-index: 100;
+    transition: padding 0.2s;
+}
+@media (max-width: 600px) {
+    .nav {
+        padding: 12px 10px;
+    }
 }
 
 .nav-links a {
@@ -160,14 +179,22 @@ body {
 }
 
 /* CARD */
+/* Card: responsive width and padding */
 .card {
-    width: 350px;                /* slightly narrower background: rgba(255, 255, 255, 0.25); */
+    width: 350px;
+    max-width: 95vw;
     background: rgba(255, 255, 255, 0.795);
-    padding: 28px 32px;          /* reduced padding */
+    padding: 28px 18px;
     border-radius: 18px;
     backdrop-filter: blur(15px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     text-align: center;
+}
+@media (max-width: 600px) {
+    .card {
+        width: 98vw;
+        padding: 18px 4vw;
+    }
 }
 
 .icon-top {
@@ -262,23 +289,27 @@ body {
 }
 
 /* FOOTER — same design as NAVBAR */
+/* Footer: responsive padding */
 .footer {
     width: 100%;
     padding: 18px 45px;
-
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-
     border-top: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 -4px 25px rgba(0,0,0,0.25);
-
     position: fixed;
     bottom: 0;
     left: 0;
     z-index: 100;
-
-    animation: fadeUp 0.4s ease-out; /* smooth reveal */
+    animation: fadeUp 0.4s ease-out;
+    transition: padding 0.2s;
+}
+@media (max-width: 600px) {
+    .footer {
+        padding: 10px 4vw;
+        font-size: 0.95rem;
+    }
 }
 
 /* Left-aligned links */

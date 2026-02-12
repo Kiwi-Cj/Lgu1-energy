@@ -1,5 +1,8 @@
 
 <?php $__env->startSection('title', 'Billing Management'); ?>
+
+
+
 <?php $__env->startSection('content'); ?>
 <div class="billing-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
 	<div style="display:flex;flex-direction:column;">
@@ -115,22 +118,6 @@
 </table>
 <?php $__env->stopSection(); ?>
 
-<?php $__env->startPush('scripts'); ?>
-<script>
-// Tooltip hover logic for action buttons (show label on hover, left side)
-document.addEventListener('DOMContentLoaded', function() {
-	document.querySelectorAll('.action-btn-tooltip').forEach(function(btn) {
-		btn.addEventListener('mouseenter', function() {
-			var label = btn.querySelector('.action-tooltip-label');
-			if(label) label.style.display = 'block';
-		});
-		btn.addEventListener('mouseleave', function() {
-			var label = btn.querySelector('.action-tooltip-label');
-			if(label) label.style.display = 'none';
-		});
-	});
-});
-</script>
-<?php $__env->stopPush(); ?>
+
 
 <?php echo $__env->make('layouts.qc-admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/billing/index.blade.php ENDPATH**/ ?>

@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('facilities', function (Blueprint $table) {
-            $table->float('baseline_kwh')->nullable()->after('floor_area');
-        });
+        // Only add column if it does not exist
+        if (!Schema::hasColumn('facilities', 'baseline_kwh')) {
+            Schema::table('facilities', function (Blueprint $table) {
+                $table->float('baseline_kwh')->nullable()->after('floor_area');
+            });
+        }
     }
 
     /**

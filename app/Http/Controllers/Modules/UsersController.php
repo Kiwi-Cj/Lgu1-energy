@@ -26,7 +26,11 @@ class UsersController extends Controller
         $activeUsers = $users->where('status', 'active')->count();
         $inactiveUsers = $users->where('status', 'inactive')->count();
         $rolesList = $users->pluck('role')->unique()->implode(', ');
-        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList'));
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
+        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'notifications', 'unreadNotifCount'));
     }
 
     public function edit($id)

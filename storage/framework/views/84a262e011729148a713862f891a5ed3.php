@@ -10,11 +10,22 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 
 <style>
+/* ===== BASE STYLES ===== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+
+body {
+    min-height: 100vh;
+    background: #f4f6fa;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 /* ===== HEADER ===== */
 .top-header{
     position:fixed;
     top:0;
-    left:260px;
+    left:260px; /* Default sidebar width */
     right:0;
     height:70px;
     background:rgba(255,255,255,.92);
@@ -24,7 +35,60 @@
     align-items:center;
     justify-content:space-between;
     padding:0 32px;
-    z-index:90;
+    z-index:900;
+    transition: all 0.3s ease;
+}
+
+.header-left h1{
+    font-size:1.4rem;
+    font-weight:600;
+    color:#1f2937;
+}
+.header-sub{
+    font-size:.85rem;
+    color:#6b7280;
+}
+
+.header-right{
+    display:flex;
+    align-items:center;
+    gap:18px;
+}
+
+@media(max-width:991px){
+    .header-right form { display: none !important; }
+    .header-user span { display: none !important; }
+}
+
+
+<style>
+/* ===== BASE STYLES ===== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+
+body {
+    min-height: 100vh;
+    background: #f4f6fa;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.top-header{
+    position:fixed;
+    top:0;
+    left:260px; /* Default sidebar width */
+    right:0;
+    height:70px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(18px);
+    box-shadow:0 4px 25px rgba(0,0,0,.12);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 32px;
+    z-index:900;
+    transition: all 0.3s ease;
 }
 
 .header-left h1{
@@ -56,42 +120,6 @@
     color:#3762c8;
 }
 
-.header-right .notif-btn:hover .fa-bell {
-    color: #ef4444;
-    transition: color 0.18s;
-}
-.header-right .notif-btn:hover span {
-    transform: scale(1.15);
-    transition: transform 0.18s;
-}
-
-/* Dark header */
-body.dark-mode .top-header{
-    background:rgba(24,24,27,.96);
-}
-body.dark-mode .header-left h1,
-body.dark-mode .header-user{
-    color:#f9fafb;
-}
-body.dark-mode .header-sub{
-    color:#9ca3af;
-}
-
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
-
-/* ===== BACKGROUND ===== */
-body {
-    min-height: 100vh;
-    background: #f4f6fa;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-body::before {
-    display: none;
-}
-
 /* ===== SIDEBAR ===== */
 .sidebar-nav{
     position:fixed;
@@ -101,12 +129,14 @@ body::before {
     background:rgba(255,255,255,.92);
     backdrop-filter:blur(18px);
     box-shadow:0 4px 25px rgba(0,0,0,.18);
-    z-index:100;
+    z-index:1000;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
+    transition: transform 0.3s ease;
 }
-.sidebar-top{padding:26px 0;overflow-y:auto}
+
+.sidebar-top{padding:26px 0;overflow-y:auto; flex: 1;}
 .site-logo{text-align:center;margin-bottom:12px}
 .site-logo img{width:110px}
 .sidebar-divider{
@@ -133,7 +163,7 @@ body::before {
 .nav-link:hover{background:#b8c6e6}
 .nav-link.active{background:#3762c8;color:#fff}
 
-/* ===== SUBMENU ===== */
+/* Submenu */
 .nav-item-has-submenu>.nav-link{justify-content:space-between}
 .nav-submenu{
     display:none;
@@ -143,155 +173,93 @@ body::before {
     background:rgba(0,0,0,.05);
     border-radius:10px;
 }
-.nav-submenu .nav-link{
-    padding:8px 14px;
-    font-size:.9rem;
-}
-
-/* ===== USER ===== */
-.user-info{
-    padding:16px;
-    text-align:center;
-    border-top:1px solid rgba(0,0,0,.1);
-}
-.logout-btn{
-    margin-top:8px;
-    background:#3762c8;
-    border:none;
-    color:#fff;
-    padding:8px 18px;
-    border-radius:8px;
-    cursor:pointer;
-}
-
-/* ===== DARK MODE ===== */
-body.dark-mode::before{background:rgba(0,0,0,.65)}
-body.dark-mode .sidebar-nav{background:rgba(24,24,27,.96)}
-body.dark-mode .nav-link{color:#e5e7eb}
-body.dark-mode .nav-link:hover{background:#374151}
-body.dark-mode .nav-link.active{background:#2563eb}
-body.dark-mode .nav-submenu{background:rgba(255,255,255,.06)}
-body.dark-mode .main-content-inner{background:#111827;color:#e5e7eb}
-body.dark-mode h1,body.dark-mode h2{color:#f9fafb}
-
-/* Dark toggle */
-.dark-toggle{
-    margin-top:10px;
-    padding:6px 14px;
-    border-radius:20px;
-    border:none;
-    cursor:pointer;
-    font-size:.85rem;
-    background:#111827;
-    color:#fff;
-}
-body.dark-mode .dark-toggle{
-    background:#f9fafb;
-    color:#111827;
-}
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
-    margin-left: 260px;          /* space for sidebar */
-    padding-top: 49px;           /* space for header */
-    min-height: calc(100vh - 0px);
+    margin-left: 260px;
+    padding-top: 70px;
+    min-height: 100vh;
     background: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    position: relative;
-    min-width: 0;
-    flex: 1 1 auto;
-    height: calc(100vh - 70px);
-    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .main-content-inner {
     width: 100%;
     background: #e9f1f7;
-    border-radius: 0;
-    box-shadow: 0 4px 24px rgba(55,98,200,0.10);
     padding: 32px 28px;
-    margin: 0;
-    transition: box-shadow 0.2s;
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    height: 100%;
-    overflow-y: auto;
-    min-height: 0;
-}
-.main-content-inner:focus-within, .main-content-inner:hover {
-    box-shadow: 0 8px 32px rgba(55,98,200,0.16);
+    min-height: calc(100vh - 70px);
 }
 
-/* ===== MOBILE RESPONSIVE ===== */
+/* ===== MOBILE ELEMENTS ===== */
 .sidebar-hamburger{
     display:none;
     position:fixed;
-    top:18px;left:18px;
-    width:40px;height:40px;
-    background:#fff;
-    border:none;
-    border-radius:8px;
-    box-shadow:0 2px 8px rgba(0,0,0,.15);
-    z-index:200;
-}
-.sidebar-hamburger span{
-    display:block;
-    width:24px;height:3px;
+    top:15px; left:15px;
+    width:40px; height:40px;
     background:#3762c8;
-    margin:4px auto;
+    color: white;
+    border:none; border-radius:8px;
+    z-index:1100;
+    cursor:pointer;
 }
+.sidebar-hamburger span {
+    display:block; width:22px; height:2px;
+    background:white; margin:5px auto; transition: 0.3s;
+}
+
 .sidebar-backdrop{
     display:none;
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,.25);
-    z-index:99;
+    background:rgba(0,0,0,.4);
+    backdrop-filter: blur(4px);
+    z-index:950;
 }
 
-@media(max-width:900px){
-    .sidebar-nav{left:-260px;transition:.3s}
-    .sidebar-nav.open{left:0}
-    .sidebar-hamburger{display:block}
+/* ===== DARK MODE ===== */
+body.dark-mode { background: #111827; }
+body.dark-mode .top-header, body.dark-mode .sidebar-nav{ background:rgba(24,24,27,.96); color: white; }
+body.dark-mode .header-left h1, body.dark-mode .header-user, body.dark-mode .nav-link { color: #f9fafb; }
+body.dark-mode .main-content-inner { background: #1f2937; color: #e5e7eb; }
+body.dark-mode .header-sub { color: #9ca3af; }
+body.dark-mode .nav-link:hover { background: #374151; }
 
-    .main-content{
-        margin-left:0;
-        padding:0;
-    }
-    .main-content-inner{
-        padding: 12px 4px;
-        margin: 0;
-        max-width: none;
-        width: 100%;
-        border-radius: 12px;
-        text-align: left;
-    }
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+@media(max-width:991px){
+    .sidebar-nav { transform: translateX(-100%); }
+    .sidebar-nav.open { transform: translateX(0); }
+    .top-header { left: 0; padding-left: 70px; }
+    .main-content { margin-left: 0; }
+    .sidebar-hamburger { display: block; }
+    .sidebar-backdrop.active { display: block; }
 }
 
+@media(max-width:991px){
+    .header-right form { display: none !important; }
+}
 @media(max-width:480px){
-    .main-content-inner{
-        padding: 0 2px;
-        margin: 0;
-        max-width: none;
-        width: 100%;
-        border-radius: 0;
-        text-align: left;
-    }
-    h1{font-size:1.5rem}
-    h2{font-size:1.3rem}
-    h3{font-size:1.1rem}
+    .header-sub { display: none; }
+    .main-content-inner { padding: 20px 15px; }
+    .header-left h1 { font-size: 1.1rem; }
 }
+
+/* Additional Styles from Original */
+.user-info{ padding:16px; text-align:center; border-top:1px solid rgba(0,0,0,.1); }
+.logout-btn{ margin-top:8px; background:#3762c8; border:none; color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; width: 100%; }
+.notif-btn:hover .fa-bell { color: #ef4444; }
 </style>
 </head>
 
 <body>
 
-<!-- ===== MODERN HEADER ===== -->
+<div class="sidebar-backdrop" id="backdrop"></div>
+
+<button class="sidebar-hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+</button>
+
 <header class="top-header">
-    <div class="header-left" style="display:flex;align-items:center;gap:16px;">
+    <div class="header-left">
         <div>
             <h1>Energy System</h1>
             <div class="header-sub">LGU Employee Portal</div>
@@ -299,20 +267,21 @@ body.dark-mode .dark-toggle{
     </div>
     <div class="header-right">
         <form action="#" method="get" style="display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:6px 12px;border-radius:8px;">
-            <input type="text" placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:1rem;">
+            <input type="text" placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:1rem; width: 100px;">
             <button type="submit" style="background:none;border:none;color:#3762c8;font-size:1.1rem;cursor:pointer;"><i class="fa fa-search"></i></button>
         </form>
 
-        <!-- Notification Bell -->
-        <button class="notif-btn" id="notifBtn" style="background:none;border:none;color:#3762c8;font-size:1.5rem;cursor:pointer;position:relative;" title="Notifications">
+
+        <button class="notif-btn" id="notifBtn" style="background:none;border:none;color:#3762c8;font-size:1.5rem;cursor:pointer;position:relative;">
             <i class="fa fa-bell"></i>
             <span id="notifCount" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:12px;<?php echo e(($unreadNotifCount ?? 0) > 0 ? '' : 'display:none;'); ?>"><?php echo e($unreadNotifCount ?? 0); ?></span>
         </button>
+
         <div id="notifDropdown" style="display:none;position:absolute;right:60px;top:60px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:320px;max-width:90vw;z-index:999;max-height:380px;overflow-y:auto;">
             <div style="padding:12px 16px;border-bottom:1px solid #eee;font-size:0.97rem;font-weight:600;color:#3762c8;">Notifications</div>
-            <div id="notifList" style="max-height:320px;overflow-y:auto;">
+            <div id="notifList">
                 <?php $__empty_1 = true; $__currentLoopData = $notifications ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notif): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                    <a href="#" class="notif-item" data-id="<?php echo e($notif->id); ?>" style="display:block;padding:12px 16px;border-bottom:1px solid #eee;font-size:0.95rem;<?php echo e($notif->read_at ? 'background:#f3f4f6;' : ''); ?>;color:inherit;text-decoration:none;cursor:pointer;">
+                    <a href="#" class="notif-item" data-id="<?php echo e($notif->id); ?>" style="display:block;padding:12px 16px;border-bottom:1px solid #eee;font-size:0.95rem;<?php echo e($notif->read_at ? 'background:#f3f4f6;' : ''); ?>;color:inherit;text-decoration:none;">
                         <strong><?php echo e($notif->title); ?></strong><br>
                         <span style="color:#ef4444;"><?php echo e($notif->message); ?></span>
                         <div style="font-size:0.85rem;color:#888;margin-top:2px;"><?php echo e($notif->created_at->diffForHumans()); ?></div>
@@ -323,17 +292,18 @@ body.dark-mode .dark-toggle{
             </div>
         </div>
 
-        <button id="darkToggleHeader" style="background:none;border:none;color:#3762c8;font-size:1.4rem;cursor:pointer;" title="Toggle dark mode">
+        <button id="darkToggleHeader" style="background:none;border:none;color:#3762c8;font-size:1.4rem;cursor:pointer;">
             <i id="darkModeIcon" class="fa fa-moon"></i>
         </button>
+
         <div class="header-user" style="position:relative;">
-            <button id="userMenuBtn" style="background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <i class="fa fa-user-circle"></i>
+            <button id="userMenuBtn" style="background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer; color: inherit;">
+                <img src="<?php echo e(auth()->user()->profile_photo_url); ?>" alt="Profile Photo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e8f0; background: #fff;"> 
                 <span><?php echo e($user->full_name ?? $user->name ?? 'Admin'); ?></span>
                 <i class="fa fa-caret-down"></i>
             </button>
-            <div id="userDropdown" style="display:none;position:absolute;right:0;top:120%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:160px;z-index:999;">
-                <div style="padding:12px 16px;border-bottom:1px solid #eee;">
+            <div id="userDropdown" style="display:none;position:absolute;right:0;top:120%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:180px;z-index:999;">
+                <div style="padding:12px 16px;border-bottom:1px solid #eee; color: #333;">
                     <strong><?php echo e($user->full_name ?? $user->name ?? 'Admin'); ?></strong><br>
                     <small style="color:#666;"><?php echo e(ucfirst($role ?? 'User')); ?></small>
                 </div>
@@ -342,20 +312,13 @@ body.dark-mode .dark-toggle{
                 </a>
                 <form method="POST" action="<?php echo e(route('logout')); ?>" style="margin:0;">
                     <?php echo csrf_field(); ?>
-                    <button class="logout-btn" style="width:100%;border-radius:0 0 8px 8px;">Logout</button>
+                    <button class="logout-btn" style="border-radius:0 0 8px 8px;">Logout</button>
                 </form>
             </div>
         </div>
     </div>
 </header>
 
-<!-- HAMBURGER BUTTON -->
-<button class="sidebar-hamburger" id="hamburger">
-    <span></span><span></span><span></span>
-</button>
-<div class="sidebar-backdrop" id="backdrop"></div>
-
-<!-- ===== SIDEBAR ===== -->
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
         <div class="site-logo">
@@ -364,65 +327,90 @@ body.dark-mode .dark-toggle{
         <div class="sidebar-divider"></div>
 
         <?php
-        $user = auth()->user();
-        $role = strtolower($user?->role ?? '');
+            $user = auth()->user();
+            $role = strtolower($user?->role ?? '');
         ?>
 
         <ul class="nav-list">
-            <li><a href="/modules/dashboard/index" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+            <li><a href="/modules/dashboard/index" class="nav-link<?php echo e(request()->is('modules/dashboard/index') ? ' active' : ''); ?>"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            
-            <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
-            <?php if($role=='super admin'||$role=='admin'||$role=='staff'): ?>
-                <li><a href="/modules/facilities/index" class="nav-link"><i class="fa-solid fa-building"></i> Facilities</a></li>
-                <?php if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff'): ?>
-                    <li class="nav-item-has-submenu">
-                        <a href="#" class="nav-link submenu-toggle">
-                            <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
-                            <i class="fa fa-caret-down"></i>
-                        </a>
-                        <ul class="nav-submenu">
-                            <li><a href="<?php echo e(route('energy.dashboard')); ?>" class="nav-link">Dashboard</a></li>
-                            <li><a href="<?php echo e(route('energy.trend')); ?>" class="nav-link">Trend Analysis</a></li>
-                            <li><a href="<?php echo e(route('energy.exportReport')); ?>" class="nav-link">Export COA Report</a></li>
-                            <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incident Records</a></li>
-                        </ul>
-                    </li>
-                <?php endif; ?>
-                <li><a href="/modules/maintenance/index" class="nav-link"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
-                <li><a href="/modules/billing/index" class="nav-link"><i class="fa-solid fa-money-bill-wave"></i> Billing & Cost</a></li>
-            <?php endif; ?>
-
-            
-            <?php if($role=='super admin'||$role=='admin'||$role=='energy_officer'): ?>
-                <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
-                <li><a href="/modules/energy-efficiency-analysis" class="nav-link"><i class="fa-solid fa-chart-line"></i> Energy Efficiency Analysis</a></li>
+            <?php if($role=='energy_officer'): ?>
+                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+                <li><a href="/modules/facilities/index" class="nav-link<?php echo e(request()->is('modules/facilities*') ? ' active' : ''); ?>"><i class="fa-solid fa-building"></i> Facilities</a></li>
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle">
-                        <span><i class="fa-solid fa-chart-bar"></i> Reports & Analytics</span>
+                        <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
+                        <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="nav-submenu">
+                        <li><a href="<?php echo e(route('energy.dashboard')); ?>" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                        <li><a href="<?php echo e(route('energy.trend')); ?>" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                        <!-- Removed Export Report submenu -->
+                       
+                    </ul>
+                </li>
+                <li><a href="/modules/maintenance/index" class="nav-link<?php echo e(request()->is('modules/maintenance*') ? ' active' : ''); ?>"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
+                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
+                <li class="nav-item-has-submenu">
+                    <a href="#" class="nav-link submenu-toggle">
+                        <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
                         <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
                         <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
+                         <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
+            <?php else: ?>
+                <!-- ...existing code for other roles... -->
+                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+                <?php if($role=='super admin'||$role=='admin'||$role=='staff'): ?>
+                    <li><a href="/modules/facilities/index" class="nav-link<?php echo e(request()->is('modules/facilities*') ? ' active' : ''); ?>"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                    <?php if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff'): ?>
+                        <li class="nav-item-has-submenu">
+                            <a href="#" class="nav-link submenu-toggle">
+                                <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
+                                <i class="fa fa-caret-down"></i>
+                            </a>
+                            <ul class="nav-submenu">
+                                <li><a href="<?php echo e(route('energy.dashboard')); ?>" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                                <li><a href="<?php echo e(route('energy.trend')); ?>" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                                <!-- Removed Export Report sidebar link -->
+                             
+                            </ul>
+                        </li>
+                    <?php endif; ?>
+                    <li><a href="/modules/maintenance/index" class="nav-link<?php echo e(request()->is('modules/maintenance*') ? ' active' : ''); ?>"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
+                <?php endif; ?>
+
+                <?php if($role=='super admin'||$role=='admin'||$role=='energy_officer'): ?>
+                    <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
+                    <li class="nav-item-has-submenu">
+                        <a href="#" class="nav-link submenu-toggle">
+                            <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
+                            <i class="fa fa-caret-down"></i>
+                        </a>
+                        <ul class="nav-submenu">
+                            <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
+                            <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
+                              <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
+                        </ul>
+                    </li>
+                <?php endif; ?>
             <?php endif; ?>
 
-            
             <?php if($role=='super admin'||$role=='admin'): ?>
-                <li style="margin: 18px 0 6px 8px; font-size:0.95rem; color:#888; font-weight:600; letter-spacing:1px;">ADMINISTRATION</li>
-                <li><a href="/modules/users/index" class="nav-link"><i class="fa-solid fa-users"></i> Users & Roles</a></li>
-                <li><a href="/modules/settings/index" class="nav-link"><i class="fa-solid fa-gear"></i> System Settings</a></li>
+                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
+                <li><a href="/modules/users/index" class="nav-link<?php echo e(request()->is('modules/users*') ? ' active' : ''); ?>"><i class="fa-solid fa-users"></i> Users</a></li>
+                <li><a href="/modules/settings/index" class="nav-link<?php echo e(request()->is('modules/settings*') ? ' active' : ''); ?>"><i class="fa-solid fa-gear"></i> Settings</a></li>
             <?php endif; ?>
         </ul>
     </div>
 
-  
     <div class="user-info">
-        Welcome, <?php echo e($user->full_name ?? $user->name ?? 'Admin'); ?><br>
-        <small style="color:#666;font-size:0.85rem;"><?php echo e(ucfirst($role ?? 'User')); ?></small>
-   
+        Welcome, <?php echo e($user->name ?? 'Admin'); ?><br>
+        <small style="color:#666;font-size:0.8rem;"><?php echo e(ucfirst($role ?? 'User')); ?></small>
         <form method="POST" action="<?php echo e(route('logout')); ?>">
             <?php echo csrf_field(); ?>
             <button class="logout-btn">Logout</button>
@@ -430,11 +418,17 @@ body.dark-mode .dark-toggle{
     </div>
 </div>
 
-<!-- ===== MAIN CONTENT (SIDEBAR + HEADER + CONTENT) ===== -->
 <div class="main-content">
-    
     <div class="main-content-inner">
         <?php echo $__env->yieldContent('content'); ?>
+    </div>
+</div>
+
+<div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;">
+    <div style="background:#fff;padding:32px;border-radius:16px;max-width:400px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div style="font-size:1.25rem;font-weight:700;color:#e11d48;margin-bottom:10px;">Session Expired</div>
+        <div style="color:#444;margin-bottom:18px;">Please log in again to continue.</div>
+        <a href="/login" style="background:#3762c8;color:#fff;padding:10px 28px;border-radius:8px;text-decoration:none;display:inline-block;">Log In</a>
     </div>
 </div>
 
@@ -442,193 +436,87 @@ body.dark-mode .dark-toggle{
 <script src="/js/echo.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Ensure dark mode persists across all content
-    if(localStorage.getItem('darkMode')==='on'){
-        document.body.classList.add('dark-mode');
-    }
+    // 1. Sidebar & Backdrop Logic
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.getElementById('hamburger');
+    const backdrop = document.getElementById('backdrop');
 
-    const sidebar=document.getElementById('sidebar');
-    const hamburger=document.getElementById('hamburger');
-    const backdrop=document.getElementById('backdrop');
+    hamburger.onclick = () => {
+        sidebar.classList.toggle('open');
+        backdrop.classList.toggle('active');
+    };
 
-    hamburger.onclick=()=>{sidebar.classList.add('open');backdrop.style.display='block'}
-    backdrop.onclick=()=>{sidebar.classList.remove('open');backdrop.style.display='none'}
+    backdrop.onclick = () => {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('active');
+    };
 
-    // Submenu toggle
-    document.querySelectorAll('.submenu-toggle').forEach(btn=>{
-        btn.onclick=e=>{
+    // 2. Submenu Logic
+    document.querySelectorAll('.submenu-toggle').forEach(btn => {
+        btn.onclick = e => {
             e.preventDefault();
-            const menu=btn.nextElementSibling;
-            menu.style.display=menu.style.display==='block'?'none':'block';
+            const menu = btn.nextElementSibling;
+            const isVisible = menu.style.display === 'block';
+            menu.style.display = isVisible ? 'none' : 'block';
         }
     });
 
-    // User dropdown logic
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    const userDropdown = document.getElementById('userDropdown');
-    if(userMenuBtn && userDropdown){
-        userMenuBtn.onclick = (e) => {
-            e.stopPropagation();
-            userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-            userMenuBtn.classList.toggle('active');
-        };
-        document.addEventListener('click', (e) => {
-            if (!userMenuBtn.contains(e.target)) {
-                userDropdown.style.display = 'none';
-                userMenuBtn.classList.remove('active');
-            }
-        });
-    }
-    // Dark mode
-    const toggleHeader=document.getElementById('darkToggleHeader');
-    function updateDarkModeIcon() {
-        const icon = document.getElementById('darkModeIcon');
-        if (!icon) return;
-        if (document.body.classList.contains('dark-mode')) {
-            icon.classList.remove('fa-moon');
-            icon.classList.add('fa-sun');
-            icon.title = 'Light Mode';
-        } else {
-            icon.classList.remove('fa-sun');
-            icon.classList.add('fa-moon');
-            icon.title = 'Dark Mode';
-        }
-    }
-    updateDarkModeIcon();
-    if(toggleHeader){
-        toggleHeader.onclick=()=>{
-            document.body.classList.toggle('dark-mode');
-            const on=document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode',on?'on':'off');
-            updateDarkModeIcon();
-        };
-    }
-    // Notification dropdown logic
+    // 3. User & Notif Dropdown
+    const userBtn = document.getElementById('userMenuBtn');
+    const userDrop = document.getElementById('userDropdown');
     const notifBtn = document.getElementById('notifBtn');
-    const notifDropdown = document.getElementById('notifDropdown');
-    const notifCount = document.getElementById('notifCount');
-    const notifList = document.getElementById('notifList');
-    const notifEmpty = document.getElementById('notifEmpty');
+    const notifDrop = document.getElementById('notifDropdown');
 
-
-    function updateNotifBadge(count) {
-        if (count > 0) {
-            notifCount.style.display = 'inline-block';
-            notifCount.innerText = count;
-        } else {
-            notifCount.style.display = 'none';
-            notifCount.innerText = 0;
-        }
-    }
-    // Set initial badge count from backend
-    updateNotifBadge(parseInt(document.getElementById('notifCount').innerText) || 0);
-
-    function addNotification(title, message, time) {
-        const html = `<div style="padding:12px 16px;border-bottom:1px solid #eee;font-size:0.95rem;">
-                        <strong>${title}</strong><br>
-                        <span style="color:#ef4444;">${message}</span>
-                        <div style="font-size:0.85rem;color:#888;margin-top:2px;">${time}</div>
-                      </div>`;
-        notifList.insertAdjacentHTML('afterbegin', html);
-        notifEmpty.style.display = 'none';
-        let count = parseInt(notifCount.innerText) || 0;
-        updateNotifBadge(count + 1);
-    }
-
-    notifBtn && notifBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        notifDropdown.style.display = notifDropdown.style.display === 'block' ? 'none' : 'block';
-        // Mark all as read when opening dropdown
-        if (notifDropdown.style.display === 'block') {
-            fetch("<?php echo e(route('notifications.markAllRead')); ?>", {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                },
-            }).then(r => {
-                if (r.ok) updateNotifBadge(0);
-            });
-        }
-    });
-    document.addEventListener('click', (e) => {
-        if (!notifBtn.contains(e.target) && !notifDropdown.contains(e.target)) {
-            notifDropdown.style.display = 'none';
-        }
+    userBtn.onclick = (e) => { e.stopPropagation(); userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block'; notifDrop.style.display = 'none'; };
+    notifBtn.onclick = (e) => { e.stopPropagation(); notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block'; userDrop.style.display = 'none'; };
+    
+    document.addEventListener('click', () => {
+        userDrop.style.display = 'none';
+        notifDrop.style.display = 'none';
     });
 
-    // Optionally, load initial notifications from backend here
-    // Example: updateNotifBadge(0);
-    // Real-time notification listener (Laravel Echo + Pusher)
-    // This must be outside DOMContentLoaded if Echo is loaded after DOMContentLoaded
-    <?php if(auth()->check()): ?>
+    // 4. Dark Mode Logic
+    const darkBtn = document.getElementById('darkToggleHeader');
+    const darkIcon = document.getElementById('darkModeIcon');
+    if(localStorage.getItem('darkMode') === 'on') document.body.classList.add('dark-mode');
+
+    darkBtn.onclick = () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark ? 'on' : 'off');
+        darkIcon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
+    };
+
+    // 5. Session Timeout Logic
+    var timeoutMinutes = <?php echo e(env('SESSION_LIFETIME', 15)); ?>;
+    var timeoutMs = timeoutMinutes * 60 * 1000;
+    var timer = setTimeout(() => { document.getElementById('sessionTimeoutModal').style.display='flex'; }, timeoutMs);
+
+    ['click','mousemove','keydown'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { document.getElementById('sessionTimeoutModal').style.display='flex'; }, timeoutMs);
+        });
+    });
+});
+
+// Pusher/Echo Notification logic (kept as per your original)
+<?php if(auth()->check()): ?>
     if (window.Echo) {
         window.Echo.private(`App.Models.User.<?php echo e(auth()->id()); ?>`)
             .notification((notif) => {
-                addNotification(notif.data.title, notif.data.message, 'Just now');
+                const notifList = document.getElementById('notifList');
+                const html = `<div style="padding:12px 16px;border-bottom:1px solid #eee;">
+                                <strong>${notif.data.title}</strong><br>${notif.data.message}
+                              </div>`;
+                notifList.insertAdjacentHTML('afterbegin', html);
+                let count = parseInt(document.getElementById('notifCount').innerText) || 0;
+                document.getElementById('notifCount').innerText = count + 1;
+                document.getElementById('notifCount').style.display = 'inline-block';
             });
     }
-    <?php endif; ?>
-        // Notification item click handler (future: link to details)
-        document.querySelectorAll('.notif-item').forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Example: show alert or redirect
-                // alert('Notification clicked: ' + this.dataset.id);
-                // TODO: Implement redirect to details if needed
-            });
-        });
-    });
-    </script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var timeoutMinutes = <?php echo e(env('SESSION_LIFETIME', 20)); ?>;
-    if (timeoutMinutes > 0) {
-        var timeoutMs = timeoutMinutes * 60 * 1000;
-        var timer = setTimeout(autoLogout, timeoutMs);
-
-        function autoLogout() {
-            var csrf = document.querySelector('meta[name="csrf-token"]');
-            if (csrf && csrf.getAttribute('content')) {
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?php echo e(route('logout')); ?>';
-
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = '_token';
-                input.value = csrf.getAttribute('content');
-
-                form.appendChild(input);
-                document.body.appendChild(form);
-                form.submit();
-            } else {
-                window.location.href = '<?php echo e(route('login')); ?>';
-            }
-        }
-
-        ['click','mousemove','keydown','scroll','touchstart'].forEach(function(evt) {
-            window.addEventListener(evt, function() {
-                clearTimeout(timer);
-                timer = setTimeout(autoLogout, timeoutMs);
-            });
-        });
-    }
-});
-// Session Timeout Modal logic
-function showSessionTimeoutModal() {
-    var modal = document.getElementById('sessionTimeoutModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
+<?php endif; ?>
 </script>
-<!-- Session Timeout Modal -->
-<div id="sessionTimeoutModal" style="display:none;position:fixed;bottom:0;left:0;width:100vw;z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:32px 28px;border-radius:16px;min-width:320px;max-width:98vw;box-shadow:0 8px 32px rgba(37,99,235,0.18);margin-bottom:32px;text-align:center;">
-        <div style="font-size:1.25rem;font-weight:700;color:#e11d48;margin-bottom:10px;">Session Timed Out</div>
-        <div style="color:#444;margin-bottom:18px;">Your session has expired due to inactivity. Please log in again to continue.</div>
-        <a href="/login" style="background:#3762c8;color:#fff;padding:10px 28px;border:none;border-radius:8px;font-size:1.08rem;font-weight:600;text-decoration:none;">Log In</a>
-    </div>
-</div>
-<?php /**PATH C:\xampp\htdocs\energy-system\resources\views/layouts/qc-admin.blade.php ENDPATH**/ ?>
+
+</body>
+</html><?php /**PATH C:\xampp\htdocs\energy-system\resources\views/layouts/qc-admin.blade.php ENDPATH**/ ?>

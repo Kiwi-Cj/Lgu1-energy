@@ -226,7 +226,13 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;">
                 <label style="font-weight:500;">Image Preview</label>
-                <div id="edit_image_preview" style="margin-bottom:8px;"></div>
+                <div id="edit_image_preview" style="margin-bottom:8px;">
+                    <?php if(isset($facility) && $facility->image_path): ?>
+                        <img src="<?php echo e(asset('storage/' . $facility->image_path)); ?>" alt="Current Image" style="max-width:100%;max-height:120px;border-radius:8px;box-shadow:0 2px 8px #2563eb22;">
+                    <?php elseif(isset($facility) && $facility->image): ?>
+                        <img src="<?php echo e(str_starts_with($facility->image,'img/') ? asset($facility->image) : asset('storage/'.$facility->image)); ?>" alt="Current Image" style="max-width:100%;max-height:120px;border-radius:8px;box-shadow:0 2px 8px #2563eb22;">
+                    <?php endif; ?>
+                </div>
                 <input type="file" name="image" accept="image/*" style="border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
             </div>
             <button type="submit" style="background:#2563eb;color:#fff;padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Update Facility</button>
@@ -255,26 +261,69 @@
     </div>
 </div>
 
-<!-- Delete Facility Modal -->
-<div id="deleteFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;">
-    <div class="modal-content" style="max-width:350px;background:#fff7f7;border-radius:18px;box-shadow:0 8px 32px rgba(225,29,72,0.13);padding:32px 28px;">
-        <button class="modal-close" type="button" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="top:12px;right:12px;">&times;</button>
-        <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>
-        <div style="font-size:1.02rem;color:#b91c1c;margin-bottom:18px;">Are you sure you want to delete this facility? This action cannot be undone.</div>
-        <form id="deleteFacilityForm" method="POST" style="display:flex;flex-direction:column;gap:16px;">
-            <?php echo csrf_field(); ?>
-            <?php echo method_field('DELETE'); ?>
-            <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Yes, Delete</button>
-            <button type="button" class="delete-modal-btn cancel" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;">Cancel</button>
-        </form>
-    </div>
+<!-- Delete Facility Modal (centered, fixed, non-interactive background) -->
+<style>
+#deleteFacilityModal {
+    display: none;
+    position: fixed;
+    z-index: 99999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.18);
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
+}
+#deleteFacilityModal .modal-content {
+    max-width: 350px;
+    background: #fff7f7;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(225,29,72,0.13);
+    padding: 32px 28px;
+    position: relative;
+    margin: 0;
+}
+#deleteFacilityModal .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #e11d48;
+    cursor: pointer;
+}
+#deleteFacilityModal.open {
+    display: flex !important;
+}
+</style>
+<div id="deleteFacilityModal" class="modal">
+        <div class="modal-content">
+                <button class="modal-close" type="button" onclick="document.getElementById('deleteFacilityModal').style.display='none'">&times;</button>
+                <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>
+                <div style="font-size:1.02rem;color:#b91c1c;margin-bottom:18px;">Are you sure you want to delete this facility? This action cannot be undone.</div>
+                <form id="deleteFacilityForm" method="POST" style="display:flex;flex-direction:column;gap:16px;">
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
+                        <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Yes, Delete</button>
+                        <button type="button" class="delete-modal-btn cancel" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;">Cancel</button>
+                </form>
+        </div>
 </div>
 <script>
 // Call this function and pass the facility ID before showing the modal
-function openDeleteFacilityModal(facilityId) {
+/**
+ * Show delete modal and set form action dynamically.
+ * @param {number|string} facilityId
+ * @param {string} [route] Optional. If provided, will use this as the form action. Otherwise, defaults to /modules/facilities/{id}
+ */
+function openDeleteFacilityModal(facilityId, route) {
     var form = document.getElementById('deleteFacilityForm');
     if (form) {
-        form.action = '/modules/facilities/' + facilityId;
+        if (route) {
+            form.action = route;
+        } else {
+            form.action = '/modules/facilities/' + facilityId;
+        }
     }
     document.getElementById('deleteFacilityModal').style.display = 'flex';
 }
