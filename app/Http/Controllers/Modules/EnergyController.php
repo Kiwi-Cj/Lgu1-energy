@@ -159,16 +159,60 @@ class EnergyController extends Controller
         $validated['actual_kwh'] = $validated['kwh_consumed'];
         unset($validated['kwh_consumed']);
 
-        // Use baseline_kwh from request if provided
+        // --- Compute baseline kWh ---
         $baselineInput = $request->input('baseline_kwh');
         $facility = \App\Models\Facility::find($validated['facility_id']);
         $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-        $avg = $baselineInput !== null && $baselineInput !== '' ? floatval($baselineInput) : ($profile ? $profile->baseline_kwh : ($facility ? $facility->baseline_kwh : null));
-        $kwh_vs_avg = ($avg !== null) ? $validated['actual_kwh'] - $avg : null;
-        $percent_change = ($avg && $avg != 0) ? (($kwh_vs_avg / $avg) * 100) : null;
-        $validated['kwh_vs_avg'] = $kwh_vs_avg;
-        $validated['percent_change'] = $percent_change;
+        $avg = null;
+        if ($baselineInput !== null && $baselineInput !== '') {
+            $avg = floatval($baselineInput);
+        } elseif ($profile && $profile->baseline_kwh !== null) {
+            $avg = floatval($profile->baseline_kwh);
+        } elseif ($facility && $facility->baseline_kwh !== null) {
+            $avg = floatval($facility->baseline_kwh);
+        }
         $validated['baseline_kwh'] = $avg;
+
+        // --- Compute deviation ---
+        $actualKwh = isset($validated['actual_kwh']) ? floatval($validated['actual_kwh']) : null;
+        $deviation = ($avg && $avg != 0 && $actualKwh !== null) ? round((($actualKwh - $avg) / $avg) * 100, 2) : null;
+        $validated['deviation'] = $deviation;
+
+        // --- Compute alert based on deviation and facility size ---
+        $sizeLabel = 'Medium';
+        if ($avg !== null) {
+            if ($avg <= 1000) {
+                $sizeLabel = 'Small';
+            } elseif ($avg <= 3000) {
+                $sizeLabel = 'Medium';
+            } elseif ($avg <= 10000) {
+                $sizeLabel = 'Large';
+            } else {
+                $sizeLabel = 'Extra Large';
+            }
+        }
+        $thresholds = [
+            'Small' =>    [ 'level5' => 80,  'level4' => 50,  'level3' => 30,  'level2' => 15 ],
+            'Medium' =>   [ 'level5' => 60,  'level4' => 40,  'level3' => 20,  'level2' => 10 ],
+            'Large' =>    [ 'level5' => 30,  'level4' => 20,  'level3' => 12,  'level2' => 5  ],
+            'Extra Large'=>[ 'level5' => 20,  'level4' => 12,  'level3' => 7,   'level2' => 3  ],
+        ];
+        $t = $thresholds[$sizeLabel];
+        if ($deviation === null) {
+            $validated['alert'] = '';
+        } elseif ($deviation > $t['level5']) {
+            $validated['alert'] = 'Extreme / level 5';
+        } elseif ($deviation > $t['level4']) {
+            $validated['alert'] = 'Extreme / level 4';
+        } elseif ($deviation > $t['level3']) {
+            $validated['alert'] = 'High / level 3';
+        } elseif ($deviation > $t['level2']) {
+            $validated['alert'] = 'Warning / level 2';
+        } else {
+            $validated['alert'] = 'Normal / Low';
+        }
+
+        // --- Save to database ---
         \App\Models\EnergyRecord::create($validated);
 
     // Preserve filters after add (use filter fields from form if present)

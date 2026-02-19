@@ -1,4 +1,3 @@
-
 <style>
 .delete-modal-btn {
     transition: background 0.2s, color 0.2s;
@@ -60,12 +59,12 @@
 </div>
 
 <!-- Add Facility Modal -->
-<div id="addFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:10050 !important;pointer-events:auto !important;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);">
-    <div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;">
-        <button class="modal-close" type="button" style="top:12px;right:12px;">&times;</button>
-        <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Add Facility</h2>
-        <div style="font-size:1.02rem;color:#64748b;margin-bottom:18px;">Enter new facility details below.</div>
-        <form id="addFacilityForm" action="/facilities" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
+<div id="addFacilityModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:10050;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
+    <div class="modal-content" style="max-width:520px;width:95vw;background:#fff;border-radius:22px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:36px 32px;max-height:92vh;overflow-y:auto;position:relative;">
+        <button class="modal-close" type="button" onclick="closeAddFacilityModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
+        <h2 style="margin-bottom:8px;font-size:1.7rem;font-weight:900;color:#2563eb;letter-spacing:-1px;">Add Facility</h2>
+        <div style="font-size:1.08rem;color:#64748b;margin-bottom:18px;">Enter new facility details below. Fields marked with <span style='color:#e11d48;'>*</span> are required.</div>
+        <form id="addFacilityForm" action="/facilities" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:18px;">
             @if ($errors->any())
                 <div style="background:#fee2e2;color:#b91c1c;padding:10px 16px;border-radius:8px;font-size:1.05rem;margin-bottom:8px;">
                     <strong>There were some problems with your input:</strong>
@@ -77,165 +76,153 @@
                 </div>
             @endif
             @csrf
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_name" style="font-weight:500;">Name</label>
-                    <input type="text" id="add_name" name="name" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_name" style="font-weight:600;">Name <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="add_name" name="name" required placeholder="Facility Name" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_type" style="font-weight:500;">Type</label>
-                    <input type="text" id="add_type" name="type" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_department" style="font-weight:500;">Department</label>
-                    <input type="text" id="add_department" name="department" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_address" style="font-weight:500;">Address</label>
-                    <input type="text" id="add_address" name="address" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_type" style="font-weight:600;">Type <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="add_type" name="type" required placeholder="Facility Type" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
             </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_barangay" style="font-weight:500;">Barangay</label>
-                    <input type="text" id="add_barangay" name="barangay" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_department" style="font-weight:600;">Department</label>
+                    <input type="text" id="add_department" name="department" placeholder="Department" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_floor_area" style="font-weight:500;">Floor Area</label>
-                    <input type="number" id="add_floor_area" name="floor_area" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_address" style="font-weight:600;">Address <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="add_address" name="address" required placeholder="Address" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_floors" style="font-weight:500;">Floors</label>
-                    <input type="number" id="add_floors" name="floors" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_year_built" style="font-weight:500;">Year Built</label>
-                    <input type="number" id="add_year_built" name="year_built" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_operating_hours" style="font-weight:500;">Operating Hours</label>
-                    <input type="text" id="add_operating_hours" name="operating_hours" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="add_status" style="font-weight:500;">Status</label>
-                    <select id="add_status" name="status" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_status" style="font-weight:600;">Status <span style='color:#e11d48;'>*</span></label>
+                    <select id="add_status" name="status" required style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                         <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
                         <option value="maintenance">Maintenance</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-                <label for="add_image" style="font-weight:500;">Image</label>
-                <input type="file" id="add_image" name="image" accept="image/*" style="border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_barangay" style="font-weight:600;">Barangay <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="add_barangay" name="barangay" required placeholder="Barangay" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_floor_area" style="font-weight:600;">Floor Area (sqm)</label>
+                    <input type="number" id="add_floor_area" name="floor_area" placeholder="Floor Area" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_operating_hours" style="font-weight:600;">Operating Hours</label>
+                    <input type="text" id="add_operating_hours" name="operating_hours" placeholder="e.g. 8:00 AM - 5:00 PM" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
             </div>
-            <button type="submit" style="background:#2563eb;color:#fff;padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Add Facility</button>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_floors" style="font-weight:600;">Floors</label>
+                    <input type="number" id="add_floors" name="floors" placeholder="Floors" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_year_built" style="font-weight:600;">Year Built</label>
+                    <input type="number" id="add_year_built" name="year_built" placeholder="Year Built" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="add_image" style="font-weight:600;">Image</label>
+                    <input type="file" id="add_image" name="image" accept="image/*" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">
+                <button type="button" class="energy-modal-btn cancel" onclick="closeAddFacilityModal()" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
+                <button type="submit" class="energy-modal-btn save" style="flex:1;padding:10px 0;border-radius:8px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:700;border:none;font-size:1.13rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);">Add Facility</button>
+            </div>
         </form>
     </div>
 </div>
+<script>
+function openAddFacilityModal() {
+    document.getElementById('addFacilityModal').style.display = 'flex';
+}
+function closeAddFacilityModal() {
+    document.getElementById('addFacilityModal').style.display = 'none';
+}
+</script>
 
 <!-- Edit Facility Modal -->
-<div id="editFacilityModal" class="modal" style="display:none;align-items:center;justify-content:center;">
-    <div class="modal-content" style="max-width:440px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;">
-        <style>
-            /* Center modal within main content */
-            #editFacilityModal.modal {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 99999 !important;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                pointer-events: auto !important;
-                width: auto;
-                height: auto;
-                background: rgba(0,0,0,0.18);
-            }
-            /* If you want to restrict modal to a specific container, add position:relative to that container */
-        </style>
-        <button class="modal-close" type="button" style="position:absolute;top:18px;right:18px;width:32px;height:32px;border:none;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#64748b;box-shadow:0 2px 8px #0001;cursor:pointer;transition:background 0.2s;" onclick="document.getElementById('editFacilityModal').style.display='none'" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        <h2 style="margin-bottom:10px;font-size:1.5rem;font-weight:700;color:#2563eb;">Edit Facility</h2>
-        <div style="font-size:1.02rem;color:#64748b;margin-bottom:18px;">Update facility details below.</div>
-        <form id="editFacilityForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:16px;">
+<div id="editFacilityModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:10050;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
+    <div class="modal-content" style="max-width:520px;width:95vw;background:#fff;border-radius:22px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:36px 32px;max-height:92vh;overflow-y:auto;position:relative;">
+        <button class="modal-close" type="button" onclick="closeEditFacilityModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
+        <h2 style="margin-bottom:8px;font-size:1.7rem;font-weight:900;color:#2563eb;letter-spacing:-1px;">Edit Facility</h2>
+        <div style="font-size:1.08rem;color:#64748b;margin-bottom:18px;">Update facility details below. Fields marked with <span style='color:#e11d48;'>*</span> are required.</div>
+        <form id="editFacilityForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:18px;">
             @csrf
             @method('PUT')
-            <input type="hidden" id="edit_facility_id" name="id">
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_name" style="font-weight:500;">Name</label>
-                    <input type="text" id="edit_name" name="name" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <input type="hidden" id="edit_facility_id" name="facility_id">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_name" style="font-weight:600;">Name <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="edit_name" name="name" required placeholder="Facility Name" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_type" style="font-weight:500;">Type</label>
-                    <input type="text" id="edit_type" name="type" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_department" style="font-weight:500;">Department</label>
-                    <input type="text" id="edit_department" name="department" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_address" style="font-weight:500;">Address</label>
-                    <input type="text" id="edit_address" name="address" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_type" style="font-weight:600;">Type <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="edit_type" name="type" required placeholder="Facility Type" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
             </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_barangay" style="font-weight:500;">Barangay</label>
-                    <input type="text" id="edit_barangay" name="barangay" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_department" style="font-weight:600;">Department</label>
+                    <input type="text" id="edit_department" name="department" placeholder="Department" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_floor_area" style="font-weight:500;">Floor Area</label>
-                    <input type="number" id="edit_floor_area" name="floor_area" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_floors" style="font-weight:500;">Floors</label>
-                    <input type="number" id="edit_floors" name="floors" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
-                </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_year_built" style="font-weight:500;">Year Built</label>
-                    <input type="number" id="edit_year_built" name="year_built" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_address" style="font-weight:600;">Address <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="edit_address" name="address" required placeholder="Address" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
             </div>
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_operating_hours" style="font-weight:500;">Operating Hours</label>
-                    <input type="text" id="edit_operating_hours" name="operating_hours" style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_barangay" style="font-weight:600;">Barangay <span style='color:#e11d48;'>*</span></label>
+                    <input type="text" id="edit_barangay" name="barangay" required placeholder="Barangay" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                 </div>
-                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                    <label for="edit_status" style="font-weight:500;">Status</label>
-                    <select id="edit_status" name="status" required style="width:100%;border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_floor_area" style="font-weight:600;">Floor Area (sqm)</label>
+                    <input type="number" id="edit_floor_area" name="floor_area" placeholder="Floor Area" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_floors" style="font-weight:600;">Floors</label>
+                    <input type="number" id="edit_floors" name="floors" placeholder="Floors" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_year_built" style="font-weight:600;">Year Built</label>
+                    <input type="number" id="edit_year_built" name="year_built" placeholder="Year Built" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_operating_hours" style="font-weight:600;">Operating Hours</label>
+                    <input type="text" id="edit_operating_hours" name="operating_hours" placeholder="e.g. 8am-5pm" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:180px;">
+                    <label for="edit_status" style="font-weight:600;">Status</label>
+                    <select id="edit_status" name="status" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
                         <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
                         <option value="maintenance">Maintenance</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-                <label style="font-weight:500;">Image Preview</label>
-                <div id="edit_image_preview" style="margin-bottom:8px;">
-                    @if(isset($facility) && $facility->image_path)
-                        <img src="{{ asset('storage/' . $facility->image_path) }}" alt="Current Image" style="max-width:100%;max-height:120px;border-radius:8px;box-shadow:0 2px 8px #2563eb22;">
-                    @elseif(isset($facility) && $facility->image)
-                        <img src="{{ str_starts_with($facility->image,'img/') ? asset($facility->image) : asset('storage/'.$facility->image) }}" alt="Current Image" style="max-width:100%;max-height:120px;border-radius:8px;box-shadow:0 2px 8px #2563eb22;">
-                    @endif
-                </div>
-                <input type="file" name="image" accept="image/*" style="border-radius:7px;border:1px solid #c3cbe5;padding:7px 10px;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <label for="edit_image" style="font-weight:600;">Image</label>
+                <input type="file" id="edit_image" name="image" accept="image/*" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                <div id="edit_image_preview" style="margin-top:8px;"></div>
             </div>
-            <button type="submit" style="background:#2563eb;color:#fff;padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Update Facility</button>
+            <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">
+                <button type="button" class="energy-modal-btn cancel" onclick="closeEditFacilityModal()" style="background:#f3f4f6;color:#222;font-weight:600;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
+                <button type="submit" class="energy-modal-btn save" style="flex:1;padding:10px 0;border-radius:8px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:700;border:none;font-size:1.13rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);">Save Changes</button>
+            </div>
         </form>
     </div>
 </div>
@@ -296,7 +283,7 @@
     display: flex !important;
 }
 </style>
-<div id="deleteFacilityModal" class="modal">
+<div id="deleteFacilityModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
         <div class="modal-content">
                 <button class="modal-close" type="button" onclick="document.getElementById('deleteFacilityModal').style.display='none'">&times;</button>
                 <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>

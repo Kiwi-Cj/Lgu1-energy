@@ -91,21 +91,13 @@ class FacilityController extends Controller
     {
         $facility = Facility::findOrFail($id);
 
-        // Try to get first3months_data
-        $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+        // Fallback: use last 3 energyRecords instead of deleted energyReadings
         $avgKwh = null;
         $showAvg = false;
-        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
-            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
-            $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+        $records = method_exists($facility, 'energyRecords') ? $facility->energyRecords()->orderBy('year')->orderBy('month')->take(3)->pluck('actual_kwh') : collect();
+        if ($records->count() === 3) {
+            $avgKwh = $records->avg();
             $showAvg = true;
-        } else {
-            // Fallback: use last 3 energyReadings
-            $readings = method_exists($facility, 'energyReadings') ? $facility->energyReadings()->orderBy('year')->orderBy('month')->take(3)->pluck('kwh') : collect();
-            if ($readings->count() === 3) {
-                $avgKwh = $readings->avg();
-                $showAvg = true;
-            }
         }
 
         return view('modules.facilities.show', compact('facility', 'avgKwh', 'showAvg'));
@@ -139,14 +131,19 @@ class FacilityController extends Controller
             $facilities = Facility::all();
         }
 
-        // Compute 3-month average kWh for each facility, prefer first3months_data if available
+        // Compute 3-month average kWh for each facility using last 3 energyRecords only
         $facilitiesWithAvg = $facilities->map(function($facility) {
-            $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
-            if ($first3mo) {
-                $avg3MoKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-                $facility->avg3MoKwh = $avg3MoKwh;
-                $facility->has3MoData = true;
-                // Compute dynamic size based on average
+            $records = $facility->energyRecords()
+                ->orderByDesc('year')
+                ->orderByDesc('month')
+                ->take(3)
+                ->get();
+            $has3MoData = $records->count() === 3;
+            $avg3MoKwh = $has3MoData ? $records->avg('kwh_consumed') : null;
+            $facility->avg3MoKwh = $avg3MoKwh;
+            $facility->has3MoData = $has3MoData;
+            // Compute dynamic size based on average
+            if ($has3MoData && $avg3MoKwh) {
                 if ($avg3MoKwh < 1500) {
                     $facility->dynamicSize = 'Small';
                 } elseif ($avg3MoKwh < 3000) {
@@ -157,29 +154,7 @@ class FacilityController extends Controller
                     $facility->dynamicSize = 'Extra Large';
                 }
             } else {
-                $records = $facility->energyRecords()
-                    ->orderByDesc('year')
-                    ->orderByDesc('month')
-                    ->take(3)
-                    ->get();
-                $has3MoData = $records->count() === 3;
-                $avg3MoKwh = $has3MoData ? $records->avg('kwh_consumed') : null;
-                $facility->avg3MoKwh = $avg3MoKwh;
-                $facility->has3MoData = $has3MoData;
-                // Compute dynamic size based on average
-                if ($has3MoData && $avg3MoKwh) {
-                    if ($avg3MoKwh < 1500) {
-                        $facility->dynamicSize = 'Small';
-                    } elseif ($avg3MoKwh < 3000) {
-                        $facility->dynamicSize = 'Medium';
-                    } elseif ($avg3MoKwh < 6000) {
-                        $facility->dynamicSize = 'Large';
-                    } else {
-                        $facility->dynamicSize = 'Extra Large';
-                    }
-                } else {
-                    $facility->dynamicSize = $facility->size ?? 'N/A';
-                }
+                $facility->dynamicSize = $facility->size ?? 'N/A';
             }
             return $facility;
         });
@@ -209,13 +184,9 @@ class FacilityController extends Controller
         \Log::info('modalDetail called', ['facility_id' => $id]);
 
         // BASELINE
-        // Always use first3months_data for baseline if available and valid
-        $first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
+        // Use profile baseline_kwh if locked, else use last 3 energyRecords
         $avgKwh = null;
-        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
-            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
-            $avgKwh = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-        } elseif ($profile && $profile->baseline_kwh && $profile->baseline_locked) {
+        if ($profile && $profile->baseline_kwh && $profile->baseline_locked) {
             $avgKwh = $profile->baseline_kwh;
         } elseif ($energyRecords->count() >= 3) {
             $avgKwh = round($energyRecords->take(3)->avg('kwh_consumed'), 2);

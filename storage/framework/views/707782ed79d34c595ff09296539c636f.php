@@ -15,16 +15,12 @@
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 ?>
-
 <?php
     $sortedRecords = $records->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
     // Use baseline_kwh from record if set, else fallback to energy profile/facility
     $energyProfile = \App\Models\EnergyProfile::where('facility_id', $facility->id)->latest()->first();
     $hasBaseline = false;
-    if ($sortedRecords->count() > 0 && $sortedRecords->first()->baseline_kwh !== null) {
-        $baselineAvg = floatval($sortedRecords->first()->baseline_kwh);
-        $hasBaseline = $baselineAvg > 0;
-    } elseif ($energyProfile && is_numeric($energyProfile->baseline_kwh) && $energyProfile->baseline_kwh > 0) {
+    if ($energyProfile && is_numeric($energyProfile->baseline_kwh) && $energyProfile->baseline_kwh > 0) {
         $baselineAvg = floatval($energyProfile->baseline_kwh);
         $hasBaseline = true;
     } else {
@@ -59,6 +55,9 @@
     </div>
 </div>
 <?php endif; ?>
+
+
+
 <!-- ...existing content... -->
 <script>
 window.addEventListener('DOMContentLoaded', function() {
@@ -153,6 +152,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     <th style="padding:10px 14px; text-align:center;">Alert</th>
                     <th style="padding:10px 14px; text-align:center;">Energy Cost</th>
                     <th style="padding:10px 14px; text-align:center;">Bill Image</th>
+                    <th style="padding:10px 14px; text-align:center;">Recommendation</th>
                     <th style="padding:10px 14px; text-align:center;">Action</th>
                 </tr>
             </thead>
@@ -169,88 +169,53 @@ window.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td style="padding:10px 14px; text-align:center;"><?php echo e($record->day ?? '-'); ?></td>
                     <td style="padding:10px 14px; text-align:center;"><?php echo e(number_format($record->actual_kwh, 2)); ?></td>
-                    <td style="padding:10px 14px; text-align:center;"><?php echo e(number_format($baselineAvg, 2)); ?></td>
+                    <td style="padding:10px 14px; text-align:center;"><?php echo e(number_format($record->baseline_kwh, 2)); ?></td>
                     <td style="padding:10px 14px; text-align:center;">
-                        <?php
-                            $actual = $record->actual_kwh;
-                            $baseline = $baselineAvg;
-                            $deviation = $baseline > 0 ? round((($actual - $baseline) / $baseline) * 100, 2) : null;
-                        ?>
-                        <?php echo e($deviation !== null ? $deviation . '%' : ''); ?>
+                        <?php echo e($record->deviation !== null ? $record->deviation . '%' : ''); ?>
 
                     </td>
                     <td style="padding:10px 14px; text-align:center;">
                         <?php
-                            // LevelAlert Table
-                            // Level 1: Normal / Low (Green)
-                            // Level 2: Warning / Moderate (Yellow)
-                            // Level 3: High (Orange)
-                            // Level 4: Critical / Excessive (Red)
-                            // Level 5: Extreme / Danger (Dark Red / Maroon)
-                            $alert = '';
-                            $alertColor = '#22c55e'; // default green
-                            $alertLabel = 'Normal';
-                            if ($deviation === null) {
-                                $alert = '';
-                                $alertColor = '#64748b';
-                                $alertLabel = '';
-                            } else {
-                                // Fetch thresholds from settings for each size
-                                $thresholds = [];
-                                if ($sizeLabel === 'Small') {
-                                    $thresholds = [
-                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_small', 80),
-                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_small', 50),
-                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_small', 30),
-                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_small', 15),
-                                    ];
-                                } elseif ($sizeLabel === 'Medium') {
-                                    $thresholds = [
-                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_medium', 60),
-                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_medium', 40),
-                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_medium', 20),
-                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_medium', 10),
-                                    ];
-                                } elseif ($sizeLabel === 'Large') {
-                                    $thresholds = [
-                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_large', 30),
-                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_large', 20),
-                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_large', 12),
-                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_large', 5),
-                                    ];
-                                } elseif ($sizeLabel === 'Extra Large') {
-                                    $thresholds = [
-                                        'level5' => (float) \App\Models\Setting::getValue('alert_level5_xlarge', 20),
-                                        'level4' => (float) \App\Models\Setting::getValue('alert_level4_xlarge', 12),
-                                        'level3' => (float) \App\Models\Setting::getValue('alert_level3_xlarge', 7),
-                                        'level2' => (float) \App\Models\Setting::getValue('alert_level2_xlarge', 3),
-                                    ];
+                            $alert = '-';
+                            $deviation = $record->deviation;
+                            $baseline = $record->baseline_kwh;
+                            $alertColor = '#2563eb'; // Default color
+                            if ($deviation !== null && $baseline !== null) {
+                                if ($baseline <= 1000) {
+                                    $size = 'Small';
+                                } elseif ($baseline <= 3000) {
+                                    $size = 'Medium';
+                                } elseif ($baseline <= 10000) {
+                                    $size = 'Large';
                                 } else {
-                                    $thresholds = [
-                                        'level5' => 60,
-                                        'level4' => 40,
-                                        'level3' => 20,
-                                        'level2' => 10,
-                                    ];
+                                    $size = 'Extra Large';
                                 }
-                                if ($deviation > $thresholds['level5']) {
-                                    $alert = 'Level 5'; $alertColor = '#7c1d1d'; $alertLabel = 'Extreme / level 5';
-                                } elseif ($deviation > $thresholds['level4']) {
-                                    $alert = 'Level 4'; $alertColor = '#e11d48'; $alertLabel = 'Critical / level 4';
-                                } elseif ($deviation > $thresholds['level3']) {
-                                    $alert = 'Level 3'; $alertColor = '#f59e42'; $alertLabel = 'High / level 3';
-                                } elseif ($deviation > $thresholds['level2']) {
-                                    $alert = 'Level 2'; $alertColor = '#fde047'; $alertLabel = 'Warning / level 2';
+                                $thresholds = [
+                                    'Small' =>    [ 'level5' => 80,  'level4' => 50,  'level3' => 30,  'level2' => 15 ],
+                                    'Medium' =>   [ 'level5' => 60,  'level4' => 40,  'level3' => 20,  'level2' => 10 ],
+                                    'Large' =>    [ 'level5' => 30,  'level4' => 20,  'level3' => 12,  'level2' => 5  ],
+                                    'Extra Large'=>[ 'level5' => 20,  'level4' => 12,  'level3' => 7,   'level2' => 3  ],
+                                ];
+                                $t = $thresholds[$size];
+                                if ($deviation > $t['level5']) {
+                                    $alert = 'Extreme / level 5';
+                                    $alertColor = '#7c1d1d'; // dark red
+                                } elseif ($deviation > $t['level4']) {
+                                    $alert = 'Extreme / level 4';
+                                    $alertColor = '#e11d48'; // red
+                                } elseif ($deviation > $t['level3']) {
+                                    $alert = 'High / level 3';
+                                    $alertColor = '#f59e42'; // orange
+                                } elseif ($deviation > $t['level2']) {
+                                    $alert = 'Warning / level 2';
+                                    $alertColor = '#f59e42'; // orange
                                 } else {
-                                    $alert = 'Level 1'; $alertColor = '#22c55e'; $alertLabel = 'Normal / Low';
+                                    $alert = 'Normal / Low';
+                                    $alertColor = '#16a34a'; // green
                                 }
                             }
                         ?>
-                        <?php if($alert): ?>
-                            <span style="color:<?php echo e($alertColor); ?>;font-weight:700;"><?php echo e($alertLabel); ?></span>
-                        <?php else: ?>
-                            <span style="color:#64748b;">&nbsp;</span>
-                        <?php endif; ?>
+                        <span style="color:<?php echo e($alertColor); ?>; font-weight:600;"><?php echo e($alert); ?></span>
                     </td>
                     <td style="padding:10px 14px; text-align:center;">
                         <?php
@@ -270,19 +235,84 @@ window.addEventListener('DOMContentLoaded', function() {
                             &nbsp;
                         <?php endif; ?>
                     </td>
+                    <td style="padding:10px 14px; text-align:center;">
+                        <?php
+                            $alertIcons = [
+                                'Extreme / level 5' => ['icon' => '🚨', 'color' => '#7c1d1d'],
+                                'Extreme / level 4' => ['icon' => '🚩', 'color' => '#e11d48'],
+                                'High / level 3' => ['icon' => '⚡', 'color' => '#f59e42'],
+                                'Warning / level 2' => ['icon' => '🔔', 'color' => '#f59e42'],
+                                'Normal / Low' => ['icon' => '💡', 'color' => '#16a34a'],
+                                '-' => ['icon' => 'ℹ️', 'color' => '#64748b'],
+                            ];
+                            $recommendations = [
+                                'Extreme / level 5' => 'Critical: Take urgent action to reduce energy use. Investigate immediately.',
+                                'Extreme / level 4' => 'Very high deviation: Investigate and address immediately.',
+                                'High / level 3' => 'High deviation: Review and optimize energy usage.',
+                                'Warning / level 2' => 'Warning: Monitor and plan improvements.',
+                                'Normal / Low' => 'Normal: Maintain current practices.',
+                                '-' => 'No recommendation.'
+                            ];
+                            $iconData = $alertIcons[$alert] ?? ['icon' => 'ℹ️', 'color' => '#64748b'];
+                            $recommendation = $recommendations[$alert] ?? 'No recommendation.';
+                        ?>
+                        <button type="button" title="View Recommendation" style="background: none; border: none; color: <?php echo e($iconData['color']); ?>; font-size: 1.3rem; cursor: pointer;" onclick="openMonthlyRecommendationModal('<?php echo e($facility->name); ?>', '<?php echo e($iconData['icon']); ?>', '<?php echo e(addslashes($recommendation)); ?>', '<?php echo e($alert); ?>')">
+                            <span style="font-size:1.3rem;"><?php echo e($iconData['icon']); ?></span>
+                        </button>
+                    </td>
+                    <!-- Monthly Recommendation Modal -->
+                    <div id="monthlyRecommendationModal" style="display:none;position:fixed;z-index:10060;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
+                        <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
+                            <div id="monthlyRecommendationModalBox" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
+                                <button type="button" onclick="closeMonthlyRecommendationModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
+                                <h2 id="monthlyRecommendationModalTitle" style="margin-bottom:12px;font-size:1.3rem;font-weight:700;"></h2>
+                                <div id="monthlyRecommendationText" style="margin:0 0 10px 0;padding:0;font-size:1.08rem;"></div>
+                                <div style="text-align:right;margin-top:18px;">
+                                    <button type="button" onclick="closeMonthlyRecommendationModal()" style="background:#2563eb;color:#fff;padding:8px 22px;border:none;border-radius:7px;font-weight:600;font-size:1rem;">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    function openMonthlyRecommendationModal(facilityName, icon, recommendation, alert) {
+                        const modal = document.getElementById('monthlyRecommendationModal');
+                        const title = document.getElementById('monthlyRecommendationModalTitle');
+                        const text  = document.getElementById('monthlyRecommendationText');
+                        const box   = document.getElementById('monthlyRecommendationModalBox');
+                        const alertStyles = {
+                            'Extreme / level 5': { color: '#fff', bg: '#7c1d1d' },
+                            'Extreme / level 4': { color: '#fff', bg: '#e11d48' },
+                            'High / level 3':    { color: '#fff', bg: '#f59e42' },
+                            'Warning / level 2': { color: '#222', bg: '#fde68a' },
+                            'Normal / Low':      { color: '#222', bg: '#bbf7d0' },
+                            '-':                { color: '#222', bg: '#f8fafc' },
+                        };
+                        const style = alertStyles[alert] || { color: '#222', bg: '#f8fafc' };
+                        title.innerHTML = `<span style='font-size:1.5rem;margin-right:8px;'>${icon}</span> Recommendation for ${facilityName}`;
+                        text.textContent = recommendation;
+                        text.style.color = style.color;
+                        text.style.background = style.bg;
+                        text.style.padding = '12px 16px';
+                        text.style.borderRadius = '8px';
+                        box.style.background = '#fff';
+                        modal.style.display = 'flex';
+                    }
+                    function closeMonthlyRecommendationModal() {
+                        document.getElementById('monthlyRecommendationModal').style.display = 'none';
+                    }
+                    </script>
                     <td style="padding:10px 14px; text-align:center; display: flex; gap: 8px; justify-content: center; align-items: center;">
-                        <?php if($alert === 'High'): ?>
+                        <?php if($record->alert === 'High / level 3'): ?>
                             <button type="button" title="Create Energy Action (High)" style="background: none; border: none; color: #e11d48; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal(<?php echo e($record->id); ?>, 'High')">
                                 <span style="font-size:1.3rem;">⚠️</span>
                             </button>
-                        <?php elseif($alert === 'Medium'): ?>
+                        <?php elseif($record->alert === 'Warning / level 2'): ?>
                             <button type="button" title="Create Energy Action (Medium)" style="background: none; border: none; color: #f59e42; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal(<?php echo e($record->id); ?>, 'Medium')">
                                 <span style="font-size:1.3rem;">⚡</span>
                             </button>
-                         <?php elseif($alert === 'Low'): ?>
-                            <button type="button" title="View Recommendation (Low)" style="background: none; border: none; color: #22c55e; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal(<?php echo e($record->id); ?>, 'Low')">
-                                <span style="font-size:1.3rem;">💡</span>
-                            </button>
+                        <?php elseif($record->alert === 'Normal / Low'): ?>
+                            <!-- No recommendation button in Action column -->
                         <?php endif; ?>
                        
                         <form id="deleteMonthlyRecordForm-<?php echo e($record->id); ?>" action="<?php echo e(route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id])); ?>" method="POST" style="display:inline;">
@@ -371,7 +401,7 @@ window.addEventListener('DOMContentLoaded', function() {
 <!-- ADD MONTHLY RECORD MODAL (Consistent UI) -->
 
 <!-- ADD MONTHLY RECORD MODAL (Centered Overlay) -->
-<div id="addModal" style="display:none;position:fixed;z-index:10050;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
+<div id="addModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
     <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
         <div class="modal-content" style="max-width:420px;background:#f8fafc;border-radius:18px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:32px 28px;position:relative;">
             <button type="button" onclick="closeAddModal()" style="position:absolute;top:12px;right:12px;font-size:1.5rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
@@ -457,7 +487,7 @@ document.getElementById('add_rate_per_kwh').addEventListener('input', computeEne
 </script>
 
 <!-- DELETE MONTHLY RECORD MODAL -->
-<div id="deleteMonthlyRecordModal" style="display:none;position:fixed;z-index:10050;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
+<div id="deleteMonthlyRecordModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
     <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
         <div class="modal-content" style="max-width:380px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
             <button type="button" onclick="closeDeleteMonthlyRecordModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>

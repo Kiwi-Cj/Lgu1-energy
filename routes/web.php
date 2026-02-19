@@ -29,11 +29,15 @@ Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendO
 	Route::get('/energy-actions/create', [EnergyActionController::class, 'create']);
 	Route::post('/energy-actions/store', [EnergyActionController::class, 'store']);
 		   // Delete a monthly energy record for a facility
-		   Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function($facilityId, $recordId) {
-			   $record = \App\Models\EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
-			   $record->delete();
-			   return redirect()->back()->with('success', 'Monthly record deleted!');
-		   })->name('energy-records.delete');
+		Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function($facilityId, $recordId) {
+			$record = \App\Models\EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
+			$record->delete();
+			if (request()->expectsJson() || request()->isJson() || request()->wantsJson()) {
+				return response()->json(['success' => true, 'message' => 'Monthly record deleted!']);
+			}
+			// Redirect to the monthly records list for the facility
+			return redirect('/modules/facilities/' . $facilityId . '/monthly-records')->with('success', 'Monthly record deleted!');
+		})->name('energy-records.delete');
 	// Store new monthly energy record for a facility (for modal form)
 		Route::post('/modules/facilities/{facility}/monthly-records', function($facilityId, \Illuminate\Http\Request $request) {
 		   $validated = $request->validate([
@@ -389,12 +393,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 	Route::get('/modules/facilities/create', fn() => view('modules.facilities.create'))->name('modules.facilities.create');
 	Route::get('/modules/facilities/{id}/show', function($id) {
 		$facility = \App\Models\Facility::findOrFail($id);
-		// Compute 3-month average from first3months_data
-		$first3mo = \DB::table('first3months_data')->where('facility_id', $id)->first();
-		$months = [$first3mo?->month1, $first3mo?->month2, $first3mo?->month3];
-		$validMonths = array_filter($months, fn($v) => $v !== null && $v !== '' && $v !== 0);
-		$showAvg = count($validMonths) === 3;
-		$avgKwh = $showAvg ? (array_sum($validMonths) / 3) : 0;
+		// first3months_data table removed; fallback to baseline_kwh
+		$showAvg = false;
+		$avgKwh = $facility->baseline_kwh ?? 0;
 		return view('modules.facilities.show', compact('facility', 'showAvg', 'avgKwh'));
 	})->name('modules.facilities.show');
 	Route::get('/modules/facilities/{id}/edit', fn($id) => view('modules.facilities.edit', ['id' => $id]))->name('modules.facilities.edit');

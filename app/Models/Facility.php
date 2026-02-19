@@ -135,29 +135,7 @@ class Facility extends Model
      | BUSINESS LOGIC
      ======================= */
 
-    /**
-     * Auto-update latest EnergyProfile aMAverage
-     * when 3 records exist
-     */
-    public function updateProfileAverageFromRecords()
-    {
-        $records = $this->energyRecords()
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->take(3)
-            ->get();
-
-        if ($records->count() === 3) {
-            $avg = $records->avg('actual_kwh');
-
-            $profile = $this->energyProfiles()->latest()->first();
-            if ($profile) {
-                $profile->update([
-                    'baseline_kwh' => $avg
-                ]);
-            }
-        }
-    }
+    // Removed auto-update of baseline_kwh. Baseline is now fixed and only updated manually.
 
     /**
      * Check if facility has high consumption this month
@@ -183,11 +161,7 @@ class Facility extends Model
      */
     public function getBaselineKwhAttribute($value)
     {
-        $first3mo = \DB::table('first3months_data')->where('facility_id', $this->id)->first();
-        if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
-            && $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
-            return (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-        }
+        // first3months_data table removed; fallback to baseline_kwh
         return $value;
     }
 }

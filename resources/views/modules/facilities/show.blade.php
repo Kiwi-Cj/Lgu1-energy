@@ -117,26 +117,21 @@ background:#f1f5f9;color:#64748b;">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:24px;">
 
 @php
-	$first3mo = \DB::table('first3months_data')->where('facility_id', $facility->id)->first();
-	if ($first3mo && is_numeric($first3mo->month1) && is_numeric($first3mo->month2) && is_numeric($first3mo->month3)
-		&& $first3mo->month1 > 0 && $first3mo->month2 > 0 && $first3mo->month3 > 0) {
-		$baselineAvg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
+// Get latest monthly record for this facility
+$latestRecord = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->first();
+$sizeLabel = '-';
+if ($latestRecord && $latestRecord->actual_kwh !== null) {
+	$kwh = $latestRecord->actual_kwh;
+	if ($kwh < 1500) {
+		$sizeLabel = 'Small';
+	} elseif ($kwh < 3000) {
+		$sizeLabel = 'Medium';
+	} elseif ($kwh < 6000) {
+		$sizeLabel = 'Large';
 	} else {
-		$baselineAvg = $facility->baseline_kwh;
+		$sizeLabel = 'Extra Large';
 	}
-	$hasBaseline = $baselineAvg > 0;
-	$sizeLabel = '';
-	if ($hasBaseline) {
-		if ($baselineAvg <= 1000) {
-			$sizeLabel = 'Small';
-		} elseif ($baselineAvg <= 3000) {
-			$sizeLabel = 'Medium';
-		} elseif ($baselineAvg <= 10000) {
-			$sizeLabel = 'Large';
-		} else {
-			$sizeLabel = 'Extra Large';
-		}
-	}
+}
 @endphp
 
 @foreach([
@@ -146,7 +141,7 @@ background:#f1f5f9;color:#64748b;">
 	['🏢','Floors',$facility->floors],
 	['📅','Year Built',$facility->year_built],
 	['⏱','Operating Hours',$facility->operating_hours],
-	['📊','Facility Size',$hasBaseline ? $sizeLabel : '-']
+	['📊','Facility Size',$sizeLabel]
 ] as $info)
 	<div style="background:#fff;padding:18px;border-radius:16px;display:flex;gap:14px;box-shadow:0 6px 18px rgba(0,0,0,.08);">
 		<div style="width:44px;height:44px;border-radius:14px;background:#2563eb1a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#2563eb;">

@@ -10,7 +10,7 @@
 </style>
 
 <!-- ADD ENERGY PROFILE MODAL -->
-<div id="addEnergyProfileModal" class="modal" style="display:none;align-items:center;justify-content:center;z-index:9999;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(30,41,59,0.18);">
+<div id="addEnergyProfileModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
 	<div class="modal-content" style="max-width:520px;background:#fff;border-radius:18px;padding:32px 28px;position:relative;">
 		<button class="modal-close" type="button" onclick="closeAddEnergyProfileModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
 
@@ -107,6 +107,25 @@
 </div>
 
 
+
+<!-- DELETE ENERGY PROFILE MODAL -->
+<div id="deleteEnergyProfileModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:10000;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
+    <div class="modal-content" style="max-width:400px;background:#fff;border-radius:16px;padding:32px 28px;position:relative;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:center;">
+        <button class="modal-close" type="button" onclick="closeDeleteEnergyProfileModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
+        <h2 style="margin-bottom:18px;font-size:1.3rem;font-weight:700;color:#e11d48;text-align:center;">Delete Energy Profile?</h2>
+        <p style="color:#64748b;font-size:1.05rem;text-align:center;margin-bottom:24px;">Are you sure you want to delete this energy profile? This action cannot be undone.</p>
+        <form method="POST" id="deleteEnergyProfileForm" style="width:100%;display:flex;flex-direction:column;gap:14px;align-items:center;">
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('DELETE'); ?>
+            <input type="hidden" name="energy_profile_id" id="delete_energy_profile_id">
+            <div style="display:flex;gap:12px;justify-content:center;width:100%;">
+                <button type="button" class="energy-modal-btn cancel" onclick="closeDeleteEnergyProfileModal()" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
+                <button type="submit" class="energy-modal-btn delete" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddEnergyProfileModal(facilityId) {
 	document.getElementById('addEnergyProfileModal').style.display = 'flex';
@@ -114,6 +133,39 @@ function openAddEnergyProfileModal(facilityId) {
 }
 function closeAddEnergyProfileModal() {
 	document.getElementById('addEnergyProfileModal').style.display = 'none';
+}
+
+// Robust fallback: always close modal on X or Cancel click
+document.addEventListener('DOMContentLoaded', function() {
+	var modal = document.getElementById('addEnergyProfileModal');
+	if (modal) {
+		// X button
+		var xBtn = modal.querySelector('.modal-close');
+		if (xBtn) {
+			xBtn.addEventListener('click', closeAddEnergyProfileModal);
+		}
+		// Cancel button
+		var cancelBtn = modal.querySelector('.energy-modal-btn.cancel');
+		if (cancelBtn) {
+			cancelBtn.addEventListener('click', closeAddEnergyProfileModal);
+		}
+	}
+});
+
+function openAddMaintenanceModal(facilityId) {
+    document.getElementById('addMaintenanceModal').style.display = 'flex';
+    document.getElementById('add_maintenance_facility_id').value = facilityId;
+}
+function closeAddMaintenanceModal() {
+    document.getElementById('addMaintenanceModal').style.display = 'none';
+}
+
+function openDeleteEnergyProfileModal(profileId) {
+    document.getElementById('deleteEnergyProfileModal').style.display = 'flex';
+    document.getElementById('delete_energy_profile_id').value = profileId;
+}
+function closeDeleteEnergyProfileModal() {
+    document.getElementById('deleteEnergyProfileModal').style.display = 'none';
 }
 </script>
 <?php /**PATH C:\xampp\htdocs\energy-system\resources\views/modules/facilities/energy-profile/partials/modals.blade.php ENDPATH**/ ?>

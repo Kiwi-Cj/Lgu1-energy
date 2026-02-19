@@ -154,7 +154,9 @@
                         <thead>
                             <tr>
                                 <th>Facility Name</th>
-                                <th style="text-align:center;">kWh Usage</th>
+                                <th style="text-align:center;">Total kWh (6mo)</th>
+                                <th style="text-align:center;">Total Baseline (6mo)</th>
+                                <th style="text-align:center;">Deviation %</th>
                                 <th style="text-align:center;">Status</th>
                             </tr>
                         </thead>
@@ -162,7 +164,9 @@
                             <?php $__empty_1 = true; $__currentLoopData = ($topFacilities ?? collect())->take(5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td style="font-weight:700; color:#334155;"><?php echo e($facility->name); ?></td>
-                                <td style="text-align:center; font-weight:800; color:#1e293b;"><?php echo e(number_format($facility->monthly_kwh)); ?></td>
+                                <td style="text-align:center; font-weight:800; color:#1e293b;"><?php echo e(number_format($facility->total_kwh, 2)); ?></td>
+                                <td style="text-align:center; font-weight:700; color:#64748b;"><?php echo e(number_format($facility->baseline_kwh, 2)); ?></td>
+                                <td style="text-align:center; font-weight:700; color:#e11d48;"><?php echo e($facility->deviation); ?>%</td>
                                 <td style="text-align:center;">
                                     <?php
                                         $status = $facility->status ?? 'Normal';
@@ -201,17 +205,6 @@
                     <?php endif; ?>
                 </div>
 
-                <h4 style="font-size:0.8rem; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px; border-top: 1px solid #f1f5f9; padding-top:20px;">Recent Activity Logs</h4>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <?php $__empty_1 = true; $__currentLoopData = collect($recentLogs ?? [])->take(4); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <div style="font-size:0.85rem; color:#475569; display:flex; gap:10px;">
-                            <span style="color:#cbd5e1;">•</span> <?php echo e($log); ?>
-
-                        </div>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <div style="font-size:0.85rem; color:#94a3b8;">No activity logged today.</div>
-                    <?php endif; ?>
-                </div>
             </div>
 
         </div>

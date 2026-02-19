@@ -109,6 +109,12 @@
     <div class="page-header">
         <h2>⚡ Efficiency <span>Summary Report</span></h2>
         <p>Real-time overview of energy efficiency and EUI metrics across all active facilities.</p>
+        <div style="margin-top:10px; font-size:0.98rem; color:#64748b; background:#f1f5f9; border-radius:8px; padding:12px 18px; max-width:600px;">
+            <b>How is Energy Efficiency computed?</b><br>
+            <span style="color:#2563eb;">EUI (kWh/sqm)</span> = (Average monthly kWh) ÷ (Facility Floor Area in sqm).<br>
+            <span style="color:#2563eb;">Rating:</span> <b>High</b> if EUI &gt; 10, <b>Medium</b> if 5–10, <b>Low</b> if &lt; 5.<br>
+            <span style="color:#64748b;">All values are based on your monthly records and facility size.</span>
+        </div>
     </div>
 
     <form method="GET" action="" class="filter-section">

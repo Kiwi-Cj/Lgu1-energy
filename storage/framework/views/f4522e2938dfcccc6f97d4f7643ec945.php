@@ -57,7 +57,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:25px; gap: 20px; flex-wrap: wrap;">
         <div>
             <h1 style="margin:0; font-size:1.8rem; color:#1e293b; font-weight:800; letter-spacing:-0.5px;">
-                Energy Monitoring <span style="color:#2563eb;">Dashboard</span>
+                Energy Trend Monitoring <span style="color:#2563eb;">Dashboard</span>
             </h1>
             <p style="margin:4px 0 0; color:#64748b; font-size:1rem;">Overview of all facility energy performance</p>
         </div>
@@ -104,9 +104,7 @@
                     <th style="padding:15px; color:#475569; font-weight:700; text-align:center;">Trend</th>
                     <th style="padding:15px; color:#475569; font-weight:700; text-align:center;">EUI</th>
                     <th style="padding:15px; color:#475569; font-weight:700; text-align:center;">Alerts</th>
-                    <?php if($userRole !== 'staff'): ?>
-                        <th style="padding:15px; border-radius:0 10px 10px 0; color:#475569; font-weight:700; text-align:center;">Actions</th>
-                    <?php endif; ?>
+                    <th style="padding:15px; color:#475569; font-weight:700; text-align:center;">Recommendation</th>
                 </tr>
             </thead>
             <tbody>
@@ -124,36 +122,59 @@
                         $floorArea = $facility->floor_area;
                         $eui = ($floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
 
-                        $previousRecord = \App\Models\EnergyRecord::where('facility_id', $facility->id)
-                            ->where(function($q) use ($record) {
-                                $q->where('year', '<', $record->year)
-                                  ->orWhere(function($q2) use ($record){
-                                      $q2->where('year', $record->year)->where('month', '<', $record->month);
-                                  });
-                            })->orderBy('year', 'desc')->orderBy('month', 'desc')->first();
-
-                        if($previousRecord){
-                            $trend = $previousRecord->actual_kwh > 0 
-                                ? round((($record->actual_kwh - $previousRecord->actual_kwh)/$previousRecord->actual_kwh)*100, 2) 
-                                : null;
-                            $trendAnalysis = $trend !== null ? ($trend > 0 ? '+'.$trend : $trend) . '%' : '-';
-                            
-                            $size = $facility->size_label ?? 'Medium';
-                            $alert = 'Normal';
-                            if($trend !== null){
-                                if($size === 'Small'){
-                                    if($trend > 40) $alert = 'Critical'; elseif($trend > 30) $alert = 'High';
-                                    elseif($trend > 20) $alert = 'Moderate'; elseif($trend > 10) $alert = 'Low';
-                                } elseif($size === 'Medium'){
-                                    if($trend > 30) $alert = 'Critical'; elseif($trend > 20) $alert = 'High';
-                                    elseif($trend > 15) $alert = 'Moderate'; elseif($trend > 7) $alert = 'Low';
-                                } else {
-                                    if($trend > 20) $alert = 'Critical'; elseif($trend > 12) $alert = 'High';
-                                    elseif($trend > 8) $alert = 'Moderate'; elseif($trend > 4) $alert = 'Low';
-                                }
-                            }
-                            $alertLevel = $alert;
+                        // --- 3-Month Trend Logic (LGU World style, per facility) ---
+                        $monthsToCompare = 3;
+                        $now = \Carbon\Carbon::create($record->year, $record->month, 1);
+                        $currentMonths = [];
+                        $previousMonths = [];
+                        for ($i = $monthsToCompare - 1; $i >= 0; $i--) {
+                            $date = $now->copy()->subMonths($i);
+                            $currentMonths[] = ['year' => $date->year, 'month' => $date->month];
                         }
+                        for ($i = $monthsToCompare * 2 - 1; $i >= $monthsToCompare; $i--) {
+                            $date = $now->copy()->subMonths($i);
+                            $previousMonths[] = ['year' => $date->year, 'month' => $date->month];
+                        }
+                        $currentKwh = 0;
+                        foreach ($currentMonths as $m) {
+                            $currentKwh += \App\Models\EnergyRecord::where('facility_id', $facility->id)
+                                ->where('year', $m['year'])
+                                ->where('month', $m['month'])
+                                ->sum('actual_kwh');
+                        }
+                        $previousKwh = 0;
+                        foreach ($previousMonths as $m) {
+                            $previousKwh += \App\Models\EnergyRecord::where('facility_id', $facility->id)
+                                ->where('year', $m['year'])
+                                ->where('month', $m['month'])
+                                ->sum('actual_kwh');
+                        }
+                        if ($previousKwh > 0) {
+                            $trend = (($currentKwh - $previousKwh) / $previousKwh) * 100;
+                            $trendAnalysis = ($trend >= 0 ? '+' : '') . number_format($trend, 2) . '%';
+                        } else {
+                            $trend = null;
+                            $trendAnalysis = '-';
+                        }
+                        // Alert logic based on facility size
+                        $size = $facility->size_label ?? 'Medium';
+                        $alert = 'Normal';
+                        if($trend !== null){
+                            if($size === 'Small'){
+                                if($trend > 40) $alert = 'Critical'; elseif($trend > 30) $alert = 'High';
+                                elseif($trend > 20) $alert = 'Moderate'; elseif($trend > 10) $alert = 'Low';
+                            } elseif($size === 'Medium'){
+                                if($trend > 30) $alert = 'Critical'; elseif($trend > 20) $alert = 'High';
+                                elseif($trend > 15) $alert = 'Moderate'; elseif($trend > 7) $alert = 'Low';
+                            } elseif($size === 'Extra Large'){
+                                if($trend > 15) $alert = 'Critical'; elseif($trend > 10) $alert = 'High';
+                                elseif($trend > 6) $alert = 'Moderate'; elseif($trend > 2) $alert = 'Low';
+                            } else {
+                                if($trend > 20) $alert = 'Critical'; elseif($trend > 12) $alert = 'High';
+                                elseif($trend > 8) $alert = 'Moderate'; elseif($trend > 4) $alert = 'Low';
+                            }
+                        }
+                        $alertLevel = $alert;
                     ?>
                     <tr style="border-bottom:1px solid #f1f5f9; transition: background 0.2s;">
                         <td style="padding:15px; text-align:center; font-weight:700; color:#334155;"><?php echo e($facility->name); ?></td>
@@ -166,10 +187,10 @@
                         <td style="padding:15px; text-align:center;"><?php echo e($facility->floor_area ?? '-'); ?> <small>m²</small></td>
                         <td style="padding:15px; text-align:center; color:#2563eb; font-weight:600;">
                             <?php
-                                $energyProfile = $facility->energyProfiles()->latest()->first();
-                                $baselineKwh = $energyProfile && is_numeric($energyProfile->baseline_kwh) ? floatval($energyProfile->baseline_kwh) : null;
+                                // Get baseline_kwh from the current month's energy record
+                                $baselineKwh = $record->baseline_kwh ?? null;
                             ?>
-                            <?php echo e($baselineKwh ? number_format($baselineKwh, 2) : '-'); ?>
+                            <?php echo e($baselineKwh !== null ? number_format($baselineKwh, 2) : '-'); ?>
 
                         </td>
                         <td style="padding:15px; text-align:center; font-weight:700; color:<?php echo e(str_contains($trendAnalysis, '+') ? '#e11d48' : '#16a34a'); ?>;">
@@ -189,18 +210,35 @@
 
                             </span>
                         </td>
-                        <?php if($userRole !== 'staff'): ?>
                         <td style="padding:15px; text-align:center;">
-                            <div style="display:flex; justify-content:center; gap:8px;">
-                                <a href="<?php echo e(url('/modules/facilities/'.$facility->id.'/energy-profile')); ?>" title="View Profile" style="color:#2563eb;"><i class="fa fa-eye"></i></a>
-                                <button onclick="openResetBaselineModal(<?php echo e($facility->id); ?>)" title="Reset" style="background:none; border:none; color:#f59e42; cursor:pointer;"><i class="fa fa-repeat"></i></button>
-                                <button onclick="toggleEngineerApproval(<?php echo e($facility->id); ?>)" title="Approve" style="background:none; border:none; color:#16a34a; cursor:pointer;"><i class="fa fa-check-circle"></i></button>
-                                <?php if($alertLevel === 'High' || $alertLevel === 'Critical'): ?>
-                                    <a href="<?php echo e(url('/energy-actions/create?facility='.$facility->id)); ?>" title="Action" style="color:#e11d48;"><i class="fa fa-bolt"></i></a>
-                                <?php endif; ?>
-                            </div>
+                            <?php
+                                $alertIcons = [
+                                    'Critical' => ['icon' => '⚠️', 'color' => '#e11d48'],
+                                    'High' => ['icon' => '⚡', 'color' => '#f59e42'],
+                                    'Moderate' => ['icon' => '🔆', 'color' => '#fbbf24'],
+                                    'Low' => ['icon' => '💡', 'color' => '#16a34a'],
+                                    'Normal' => ['icon' => '✅', 'color' => '#2563eb'],
+                                    'Extreme / level 5' => ['icon' => '🚨', 'color' => '#7c1d1d'],
+                                    'Extreme / level 4' => ['icon' => '🚩', 'color' => '#e11d48'],
+                                    'High / level 3' => ['icon' => '⚡', 'color' => '#f59e42'],
+                                    'Warning / level 2' => ['icon' => '🔔', 'color' => '#f59e42'],
+                                    'Normal / Low' => ['icon' => '💡', 'color' => '#16a34a'],
+                                ];
+                                $iconData = $alertIcons[$alertLevel] ?? ['icon' => 'ℹ️', 'color' => '#64748b'];
+                                $trendRecommendations = [
+                                    'Critical' => 'Immediate action required! Trend shows a significant increase in energy use. Investigate and resolve excessive consumption.',
+                                    'High' => 'High upward trend detected. Review operations and address high energy consumption.',
+                                    'Moderate' => 'Moderate increase in trend. Monitor closely and plan for efficiency improvements.',
+                                    'Low' => 'Slight upward trend. Consider energy efficiency improvements.',
+                                    'Normal' => 'Stable trend. No immediate action required.',
+                                ];
+                                $trendRecommendation = $trendRecommendations[$alertLevel] ?? 'No recommendation';
+                            ?>
+                            <button type="button" title="View Recommendation" style="background: none; border: none; color: <?php echo e($iconData['color']); ?>; font-size: 1.3rem; cursor: pointer;" onclick="openRecommendationModal('<?php echo e($facility->id); ?>', '<?php echo e(addslashes($facility->name)); ?>', '<?php echo e($alertLevel); ?>', '<?php echo e(addslashes($trendRecommendation)); ?>')">
+                                <span style="font-size:1.3rem;"><?php echo e($iconData['icon']); ?></span>
+                            </button>
                         </td>
-                        <?php endif; ?>
+                        // ...existing code...
                     </tr>
                 <?php endif; ?>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -216,6 +254,18 @@
 
         </div>
     <?php endif; ?>
+<!-- Recommendation Modal -->
+<div id="recommendationModal" style="display:none;position:fixed;z-index:10060;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);justify-content:center;align-items:center;">
+    <div style="display:flex;justify-content:center;align-items:center;width:100vw;height:100vh;">
+        <div id="recommendationModalBox" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
+            <button type="button" onclick="closeRecommendationModal()" style="position:absolute;top:10px;right:10px;font-size:1.3rem;background:none;border:none;color:#64748b;cursor:pointer;">&times;</button>
+            <h2 id="recommendationModalTitle" style="margin-bottom:12px;font-size:1.3rem;font-weight:700;"></h2>
+            <div id="recommendationText" style="margin:0 0 10px 0;padding:0;font-size:1.08rem;"></div>
+            <div style="text-align:right;margin-top:18px;">
+                <button type="button" onclick="closeRecommendationModal()" style="background:#2563eb;color:#fff;padding:8px 22px;border:none;border-radius:7px;font-weight:600;font-size:1rem;">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <?php echo $__env->make('modules.facilities.partials.modals', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -236,6 +286,37 @@ function toggleEngineerApproval(facilityId) {
             'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         }
     }).then(() => location.reload());
+}
+
+function openRecommendationModal(facilityId, facilityName, alertLevel, trendRecommendation) {
+    const modal = document.getElementById('recommendationModal');
+    const title = document.getElementById('recommendationModalTitle');
+    const text  = document.getElementById('recommendationText');
+    const box   = document.getElementById('recommendationModalBox');
+    const alertStyles = {
+        'Critical':   { color: '#fff', bg: '#e11d48', icon: '⚠️' },
+        'High':       { color: '#fff', bg: '#f59e42', icon: '⚡' },
+        'Moderate':   { color: '#222', bg: '#fbbf24', icon: '🔆' },
+        'Low':        { color: '#222', bg: '#bbf7d0', icon: '💡' },
+        'Normal':     { color: '#fff', bg: '#2563eb', icon: '✅' },
+        'Extreme / level 5': { color: '#fff', bg: '#7c1d1d', icon: '🚨' },
+        'Extreme / level 4': { color: '#fff', bg: '#e11d48', icon: '🚩' },
+        'High / level 3':    { color: '#fff', bg: '#f59e42', icon: '⚡' },
+        'Warning / level 2': { color: '#222', bg: '#fde68a', icon: '🔔' },
+        'Normal / Low':      { color: '#222', bg: '#bbf7d0', icon: '💡' },
+    };
+    const style = alertStyles[alertLevel] || { color: '#222', bg: '#f1f5f9', icon: 'ℹ️' };
+    title.innerHTML = `<span style='font-size:1.5rem;margin-right:8px;'>${style.icon}</span> Recommendation for ${facilityName}`;
+    text.textContent = trendRecommendation || 'No recommendation';
+    text.style.color = style.color;
+    text.style.background = style.bg;
+    text.style.padding = '12px 16px';
+    text.style.borderRadius = '8px';
+    box.style.background = '#fff';
+    modal.style.display = 'flex';
+}
+function closeRecommendationModal() {
+    document.getElementById('recommendationModal').style.display = 'none';
 }
 
 // Auto-hide alert

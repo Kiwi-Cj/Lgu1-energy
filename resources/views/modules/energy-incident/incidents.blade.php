@@ -10,10 +10,10 @@
 
 @section('content')
 
+        <div class="report card" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;">
             <h3 style="font-size:1.35rem;font-weight:700;color:#2563eb;margin:0;letter-spacing:0.5px;">Incident Records</h3>
             <div style="display:flex;gap:14px;">
-                <a href="{{ route('energy-incidents.create') }}" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.1);font-size:1.05rem;transition:0.2s;text-decoration:none;">+ Log Incident</a>
                 <a href="{{ route('energy-incidents.history') }}" style="background:linear-gradient(90deg,#6366f1,#2563eb);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.13);font-size:1.05rem;transition:0.2s;text-decoration:none;display:flex;align-items:center;gap:8px;">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     View History
@@ -37,38 +37,35 @@
                 </div>
             </div>
             <div id="incident-modal-{{ $incident->id }}" class="incident-modal" style="display:none;">
-                <div class="incident-modal-content">
-                    <h3 style="margin-top:0;margin-bottom:24px;font-size:1.5rem;font-weight:700;">Incident Details</h3>
-                    <div style="margin-bottom:20px;"><b>Facility:</b> {{ $incident->facility->name ?? '-' }}</div>
-                    <div style="margin-bottom:20px;"><b>Month/Year:</b> {{ $monthLabel }}/{{ $yearNum ?? '-' }}</div>
-                    <div style="margin-bottom:20px;"><b>Deviation:</b> {{ $dpn !== null ? number_format($dpn, 2) . '%' : '-' }}</div>
-                    <div style="margin-bottom:20px;"><b>Alert Level:</b> {{ $incident->alert_level ?? 'High' }}</div>
-                    <div style="margin-bottom:20px;"><b>Status:</b> {{ $incident->status ?? 'High Alert' }}</div>
-                    <div style="margin-bottom:20px;"><b>Date Detected:</b> {{ $dateDetected }}</div>
-                    <div style="margin-bottom:20px;"><b>Description:</b> {{ $incident->description ?? '-' }}</div>
-                    <div style="margin-bottom:20px;"><b>Probable Cause:</b> 
+                <div class="incident-modal-content" style="max-width:520px;padding:38px 36px 32px 36px;border-radius:20px;background:#f8fafc;box-shadow:0 12px 40px rgba(37,99,235,0.13); position:relative;">
+                    <button class="incident-modal-close" onclick="closeIncidentModal({{ $incident->id }})" aria-label="Close modal">&times;</button>
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+                        <div style="font-size:2.1rem;color:#e11d48;"><i class='fa fa-bolt'></i></div>
+                        <h3 style="margin:0;font-size:1.45rem;font-weight:900;color:#1e293b;letter-spacing:-0.5px;">Energy Incident Report</h3>
+                    </div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Facility:</span> <span style="font-weight:800;color:#2563eb;">{{ $incident->facility->name ?? '-' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Month/Year:</span> <span style="font-weight:800;">{{ $monthLabel }}/{{ $yearNum ?? '-' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Deviation:</span> <span style="font-weight:800;color:#e11d48;">{{ $dpn !== null ? number_format($dpn, 2) . '%' : '-' }}</span></div>
+                    <div style="margin-bottom:18px;">
+                        <span style="font-weight:700;color:#64748b;">Alert Severity:</span> 
                         @php
-                            $defaultProbable = 'System-detected: Abnormal consumption pattern';
+                            $alert = $incident->energyRecord->alert ?? $incident->alert_level ?? 'High';
+                            $alertColor = $alert === 'High' ? '#e11d48' : ($alert === 'Medium' ? '#f59e42' : '#16a34a');
                         @endphp
-                        {{ (is_array($incident->probable_cause) && count($incident->probable_cause)) ? implode(', ', $incident->probable_cause) : ($incident->probable_cause ?: $defaultProbable) }}
+                        <span style="font-weight:900;color:{{ $alertColor }};text-transform:uppercase;">{{ $alert }}</span>
                     </div>
-                    <div style="margin-bottom:20px;"><b>Immediate Action:</b> 
-                        @php $defaultAction = 'System flagged for review'; @endphp
-                        {{ $incident->immediate_action ?: $defaultAction }}
-                    </div>
-                    <div style="margin-bottom:20px;"><b>Resolution:</b> 
-                        @php $defaultResolution = 'Pending manual review and validation.'; @endphp
-                        {{ $incident->resolution_summary ?: $defaultResolution }}
-                    </div>
-                    <div style="margin-bottom:28px;"><b>Preventive Recommendation:</b> 
-                        @php $defaultPrev = 'Monitor facility usage and investigate anomalies.'; @endphp
-                        {{ $incident->preventive_recommendation ?: $defaultPrev }}
-                    </div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Status:</span> <span style="font-weight:800;">{{ $incident->status ?? 'Open' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Date Detected:</span> <span style="font-weight:800;">{{ $dateDetected }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Description:</span> <span style="font-weight:500;">{{ $incident->description ?? 'System detected unusually high energy consumption for this period. Please review and validate.' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Probable Cause:</span> <span style="font-weight:500;">{{ $incident->probable_cause ?: 'Automated system analysis: Abnormal usage pattern detected based on recent records.' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Immediate Action:</span> <span style="font-weight:500;">{{ $incident->immediate_action ?: 'Incident flagged for LGU review and action.' }}</span></div>
+                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Resolution:</span> <span style="font-weight:500;">{{ $incident->resolution_summary ?: 'Pending review by LGU energy officer or facility manager.' }}</span></div>
+                    <div style="margin-bottom:24px;"><span style="font-weight:700;color:#64748b;">Preventive Recommendation:</span> <span style="font-weight:500;">{{ $incident->preventive_recommendation ?: 'Regularly monitor facility energy trends and investigate any unusual spikes immediately.' }}</span></div>
                     @if(!empty($incident->attachments))
-                        <div style="margin-bottom:24px;"><b>Attachments:</b> <a href="{{ asset('storage/'.$incident->attachments) }}" target="_blank">View</a></div>
+                        <div style="margin-bottom:24px;"><span style="font-weight:700;color:#64748b;">Attachments:</span> <a href="{{ asset('storage/'.$incident->attachments) }}" target="_blank">View</a></div>
                     @endif
-                    <div style="margin-top:36px; text-align:right;">
-                        <a href="{{ route('modules.maintenance.index') }}?facility_id={{ $incident->facility->id ?? '' }}" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.13);font-size:1.05rem;transition:0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+                    <div style="margin-top:32px; text-align:right;">
+                        <a href="{{ route('modules.maintenance.index') }}?facility_id={{ $incident->facility->id ?? '' }}" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:12px 30px;font-weight:800;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.13);font-size:1.08rem;transition:0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
                             View Maintenance
                         </a>
@@ -83,7 +80,8 @@
 @foreach($incidents as $incident)
     @if($incident->facility)
         <div id="facility-modal-{{ $incident->facility->id }}" class="incident-modal" style="display:none;">
-            <div class="incident-modal-content">
+            <div class="incident-modal-content" style="position:relative;">
+                <button class="incident-modal-close" onclick="closeFacilityModal({{ $incident->facility->id }})" aria-label="Close modal">&times;</button>
                 <h3 style="margin-top:0;margin-bottom:24px;font-size:1.3rem;font-weight:700;color:#2563eb;">Facility Details</h3>
                 <div style="margin-bottom:18px;"><b>Name:</b> {{ $incident->facility->name ?? '-' }}</div>
                 <div style="margin-bottom:18px;"><b>Type:</b> {{ $incident->facility->type ?? '-' }}</div>

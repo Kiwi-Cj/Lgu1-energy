@@ -3,7 +3,9 @@
 
 
 
+
 @section('content')
+<div class="report card" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
 
 @php
 	// Ensure notifications and unreadNotifCount are available for the notification bell
@@ -31,14 +33,15 @@
 		}
 
 		/* Simple modal (no bootstrap needed) */
-		.modal-backdrop {
+		.modal-backdrop, .modal-overlay, .modal {
 			position: fixed;
 			inset: 0;
-			background: rgba(0,0,0,0.45);
+			background: rgba(15,23,42,0.6) !important;
 			display: none;
 			z-index: 9998;
+			backdrop-filter: blur(4px) !important;
 		}
-		.modal-sheet {
+		.modal-sheet, .modal-content {
 			position: fixed;
 			inset: 0;
 			display: none;
@@ -810,3 +813,4 @@
 	</script>
 @endif
 @endsection
+</div>

@@ -1,7 +1,7 @@
 @extends('layouts.qc-admin')
 
 @section('content')
-<div style="max-width:900px;margin:0 auto;">
+<div class="report card" style="max-width:900px;margin:0 auto; padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 18px 0;">
         <h2 style="font-size:2rem; font-weight:700; color:#222; margin:0;">Incident History</h2>
         <a href="{{ route('energy-incidents.index') }}" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.1);font-size:1.05rem;transition:0.2s;text-decoration:none;">&larr; Back to Incidents</a>

@@ -357,9 +357,9 @@ body.dark-mode .nav-link:hover { background: #374151; }
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
-                        <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
-                        <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
-                         <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
+                        <li><a href="/modules/reports/energy" class="nav-link"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
+                        <li><a href="/modules/reports/efficiency-summary" class="nav-link"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                        <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
             <?php else: ?>
@@ -392,9 +392,9 @@ body.dark-mode .nav-link:hover { background: #374151; }
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="nav-submenu">
-                            <li><a href="/modules/reports/energy" class="nav-link">Energy Report</a></li>
-                            <li><a href="/modules/reports/efficiency-summary" class="nav-link">Efficiency Summary</a></li>
-                              <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
+                            <li><a href="/modules/reports/energy" class="nav-link"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
+                            <li><a href="/modules/reports/efficiency-summary" class="nav-link"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                            <li><a href="<?php echo e(route('energy-incidents.index')); ?>" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                         </ul>
                     </li>
                 <?php endif; ?>
@@ -425,10 +425,12 @@ body.dark-mode .nav-link:hover { background: #374151; }
 </div>
 
 <div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:32px;border-radius:16px;max-width:400px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-        <div style="font-size:1.25rem;font-weight:700;color:#e11d48;margin-bottom:10px;">Session Expired</div>
-        <div style="color:#444;margin-bottom:18px;">Please log in again to continue.</div>
-        <a href="/login" style="background:#3762c8;color:#fff;padding:10px 28px;border-radius:8px;text-decoration:none;display:inline-block;">Log In</a>
+    <div style="background:#fff;padding:44px 36px 36px 36px;border-radius:20px;max-width:430px;text-align:center;box-shadow:0 12px 40px rgba(37,99,235,0.15);">
+        <div style="font-size:3rem;line-height:1;color:#e11d48;margin-bottom:8px;"><i class="fa fa-lock"></i></div>
+        <div style="font-size:2rem;font-weight:900;color:#e11d48;margin-bottom:10px;letter-spacing:-1px;">Session Ended for Security</div>
+        <div style="color:#334155;font-size:1.15rem;margin-bottom:18px;font-weight:600;">Your session has timed out due to inactivity or a security update.<br>To protect your account, we've signed you out automatically.</div>
+        <div style="color:#64748b;font-size:1.01rem;margin-bottom:24px;">Please log in again to continue your work. If you need help, contact your system administrator.</div>
+        <a href="/login" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:13px 36px;border-radius:10px;text-decoration:none;display:inline-block;font-weight:800;font-size:1.13rem;box-shadow:0 2px 8px #2563eb22;transition:background 0.18s;">Log In</a>
     </div>
 </div>
 

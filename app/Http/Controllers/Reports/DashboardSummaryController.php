@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Facility;
-use App\Models\EnergyEfficiency;
+
 use App\Models\EnergyRecord;
 // use App\Models\Bill; // removed
 

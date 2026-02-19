@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Facility;
-use App\Models\EnergyEfficiency;
+
 use App\Models\Maintenance;
 
 class EfficiencySummaryReportController extends Controller
@@ -23,9 +23,20 @@ class EfficiencySummaryReportController extends Controller
         }
         $efficiencyRows = [];
         foreach ($filteredFacilities as $facility) {
-            $eff = EnergyEfficiency::where('facility_id', $facility->id)->orderByDesc('year')->orderByDesc('month')->first();
-            $eui = $eff && $eff->eui !== null ? $eff->eui : '-';
-            $rating = $eff && $eff->rating !== null ? $eff->rating : '-';
+            // Compute EUI and rating from EnergyRecord
+            $records = $facility->energyRecords()->whereNotNull('actual_kwh')->where('actual_kwh', '>', 0)->get();
+            $totalKwh = $records->sum('actual_kwh');
+            $months = $records->count();
+            $floorArea = $facility->floor_area ?? 0;
+            $eui = ($months > 0 && $floorArea > 0) ? round(($totalKwh / $months) / $floorArea, 2) : '-';
+            // Corrected: Low EUI = High efficiency, High EUI = Low efficiency
+            if ($eui !== '-') {
+                if ($eui < 5) $rating = 'High';
+                elseif ($eui < 10) $rating = 'Medium';
+                else $rating = 'Low';
+            } else {
+                $rating = '-';
+            }
             if ($selectedRating && $selectedRating !== 'all' && $selectedRating !== $rating) {
                 continue;
             }

@@ -9,6 +9,7 @@
 
 @section('content')
 <div class="container">
+    <div class="report card" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
     <div style="margin-bottom:18px;">
         <a href="{{ route('modules.maintenance.index') }}" class="btn btn-secondary" style="background:#e5e7eb;color:#2563eb;padding:8px 20px;border-radius:8px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(37,99,235,0.08);display:inline-block;">
             <i class="fa fa-arrow-left" style="margin-right:7px;"></i> Back to Maintenance
@@ -121,5 +122,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

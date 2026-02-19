@@ -6,13 +6,78 @@ use App\Models\Facility;
 use App\Models\EnergyRecord;
 // use App\Models\Bill; // removed
 use App\Models\Maintenance;
-use App\Models\EnergyEfficiency;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        // Alerts array for notifications and dashboard
+        $alerts = [];
+
+        // 4. Add alert for any unresolved energy incidents
+        $unresolvedIncidents = \App\Models\EnergyIncident::whereNull('resolved_at')
+            ->whereMonth('date_detected', now()->month)
+            ->whereYear('date_detected', now()->year)
+            ->orWhere(function($q) {
+                $q->where('status', '!=', 'Resolved')
+                  ->whereMonth('date_detected', now()->month)
+                  ->whereYear('date_detected', now()->year);
+            })
+            ->get();
+        foreach ($unresolvedIncidents as $incident) {
+            $facilityName = $incident->facility->name ?? 'Unknown Facility';
+            $desc = $incident->description ?? 'No description';
+            $status = $incident->status ?? 'Unresolved';
+            $alerts[] = "Incident: {$facilityName} - {$desc} [Status: {$status}]";
+        }
+
+        // 1. Add alert for any facility with status 'High' in High Consumption Hubs
+        $sixMonthsAgo = now()->subMonths(6);
+        $criticalFacilities = Facility::with(['energyRecords' => function($q) use ($sixMonthsAgo) {
+            $q->whereDate('created_at', '>=', $sixMonthsAgo);
+        }])
+        ->get()
+        ->map(function($facility) {
+            $records = $facility->energyRecords;
+            $totalKwh = $records->sum('actual_kwh');
+            $totalBaseline = $records->sum('baseline_kwh');
+            $deviation = ($totalBaseline > 0 && $totalKwh > 0) ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100 : 0;
+            $status = 'Normal';
+            if ($totalBaseline > 0) {
+                if ($deviation >= 20) {
+                    $status = 'High';
+                } elseif ($deviation >= 10) {
+                    $status = 'Medium';
+                }
+            }
+            return [
+                'name' => $facility->name,
+                'status' => $status,
+                'deviation' => round($deviation, 2),
+            ];
+        })
+        ->filter(function($f) { return $f['status'] === 'High'; });
+        foreach ($criticalFacilities as $f) {
+            $alerts[] = "Critical: {$f['name']} is above baseline by {$f['deviation']}%.";
+        }
+
+        // 2. Add alert for any active EnergyRecord alerts (Medium/High)
+        $activeAlertRecords = \App\Models\EnergyRecord::whereIn('alert', ['Medium', 'High'])
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->get();
+        foreach ($activeAlertRecords as $rec) {
+            $facilityName = $rec->facility->name ?? 'Unknown Facility';
+            $alerts[] = "Alert: {$facilityName} has a {$rec->alert} alert this month.";
+        }
+
+        // 3. Add alert for any ongoing maintenance
+        $ongoingMaint = \App\Models\Maintenance::where('maintenance_status', 'Ongoing')->get();
+        foreach ($ongoingMaint as $m) {
+            $facilityName = $m->facility->name ?? 'Unknown Facility';
+            $alerts[] = "Maintenance: {$facilityName} has ongoing maintenance.";
+        }
         // Check user role and facility assignment
         $user = Auth::user();
         $userRole = strtolower($user->role ?? '');
@@ -52,19 +117,17 @@ class DashboardController extends Controller
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year);
         $ongoingMaintenanceQuery = Maintenance::where('maintenance_status', 'Ongoing');
-        $complianceStatusQuery = EnergyEfficiency::query();
         if ($facilityIds) {
             $totalKwhQuery->whereIn('facility_id', $facilityIds);
             $totalCostQuery->whereIn('facility_id', $facilityIds);
             $activeAlertsQuery->whereIn('facility_id', $facilityIds);
             $ongoingMaintenanceQuery->whereIn('facility_id', $facilityIds);
-            $complianceStatusQuery->whereIn('facility_id', $facilityIds);
         }
         $totalKwh = $totalKwhQuery->sum('actual_kwh');
         $totalCost = $totalCostQuery->sum('energy_cost');
         $activeAlerts = $activeAlertsQuery->count();
         $ongoingMaintenance = $ongoingMaintenanceQuery->count();
-        $complianceStatus = $complianceStatusQuery->where('rating', 'Low')->count() > 0 ? 'Pending' : 'Compliant';
+        $complianceStatus = 'N/A';
 
 
         // 2. Charts
@@ -96,40 +159,38 @@ class DashboardController extends Controller
             $costChartData[] = $cost ?: 0;
         }
 
-        // 2b. Top Energy-Consuming Facilities (current month)
-        $topFacilities = EnergyRecord::with('facility')
-            ->selectRaw('facility_id, SUM(actual_kwh) as monthly_kwh')
-            ->where(function($q) use ($monthsRange) {
-                foreach ($monthsRange as $m) {
-                    $q->orWhere(function($sub) use ($m) {
-                        $sub->where('year', $m['year'])->where('month', $m['month']);
-                    });
+        // 2b. High Consumption Hubs (last 6 months, average vs. baseline)
+        $sixMonthsAgo = now()->subMonths(6);
+        $topFacilities = Facility::with(['energyRecords' => function($q) use ($sixMonthsAgo) {
+            $q->whereDate('created_at', '>=', $sixMonthsAgo);
+        }])
+        ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('id', $facilityIds); })
+        ->get()
+        ->map(function($facility) {
+            $records = $facility->energyRecords;
+            $totalKwh = $records->sum('actual_kwh');
+            // Sum baseline_kwh from each monthly record (last 6 months)
+            $totalBaseline = $records->sum('baseline_kwh');
+            $deviation = ($totalBaseline > 0 && $totalKwh > 0) ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100 : 0;
+            $status = 'Normal';
+            if ($totalBaseline > 0) {
+                if ($deviation >= 20) {
+                    $status = 'High';
+                } elseif ($deviation >= 10) {
+                    $status = 'Medium';
                 }
-            })
-            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
-            ->groupBy('facility_id')
-            ->orderByDesc('monthly_kwh')
-            ->take(5)
-            ->get()
-            ->map(function($rec) {
-                $facility = $rec->facility;
-                $avgKwh = $facility ? ($facility->baseline_kwh ?? 0) : 0;
-                $status = '-';
-                if ($avgKwh > 0) {
-                    if ($rec->monthly_kwh > $avgKwh * 1.2) {
-                        $status = 'High';
-                    } elseif ($rec->monthly_kwh > $avgKwh) {
-                        $status = 'Medium';
-                    } else {
-                        $status = 'Normal';
-                    }
-                }
-                return (object) [
-                    'name' => $facility ? $facility->name : 'Unknown',
-                    'monthly_kwh' => $rec->monthly_kwh,
-                    'status' => $status,
-                ];
-            });
+            }
+            return (object) [
+                'name' => $facility->name,
+                'total_kwh' => round($totalKwh, 2),
+                'baseline_kwh' => round($totalBaseline, 2),
+                'deviation' => round($deviation, 2),
+                'status' => $status,
+            ];
+        })
+        // Show all facilities with data, no filter
+        ->sortByDesc('deviation')
+        ->values();
 
         // 3. Recent Activity (last 8 actions) - Filter by facility for Staff
         $recentLogs = [];
@@ -142,53 +203,7 @@ class DashboardController extends Controller
         $facilityLogs = $facilityQuery->take(2)->get()->map(function($f) {
             return 'Added new facility – ' . ($f->name ?? 'Unknown');
         });
-
-        // Maintenance logs (Staff only see their facility, Admin/Energy Officer see all)
-        $maintenanceQuery = Maintenance::orderByDesc('created_at');
-        if ($facilityIds) {
-            $maintenanceQuery->whereIn('facility_id', $facilityIds);
-        }
-        $maintenanceLogs = $maintenanceQuery->take(2)->get()->map(function($m) {
-            return 'Maintenance scheduled – ' . ($m->facility->name ?? 'Facility') . ' (' . ($m->maintenance_type ?? 'Type') . ')';
-        });
-
-        // Energy logs (Staff only see their facility, Admin/Energy Officer see all)
-        $energyQuery = EnergyRecord::orderByDesc('created_at');
-        if ($facilityIds) {
-            $energyQuery->whereIn('facility_id', $facilityIds);
-        }
-        $energyLogs = $energyQuery->take(2)->get()->map(function($e) {
-            return 'Energy record added – ' . ($e->facility->name ?? 'Facility') . ' (' . ($e->month ?? '-') . '/' . ($e->year ?? '-') . ')';
-        });
-
-        // Bill logs (Staff only see their facility, Admin/Energy Officer see all)
-        // Bill logs removed
-
-        $recentLogs = $facilityLogs->merge($maintenanceLogs)->merge($energyLogs)->take(8)->toArray();
-
-        // 4. Alerts & Notifications (dynamic) - Filter by facility for Staff
-        $alerts = [];
-        
-        // High energy usage alerts (Staff only see their facility, Admin/Energy Officer see all)
-        // High usage = alert is 'High' or 'Medium'
-        $highUsageQuery = EnergyRecord::whereIn('alert', ['Medium', 'High'])->orderByDesc('created_at');
-        if ($facilityIds) {
-            $highUsageQuery->whereIn('facility_id', $facilityIds);
-        }
-        $highUsage = $highUsageQuery->take(3)->get();
-        foreach ($highUsage as $record) {
-            $alerts[] = '⚠️ High energy usage detected – ' . ($record->facility->name ?? 'Facility') . ' (' . ($record->month ?? '-') . '/' . ($record->year ?? '-') . ')';
-        }
-        
-        // Pending maintenance alerts (Staff only see their facility, Admin/Energy Officer see all)
-        $pendingMaintenanceQuery = Maintenance::where('maintenance_status', 'Pending')->orderByDesc('created_at');
-        if ($facilityIds) {
-            $pendingMaintenanceQuery->whereIn('facility_id', $facilityIds);
-        }
-        $pendingMaintenance = $pendingMaintenanceQuery->take(3)->get();
-        foreach ($pendingMaintenance as $m) {
-            $alerts[] = '🔴 Pending maintenance – ' . ($m->facility->name ?? 'Facility');
-        }
+        $recentLogs = $facilityLogs->toArray();
 
         // --- Dynamic kWh Trend Calculation (6 months) ---
         $monthsToCompare = 6;

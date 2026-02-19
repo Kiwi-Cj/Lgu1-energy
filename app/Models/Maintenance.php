@@ -14,7 +14,6 @@ class Maintenance extends Model
         'facility_id',
         'issue_type',
         'trigger_month',
-        'efficiency_rating',
         'trend',
         'maintenance_type',
         'maintenance_status',

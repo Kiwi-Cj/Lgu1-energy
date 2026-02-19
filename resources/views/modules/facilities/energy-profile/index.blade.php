@@ -2,10 +2,8 @@
 @section('title', 'Energy Profile')
 
 @php
-    $first3mo = isset($facilityModel) ? \DB::table('first3months_data')->where('facility_id', $facilityModel->id)->first() : null;
-    $hasFirst3mo = $first3mo && $first3mo->month1 && $first3mo->month2 && $first3mo->month3;
-    $avgKwh = $first3mo ? (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3 : null;
-
+    // first3months_data table removed; fallback to baseline_kwh
+    $avgKwh = isset($facilityModel) ? $facilityModel->baseline_kwh : null;
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
@@ -229,10 +227,8 @@
 @section('title', 'Energy Profile')
 
 @php
-    $first3mo = isset($facilityModel) ? \DB::table('first3months_data')->where('facility_id', $facilityModel->id)->first() : null;
-    $hasFirst3mo = $first3mo && $first3mo->month1 && $first3mo->month2 && $first3mo->month3;
-    $avgKwh = $first3mo ? (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3 : null;
-
+    // first3months_data table removed; fallback to baseline_kwh
+    $avgKwh = isset($facilityModel) ? $facilityModel->baseline_kwh : null;
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);

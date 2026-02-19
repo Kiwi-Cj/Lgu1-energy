@@ -295,21 +295,18 @@
         <div id="loginError" style="display:none;margin-bottom:20px;padding:12px;border-radius:12px;font-weight:500;"></div>
 
         <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" style="margin-top: 10px;">
-
             @csrf
-            <!-- Hidden fields to confuse autofill -->
-            <input type="text" name="username_fake" style="display:none" tabindex="-1" autocomplete="username">
-            <input type="password" name="password_fake" style="display:none" tabindex="-1" autocomplete="new-password">
-
+            <input type="text" name="fake_user" style="display:none" tabindex="-1" autocomplete="off">
+            <input type="password" name="fake_pass" style="display:none" tabindex="-1" autocomplete="new-password">
 
             <div class="input-box">
                 <label for="loginEmail">Email Address</label>
-                <input type="email" name="login_email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="new-email" autocapitalize="off" spellcheck="false" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
+                <input type="email" name="email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="off" autocapitalize="off" spellcheck="false" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
             </div>
 
             <div class="input-box">
                 <label for="loginPassword">Password</label>
-                <input type="password" name="login_password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
+                <input type="password" name="password" id="loginPassword" placeholder="••••••••" required autocomplete="off" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
             </div>
 
             <button type="submit" class="login-btn d-flex align-items-center justify-content-center gap-2" id="loginBtn" style="position:relative;overflow:hidden;">

@@ -8,16 +8,55 @@ use App\Models\Traits\BelongsToFacility;
 
 class EnergyRecord extends Model
 {
+    // Set alert value based on deviation and baseline
+    public function setAlertAttribute($value)
+    {
+        $baseline = $this->baseline_kwh ?? 0;
+        $deviation = $this->deviation;
+        $size = 'Medium';
+        if ($baseline <= 1000) {
+            $size = 'Small';
+        } elseif ($baseline <= 3000) {
+            $size = 'Medium';
+        } elseif ($baseline <= 10000) {
+            $size = 'Large';
+        } else {
+            $size = 'Extra Large';
+        }
+        $thresholds = [
+            'Small' =>    [ 'level5' => 80,  'level4' => 50,  'level3' => 30,  'level2' => 15 ],
+            'Medium' =>   [ 'level5' => 60,  'level4' => 40,  'level3' => 20,  'level2' => 10 ],
+            'Large' =>    [ 'level5' => 30,  'level4' => 20,  'level3' => 12,  'level2' => 5  ],
+            'Extra Large'=>[ 'level5' => 20,  'level4' => 12,  'level3' => 7,   'level2' => 3  ],
+        ];
+        $t = $thresholds[$size];
+        if ($deviation === null) {
+            $this->attributes['alert'] = '';
+        } elseif ($deviation > $t['level5']) {
+            $this->attributes['alert'] = 'Extreme / level 5';
+        } elseif ($deviation > $t['level4']) {
+            $this->attributes['alert'] = 'Extreme / level 4';
+        } elseif ($deviation > $t['level3']) {
+            $this->attributes['alert'] = 'High / level 3';
+        } elseif ($deviation > $t['level2']) {
+            $this->attributes['alert'] = 'Warning / level 2';
+        } else {
+            $this->attributes['alert'] = 'Normal / Low';
+        }
+    }
+// ...existing code...
+    // Deviation percentage from baseline kWh
+    public function getDeviationAttribute()
+    {
+        $baseline = $this->baseline_kwh ?? 0;
+        if ($baseline > 0) {
+            return round((($this->actual_kwh - $baseline) / $baseline) * 100, 2);
+        }
+        return null;
+    }
     use HasFactory;
 
-    protected static function booted()
-    {
-        static::saved(function ($record) {
-            if ($record->facility) {
-                $record->facility->updateProfileAverageFromRecords();
-            }
-        });
-    }
+    // Removed auto-update of baseline_kwh in EnergyRecord booted event.
 
     protected $table = 'energy_records';
     protected $fillable = [
@@ -31,6 +70,8 @@ class EnergyRecord extends Model
         'recorded_by',
         'bill_image', // optional bill image
         'baseline_kwh',
+        'deviation',
+        'alert',
     ];
 
 
@@ -86,3 +127,4 @@ class EnergyRecord extends Model
         return $this->status ?? 'active';
     }
 }
+

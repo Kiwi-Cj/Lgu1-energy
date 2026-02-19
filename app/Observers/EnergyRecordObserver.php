@@ -3,7 +3,7 @@ namespace App\Observers;
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
-use App\Models\EnergyEfficiency;
+
 
 class EnergyRecordObserver
 {
@@ -14,10 +14,7 @@ class EnergyRecordObserver
         $year = $record->year;
         if ($facility) {
             // Delete related energy efficiency (by facility_id)
-            \App\Models\EnergyEfficiency::where('facility_id', $facility->id)
-                ->where('month', $month)
-                ->where('year', $year)
-                ->delete();
+                // EnergyEfficiency model deleted; nothing to clean up
             // Delete related maintenance records for this facility and trigger month
             $triggerMonth = $record->month ? date('M Y', mktime(0,0,0,(int)$record->month,1,$record->year)) : '-';
             \App\Models\Maintenance::where('facility_id', $facility->id)
@@ -30,14 +27,9 @@ class EnergyRecordObserver
     public function saved(EnergyRecord $record)
     {
         $facility = $record->facility;
-        // Always use first3months_data for avg_kwh if available
-        $first3mo = $facility ? \DB::table('first3months_data')->where('facility_id', $facility->id)->first() : null;
-        if ($first3mo) {
-            $avg = (floatval($first3mo->month1) + floatval($first3mo->month2) + floatval($first3mo->month3)) / 3;
-        } else {
-            $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-            $avg = $profile ? $profile->baseline_kwh : null;
-        }
+        // first3months_data table removed; fallback to baseline_kwh
+        $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+        $avg = $profile ? $profile->baseline_kwh : null;
         $variance = ($record->actual_kwh && $avg !== null) ? $record->actual_kwh - $avg : 0;
         $eui = ($record->actual_kwh && $facility && $facility->floor_area) ? round($record->actual_kwh / $facility->floor_area, 2) : 0; // Never null
         $percent = ($avg && $avg != 0) ? ($record->actual_kwh / $avg) * 100 : 0;
@@ -85,58 +77,7 @@ class EnergyRecordObserver
             }
         }
 
-        $autoFlagged = ($ratingVal === 'Low' || $trendIncreasing) ? 1 : 0;
-
-        EnergyEfficiency::updateOrCreate([
-            'facility_id' => $facility ? $facility->id : null,
-            'month' => $record->month ? date('M', mktime(0,0,0,(int)$record->month,1)) : '-',
-            'year' => $record->year,
-        ], [
-            'actual_kwh' => $record->actual_kwh,
-            'avg_kwh' => $avg !== null ? $avg : 0,
-            'variance' => $variance !== null ? $variance : 0,
-            'eui' => $eui,
-            'rating' => $ratingVal,
-            'auto_flagged' => $autoFlagged,
-        ]);
-
-        // If Low Efficiency or auto-flagged, create or update a maintenance record for this month
-        if ($facility) {
-            $issueType = $ratingVal === 'Low' ? 'High Consumption / Inefficient' : 'Trend Increasing';
-            $triggerMonth = $record->month ? date('M Y', mktime(0,0,0,(int)$record->month,1,$record->year)) : '-';
-            $maintenance = \App\Models\Maintenance::where('facility_id', $facility->id)
-                ->where('trigger_month', $triggerMonth)
-                ->where('issue_type', $issueType)
-                ->whereIn('maintenance_status', ['Pending','Ongoing'])
-                ->first();
-            if ($autoFlagged) {
-                if (!$maintenance) {
-                    \App\Models\Maintenance::create([
-                        'facility_id' => $facility->id,
-                        'issue_type' => $issueType,
-                        'trigger_month' => $triggerMonth,
-                        'efficiency_rating' => $ratingVal,
-                        'trend' => $trendIncreasing ? 'Increasing' : 'Stable',
-                        'maintenance_type' => 'Preventive',
-                        'maintenance_status' => 'Pending',
-                        'scheduled_date' => null,
-                        'assigned_to' => null,
-                        'completed_date' => null,
-                        'remarks' => 'Auto-flagged due to ' . ($ratingVal === 'Low' ? 'low efficiency rating' : 'increasing consumption trend'),
-                    ]);
-                } else {
-                    // Update efficiency_rating and trend if changed
-                    $maintenance->efficiency_rating = $ratingVal;
-                    $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
-                    $maintenance->save();
-                }
-            } else if ($maintenance) {
-                // If no longer auto-flagged, update efficiency_rating and trend
-                $maintenance->efficiency_rating = $ratingVal;
-                $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
-                $maintenance->save();
-            }
-        }
+        // (Removed: auto-flagged maintenance for low efficiency or trend increasing. Now only auto-flag if auto-incident is triggered.)
 
         // --- INCIDENT LOGIC: Create EnergyIncident if High alert ---
         // Compute deviation and alert level (same as in Blade)
@@ -152,18 +93,36 @@ class EnergyRecordObserver
             $size = 'Extra Large';
         }
         $alert = null;
+        $alertLevel = 1;
         if ($deviation !== null) {
             if ($size === 'Small') {
-                $alert = $deviation > 30 ? 'High' : ($deviation > 15 ? 'Medium' : 'Low');
+                if ($deviation > 40) { $alert = 'High'; $alertLevel = 5; }
+                elseif ($deviation > 35) { $alert = 'High'; $alertLevel = 4; }
+                elseif ($deviation > 30) { $alert = 'Medium'; $alertLevel = 3; }
+                elseif ($deviation > 15) { $alert = 'Medium'; $alertLevel = 2; }
+                else { $alert = 'Low'; $alertLevel = 1; }
             } elseif ($size === 'Medium') {
-                $alert = $deviation > 20 ? 'High' : ($deviation > 10 ? 'Medium' : 'Low');
+                if ($deviation > 30) { $alert = 'High'; $alertLevel = 5; }
+                elseif ($deviation > 25) { $alert = 'High'; $alertLevel = 4; }
+                elseif ($deviation > 20) { $alert = 'Medium'; $alertLevel = 3; }
+                elseif ($deviation > 10) { $alert = 'Medium'; $alertLevel = 2; }
+                else { $alert = 'Low'; $alertLevel = 1; }
             } elseif ($size === 'Large') {
-                $alert = $deviation > 15 ? 'High' : ($deviation > 5 ? 'Medium' : 'Low');
+                if ($deviation > 25) { $alert = 'High'; $alertLevel = 5; }
+                elseif ($deviation > 20) { $alert = 'High'; $alertLevel = 4; }
+                elseif ($deviation > 15) { $alert = 'Medium'; $alertLevel = 3; }
+                elseif ($deviation > 5) { $alert = 'Medium'; $alertLevel = 2; }
+                else { $alert = 'Low'; $alertLevel = 1; }
             } else /* Extra Large */ {
-                $alert = $deviation > 10 ? 'High' : ($deviation > 3 ? 'Medium' : 'Low');
+                if ($deviation > 20) { $alert = 'High'; $alertLevel = 5; }
+                elseif ($deviation > 15) { $alert = 'High'; $alertLevel = 4; }
+                elseif ($deviation > 10) { $alert = 'Medium'; $alertLevel = 3; }
+                elseif ($deviation > 3) { $alert = 'Medium'; $alertLevel = 2; }
+                else { $alert = 'Low'; $alertLevel = 1; }
             }
         }
-        if ($alert === 'High' && $facility) {
+        // Only create incident if alertLevel is 4 or 5
+        if ($facility && $alertLevel >= 4) {
             // Update if exists, else create, always set energy_record_id, month, year, size, and deviation_percent
             $incident = \App\Models\EnergyIncident::where('facility_id', $facility->id)
                 ->where('description', 'like', '%High energy consumption detected for this billing period.%')
@@ -172,7 +131,7 @@ class EnergyRecordObserver
                 ->where('year', $record->year)
                 ->first();
             if (!$incident) {
-                \App\Models\EnergyIncident::create([
+                $incident = \App\Models\EnergyIncident::create([
                     'facility_id' => $facility->id,
                     'energy_record_id' => $record->id,
                     'month' => $record->month,
@@ -180,7 +139,7 @@ class EnergyRecordObserver
                     'size' => $size,
                     'deviation_percent' => $deviation,
                     'description' => 'High energy consumption detected for this billing period.',
-                    'status' => 'Open',
+                    'status' => 'Pending',
                     'date_detected' => now()->toDateString(),
                 ]);
             } else {
@@ -190,6 +149,28 @@ class EnergyRecordObserver
                 $incident->size = $size;
                 $incident->deviation_percent = $deviation;
                 $incident->save();
+            }
+
+            // --- AUTO-FLAG MAINTENANCE LOGIC: If auto-incident, also auto-flag maintenance ---
+            $triggerMonth = $record->month ? date('M Y', mktime(0,0,0,(int)$record->month,1,$record->year)) : '-';
+            $maintenance = \App\Models\Maintenance::where('facility_id', $facility->id)
+                ->where('trigger_month', $triggerMonth)
+                ->where('issue_type', 'Auto-flagged: High Consumption')
+                ->whereIn('maintenance_status', ['Pending','Ongoing'])
+                ->first();
+            if (!$maintenance) {
+                \App\Models\Maintenance::create([
+                    'facility_id' => $facility->id,
+                    'issue_type' => 'Auto-flagged: High Consumption',
+                    'trigger_month' => $triggerMonth,
+                    'trend' => $trendIncreasing ? 'Increasing' : 'Stable',
+                    'maintenance_type' => 'Corrective',
+                    'maintenance_status' => 'Pending',
+                    'scheduled_date' => null,
+                    'assigned_to' => null,
+                    'completed_date' => null,
+                    'remarks' => 'Auto-flagged due to system-detected high energy consumption (incident auto-created).',
+                ]);
             }
         }
     }
