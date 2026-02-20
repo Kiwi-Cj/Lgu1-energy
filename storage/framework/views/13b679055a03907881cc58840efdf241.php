@@ -18,26 +18,26 @@
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     View History
                 </a>
+            </div>
+        </div>
+        <div class="incident-list-container">
+        <?php $__empty_1 = true; $__currentLoopData = $incidents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $incident): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <?php
-                $alert = $incident->energyRecord->alert ?? $incident->alert_level ?? 'Normal / level 1';
-                // Use the full label from backend
-                if (strpos($alert, 'Extreme / level 5') !== false) {
-                    $alertLabel = 'Extreme / Level 5';
-                    $alertColor = '#7c1d1d'; // dark red
-                } elseif (strpos($alert, 'Extreme / level 4') !== false) {
-                    $alertLabel = 'Extreme / Level 4';
-                    $alertColor = '#e11d48'; // red
-                } elseif (strpos($alert, 'High / level 3') !== false) {
-                    $alertLabel = 'High / Level 3';
-                    $alertColor = '#f59e42'; // orange
-                } elseif (strpos($alert, 'Warning / level 2') !== false) {
-                    $alertLabel = 'Warning / Level 2';
-                    $alertColor = '#f59e42'; // orange
-                } else {
-                    $alertLabel = 'Normal / Level 1';
-                    $alertColor = '#16a34a'; // green
-                }
+                $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                $monthNum = isset($incident->month) && $incident->month ? (int) $incident->month : (isset($incident->energyRecord) && $incident->energyRecord->month ? (int) $incident->energyRecord->month : null);
+                $yearNum = isset($incident->year) && $incident->year ? $incident->year : (isset($incident->energyRecord) && $incident->energyRecord->year ? $incident->energyRecord->year : null);
+                $monthLabel = $monthNum && $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum-1] : '-';
+                $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : (isset($incident->energyRecord) && isset($incident->energyRecord->deviation_percent) ? $incident->energyRecord->deviation_percent : null);
+                $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-');
             ?>
+            <div class="incident-list-row" tabindex="0" onclick="showIncidentModal(<?php echo e($incident->id); ?>)">
+                <div class="incident-list-main">
+                    <div class="incident-facility"><?php echo e($incident->facility->name ?? '-'); ?></div>
+                    <div class="incident-detected" style="text-align:right;min-width:120px;"><?php echo e($dateDetected); ?></div>
+                </div>
+            </div>
+            <div id="incident-modal-<?php echo e($incident->id); ?>" class="incident-modal" style="display:none;">
+                <div class="incident-modal-content" style="max-width:520px;padding:38px 36px 32px 36px;border-radius:20px;background:#f8fafc;box-shadow:0 12px 40px rgba(37,99,235,0.13); position:relative;">
                     <button class="incident-modal-close" onclick="closeIncidentModal(<?php echo e($incident->id); ?>)" aria-label="Close modal">&times;</button>
                     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
                         <div style="font-size:2.1rem;color:#e11d48;"><i class='fa fa-bolt'></i></div>
@@ -52,7 +52,7 @@
                             $alert = $incident->energyRecord->alert ?? $incident->alert_level ?? 'High';
                             $alertColor = $alert === 'High' ? '#e11d48' : ($alert === 'Medium' ? '#f59e42' : '#16a34a');
                         ?>
-                        <span style="font-weight:900;color:<?php echo e($alertColor); ?>;text-transform:uppercase;"><?php echo e($alertLabel); ?></span>
+                        <span style="font-weight:900;color:<?php echo e($alertColor); ?>;text-transform:uppercase;"><?php echo e($alert); ?></span>
                     </div>
                     <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Status:</span> <span style="font-weight:800;"><?php echo e($incident->status ?? 'Open'); ?></span></div>
                     <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Date Detected:</span> <span style="font-weight:800;"><?php echo e($dateDetected); ?></span></div>
@@ -72,7 +72,7 @@
                     </div>
                 </div>
             </div>
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_0): ?>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div style="text-align:center; color:#64748b; padding:18px 0;">No incidents found.</div>
         <?php endif; ?>
     </div>

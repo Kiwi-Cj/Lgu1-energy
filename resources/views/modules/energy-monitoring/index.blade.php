@@ -235,7 +235,7 @@
                                 <span style="font-size:1.3rem;">{{ $iconData['icon'] }}</span>
                             </button>
                         </td>
-                        // ...existing code...
+                       
                     </tr>
                 @endif
             @empty

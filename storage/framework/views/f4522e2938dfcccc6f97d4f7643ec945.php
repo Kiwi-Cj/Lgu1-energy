@@ -238,7 +238,7 @@
                                 <span style="font-size:1.3rem;"><?php echo e($iconData['icon']); ?></span>
                             </button>
                         </td>
-                        // ...existing code...
+                       
                     </tr>
                 <?php endif; ?>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
