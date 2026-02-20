@@ -33,15 +33,15 @@ class EnergyRecord extends Model
         if ($deviation === null) {
             $this->attributes['alert'] = '';
         } elseif ($deviation > $t['level5']) {
-            $this->attributes['alert'] = 'Extreme / level 5';
+            $this->attributes['alert'] = 'Critical';
         } elseif ($deviation > $t['level4']) {
-            $this->attributes['alert'] = 'Extreme / level 4';
+            $this->attributes['alert'] = 'Very High';
         } elseif ($deviation > $t['level3']) {
-            $this->attributes['alert'] = 'High / level 3';
+            $this->attributes['alert'] = 'High';
         } elseif ($deviation > $t['level2']) {
-            $this->attributes['alert'] = 'Warning / level 2';
+            $this->attributes['alert'] = 'Warning';
         } else {
-            $this->attributes['alert'] = 'Normal / Low';
+            $this->attributes['alert'] = 'Normal';
         }
     }
 // ...existing code...

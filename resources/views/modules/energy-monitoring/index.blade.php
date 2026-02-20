@@ -215,11 +215,11 @@
                                     'Moderate' => ['icon' => '🔆', 'color' => '#fbbf24'],
                                     'Low' => ['icon' => '💡', 'color' => '#16a34a'],
                                     'Normal' => ['icon' => '✅', 'color' => '#2563eb'],
-                                    'Extreme / level 5' => ['icon' => '🚨', 'color' => '#7c1d1d'],
-                                    'Extreme / level 4' => ['icon' => '🚩', 'color' => '#e11d48'],
-                                    'High / level 3' => ['icon' => '⚡', 'color' => '#f59e42'],
-                                    'Warning / level 2' => ['icon' => '🔔', 'color' => '#f59e42'],
-                                    'Normal / Low' => ['icon' => '💡', 'color' => '#16a34a'],
+                                    'Critical' => ['icon' => '🚨', 'color' => '#7c1d1d'],
+                                    'Very High' => ['icon' => '🚩', 'color' => '#e11d48'],
+                                    'High' => ['icon' => '⚡', 'color' => '#f59e42'],
+                                    'Warning' => ['icon' => '🔔', 'color' => '#f59e42'],
+                                    'Normal' => ['icon' => '💡', 'color' => '#16a34a'],
                                 ];
                                 $iconData = $alertIcons[$alertLevel] ?? ['icon' => 'ℹ️', 'color' => '#64748b'];
                                 $trendRecommendations = [
@@ -295,11 +295,11 @@ function openRecommendationModal(facilityId, facilityName, alertLevel, trendReco
         'Moderate':   { color: '#222', bg: '#fbbf24', icon: '🔆' },
         'Low':        { color: '#222', bg: '#bbf7d0', icon: '💡' },
         'Normal':     { color: '#fff', bg: '#2563eb', icon: '✅' },
-        'Extreme / level 5': { color: '#fff', bg: '#7c1d1d', icon: '🚨' },
-        'Extreme / level 4': { color: '#fff', bg: '#e11d48', icon: '🚩' },
-        'High / level 3':    { color: '#fff', bg: '#f59e42', icon: '⚡' },
-        'Warning / level 2': { color: '#222', bg: '#fde68a', icon: '🔔' },
-        'Normal / Low':      { color: '#222', bg: '#bbf7d0', icon: '💡' },
+        'Critical': { color: '#fff', bg: '#7c1d1d', icon: '🚨' },
+        'Very High': { color: '#fff', bg: '#e11d48', icon: '🚩' },
+        'High':    { color: '#fff', bg: '#f59e42', icon: '⚡' },
+        'Warning': { color: '#222', bg: '#fde68a', icon: '🔔' },
+        'Normal':      { color: '#222', bg: '#bbf7d0', icon: '💡' },
     };
     const style = alertStyles[alertLevel] || { color: '#222', bg: '#f1f5f9', icon: 'ℹ️' };
     title.innerHTML = `<span style='font-size:1.5rem;margin-right:8px;'>${style.icon}</span> Recommendation for ${facilityName}`;

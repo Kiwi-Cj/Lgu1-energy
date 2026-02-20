@@ -201,15 +201,15 @@ class EnergyController extends Controller
         if ($deviation === null) {
             $validated['alert'] = '';
         } elseif ($deviation > $t['level5']) {
-            $validated['alert'] = 'Extreme / level 5';
+            $validated['alert'] = 'Critical';
         } elseif ($deviation > $t['level4']) {
-            $validated['alert'] = 'Extreme / level 4';
+            $validated['alert'] = 'Very High';
         } elseif ($deviation > $t['level3']) {
-            $validated['alert'] = 'High / level 3';
+            $validated['alert'] = 'High';
         } elseif ($deviation > $t['level2']) {
-            $validated['alert'] = 'Warning / level 2';
+            $validated['alert'] = 'Warning';
         } else {
-            $validated['alert'] = 'Normal / Low';
+            $validated['alert'] = 'Normal';
         }
 
         // --- Save to database ---

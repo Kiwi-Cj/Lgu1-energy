@@ -272,15 +272,15 @@
 				   <div id="um_password_block" class="uv-password-block">
 					   <div class="uv-form-grid uv-form-grid-2">
 						   <div class="uv-form-field">
-							   <label for="um_password">Password *</label>
-							   <input id="um_password" name="password" type="password" autocomplete="off">
+							   <label for="um_password" id="um_password_label">Password *</label>
+							   <input id="um_password" name="password" type="password" autocomplete="new-password">
 						   </div>
 						   <div class="uv-form-field">
-							   <label for="um_password_confirmation">Confirm Password *</label>
-							   <input id="um_password_confirmation" name="password_confirmation" type="password" autocomplete="off">
+							   <label for="um_password_confirmation" id="um_password_confirmation_label">Confirm Password *</label>
+							   <input id="um_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password">
 						   </div>
 					   </div>
-					   <div class="uv-password-hint">Password is required only when creating a new user.</div>
+					   <div class="uv-password-hint" id="um_password_hint">Password is required when creating a new user.</div>
 				   </div>
 				   <div class="uv-modal-actions">
 					   <button type="button" class="uv-btn-cancel" onclick="closeUserModal()">Cancel</button>
@@ -711,6 +711,9 @@
 		document.getElementById('um_password_block').style.display = 'block';
 		document.getElementById('um_password').required = true;
 		document.getElementById('um_password_confirmation').required = true;
+		document.getElementById('um_password_label').textContent = 'Password *';
+		document.getElementById('um_password_confirmation_label').textContent = 'Confirm Password *';
+		document.getElementById('um_password_hint').textContent = 'Password is required when creating a new user.';
 
 		openUserModal();
 	}
@@ -763,10 +766,13 @@
 		form.action = "{{ url('modules/users') }}/" + userId;
 		document.getElementById('userModalMethod').value = 'PUT';
 
-		// Password not required on edit
-		document.getElementById('um_password_block').style.display = 'none';
+		// Password is optional on edit
+		document.getElementById('um_password_block').style.display = 'block';
 		document.getElementById('um_password').required = false;
 		document.getElementById('um_password_confirmation').required = false;
+		document.getElementById('um_password_label').textContent = 'Password (optional)';
+		document.getElementById('um_password_confirmation_label').textContent = 'Confirm Password (optional)';
+		document.getElementById('um_password_hint').textContent = 'Leave password fields blank if you do not want to change the current password.';
 
 		openUserModal();
 	}

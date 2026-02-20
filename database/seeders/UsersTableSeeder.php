@@ -11,9 +11,11 @@ class UsersTableSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run()
+    public function run(): void
     {
-        DB::table('users')->insert([
+        $now = now();
+
+        $users = [
             [
                 'facility_id' => null,
                 'full_name' => 'Super Admin',
@@ -24,8 +26,8 @@ class UsersTableSeeder extends Seeder
                 'status' => 'active',
                 'contact_number' => '09123456789',
                 'department' => 'Admin',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'facility_id' => null,
@@ -37,8 +39,8 @@ class UsersTableSeeder extends Seeder
                 'status' => 'active',
                 'contact_number' => '09123456789',
                 'department' => 'Admin',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'facility_id' => null,
@@ -50,8 +52,8 @@ class UsersTableSeeder extends Seeder
                 'status' => 'active',
                 'contact_number' => '09123456789',
                 'department' => 'Energy',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
             [
                 'facility_id' => null,
@@ -63,9 +65,25 @@ class UsersTableSeeder extends Seeder
                 'status' => 'active',
                 'contact_number' => '09123456789',
                 'department' => 'Staff',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ],
-        ]);
+        ];
+
+        DB::table('users')->upsert(
+            $users,
+            ['email'],
+            [
+                'facility_id',
+                'full_name',
+                'username',
+                'password',
+                'role',
+                'status',
+                'contact_number',
+                'department',
+                'updated_at',
+            ]
+        );
     }
 }

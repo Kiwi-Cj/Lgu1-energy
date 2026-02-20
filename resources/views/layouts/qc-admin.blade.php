@@ -346,6 +346,7 @@ body.dark-mode .nav-link:hover { background: #374151; }
                     <ul class="nav-submenu">
                         <li><a href="{{ route('energy.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
                         <li><a href="{{ route('energy.trend') }}" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                        <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -377,6 +378,7 @@ body.dark-mode .nav-link:hover { background: #374151; }
                             <ul class="nav-submenu">
                                 <li><a href="{{ route('energy.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
                                 <li><a href="{{ route('energy.trend') }}" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                                <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>

@@ -93,6 +93,7 @@ class UsersController extends Controller
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'username' => 'nullable|string|max:255|unique:users,username,' . $id,
+            'password' => 'nullable|string|min:6|confirmed',
             'role' => 'required|string|in:super admin,admin,staff,energy_officer',
             'status' => 'required|string|in:active,inactive',
             'facility_id' => 'array',
@@ -103,6 +104,11 @@ class UsersController extends Controller
 
         $facilityIds = $request->input('facility_id', []);
         unset($validated['facility_id']);
+        if ($request->filled('password')) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
 
         $user->update($validated);
         if (strtolower($validated['role']) === 'staff') {

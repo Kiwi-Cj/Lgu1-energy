@@ -197,19 +197,19 @@ window.addEventListener('DOMContentLoaded', function() {
                                 ];
                                 $t = $thresholds[$size];
                                 if ($deviation > $t['level5']) {
-                                    $alert = 'Extreme / level 5';
+                                    $alert = 'Critical';
                                     $alertColor = '#7c1d1d'; // dark red
                                 } elseif ($deviation > $t['level4']) {
-                                    $alert = 'Extreme / level 4';
+                                    $alert = 'Very High';
                                     $alertColor = '#e11d48'; // red
                                 } elseif ($deviation > $t['level3']) {
-                                    $alert = 'High / level 3';
+                                    $alert = 'High';
                                     $alertColor = '#f59e42'; // orange
                                 } elseif ($deviation > $t['level2']) {
-                                    $alert = 'Warning / level 2';
+                                    $alert = 'Warning';
                                     $alertColor = '#f59e42'; // orange
                                 } else {
-                                    $alert = 'Normal / Low';
+                                    $alert = 'Normal';
                                     $alertColor = '#16a34a'; // green
                                 }
                             }
@@ -236,19 +236,19 @@ window.addEventListener('DOMContentLoaded', function() {
                     <td style="padding:10px 14px; text-align:center;">
                         @php
                             $alertIcons = [
-                                'Extreme / level 5' => ['icon' => '🚨', 'color' => '#7c1d1d'],
-                                'Extreme / level 4' => ['icon' => '🚩', 'color' => '#e11d48'],
-                                'High / level 3' => ['icon' => '⚡', 'color' => '#f59e42'],
-                                'Warning / level 2' => ['icon' => '🔔', 'color' => '#f59e42'],
-                                'Normal / Low' => ['icon' => '💡', 'color' => '#16a34a'],
+                                'Critical' => ['icon' => '🚨', 'color' => '#7c1d1d'],
+                                'Very High' => ['icon' => '🚩', 'color' => '#e11d48'],
+                                'High' => ['icon' => '⚡', 'color' => '#f59e42'],
+                                'Warning' => ['icon' => '🔔', 'color' => '#f59e42'],
+                                'Normal' => ['icon' => '💡', 'color' => '#16a34a'],
                                 '-' => ['icon' => 'ℹ️', 'color' => '#64748b'],
                             ];
                             $recommendations = [
-                                'Extreme / level 5' => 'Critical: Take urgent action to reduce energy use. Investigate immediately.',
-                                'Extreme / level 4' => 'Very high deviation: Investigate and address immediately.',
-                                'High / level 3' => 'High deviation: Review and optimize energy usage.',
-                                'Warning / level 2' => 'Warning: Monitor and plan improvements.',
-                                'Normal / Low' => 'Normal: Maintain current practices.',
+                                'Critical' => 'Critical: Take urgent action to reduce energy use. Investigate immediately.',
+                                'Very High' => 'Very high deviation: Investigate and address immediately.',
+                                'High' => 'High deviation: Review and optimize energy usage.',
+                                'Warning' => 'Warning: Monitor and plan improvements.',
+                                'Normal' => 'Normal: Maintain current practices.',
                                 '-' => 'No recommendation.'
                             ];
                             $iconData = $alertIcons[$alert] ?? ['icon' => 'ℹ️', 'color' => '#64748b'];
@@ -279,11 +279,11 @@ window.addEventListener('DOMContentLoaded', function() {
                         const text  = document.getElementById('monthlyRecommendationText');
                         const box   = document.getElementById('monthlyRecommendationModalBox');
                         const alertStyles = {
-                            'Extreme / level 5': { color: '#fff', bg: '#7c1d1d' },
-                            'Extreme / level 4': { color: '#fff', bg: '#e11d48' },
-                            'High / level 3':    { color: '#fff', bg: '#f59e42' },
-                            'Warning / level 2': { color: '#222', bg: '#fde68a' },
-                            'Normal / Low':      { color: '#222', bg: '#bbf7d0' },
+                            'Critical': { color: '#fff', bg: '#7c1d1d' },
+                            'Very High': { color: '#fff', bg: '#e11d48' },
+                            'High':    { color: '#fff', bg: '#f59e42' },
+                            'Warning': { color: '#222', bg: '#fde68a' },
+                            'Normal':      { color: '#222', bg: '#bbf7d0' },
                             '-':                { color: '#222', bg: '#f8fafc' },
                         };
                         const style = alertStyles[alert] || { color: '#222', bg: '#f8fafc' };
@@ -301,15 +301,21 @@ window.addEventListener('DOMContentLoaded', function() {
                     }
                     </script>
                     <td style="padding:10px 14px; text-align:center; display: flex; gap: 8px; justify-content: center; align-items: center;">
-                        @if($record->alert === 'High / level 3')
+                        @php
+                            $alertText = strtolower((string) $record->alert);
+                            $isHighAction = in_array($record->alert, ['Critical', 'Very High', 'High']) || str_contains($alertText, 'level 5') || str_contains($alertText, 'level 4') || str_contains($alertText, 'level 3');
+                            $isWarningAction = $record->alert === 'Warning' || str_contains($alertText, 'level 2');
+                            $isNormalAction = $record->alert === 'Normal' || (str_contains($alertText, 'normal') && str_contains($alertText, 'low'));
+                        @endphp
+                        @if($isHighAction)
                             <button type="button" title="Create Energy Action (High)" style="background: none; border: none; color: #e11d48; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal({{ $record->id }}, 'High')">
                                 <span style="font-size:1.3rem;">⚠️</span>
                             </button>
-                        @elseif($record->alert === 'Warning / level 2')
+                        @elseif($isWarningAction)
                             <button type="button" title="Create Energy Action (Medium)" style="background: none; border: none; color: #f59e42; font-size: 1.3rem; cursor: pointer;" onclick="openEnergyActionModal({{ $record->id }}, 'Medium')">
                                 <span style="font-size:1.3rem;">⚡</span>
                             </button>
-                        @elseif($record->alert === 'Normal / Low')
+                        @elseif($isNormalAction)
                             <!-- No recommendation button in Action column -->
                         @endif
                        

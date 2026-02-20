@@ -305,24 +305,84 @@ Route::middleware(['auth', 'verified'])->group(function () {
 		$facilities = \App\Models\Facility::all();
 		$selectedFacility = $request->query('facility_id', '');
 
-			$query = \App\Models\EnergyRecord::query();
+			$query = \App\Models\EnergyRecord::with('facility');
 			if ($selectedFacility) {
 				$query->where('facility_id', $selectedFacility);
 			}
 			$query->where('year', $selectedYear);
 			$records = $query->get();
 
-			// Calculate monthly breakdown
+			$getAlertBySize = function($deviation, $baselineKwh) {
+				if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
+					return '-';
+				}
+
+				if ($baselineKwh <= 1000) {
+					$size = 'Small';
+				} elseif ($baselineKwh <= 3000) {
+					$size = 'Medium';
+				} elseif ($baselineKwh <= 10000) {
+					$size = 'Large';
+				} else {
+					$size = 'Extra Large';
+				}
+
+				$thresholds = [
+					'Small' =>     [ 'level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15 ],
+					'Medium' =>    [ 'level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10 ],
+					'Large' =>     [ 'level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5  ],
+					'Extra Large' => [ 'level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3 ],
+				];
+				$t = $thresholds[$size];
+
+				if ($deviation > $t['level5']) return 'Critical';
+				if ($deviation > $t['level4']) return 'Very High';
+				if ($deviation > $t['level3']) return 'High';
+				if ($deviation > $t['level2']) return 'Warning';
+				return 'Normal';
+			};
+
+			$getHighestAlert = function($alerts) {
+				$priority = [
+					'Critical' => 5,
+					'Very High' => 4,
+					'High' => 3,
+					'Warning' => 2,
+					'Normal' => 1,
+					'-' => 0,
+				];
+				$best = '-';
+				$bestScore = 0;
+				foreach ($alerts as $alert) {
+					$score = $priority[$alert] ?? 0;
+					if ($score > $bestScore) {
+						$best = $alert;
+						$bestScore = $score;
+					}
+				}
+				return $best;
+			};
+
 			$monthlyBreakdown = [];
 			foreach (range(1, 12) as $m) {
 				$monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
 				$actual = $monthRecords->sum('actual_kwh');
-				$baseline = $monthRecords->map(function($r){
-					$profile = $r->facility ? $r->facility->energyProfiles()->latest()->first() : null;
-					   return $profile ? $profile->baseline_kwh : 0;
-				})->sum();
+				$baseline = 0;
+				$monthAlerts = [];
+				foreach ($monthRecords as $record) {
+					$recordBaseline = $record->baseline_kwh;
+					if ($recordBaseline === null || $recordBaseline <= 0) {
+						$profile = $record->facility ? $record->facility->energyProfiles()->latest()->first() : null;
+						$recordBaseline = $profile ? (float) $profile->baseline_kwh : 0;
+					}
+					$baseline += (float) $recordBaseline;
+					$deviation = $recordBaseline > 0
+						? ((float)$record->actual_kwh - (float)$recordBaseline) / (float)$recordBaseline * 100
+						: null;
+					$monthAlerts[] = $getAlertBySize($deviation, $recordBaseline);
+				}
 				$diff = $actual - $baseline;
-				$status = ($baseline !== 0) ? ($diff > 0 ? 'High' : 'Efficient') : '-';
+				$status = $getHighestAlert($monthAlerts);
 				$monthlyBreakdown[] = [
 					'Month' => date('M', mktime(0,0,0,$m,1)),
 					'Actual kWh' => $actual,
@@ -354,6 +414,131 @@ Route::middleware(['auth', 'verified'])->group(function () {
 			};
 			return response()->stream($callback, 200, $headers);
 		})->name('modules.energy.annual.export-excel');
+
+	// Annual Energy Summary PDF Export
+	Route::get('/modules/energy/annual/export-pdf', function(\Illuminate\Http\Request $request) {
+		$selectedYear = $request->query('year', date('Y'));
+		$selectedFacility = $request->query('facility_id', '');
+
+		$facilities = \App\Models\Facility::orderBy('name')->get();
+		$selectedFacilityName = 'All Facilities';
+		if ($selectedFacility) {
+			$selectedFacilityModel = $facilities->firstWhere('id', (int) $selectedFacility);
+			if ($selectedFacilityModel) {
+				$selectedFacilityName = $selectedFacilityModel->name;
+			}
+		}
+
+		$query = \App\Models\EnergyRecord::with('facility');
+		if ($selectedFacility) {
+			$query->where('facility_id', $selectedFacility);
+		}
+		$query->where('year', $selectedYear);
+		$records = $query->get();
+
+		$getAlertBySize = function($deviation, $baselineKwh) {
+			if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
+				return '-';
+			}
+
+			if ($baselineKwh <= 1000) {
+				$size = 'Small';
+			} elseif ($baselineKwh <= 3000) {
+				$size = 'Medium';
+			} elseif ($baselineKwh <= 10000) {
+				$size = 'Large';
+			} else {
+				$size = 'Extra Large';
+			}
+
+			$thresholds = [
+				'Small' =>     [ 'level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15 ],
+				'Medium' =>    [ 'level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10 ],
+				'Large' =>     [ 'level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5  ],
+				'Extra Large' => [ 'level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3 ],
+			];
+			$t = $thresholds[$size];
+
+			if ($deviation > $t['level5']) return 'Critical';
+			if ($deviation > $t['level4']) return 'Very High';
+			if ($deviation > $t['level3']) return 'High';
+			if ($deviation > $t['level2']) return 'Warning';
+			return 'Normal';
+		};
+
+		$getHighestAlert = function($alerts) {
+			$priority = [
+				'Critical' => 5,
+				'Very High' => 4,
+				'High' => 3,
+				'Warning' => 2,
+				'Normal' => 1,
+				'-' => 0,
+			];
+			$best = '-';
+			$bestScore = 0;
+			foreach ($alerts as $alert) {
+				$score = $priority[$alert] ?? 0;
+				if ($score > $bestScore) {
+					$best = $alert;
+					$bestScore = $score;
+				}
+			}
+			return $best;
+		};
+
+		$monthlyBreakdown = [];
+		$totalActualKwh = 0;
+		$annualBaseline = 0;
+		foreach (range(1, 12) as $m) {
+			$monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
+			$actual = $monthRecords->sum('actual_kwh');
+			$baseline = 0;
+			$monthAlerts = [];
+			foreach ($monthRecords as $record) {
+				$recordBaseline = $record->baseline_kwh;
+				if ($recordBaseline === null || $recordBaseline <= 0) {
+					$profile = $record->facility ? $record->facility->energyProfiles()->latest()->first() : null;
+					$recordBaseline = $profile ? (float) $profile->baseline_kwh : 0;
+				}
+				$baseline += (float) $recordBaseline;
+				$deviation = $recordBaseline > 0
+					? ((float)$record->actual_kwh - (float)$recordBaseline) / (float)$recordBaseline * 100
+					: null;
+				$monthAlerts[] = $getAlertBySize($deviation, $recordBaseline);
+			}
+			$diff = $actual - $baseline;
+			$status = $getHighestAlert($monthAlerts);
+			$monthlyBreakdown[] = [
+				'label' => date('M', mktime(0,0,0,$m,1)),
+				'actual' => $actual,
+				'baseline' => $baseline,
+				'diff' => $diff,
+				'status' => $status,
+			];
+			$totalActualKwh += $actual;
+			$annualBaseline += $baseline;
+		}
+		$annualDifference = $totalActualKwh - $annualBaseline;
+		$annualStatus = $getHighestAlert(array_column($monthlyBreakdown, 'status'));
+		$generatedAt = now()->format('F d, Y h:i A');
+
+		$pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+			'modules.energy-monitoring.annual-pdf',
+			compact(
+				'selectedYear',
+				'selectedFacilityName',
+				'monthlyBreakdown',
+				'totalActualKwh',
+				'annualBaseline',
+				'annualDifference',
+				'annualStatus',
+				'generatedAt'
+			)
+		)->setPaper('a4', 'portrait');
+
+		return $pdf->download('annual_energy_monitoring_' . $selectedYear . '.pdf');
+	})->name('modules.energy.annual.export-pdf');
 
 	   // (Modal-based creation: create route/view removed)
 
@@ -535,26 +720,86 @@ Route::middleware(['auth', 'verified'])->group(function () {
 		$facilities = \App\Models\Facility::all();
 		$selectedFacility = request('facility_id', '');
 
-		$query = \App\Models\EnergyRecord::query();
+		$query = \App\Models\EnergyRecord::with('facility');
 		if ($selectedFacility) {
 			$query->where('facility_id', $selectedFacility);
 		}
 		$query->where('year', $selectedYear);
 		$records = $query->get();
 
-		// Calculate monthly breakdown
+		$getAlertBySize = function($deviation, $baselineKwh) {
+			if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
+				return '-';
+			}
+
+			if ($baselineKwh <= 1000) {
+				$size = 'Small';
+			} elseif ($baselineKwh <= 3000) {
+				$size = 'Medium';
+			} elseif ($baselineKwh <= 10000) {
+				$size = 'Large';
+			} else {
+				$size = 'Extra Large';
+			}
+
+			$thresholds = [
+				'Small' =>     [ 'level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15 ],
+				'Medium' =>    [ 'level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10 ],
+				'Large' =>     [ 'level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5  ],
+				'Extra Large' => [ 'level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3 ],
+			];
+			$t = $thresholds[$size];
+
+			if ($deviation > $t['level5']) return 'Critical';
+			if ($deviation > $t['level4']) return 'Very High';
+			if ($deviation > $t['level3']) return 'High';
+			if ($deviation > $t['level2']) return 'Warning';
+			return 'Normal';
+		};
+
+		$getHighestAlert = function($alerts) {
+			$priority = [
+				'Critical' => 5,
+				'Very High' => 4,
+				'High' => 3,
+				'Warning' => 2,
+				'Normal' => 1,
+				'-' => 0,
+			];
+			$best = '-';
+			$bestScore = 0;
+			foreach ($alerts as $alert) {
+				$score = $priority[$alert] ?? 0;
+				if ($score > $bestScore) {
+					$best = $alert;
+					$bestScore = $score;
+				}
+			}
+			return $best;
+		};
+
 		$monthlyBreakdown = [];
 		$totalActualKwh = 0;
 		$annualBaseline = 0;
 		foreach (range(1, 12) as $m) {
 			$monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
 			$actual = $monthRecords->sum('actual_kwh');
-			$baseline = $monthRecords->map(function($r){
-				$profile = $r->facility ? $r->facility->energyProfiles()->latest()->first() : null;
-				   return $profile ? $profile->baseline_kwh : 0;
-			})->sum();
+			$baseline = 0;
+			$monthAlerts = [];
+			foreach ($monthRecords as $record) {
+				$recordBaseline = $record->baseline_kwh;
+				if ($recordBaseline === null || $recordBaseline <= 0) {
+					$profile = $record->facility ? $record->facility->energyProfiles()->latest()->first() : null;
+					$recordBaseline = $profile ? (float) $profile->baseline_kwh : 0;
+				}
+				$baseline += (float) $recordBaseline;
+				$deviation = $recordBaseline > 0
+					? ((float)$record->actual_kwh - (float)$recordBaseline) / (float)$recordBaseline * 100
+					: null;
+				$monthAlerts[] = $getAlertBySize($deviation, $recordBaseline);
+			}
 			$diff = $actual - $baseline;
-			$status = ($baseline !== 0) ? ($diff > 0 ? 'High' : 'Efficient') : '-';
+			$status = $getHighestAlert($monthAlerts);
 			$monthlyBreakdown[] = [
 				'label' => date('M', mktime(0,0,0,$m,1)),
 				'actual' => $actual,
@@ -566,9 +811,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 			$annualBaseline += $baseline;
 		}
 		$annualDifference = $totalActualKwh - $annualBaseline;
-		$annualStatus = ($annualBaseline !== 0) ? ($annualDifference > 0 ? 'High' : 'Efficient') : '-';
+		$annualStatus = $getHighestAlert(array_column($monthlyBreakdown, 'status'));
+		$user = auth()->user();
+		$role = strtolower($user->role ?? '');
+		$notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
+		$unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
-		return view('modules.energy.annual.annual', compact('years','selectedYear','facilities','selectedFacility','totalActualKwh','annualBaseline','annualDifference','annualStatus','monthlyBreakdown'));
+		return view('modules.energy-monitoring.annual', compact('years','selectedYear','facilities','selectedFacility','totalActualKwh','annualBaseline','annualDifference','annualStatus','monthlyBreakdown','role','user','notifications','unreadNotifCount'));
 	})->name('modules.energy.annual');
 });
 // =====================
