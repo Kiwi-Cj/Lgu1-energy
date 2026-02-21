@@ -1,11 +1,25 @@
 <?php
-// Redirect all traffic to Laravel's public entry point
-$uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-$publicPath = __DIR__ . '/public' . $uri;
+// Directly include the home page (no redirect)
+$welcomePath = __DIR__ . '/resources/views/welcome.blade.php';
 
-if ($uri !== '/' && file_exists($publicPath)) {
-    return false; // serve static files directly
+if (!file_exists($welcomePath)) {
+    die('Welcome page not found.');
 }
 
-$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/public/index.php';
-require __DIR__ . '/public/index.php';
+// Read the Blade template
+$content = file_get_contents($welcomePath);
+
+// Replace Blade asset() helper with actual asset paths
+// asset() in Laravel points to public directory
+$content = preg_replace_callback(
+    "/\{\{\s*asset\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
+    function($matches) {
+        // Remove leading slash if present, then add it back for web path
+        $path = ltrim($matches[1], '/');
+        return '/' . $path;
+    },
+    $content
+);
+
+// Output the processed content
+echo $content;
