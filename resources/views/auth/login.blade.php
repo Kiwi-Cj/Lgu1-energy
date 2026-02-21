@@ -339,61 +339,81 @@
 
 <script src="{{ asset('js/scripts.js') }}"></script>
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const btn = document.getElementById('loginBtn');
-        const btnText = document.getElementById('loginBtnText');
-        const btnLoading = document.getElementById('loginBtnLoading');
-        const errorDiv = document.getElementById('loginError');
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        // Loading State
-        btn.disabled = true;
-        btnText.style.display = 'none';
-        btnLoading.style.display = 'inline-block';
-        errorDiv.style.display = 'none';
+            const emailInput = document.getElementById('loginEmail');
+            const passwordInput = document.getElementById('loginPassword');
+            const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('loginBtnText');
+            const btnLoading = document.getElementById('loginBtnLoading');
+            const errorDiv = document.getElementById('loginError');
 
-        const csrfToken = document.querySelector('input[name="_token"]').value;
+            if (!emailInput || !passwordInput || !btn || !btnText || !btnLoading || !errorDiv) {
+                return;
+            }
 
-        try {
-            const response = await fetch(this.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-                credentials: 'same-origin'
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                if (data.show_otp_modal) {
-                    openOtpModalAuto(email);
-                } else if (data.redirect) {
-                    window.location.href = data.redirect;
-                } else {
-                    window.location.reload();
-                }
-            } else {
-                errorDiv.textContent = data.message || 'The credentials you entered are incorrect.';
-                errorDiv.style.display = 'block';
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const resetButtonState = () => {
                 btn.disabled = false;
                 btnText.style.display = '';
                 btnLoading.style.display = 'none';
+            };
+
+            // Loading State
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-block';
+            errorDiv.style.display = 'none';
+
+            const tokenInput = this.querySelector('input[name="_token"]');
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = tokenInput?.value || metaToken?.getAttribute('content');
+
+            if (!csrfToken) {
+                errorDiv.textContent = 'Session token is missing. Please refresh the page.';
+                errorDiv.style.display = 'block';
+                resetButtonState();
+                return;
             }
-        } catch (err) {
-            errorDiv.textContent = 'Connection error. Please check your internet.';
-            errorDiv.style.display = 'block';
-            btn.disabled = false;
-            btnText.style.display = '';
-            btnLoading.style.display = 'none';
-        }
-    });
+
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.show_otp_modal) {
+                        openOtpModalAuto(email);
+                    } else if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    errorDiv.textContent = data.message || 'The credentials you entered are incorrect.';
+                    errorDiv.style.display = 'block';
+                    resetButtonState();
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Connection error. Please check your internet.';
+                errorDiv.style.display = 'block';
+                resetButtonState();
+            }
+        });
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
         const otpModal = document.getElementById('otpModalAuto');

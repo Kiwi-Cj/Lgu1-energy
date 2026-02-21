@@ -150,7 +150,7 @@
                 <li class="nav-item"><a class="nav-link" href="#partners">Partners</a></li>
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/resources/views/auth/login.blade.php">Login</a></li>
+                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
             </ul>
         </div>
     </div>
