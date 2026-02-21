@@ -23,7 +23,7 @@
         }
         .hero-section {
             min-height: 90vh;
-            background: url('/img/energy illustration.jpg') center center/cover no-repeat;
+            background: url('/public/img/energy illustration.jpg') center center/cover no-repeat;
             color: #fff;
             display: flex;
             align-items: center;
@@ -138,7 +138,7 @@
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="/img/logocityhall.jpg" alt="Logo">
+            <img src="/public/img/logocityhall.jpg" alt="Logo">
             <span class="fw-bold" style="font-size:1.25rem;">Energy System Portal</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,7 +150,7 @@
                 <li class="nav-item"><a class="nav-link" href="#partners">Partners</a></li>
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
+                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/resources/views/auth/login.blade.php">Login</a></li>
             </ul>
         </div>
     </div>
