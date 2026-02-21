@@ -7,6 +7,34 @@
 .energy-modal-btn.cancel:hover { background: #e5e7eb; color: #b91c1c; }
 .energy-modal-btn.save { background: #2563eb; color: #fff; }
 .energy-modal-btn.save:hover { background: #1d4ed8; }
+
+body.dark-mode #addEnergyProfileModal .modal-content,
+body.dark-mode #deleteEnergyProfileModal .modal-content {
+    background: #111827 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+}
+
+body.dark-mode #addEnergyProfileModal label,
+body.dark-mode #addEnergyProfileModal h2,
+body.dark-mode #deleteEnergyProfileModal h2,
+body.dark-mode #deleteEnergyProfileModal p {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode #addEnergyProfileModal input,
+body.dark-mode #addEnergyProfileModal select,
+body.dark-mode #addEnergyProfileModal textarea {
+    background: #0b1220 !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode #addEnergyProfileModal .energy-modal-btn.cancel,
+body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
+    background: #1f2937 !important;
+    color: #e2e8f0 !important;
+}
 </style>
 
 <!-- ADD ENERGY PROFILE MODAL -->

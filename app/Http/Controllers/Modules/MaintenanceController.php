@@ -3,6 +3,8 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use App\Models\Facility;
 use App\Models\EnergyRecord;
 
@@ -32,6 +34,12 @@ class MaintenanceController extends Controller
         $history = $query->orderByDesc('completed_date')->get();
         $historyRows = [];
         foreach ($history as $row) {
+            $resolvedRemarks = $this->resolveMaintenanceRemarks(
+                $row->remarks,
+                $row->issue_type,
+                $row->trend,
+                $row->maintenance_status
+            );
             $historyRows[] = [
                 'id' => $row->id,
                 'facility' => $row->facility ? $row->facility->name : '-',
@@ -43,7 +51,7 @@ class MaintenanceController extends Controller
                 'scheduled_date' => $row->scheduled_date ?? '-',
                 'assigned_to' => $row->assigned_to,
                 'completed_date' => $row->completed_date,
-                'remarks' => $row->remarks ?? '-',
+                'remarks' => $resolvedRemarks,
             ];
         }
         $user = auth()->user();
@@ -61,6 +69,13 @@ class MaintenanceController extends Controller
 
     public function store(Request $request)
     {
+        if (
+            strtolower((string) $request->input('maintenance_status')) === 'completed'
+            && !$request->filled('completed_date')
+        ) {
+            $request->merge(['completed_date' => now()->toDateString()]);
+        }
+
         // If maintenance_id is present, update. Otherwise, insert new.
         $isUpdate = $request->filled('maintenance_id');
         $rules = [
@@ -97,14 +112,23 @@ class MaintenanceController extends Controller
         try {
             if ($isUpdate) {
                 $maintenance = \App\Models\Maintenance::findOrFail($validated['maintenance_id']);
+                $remarksInput = trim((string) ($validated['remarks'] ?? ''));
                 $maintenance->maintenance_type = $validated['maintenance_type'];
                 $maintenance->scheduled_date = $validated['scheduled_date'];
                 $maintenance->assigned_to = $validated['assigned_to'];
-                $maintenance->remarks = $validated['remarks'];
+                $maintenance->remarks = $remarksInput !== ''
+                    ? $validated['remarks']
+                    : $this->resolveMaintenanceRemarks(
+                        null,
+                        $maintenance->issue_type,
+                        $maintenance->trend,
+                        $validated['maintenance_status']
+                    );
                 $maintenance->maintenance_status = $validated['maintenance_status'];
                 $maintenance->completed_date = $validated['completed_date'];
                 $maintenance->save();
             } else {
+                $remarksInput = trim((string) ($validated['remarks'] ?? ''));
                 $maintenance = \App\Models\Maintenance::create([
                     'facility_id' => $validated['facility_id'],
                     'issue_type' => $validated['issue_type'],
@@ -112,7 +136,14 @@ class MaintenanceController extends Controller
                     'maintenance_type' => $validated['maintenance_type'],
                     'scheduled_date' => $validated['scheduled_date'],
                     'assigned_to' => $validated['assigned_to'],
-                    'remarks' => $validated['remarks'],
+                    'remarks' => $remarksInput !== ''
+                        ? $validated['remarks']
+                        : $this->resolveMaintenanceRemarks(
+                            null,
+                            $validated['issue_type'],
+                            null,
+                            $validated['maintenance_status']
+                        ),
                     'maintenance_status' => $validated['maintenance_status'],
                     'completed_date' => $validated['completed_date'],
                 ]);
@@ -128,21 +159,45 @@ class MaintenanceController extends Controller
             throw $e;
         }
 
-        // If marked as Completed, move to history and delete from active
+        if (in_array($maintenance->maintenance_status, ['Ongoing', 'Completed'], true)) {
+            $this->syncIncidentStatusFromMaintenance($maintenance);
+        }
+
+        // If marked as Completed, move to history and delete from active.
         if ($maintenance->maintenance_status === 'Completed') {
-            $archived = \App\Models\MaintenanceHistory::create([
-                'facility_id' => $maintenance->facility_id,
-                'issue_type' => $maintenance->issue_type,
-                'trigger_month' => $maintenance->trigger_month,
-                'trend' => $maintenance->trend,
-                'maintenance_type' => $maintenance->maintenance_type,
-                'maintenance_status' => $maintenance->maintenance_status,
-                'scheduled_date' => $maintenance->scheduled_date,
-                'assigned_to' => $maintenance->assigned_to,
-                'completed_date' => $maintenance->completed_date,
-                'remarks' => $maintenance->remarks,
-            ]);
-            $maintenance->delete();
+            $archived = null;
+            try {
+                DB::transaction(function () use (&$archived, $maintenance) {
+                    $resolvedTrend = trim((string) $maintenance->trend) !== '' ? $maintenance->trend : 'Stable';
+                    $archived = \App\Models\MaintenanceHistory::create([
+                        'facility_id' => $maintenance->facility_id,
+                        'issue_type' => $maintenance->issue_type,
+                        'trigger_month' => $maintenance->trigger_month,
+                        'trend' => $resolvedTrend,
+                        'efficiency_rating' => $this->resolveEfficiencyRating(
+                            $maintenance->issue_type,
+                            $maintenance->maintenance_type,
+                            $resolvedTrend
+                        ),
+                        'maintenance_type' => $maintenance->maintenance_type,
+                        'maintenance_status' => $maintenance->maintenance_status,
+                        'scheduled_date' => $maintenance->scheduled_date,
+                        'assigned_to' => $maintenance->assigned_to,
+                        'completed_date' => $maintenance->completed_date,
+                        'remarks' => $maintenance->remarks,
+                    ]);
+                    $maintenance->delete();
+                });
+            } catch (\Exception $e) {
+                if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unable to archive completed maintenance.',
+                        'error' => $e->getMessage(),
+                    ], 500);
+                }
+                throw $e;
+            }
             // Return the archived record for table update
             return response()->json(['success' => true, 'archived' => true, 'maintenance' => [
                 'facility' => $archived->facility ? $archived->facility->name : '-',
@@ -185,7 +240,7 @@ public function index()
         $query->where('maintenance_type', request('maintenance_type'));
     }
     $maintenance = $query->get();
-    $maintenanceRows = [];
+        $maintenanceRows = [];
     $needingCount = 0;
     $pendingCount = 0;
     $ongoingCount = 0;
@@ -199,6 +254,12 @@ public function index()
         if ($row->maintenance_status === 'Pending') $pendingCount++;
         if ($row->maintenance_status === 'Ongoing') $ongoingCount++;
         if ($row->maintenance_status === 'Completed') $completedCount++;
+        $resolvedRemarks = $this->resolveMaintenanceRemarks(
+            $row->remarks,
+            $row->issue_type,
+            $row->trend,
+            $row->maintenance_status
+        );
 
         $maintenanceRows[] = [
             'id' => $row->id,
@@ -210,23 +271,11 @@ public function index()
             'scheduled_date' => $row->scheduled_date ?? '-',
             'assigned_to' => $row->assigned_to,
             'completed_date' => $row->completed_date,
-            'remarks' => $row->remarks ?? '-',
+            'remarks' => $resolvedRemarks,
             'action' => $row->maintenance_status === 'Pending'
                 ? '<button class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Schedule Maintenance"><i class="fa fa-calendar-plus"></i> Schedule</button>'
                 : ($row->maintenance_status === 'Ongoing' ? '<button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Mark as Complete"><i class="fa fa-check-circle"></i> Complete</button>' : '-')
         ];
-
-        // Sync incident status to 'Ongoing' if maintenance is edited to 'Ongoing'
-        if ($row->maintenance_status === 'Ongoing') {
-            $incident = \App\Models\EnergyIncident::where('facility_id', $row->facility_id)
-                ->where('month', $row->trigger_month)
-                ->where('status', 'Pending')
-                ->first();
-            if ($incident) {
-                $incident->status = 'Ongoing';
-                $incident->save();
-            }
-        }
     }
 
     // Optional: count re-flagged (facilities with completed + new pending)
@@ -259,5 +308,154 @@ public function index()
         'notifications' => $notifications,
         'unreadNotifCount' => $unreadNotifCount,
     ]);
+}
+
+private function parseTriggerMonth(?string $triggerMonth): array
+{
+    $raw = trim((string) $triggerMonth);
+    if ($raw === '') {
+        return [null, null];
+    }
+
+    foreach (['F Y', 'M Y'] as $format) {
+        try {
+            $date = Carbon::createFromFormat($format, $raw);
+            if ($date instanceof Carbon) {
+                return [(int) $date->month, (int) $date->year];
+            }
+        } catch (\Throwable $e) {
+            // Keep trying the next format.
+        }
+    }
+
+    return [null, null];
+}
+
+private function resolveMaintenanceRemarks(?string $remarks, ?string $issueType, ?string $trend, ?string $status): string
+{
+    $normalizedRemarks = trim((string) $remarks);
+    $legacyRemarks = [
+        '',
+        '-',
+        'Auto-flagged due to system-detected high energy consumption (incident auto-created).',
+    ];
+    if (!in_array($normalizedRemarks, $legacyRemarks, true)) {
+        return $normalizedRemarks;
+    }
+
+    $issueText = strtolower((string) $issueType);
+    $statusText = strtolower((string) $status);
+    $trendText = strtolower((string) $trend);
+
+    $severityKey = str_contains($issueText, 'critical')
+        ? 'critical'
+        : (str_contains($issueText, 'very high') ? 'very-high' : 'high');
+    $statusKey = str_contains($statusText, 'completed')
+        ? 'completed'
+        : (str_contains($statusText, 'ongoing') ? 'ongoing' : 'pending');
+
+    $base = match ($severityKey . ':' . $statusKey) {
+        'critical:completed' => 'Critical maintenance action completed. Validate consumption stabilization for the next billing cycles.',
+        'critical:ongoing' => 'Critical maintenance action is in progress. Keep temporary controls active while root-cause checks continue.',
+        'critical:pending' => 'Critical consumption anomaly queued for urgent corrective maintenance and immediate technical inspection.',
+        'very-high:completed' => 'Very high consumption issue completed. Continue scheduled checks to confirm sustained improvement.',
+        'very-high:ongoing' => 'Very high consumption issue under corrective maintenance. Continue close monitoring during this period.',
+        'very-high:pending' => 'Very high consumption anomaly queued for corrective maintenance and operating schedule validation.',
+        'high:completed' => 'Maintenance task completed. Keep regular monitoring to prevent repeat deviation.',
+        'high:ongoing' => 'Maintenance task is ongoing. Continue monitoring and equipment checks.',
+        default => 'Maintenance task queued for review and corrective action.',
+    };
+
+    if (str_contains($trendText, 'increasing')) {
+        return $base . ' Trend is increasing; prioritize root-cause analysis.';
+    }
+
+    return $base;
+}
+
+private function resolveEfficiencyRating(?string $issueType, ?string $maintenanceType, ?string $trend): string
+{
+    $issue = strtolower((string) $issueType);
+    $type = strtolower((string) $maintenanceType);
+    $trendText = strtolower((string) $trend);
+
+    if (
+        str_contains($issue, 'critical')
+        || str_contains($issue, 'circuit overload')
+        || str_contains($issue, 'power outage')
+    ) {
+        return 'Low';
+    }
+
+    if (
+        str_contains($issue, 'very high')
+        || str_contains($issue, 'high consumption')
+        || str_contains($trendText, 'increasing')
+        || str_contains($type, 'corrective')
+    ) {
+        return 'Medium';
+    }
+
+    return 'High';
+}
+
+private function syncIncidentStatusFromMaintenance(\App\Models\Maintenance $maintenance): void
+{
+    $statusText = strtolower((string) $maintenance->maintenance_status);
+    if (!in_array($statusText, ['ongoing', 'completed'], true)) {
+        return;
+    }
+
+    [$triggerMonthNum, $triggerYearNum] = $this->parseTriggerMonth($maintenance->trigger_month);
+    if ($triggerMonthNum === null || $triggerYearNum === null) {
+        return;
+    }
+
+    $baseQuery = \App\Models\EnergyIncident::query()
+        ->where('facility_id', $maintenance->facility_id)
+        ->where('month', $triggerMonthNum)
+        ->where('year', $triggerYearNum);
+
+    if ($statusText === 'ongoing') {
+        $incident = (clone $baseQuery)
+            ->where(function ($query) {
+                $query->where('status', 'like', '%pending%')
+                    ->orWhere('status', 'like', '%open%')
+                    ->orWhere('status', 'like', '%ongoing%');
+            })
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$incident) {
+            $incident = (clone $baseQuery)->orderByDesc('id')->first();
+        }
+
+        if ($incident) {
+            $incident->status = 'Ongoing';
+            $incident->resolved_at = null;
+            $incident->save();
+        }
+        return;
+    }
+
+    $incident = (clone $baseQuery)
+        ->where(function ($query) {
+            $query->where('status', 'not like', '%resolved%')
+                ->where('status', 'not like', '%closed%');
+        })
+        ->orderByDesc('id')
+        ->first();
+
+    if (!$incident) {
+        $incident = (clone $baseQuery)->orderByDesc('id')->first();
+    }
+
+    if ($incident) {
+        $incident->status = 'Resolved';
+        $incident->resolved_at = $maintenance->completed_date
+            ? Carbon::parse($maintenance->completed_date)
+            : now();
+        $incident->save();
+    }
 }
 }

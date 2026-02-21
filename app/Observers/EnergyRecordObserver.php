@@ -79,89 +79,150 @@ class EnergyRecordObserver
 
         // (Removed: auto-flagged maintenance for low efficiency or trend increasing. Now only auto-flag if auto-incident is triggered.)
 
-        // --- INCIDENT LOGIC: Create EnergyIncident if High alert ---
-        // Compute deviation and alert level (same as in Blade)
-        $deviation = ($avg && $avg != 0) ? round((($record->actual_kwh - $avg) / $avg) * 100, 2) : null;
-        $size = 'Medium';
-        if ($avg <= 1000) {
-            $size = 'Small';
-        } elseif ($avg <= 3000) {
-            $size = 'Medium';
-        } elseif ($avg <= 10000) {
-            $size = 'Large';
-        } else {
-            $size = 'Extra Large';
-        }
-        $alert = null;
-        $alertLevel = 1;
-        if ($deviation !== null) {
-            if ($size === 'Small') {
-                if ($deviation > 40) { $alert = 'High'; $alertLevel = 5; }
-                elseif ($deviation > 35) { $alert = 'High'; $alertLevel = 4; }
-                elseif ($deviation > 30) { $alert = 'Medium'; $alertLevel = 3; }
-                elseif ($deviation > 15) { $alert = 'Medium'; $alertLevel = 2; }
-                else { $alert = 'Low'; $alertLevel = 1; }
-            } elseif ($size === 'Medium') {
-                if ($deviation > 30) { $alert = 'High'; $alertLevel = 5; }
-                elseif ($deviation > 25) { $alert = 'High'; $alertLevel = 4; }
-                elseif ($deviation > 20) { $alert = 'Medium'; $alertLevel = 3; }
-                elseif ($deviation > 10) { $alert = 'Medium'; $alertLevel = 2; }
-                else { $alert = 'Low'; $alertLevel = 1; }
-            } elseif ($size === 'Large') {
-                if ($deviation > 25) { $alert = 'High'; $alertLevel = 5; }
-                elseif ($deviation > 20) { $alert = 'High'; $alertLevel = 4; }
-                elseif ($deviation > 15) { $alert = 'Medium'; $alertLevel = 3; }
-                elseif ($deviation > 5) { $alert = 'Medium'; $alertLevel = 2; }
-                else { $alert = 'Low'; $alertLevel = 1; }
-            } else /* Extra Large */ {
-                if ($deviation > 20) { $alert = 'High'; $alertLevel = 5; }
-                elseif ($deviation > 15) { $alert = 'High'; $alertLevel = 4; }
-                elseif ($deviation > 10) { $alert = 'Medium'; $alertLevel = 3; }
-                elseif ($deviation > 3) { $alert = 'Medium'; $alertLevel = 2; }
-                else { $alert = 'Low'; $alertLevel = 1; }
+        // --- INCIDENT LOGIC: keep this aligned with monthly-record 5-level thresholds ---
+        $baselineForIncident = is_numeric($record->baseline_kwh)
+            ? (float) $record->baseline_kwh
+            : (is_numeric($avg) ? (float) $avg : null);
+        $deviation = ($baselineForIncident && $baselineForIncident != 0)
+            ? round((($record->actual_kwh - $baselineForIncident) / $baselineForIncident) * 100, 2)
+            : null;
+
+        $resolveIncidentSeverity = function (?float $deviationValue, ?float $baselineValue): array {
+            if ($deviationValue === null) {
+                return ['key' => 'normal', 'label' => 'Normal'];
             }
-        }
-        // Only create incident if alertLevel is 4 or 5
-        if ($facility && $alertLevel >= 4) {
-            // Update if exists, else create, always set energy_record_id, month, year, size, and deviation_percent
-            $incident = \App\Models\EnergyIncident::where('facility_id', $facility->id)
-                ->where('description', 'like', '%High energy consumption detected for this billing period.%')
-                ->where('date_detected', now()->toDateString())
-                ->where('month', $record->month)
-                ->where('year', $record->year)
-                ->first();
-            if (!$incident) {
-                $incident = \App\Models\EnergyIncident::create([
-                    'facility_id' => $facility->id,
-                    'energy_record_id' => $record->id,
-                    'month' => $record->month,
-                    'year' => $record->year,
-                    'size' => $size,
-                    'deviation_percent' => $deviation,
-                    'description' => 'High energy consumption detected for this billing period.',
-                    'status' => 'Pending',
-                    'date_detected' => now()->toDateString(),
-                ]);
+
+            $baselineValue = $baselineValue ?? 0.0;
+            if ($baselineValue <= 1000) {
+                $t = ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15];
+            } elseif ($baselineValue <= 3000) {
+                $t = ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10];
+            } elseif ($baselineValue <= 10000) {
+                $t = ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5];
             } else {
-                $incident->energy_record_id = $record->id;
-                $incident->month = $record->month;
-                $incident->year = $record->year;
-                $incident->size = $size;
-                $incident->deviation_percent = $deviation;
+                $t = ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3];
+            }
+
+            if ($deviationValue > $t['level5']) {
+                return ['key' => 'critical', 'label' => 'Critical'];
+            }
+            if ($deviationValue > $t['level4']) {
+                return ['key' => 'very-high', 'label' => 'Very High'];
+            }
+            if ($deviationValue > $t['level3']) {
+                return ['key' => 'high', 'label' => 'High'];
+            }
+            if ($deviationValue > $t['level2']) {
+                return ['key' => 'warning', 'label' => 'Warning'];
+            }
+
+            return ['key' => 'normal', 'label' => 'Normal'];
+        };
+
+        $severity = $resolveIncidentSeverity($deviation, $baselineForIncident);
+        $isIncidentLevel = in_array($severity['key'], ['critical', 'very-high'], true);
+        $legacyIncidentDescriptions = [
+            'High energy consumption detected for this billing period.',
+            'System detected unusually high energy consumption for this period. Please review and validate.',
+        ];
+        $resolveIncidentStatusKey = function (?string $statusValue): string {
+            $statusRaw = strtolower(trim((string) $statusValue));
+            if (str_contains($statusRaw, 'resolved') || str_contains($statusRaw, 'closed')) {
+                return 'resolved';
+            }
+            if (str_contains($statusRaw, 'open') || str_contains($statusRaw, 'ongoing')) {
+                return 'open';
+            }
+            return 'pending';
+        };
+        $buildIncidentDescription = function (string $severityKey, string $statusKey): string {
+            if ($statusKey === 'resolved') {
+                return $severityKey === 'critical'
+                    ? 'Critical energy spike for this billing period was resolved after corrective action.'
+                    : 'Very high energy deviation for this billing period has been resolved and stabilized.';
+            }
+
+            if ($statusKey === 'open') {
+                return $severityKey === 'critical'
+                    ? 'Critical energy spike is active and requires immediate intervention.'
+                    : 'Very high energy deviation is active and under close monitoring.';
+            }
+
+            return $severityKey === 'critical'
+                ? 'Critical energy spike detected for this billing period and queued for urgent review.'
+                : 'Very high energy deviation detected for this billing period and queued for validation.';
+        };
+
+        if ($facility && $isIncidentLevel) {
+            // Deduplicate by facility + billing month/year (not by today's date).
+            $incident = \App\Models\EnergyIncident::where('facility_id', $facility->id)
+                ->where('month', (int) $record->month)
+                ->where('year', (int) $record->year)
+                ->first();
+
+            $statusKey = $resolveIncidentStatusKey($incident?->status);
+            $generatedDescription = $buildIncidentDescription($severity['key'], $statusKey);
+
+            $incidentPayload = [
+                'energy_record_id' => $record->id,
+                'month' => (int) $record->month,
+                'year' => (int) $record->year,
+                'deviation_percent' => $deviation,
+            ];
+            $currentDescription = trim((string) ($incident?->description ?? ''));
+            $shouldAutoSetDescription = !$incident
+                || $currentDescription === ''
+                || in_array($currentDescription, $legacyIncidentDescriptions, true);
+            if ($shouldAutoSetDescription) {
+                $incidentPayload['description'] = $generatedDescription;
+            }
+
+            if (!$incident) {
+                $incidentPayload['facility_id'] = $facility->id;
+                $incidentPayload['status'] = 'Pending';
+                $incidentPayload['date_detected'] = now()->toDateString();
+                $incidentPayload['created_by'] = $record->recorded_by ?? null;
+                $incident = \App\Models\EnergyIncident::create($incidentPayload);
+            } else {
+                $incident->fill($incidentPayload);
+                if (!$incident->date_detected) {
+                    $incident->date_detected = now()->toDateString();
+                }
+                if (!$incident->status) {
+                    $incident->status = 'Pending';
+                }
                 $incident->save();
             }
 
             // --- AUTO-FLAG MAINTENANCE LOGIC: If auto-incident, also auto-flag maintenance ---
             $triggerMonth = $record->month ? date('M Y', mktime(0,0,0,(int)$record->month,1,$record->year)) : '-';
+            $maintenanceIssueType = $severity['key'] === 'critical'
+                ? 'Auto-flagged: Critical Consumption'
+                : 'Auto-flagged: Very High Consumption';
+            $maintenanceRemarks = match ($severity['key']) {
+                'critical' => $trendIncreasing
+                    ? 'Critical consumption spike detected with increasing trend. Perform immediate load isolation and root-cause inspection.'
+                    : 'Critical consumption spike detected. Validate meter data and inspect major load equipment immediately.',
+                default => $trendIncreasing
+                    ? 'Very high consumption deviation detected with increasing trend. Schedule urgent corrective checks and monitor weekly.'
+                    : 'Very high consumption deviation detected. Schedule corrective maintenance and review operating schedules.',
+            };
+            $legacyMaintenanceRemarks = [
+                'Auto-flagged due to system-detected high energy consumption (incident auto-created).',
+            ];
             $maintenance = \App\Models\Maintenance::where('facility_id', $facility->id)
                 ->where('trigger_month', $triggerMonth)
-                ->where('issue_type', 'Auto-flagged: High Consumption')
+                ->where(function ($query) {
+                    $query->where('issue_type', 'Auto-flagged: High Consumption')
+                        ->orWhere('issue_type', 'Auto-flagged: Critical Consumption')
+                        ->orWhere('issue_type', 'Auto-flagged: Very High Consumption');
+                })
                 ->whereIn('maintenance_status', ['Pending','Ongoing'])
                 ->first();
             if (!$maintenance) {
                 \App\Models\Maintenance::create([
                     'facility_id' => $facility->id,
-                    'issue_type' => 'Auto-flagged: High Consumption',
+                    'issue_type' => $maintenanceIssueType,
                     'trigger_month' => $triggerMonth,
                     'trend' => $trendIncreasing ? 'Increasing' : 'Stable',
                     'maintenance_type' => 'Corrective',
@@ -169,8 +230,16 @@ class EnergyRecordObserver
                     'scheduled_date' => null,
                     'assigned_to' => null,
                     'completed_date' => null,
-                    'remarks' => 'Auto-flagged due to system-detected high energy consumption (incident auto-created).',
+                    'remarks' => $maintenanceRemarks,
                 ]);
+            } else {
+                $existingRemarks = trim((string) ($maintenance->remarks ?? ''));
+                $maintenance->issue_type = $maintenanceIssueType;
+                $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
+                if ($existingRemarks === '' || in_array($existingRemarks, $legacyMaintenanceRemarks, true)) {
+                    $maintenance->remarks = $maintenanceRemarks;
+                }
+                $maintenance->save();
             }
         }
     }

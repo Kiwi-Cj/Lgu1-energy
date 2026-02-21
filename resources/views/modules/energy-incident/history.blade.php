@@ -1,122 +1,677 @@
 @extends('layouts.qc-admin')
+@section('title', 'Incident History')
+
+@php
+    $historyRows = collect($histories ?? []);
+    $totalResolved = $historyRows->count();
+    $criticalResolved = $historyRows->filter(function ($incident) {
+        $level = strtolower((string) ($incident->severity_key ?? 'normal'));
+        return $level === 'critical';
+    })->count();
+    $veryHighResolved = $historyRows->filter(function ($incident) {
+        $level = strtolower((string) ($incident->severity_key ?? 'normal'));
+        return str_replace(' ', '-', $level) === 'very-high';
+    })->count();
+    $resolvedThisMonth = $historyRows->filter(function ($incident) {
+        $date = $incident->resolved_at ?? $incident->updated_at ?? $incident->created_at;
+        if (!$date) {
+            return false;
+        }
+        return \Carbon\Carbon::parse($date)->isSameMonth(now());
+    })->count();
+@endphp
 
 @section('content')
-<div class="report card" style="max-width:900px;margin:0 auto; padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 18px 0;">
-        <h2 style="font-size:2rem; font-weight:700; color:#222; margin:0;">Incident History</h2>
-        <a href="{{ route('energy-incidents.index') }}" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.1);font-size:1.05rem;transition:0.2s;text-decoration:none;">&larr; Back to Incidents</a>
-    </div>
-    <div class="incident-list-container">
-        @forelse($histories as $incident)
-            @php
-                $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                $monthNum = isset($incident->month) && $incident->month ? (int) $incident->month : (isset($incident->energyRecord) && $incident->energyRecord->month ? (int) $incident->energyRecord->month : null);
-                $yearNum = isset($incident->year) && $incident->year ? $incident->year : (isset($incident->energyRecord) && $incident->energyRecord->year ? $incident->energyRecord->year : null);
-                $monthLabel = $monthNum && $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum-1] : '-';
-                $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : (isset($incident->energyRecord) && isset($incident->energyRecord->deviation_percent) ? $incident->energyRecord->deviation_percent : null);
-                $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-');
-            @endphp
-            <div class="incident-list-row" tabindex="0" onclick="showIncidentModal({{ $incident->id }})">
-                <div class="incident-list-main">
-                    <div class="incident-facility">{{ $incident->facility->name ?? '-' }}</div>
-                    <div class="incident-date">{{ $monthLabel }}/{{ $yearNum ?? '-' }}</div>
-                    <div class="incident-deviation">{{ $dpn !== null ? number_format($dpn, 2) . '%' : '-' }}</div>
-                    <div class="incident-alert {{ strtolower($incident->alert_level ?? 'high') }}">{{ $incident->alert_level ?? 'High' }}</div>
-                    <div class="incident-status">{{ $incident->status ?? 'High Alert' }}</div>
-                    <div class="incident-detected">{{ $dateDetected }}</div>
-                </div>
+<div class="history-page">
+    <div class="history-shell">
+        <div class="history-header">
+            <div>
+                <h2>Incident History</h2>
+                <p>Archived resolved records with final actions and preventive recommendations.</p>
             </div>
-            <div id="incident-modal-{{ $incident->id }}" class="incident-modal" style="display:none;">
-                <div class="incident-modal-content">
-                    <button class="incident-modal-close" onclick="closeIncidentModal({{ $incident->id }})">&times;</button>
-                    <h3 style="margin-top:0;font-size:1.5rem;font-weight:700;">Incident Details</h3>
-                    <div style="margin-bottom:12px;"><b>Facility:</b> {{ $incident->facility->name ?? '-' }}</div>
-                    <div style="margin-bottom:12px;"><b>Month/Year:</b> {{ $monthLabel }}/{{ $yearNum ?? '-' }}</div>
-                    <div style="margin-bottom:12px;"><b>Deviation:</b> {{ $dpn !== null ? number_format($dpn, 2) . '%' : '-' }}</div>
-                    <div style="margin-bottom:12px;"><b>Alert Level:</b> {{ $incident->alert_level ?? 'High' }}</div>
-                    <div style="margin-bottom:12px;"><b>Status:</b> {{ $incident->status ?? 'High Alert' }}</div>
-                    <div style="margin-bottom:12px;"><b>Date Detected:</b> {{ $dateDetected }}</div>
-                    <div style="margin-bottom:12px;"><b>Description:</b> {{ $incident->description ?? '-' }}</div>
-                    <div style="margin-bottom:12px;"><b>Probable Cause:</b> 
-                        @php $defaultProbable = 'System-detected: Abnormal consumption pattern'; @endphp
-                        {{ (is_array($incident->probable_cause) && count($incident->probable_cause)) ? implode(', ', $incident->probable_cause) : ($incident->probable_cause ?: $defaultProbable) }}
-                    </div>
-                    <div style="margin-bottom:12px;"><b>Immediate Action:</b> 
-                        @php $defaultAction = 'System flagged for review'; @endphp
-                        {{ $incident->immediate_action ?: $defaultAction }}
-                    </div>
-                    <div style="margin-bottom:12px;"><b>Resolution:</b> 
-                        @php $defaultResolution = 'Pending manual review and validation.'; @endphp
-                        {{ $incident->resolution_summary ?: $defaultResolution }}
-                    </div>
-                    <div style="margin-bottom:12px;"><b>Preventive Recommendation:</b> 
-                        @php $defaultPrev = 'Monitor facility usage and investigate anomalies.'; @endphp
-                        {{ $incident->preventive_recommendation ?: $defaultPrev }}
-                    </div>
-                    @if(!empty($incident->attachments))
-                        <div style="margin-bottom:12px;"><b>Attachments:</b> <a href="{{ asset('storage/'.$incident->attachments) }}" target="_blank">View</a></div>
-                    @endif
-                </div>
+            <div class="header-actions">
+                <a href="{{ route('energy-incidents.index') }}" class="back-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Active Incidents
+                </a>
             </div>
-        @empty
-            <div style="text-align:center; color:#64748b; padding:18px 0;">No incident history found.</div>
-        @endforelse
+        </div>
+
+        <div class="history-metrics">
+            <div class="metric-card total">
+                <span class="metric-label">Resolved Records</span>
+                <strong class="metric-value">{{ $totalResolved }}</strong>
+            </div>
+            <div class="metric-card critical">
+                <span class="metric-label">Critical Resolved</span>
+                <strong class="metric-value">{{ $criticalResolved }}</strong>
+            </div>
+            <div class="metric-card very-high">
+                <span class="metric-label">Very High Resolved</span>
+                <strong class="metric-value">{{ $veryHighResolved }}</strong>
+            </div>
+            <div class="metric-card month">
+                <span class="metric-label">Resolved This Month</span>
+                <strong class="metric-value">{{ $resolvedThisMonth }}</strong>
+            </div>
+        </div>
+
+        <div class="history-filters">
+            <input type="text" id="historySearch" placeholder="Search facility, status, description..." />
+            <select id="historySeverityFilter">
+                <option value="all">All Severity</option>
+                <option value="critical">Critical</option>
+                <option value="very-high">Very High</option>
+                <option value="high">High</option>
+                <option value="warning">Warning</option>
+                <option value="normal">Normal</option>
+            </select>
+        </div>
+
+        <div class="history-list-container">
+            @forelse($histories as $incident)
+                @php
+                    $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    $monthNum = isset($incident->month) && $incident->month ? (int) $incident->month : null;
+                    $yearNum = isset($incident->year) && $incident->year ? $incident->year : null;
+                    $monthLabel = $monthNum && $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum-1] : '-';
+                    $facilityName = $incident->facility->name ?? 'Unknown Facility';
+                    $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : null;
+                    $deviationText = $dpn !== null ? number_format((float) $dpn, 2) . '%' : '-';
+                    $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-');
+                    $resolvedDateRaw = $incident->resolved_at ?? $incident->updated_at ?? $incident->created_at;
+                    $resolvedDate = $resolvedDateRaw ? \Carbon\Carbon::parse($resolvedDateRaw)->format('M d, Y h:i A') : '-';
+
+                    $levelKey = strtolower((string) ($incident->severity_key ?? 'normal'));
+                    if (!in_array($levelKey, ['critical', 'very-high', 'high', 'warning', 'normal'], true)) {
+                        $normalizedLevel = str_replace(' ', '-', $levelKey);
+                        $levelKey = in_array($normalizedLevel, ['critical', 'very-high', 'high', 'warning', 'normal'], true)
+                            ? $normalizedLevel
+                            : 'normal';
+                    }
+                    $levelLabel = (string) ($incident->severity_label ?? '');
+                    if ($levelLabel === '') {
+                        $levelLabel = $levelKey === 'very-high'
+                            ? 'Very High'
+                            : ucfirst(str_replace('-', ' ', $levelKey));
+                    }
+
+                    $statusRaw = strtolower((string) ($incident->status ?? 'resolved'));
+                    $statusKey = 'resolved';
+                    $statusLabel = 'Resolved';
+                    if (str_contains($statusRaw, 'closed')) {
+                        $statusKey = 'closed';
+                        $statusLabel = 'Closed';
+                    }
+
+                    $defaultDescription = $levelKey === 'critical'
+                        ? 'Critical energy spike was resolved and corrective controls have been validated.'
+                        : 'Energy deviation was resolved and stabilized after mitigation steps.';
+                    $descriptionText = trim((string) ($incident->description ?? ''));
+                    if ($descriptionText === '') {
+                        $descriptionText = $defaultDescription;
+                    }
+                    $descriptionPreview = \Illuminate\Support\Str::limit($descriptionText, 130);
+                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $descriptionText);
+
+                    $probableCause = $incident->probable_cause;
+                    if (is_array($probableCause)) {
+                        $probableCause = implode(', ', $probableCause);
+                    }
+                    $probableCause = $probableCause ?: 'System-detected abnormal consumption pattern.';
+
+                    $immediateAction = $incident->immediate_action ?: 'Operational controls were applied and validated.';
+                    $resolutionSummary = $incident->resolution_summary ?: 'Issue addressed and marked resolved after validation.';
+                    $preventiveRecommendation = trim((string) ($incident->preventive_recommendation ?? ''));
+                    if ($preventiveRecommendation === '') {
+                        $preventiveRecommendation = 'Continue scheduled inspections and variance monitoring to prevent recurrence.';
+                    }
+
+                    $attachments = [];
+                    if (is_array($incident->attachments)) {
+                        $attachments = $incident->attachments;
+                    } elseif (is_string($incident->attachments) && trim($incident->attachments) !== '') {
+                        $decoded = json_decode($incident->attachments, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $attachments = $decoded;
+                        } else {
+                            $attachments = [$incident->attachments];
+                        }
+                    }
+                @endphp
+                <div class="history-row"
+                    tabindex="0"
+                    data-id="{{ $incident->id }}"
+                    data-level="{{ $levelKey }}"
+                    data-search="{{ $searchText }}"
+                    onclick="openHistoryModal({{ $incident->id }})">
+                    <div class="row-main">
+                        <div class="facility-col">
+                            <div class="facility-name">{{ $facilityName }}</div>
+                            <div class="facility-desc">{{ $descriptionPreview }}</div>
+                        </div>
+                        <div class="meta-col">
+                            <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
+                            <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
+                        </div>
+                        <div class="value-col">
+                            <div class="value-label">Deviation</div>
+                            <div class="value-main {{ $dpn !== null && $dpn >= 0 ? 'up' : 'down' }}">{{ $deviationText }}</div>
+                        </div>
+                        <div class="value-col">
+                            <div class="value-label">Detected</div>
+                            <div class="value-main">{{ $dateDetected }}</div>
+                            <div class="value-sub">{{ $monthLabel }}/{{ $yearNum ?? '-' }}</div>
+                        </div>
+                        <div class="value-col">
+                            <div class="value-label">Resolved</div>
+                            <div class="value-main">{{ $resolvedDate }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="history-modal-{{ $incident->id }}" class="history-modal" style="display:none;" aria-hidden="true">
+                    <div class="history-modal-content">
+                        <button class="history-modal-close" onclick="closeHistoryModal({{ $incident->id }})" aria-label="Close modal">&times;</button>
+                        <div class="modal-top">
+                            <h3>Resolved Incident Details</h3>
+                            <div class="modal-chip-group">
+                                <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
+                                <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="detail-item"><span>Facility</span><strong>{{ $facilityName }}</strong></div>
+                            <div class="detail-item"><span>Month/Year</span><strong>{{ $monthLabel }}/{{ $yearNum ?? '-' }}</strong></div>
+                            <div class="detail-item"><span>Deviation</span><strong>{{ $deviationText }}</strong></div>
+                            <div class="detail-item"><span>Date Detected</span><strong>{{ $dateDetected }}</strong></div>
+                            <div class="detail-item"><span>Date Resolved</span><strong>{{ $resolvedDate }}</strong></div>
+                        </div>
+
+                        <div class="detail-block"><span>Description</span><p>{{ $descriptionText }}</p></div>
+                        <div class="detail-block"><span>Probable Cause</span><p>{{ $probableCause }}</p></div>
+                        <div class="detail-block"><span>Immediate Action</span><p>{{ $immediateAction }}</p></div>
+                        <div class="detail-block"><span>Resolution Summary</span><p>{{ $resolutionSummary }}</p></div>
+                        <div class="detail-block"><span>Preventive Recommendation</span><p>{{ $preventiveRecommendation }}</p></div>
+
+                        @if(count($attachments))
+                            <div class="detail-block">
+                                <span>Attachments</span>
+                                <ul class="attachment-list">
+                                    @foreach($attachments as $attachment)
+                                        @if(is_string($attachment) && trim($attachment) !== '')
+                                            <li>
+                                                <a href="{{ asset('storage/' . ltrim($attachment, '/')) }}" target="_blank" rel="noopener">
+                                                    {{ basename($attachment) }}
+                                                </a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="history-empty" id="historyEmptyState">No incident history found.</div>
+            @endforelse
+            <div class="history-empty" id="historyNoMatch" style="display:none;">No matching resolved incidents.</div>
+        </div>
     </div>
 </div>
+
 <script>
-function showIncidentModal(id) {
-    document.getElementById('incident-modal-' + id).style.display = 'flex';
+function openHistoryModal(id) {
+    const modal = document.getElementById('history-modal-' + id);
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 }
-function closeIncidentModal(id) {
-    document.getElementById('incident-modal-' + id).style.display = 'none';
+
+function closeHistoryModal(id) {
+    const modal = document.getElementById('history-modal-' + id);
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const rows = Array.from(document.querySelectorAll('.history-row'));
+    const searchInput = document.getElementById('historySearch');
+    const severityFilter = document.getElementById('historySeverityFilter');
+    const noMatch = document.getElementById('historyNoMatch');
+    const defaultEmpty = document.getElementById('historyEmptyState');
+
+    const applyFilters = () => {
+        if (!rows.length) return;
+
+        const q = (searchInput?.value || '').toLowerCase().trim();
+        const severity = (severityFilter?.value || 'all').toLowerCase();
+        let visibleCount = 0;
+
+        rows.forEach((row) => {
+            const rowSearch = (row.dataset.search || '').toLowerCase();
+            const rowLevel = (row.dataset.level || '').toLowerCase();
+            const matchSearch = q === '' || rowSearch.includes(q);
+            const matchSeverity = severity === 'all' || rowLevel === severity;
+            const visible = matchSearch && matchSeverity;
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        if (noMatch) {
+            noMatch.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        if (defaultEmpty) {
+            defaultEmpty.style.display = 'none';
+        }
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+    if (severityFilter) {
+        severityFilter.addEventListener('change', applyFilters);
+    }
+
+    rows.forEach((row) => {
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const id = row.dataset.id;
+                if (id) openHistoryModal(id);
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        document.querySelectorAll('.history-modal').forEach((modal) => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        });
+        document.body.style.overflow = '';
+    });
+
+    document.querySelectorAll('.history-modal').forEach((modal) => {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+});
 </script>
+
 <style>
-.incident-list-container {
-    background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(31,38,135,0.08); padding:0; margin-bottom:32px;
+.history-page {
+    width: 100%;
 }
-.incident-list-row {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:18px 24px;
-    border-bottom:1px solid #e5e7eb;
-    cursor:pointer;
-    background:#fff;
-    border-radius:14px;
-    margin:10px 18px;
-    box-shadow:0 1px 4px rgba(31,38,135,0.06);
-    transition:box-shadow 0.18s, background 0.18s, transform 0.16s;
-    position:relative;
+
+.history-shell {
+    background: linear-gradient(160deg, #f8fafc 0%, #eef6ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(14, 74, 126, 0.09);
+    padding: 26px 20px;
 }
-.incident-list-row:last-child { border-bottom:none; }
-.incident-list-row:hover, .incident-list-row:focus {
-    background:#f5f8ff;
-    box-shadow:0 6px 24px rgba(55,98,200,0.13);
-    transform:translateY(-2px) scale(1.012);
-    z-index:2;
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 14px;
 }
-.incident-list-main { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr; gap:12px; width:100%; align-items:center; }
-.incident-facility { font-weight:600; color:#222; }
-.incident-date, .incident-deviation, .incident-status, .incident-detected { color:#334155; font-size:1.01rem; }
-.incident-alert.high { color:#e11d48; font-weight:700; }
-.incident-alert.medium { color:#f59e42; font-weight:700; }
-.incident-alert.low { color:#2563eb; font-weight:700; }
-.incident-modal {
-    position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,41,59,0.18); display:flex; align-items:center; justify-content:center; z-index:1000;
+
+.history-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.55rem;
+    font-weight: 900;
 }
-.incident-modal-content {
-    background:#fff; border-radius:16px; box-shadow:0 8px 32px rgba(31,38,135,0.18); padding:36px 32px 28px 32px; min-width:340px; max-width:95vw; max-height:90vh; overflow-y:auto; position:relative;
+
+.history-header p {
+    margin: 6px 0 0;
+    color: #475569;
+    font-size: 0.92rem;
 }
-.incident-modal-close {
-    position:absolute; top:18px; right:18px; background:none; border:none; font-size:2rem; color:#64748b; cursor:pointer; transition:color 0.15s;
+
+.back-btn {
+    background: linear-gradient(90deg, #0f6b8f, #0e8a9a);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
 }
-.incident-modal-close:hover { color:#e11d48; }
-@media (max-width: 900px) {
-    .incident-list-main { grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1.2fr; font-size:0.98rem; }
-    .incident-modal-content { padding:24px 10px; }
+
+.history-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.metric-card {
+    border-radius: 12px;
+    padding: 11px 12px;
+    border: 1px solid transparent;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.metric-value {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.metric-card.total { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+.metric-card.critical { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+.metric-card.very-high { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+.metric-card.month { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+.history-filters {
+    display: grid;
+    grid-template-columns: 1.8fr 0.8fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.history-filters input,
+.history-filters select {
+    border: 1px solid #dbe2ef;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    color: #1f2937;
+    background: #fff;
+}
+
+.history-filters input:focus,
+.history-filters select:focus {
+    outline: none;
+    border-color: #7dd3fc;
+    box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.24);
+}
+
+.history-list-container {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.history-row {
+    border-bottom: 1px solid #edf2f7;
+    cursor: pointer;
+    transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.history-row:hover,
+.history-row:focus {
+    background: #f5fbff;
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.history-row:last-child {
+    border-bottom: none;
+}
+
+.row-main {
+    display: grid;
+    grid-template-columns: 2.2fr 1.2fr 0.8fr 0.9fr 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 15px;
+}
+
+.facility-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.facility-desc {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.35;
+}
+
+.meta-col {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.71rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.chip.severity.critical { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.chip.severity.very-high { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+.chip.severity.high { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+.chip.severity.warning { background: #fffbeb; color: #a16207; border-color: #fde68a; }
+.chip.severity.normal { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+
+.chip.status.resolved { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+.chip.status.closed { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+
+.value-label {
+    color: #64748b;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+}
+
+.value-main {
+    color: #1e293b;
+    font-weight: 800;
+    margin-top: 2px;
+    font-size: 0.9rem;
+}
+
+.value-main.up { color: #dc2626; }
+.value-main.down { color: #16a34a; }
+
+.value-sub {
+    color: #94a3b8;
+    font-size: 0.76rem;
+    margin-top: 2px;
+}
+
+.history-empty {
+    text-align: center;
+    color: #64748b;
+    padding: 20px 16px;
+}
+
+.history-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.history-modal-content {
+    width: min(760px, 94vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+    padding: 22px 20px 18px;
+    position: relative;
+}
+
+.history-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: none;
+    font-size: 2rem;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.history-modal-close:hover {
+    color: #dc2626;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-right: 20px;
+    margin-bottom: 14px;
+}
+
+.modal-top h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.24rem;
+    font-weight: 900;
+}
+
+.modal-chip-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.detail-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+}
+
+.detail-item span {
+    display: block;
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+}
+
+.detail-item strong {
+    color: #0f172a;
+}
+
+.detail-block {
+    margin-bottom: 12px;
+}
+
+.detail-block span {
+    display: block;
+    color: #334155;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+
+.detail-block p {
+    margin: 0;
+    color: #475569;
+    line-height: 1.45;
+    font-size: 0.94rem;
+}
+
+.attachment-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.attachment-list a {
+    color: #0f6b8f;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.attachment-list a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+    .history-metrics {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+    .row-main {
+        grid-template-columns: 1.8fr 1.2fr 0.9fr 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .history-shell {
+        padding: 16px 12px;
+    }
+    .history-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .back-btn {
+        justify-content: center;
+    }
+    .history-filters {
+        grid-template-columns: 1fr;
+    }
+    .row-main {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-top {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-right: 22px;
+    }
 }
 </style>
 @endsection

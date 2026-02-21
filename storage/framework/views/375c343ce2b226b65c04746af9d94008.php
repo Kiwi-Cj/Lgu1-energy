@@ -36,6 +36,44 @@
     background: #e5e7eb !important;
     color: #2563eb !important;
 }
+
+body.dark-mode #addFacilityModal .modal-content,
+body.dark-mode #editFacilityModal .modal-content,
+body.dark-mode #resetBaselineModal .modal-content,
+body.dark-mode #deleteFacilityModal .modal-content {
+    background: #111827 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+}
+
+body.dark-mode #addFacilityModal label,
+body.dark-mode #editFacilityModal label,
+body.dark-mode #resetBaselineModal label,
+body.dark-mode #addFacilityModal h2,
+body.dark-mode #editFacilityModal h2,
+body.dark-mode #resetBaselineModal h2 {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode #addFacilityModal input,
+body.dark-mode #addFacilityModal select,
+body.dark-mode #addFacilityModal textarea,
+body.dark-mode #editFacilityModal input,
+body.dark-mode #editFacilityModal select,
+body.dark-mode #editFacilityModal textarea,
+body.dark-mode #resetBaselineModal textarea {
+    background: #0b1220 !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode #addFacilityModal .energy-modal-btn.cancel,
+body.dark-mode #editFacilityModal .energy-modal-btn.cancel,
+body.dark-mode #resetBaselineModal .reset-modal-btn.cancel,
+body.dark-mode #deleteFacilityModal .delete-modal-btn.cancel {
+    background: #1f2937 !important;
+    color: #e2e8f0 !important;
+}
 </style>
 
 <!-- Modal placeholder for facilities (customize as needed) -->

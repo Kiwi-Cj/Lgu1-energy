@@ -1,3 +1,21 @@
+<style>
+body.dark-mode #deleteEnergyProfileModal .modal-content {
+    background: #111827 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+}
+
+body.dark-mode #deleteEnergyProfileModal .modal-content h2,
+body.dark-mode #deleteEnergyProfileModal .modal-content div {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode #deleteEnergyProfileModal .delete-modal-btn.cancel {
+    background: #1f2937 !important;
+    color: #e2e8f0 !important;
+}
+</style>
+
 <!-- Delete Energy Profile Modal -->
 <div id="deleteEnergyProfileModal" class="modal" style="display:none;align-items:center;justify-content:center;">
     <div class="modal-content" style="max-width:350px;background:#fff7f7;border-radius:18px;box-shadow:0 8px 32px rgba(225,29,72,0.13);padding:32px 28px;">

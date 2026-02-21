@@ -35,8 +35,70 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div style="width:100%;margin:40px 0;">
-<div style="background:linear-gradient(135deg,#f8fafc,#eef2ff);border-radius:26px;padding:40px;box-shadow:0 12px 40px rgba(37,99,235,.18);position:relative;width:100%;">
+<style>
+body.dark-mode .facility-show-page .facility-show-shell {
+    background: linear-gradient(145deg, #0f172a, #111827) !important;
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.6);
+}
+
+body.dark-mode .facility-show-page [style*="background:#fff"],
+body.dark-mode .facility-show-page [style*="background: #fff"],
+body.dark-mode .facility-show-page [style*="background:#ffffff"],
+body.dark-mode .facility-show-page [style*="background: #ffffff"],
+body.dark-mode .facility-show-page [style*="background:#f8fafc"],
+body.dark-mode .facility-show-page [style*="background: #f8fafc"],
+body.dark-mode .facility-show-page [style*="background:#f1f5f9"],
+body.dark-mode .facility-show-page [style*="background: #f1f5f9"],
+body.dark-mode .facility-show-page [style*="background:#e0f2fe"],
+body.dark-mode .facility-show-page [style*="background: #e0f2fe"] {
+    background: #111827 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .facility-show-page [style*="color:#222"],
+body.dark-mode .facility-show-page [style*="color: #222"],
+body.dark-mode .facility-show-page [style*="color:#1e293b"],
+body.dark-mode .facility-show-page [style*="color: #1e293b"],
+body.dark-mode .facility-show-page [style*="color:#475569"],
+body.dark-mode .facility-show-page [style*="color: #475569"],
+body.dark-mode .facility-show-page [style*="color:#64748b"],
+body.dark-mode .facility-show-page [style*="color: #64748b"],
+body.dark-mode .facility-show-page [style*="color:#9ca3af"],
+body.dark-mode .facility-show-page [style*="color: #9ca3af"] {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .facility-show-page [style*="color:#2563eb"],
+body.dark-mode .facility-show-page [style*="color: #2563eb"],
+body.dark-mode .facility-show-page [style*="color:#0ea5e9"],
+body.dark-mode .facility-show-page [style*="color: #0ea5e9"] {
+    color: #93c5fd !important;
+}
+
+body.dark-mode .facility-show-page .energy-profile-details-card,
+body.dark-mode .facility-show-page .energy-performance-card {
+    background: #0f172a !important;
+    border: 1px solid #334155;
+    box-shadow: 0 12px 28px rgba(2, 6, 23, 0.55);
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .facility-show-page .energy-profile-details-card h3,
+body.dark-mode .facility-show-page .energy-performance-card h3 {
+    color: #93c5fd !important;
+}
+
+body.dark-mode .facility-show-page .energy-profile-empty {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .facility-show-page .energy-warning {
+    color: #fda4af !important;
+}
+</style>
+
+<div class="facility-show-page" style="width:100%;margin:40px 0;">
+<div class="facility-show-shell" style="background:linear-gradient(135deg,#f8fafc,#eef2ff);border-radius:26px;padding:40px;box-shadow:0 12px 40px rgba(37,99,235,.18);position:relative;width:100%;">
 
 <!-- BACK BUTTON -->
 <a href="<?php echo e(route('modules.facilities.index')); ?>" style="
@@ -164,7 +226,7 @@ if ($latestRecord && $latestRecord->actual_kwh !== null) {
 <?php
 $profile = $facility->energyProfiles()->latest()->first();
 ?>
-<div style="margin-top:32px;padding:26px 32px;border-radius:22px;background:linear-gradient(135deg,#f8fafc,#e0f2fe);box-shadow:0 8px 28px rgba(37,99,235,.10);">
+<div class="energy-profile-details-card" style="margin-top:32px;padding:26px 32px;border-radius:22px;background:linear-gradient(135deg,#f8fafc,#e0f2fe);box-shadow:0 8px 28px rgba(37,99,235,.10);">
 	<h3 style="margin:0 0 18px;font-weight:900;color:#0ea5e9;font-size:1.18rem;display:flex;align-items:center;gap:8px;">
 		<i class="fa fa-id-card"></i> Energy Profile Details
 	</h3>
@@ -208,7 +270,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 			</div>
 		<?php endif; ?>
 	<?php else: ?>
-		<div style="color:#64748b;font-weight:700;">No energy profile data available for this facility.</div>
+		<div class="energy-profile-empty" style="color:#64748b;font-weight:700;">No energy profile data available for this facility.</div>
 	<?php endif; ?>
 </div>
 
@@ -221,7 +283,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 ?>
 
 <?php if($energyProfile && !$energyProfile->engineer_approved): ?>
-<div style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);text-align:center;">
+<div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);text-align:center;">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
 		⚡ Energy Performance
 	</h3>
@@ -232,7 +294,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 	</div>
 </div>
 <?php elseif($hasBaseline): ?>
-<div style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
+<div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
 		⚡ Energy Performance
 	</h3>
@@ -244,11 +306,11 @@ $profile = $facility->energyProfiles()->latest()->first();
 	</div>
 </div>
 <?php else: ?>
-<div style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
+<div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
 		⚡ Energy Performance
 	</h3>
-	<div style="color:#b91c1c;font-weight:700;">
+	<div class="energy-warning" style="color:#b91c1c;font-weight:700;">
 		⚠ Insufficient data (no baseline set in energy profile)
 	</div>
 </div>

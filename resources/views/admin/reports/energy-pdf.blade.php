@@ -1,109 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>COA Energy Report PDF</title>
+    <meta charset="UTF-8">
+    <title>Energy Report PDF</title>
     <style>
         body {
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            font-size: 14px;
-            color: #1f2937;
-            margin: 40px;
-            background: #ffffff;
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+            color: #1e293b;
+            margin: 24px;
         }
-
-        h2 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            margin: 0 0 4px 0;
-            color: #111827;
+        h1 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            color: #0f172a;
         }
-
-        .period {
-            font-size: 0.95rem;
-            color: #4b5563;
-            margin-bottom: 24px;
+        .meta {
+            margin-bottom: 14px;
+            color: #475569;
+            line-height: 1.35;
         }
-
-        table {
+        .summary {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 12px;
+            margin-bottom: 14px;
         }
-
-        th {
+        .summary td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+        }
+        .summary .label {
+            width: 38%;
+            font-weight: 700;
+            background: #f8fafc;
+        }
+        table.data {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.data th, table.data td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 8px;
+        }
+        table.data th {
+            background: #f1f5f9;
             text-align: left;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #374151;
-            padding: 10px 8px;
-            border-bottom: 2px solid #e5e7eb;
-            background: #f9fafb;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
         }
-
-        td {
-            padding: 9px 8px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 0.9rem;
+        .num {
+            text-align: right;
         }
-
-        tr:last-child td {
-            border-bottom: none;
+        .status {
+            text-align: center;
+            font-weight: 700;
         }
-
-        .total-row td {
-            font-weight: 600;
-            background: #f3f4f6;
-            border-top: 2px solid #9ca3af;
-        }
-
         .footer {
-            margin-top: 32px;
-            font-size: 0.85rem;
-            color: #6b7280;
-            text-align: left;
+            margin-top: 16px;
+            font-size: 11px;
+            color: #64748b;
         }
     </style>
 </head>
 <body>
-
-    <h2>COA Energy Report</h2>
-    <div class="period">
-        Reporting Period: <strong>{{ request('from_date') }} – {{ request('to_date') }}</strong>
+    <h1>Energy Report</h1>
+    <div class="meta">
+        Period: <strong>{{ $selectedPeriod ?? 'All Periods' }}</strong><br>
+        Facility: <strong>{{ $selectedFacilityName ?? 'All Facilities' }}</strong><br>
+        Generated: <strong>{{ $generatedAt ?? now()->format('M d, Y h:i A') }}</strong>
     </div>
 
-    <table>
+    <table class="summary">
+        <tr>
+            <td class="label">Total Actual kWh</td>
+            <td class="num">{{ number_format($totalActualKwh ?? 0, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="label">Total Baseline kWh</td>
+            <td class="num">{{ number_format($totalBaselineKwh ?? 0, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="label">Total Variance</td>
+            <td class="num">{{ number_format($totalVarianceKwh ?? 0, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="label">Records Included</td>
+            <td class="num">{{ count($energyData ?? []) }}</td>
+        </tr>
+    </table>
+
+    <table class="data">
         <thead>
             <tr>
-                @foreach($columns ?? ['facility','month','actual_kwh','baseline_kwh','variance','trend'] as $col)
-                    <th>{{ ucwords(str_replace('_',' ', $col)) }}</th>
-                @endforeach
+                <th>Facility</th>
+                <th>Month</th>
+                <th class="num">Actual kWh</th>
+                <th class="num">Baseline kWh</th>
+                <th class="num">Variance</th>
+                <th class="status">Trend</th>
             </tr>
         </thead>
         <tbody>
-            @foreach(array_reverse($energyData ?? []) as $row)
+            @forelse($energyData ?? [] as $row)
                 <tr>
-                    @foreach($columns ?? ['facility','month','actual_kwh','baseline_kwh','variance','trend'] as $col)
-                        <td>{{ $row[$col] ?? '' }}</td>
-                    @endforeach
+                    <td>{{ $row['facility'] ?? '-' }}</td>
+                    <td>{{ $row['month'] ?? '-' }}</td>
+                    <td class="num">{{ $row['actual_kwh'] ?? '0.00' }}</td>
+                    <td class="num">{{ $row['baseline_kwh'] ?? '0.00' }}</td>
+                    <td class="num">{{ $row['variance'] ?? '0.00' }}</td>
+                    <td class="status">{{ $row['trend'] ?? '-' }}</td>
                 </tr>
-            @endforeach
-
-            <tr class="total-row">
-                <td colspan="{{ (isset($columns) ? count($columns) : 6) - 1 }}">
-                    Total Energy Consumption
-                </td>
-                <td>{{ $totalUsage ?? 0 }} kWh</td>
-            </tr>
+            @empty
+                <tr>
+                    <td colspan="6">No energy report data available for selected filters.</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 
     <div class="footer">
-        Generated by LGU Energy Efficiency System<br>
-        {{ date('F j, Y') }}
+        LGU Energy Monitoring System
     </div>
-
 </body>
 </html>

@@ -4,6 +4,7 @@ namespace App\Models;
     use Illuminate\Foundation\Auth\User as Authenticatable;
     use Illuminate\Notifications\Notifiable;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
+    use Illuminate\Support\Facades\Storage;
     use Laravel\Sanctum\HasApiTokens;
     use App\Models\Traits\BelongsToFacility;
 
@@ -49,7 +50,14 @@ namespace App\Models;
         public function getProfilePhotoUrlAttribute()
         {
             if ($this->profile_photo_path) {
-                return asset('storage/' . $this->profile_photo_path);
+                $path = ltrim((string) $this->profile_photo_path, '/');
+                if (str_starts_with($path, 'storage/')) {
+                    $path = substr($path, strlen('storage/'));
+                }
+
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    return asset('storage/' . $path);
+                }
             }
             return asset('img/default-avatar.png');
         }

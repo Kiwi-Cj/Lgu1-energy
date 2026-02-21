@@ -22,10 +22,14 @@ class EnergyReportController extends Controller
         $records = $query->orderBy('year')->orderBy('month')->get();
 
         $energyData = [];
+        $totalActualKwh = 0.0;
+        $totalBaselineKwh = 0.0;
+        $totalVarianceKwh = 0.0;
+
         foreach ($records as $record) {
             $facility = $record->facility;
-            $baseline = $record->baseline_kwh;
-            $actualKwh = $record->actual_kwh;
+            $baseline = $record->baseline_kwh !== null ? (float) $record->baseline_kwh : null;
+            $actualKwh = $record->actual_kwh !== null ? (float) $record->actual_kwh : 0.0;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
             $trend = 'Stable';
             if ($variance !== null && $baseline !== null && $baseline != 0) {
@@ -38,6 +42,15 @@ class EnergyReportController extends Controller
             $monthNum = (int)ltrim($record->month, '0');
             $monthName = date('M', mktime(0, 0, 0, $monthNum, 1));
             $monthYear = $monthName . ' ' . $record->year;
+
+            $totalActualKwh += $actualKwh;
+            if ($baseline !== null) {
+                $totalBaselineKwh += $baseline;
+            }
+            if ($variance !== null) {
+                $totalVarianceKwh += $variance;
+            }
+
             $energyData[] = [
                 'facility' => $facility ? $facility->name : 'N/A',
                 'month' => $monthYear,
@@ -47,9 +60,39 @@ class EnergyReportController extends Controller
                 'trend' => $trend,
             ];
         }
+
+        $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec'];
+        $selectedFacilityName = 'All Facilities';
+        if ($request->filled('facility_id')) {
+            $facility = \App\Models\Facility::find($request->facility_id);
+            if ($facility) {
+                $selectedFacilityName = $facility->name;
+            }
+        }
+
+        if ($request->filled('year') && $request->filled('month')) {
+            $monthKey = (int) $request->month;
+            $selectedPeriod = ($months[$monthKey] ?? ('Month ' . $monthKey)) . ' ' . $request->year;
+        } elseif ($request->filled('year')) {
+            $selectedPeriod = 'Year ' . $request->year;
+        } else {
+            $selectedPeriod = 'All Periods';
+        }
+
+        $generatedAt = now()->format('M d, Y h:i A');
         $columns = ['facility', 'month', 'actual_kwh', 'baseline_kwh', 'variance', 'trend'];
-        $totalUsage = array_sum(array_map(fn($row) => floatval(str_replace(',', '', $row['actual_kwh'])), $energyData));
-        $pdf = \PDF::loadView('admin.reports.energy-pdf', compact('energyData', 'totalUsage', 'columns'));
+        $totalUsage = $totalActualKwh;
+        $pdf = \PDF::loadView('admin.reports.energy-pdf', compact(
+            'energyData',
+            'totalUsage',
+            'columns',
+            'totalActualKwh',
+            'totalBaselineKwh',
+            'totalVarianceKwh',
+            'selectedFacilityName',
+            'selectedPeriod',
+            'generatedAt'
+        ));
         return $pdf->download('energy_report.pdf');
     }
 

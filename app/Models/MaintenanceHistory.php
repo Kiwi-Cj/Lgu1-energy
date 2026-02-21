@@ -14,6 +14,7 @@ class MaintenanceHistory extends Model
         'issue_type',
         'trigger_month',
         'trend',
+        'efficiency_rating',
         'maintenance_type',
         'maintenance_status',
         'scheduled_date',

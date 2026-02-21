@@ -167,13 +167,76 @@ window.addEventListener('DOMContentLoaded', function() {
     .action-icon.records { background: #eff6ff; color: #3b82f6; }
     .action-icon:hover { transform: scale(1.1); }
 
+    body.dark-mode .facilities-page .report-card-container {
+        background: #0f172a !important;
+        border: 1px solid #1f2937;
+        box-shadow: 0 10px 28px rgba(2, 6, 23, 0.55);
+    }
+
+    body.dark-mode .facilities-page .stat-card,
+    body.dark-mode .facilities-page .facility-card,
+    body.dark-mode .facilities-page .image-wrapper {
+        background: #111827 !important;
+        border-color: #334155 !important;
+        color: #e2e8f0 !important;
+    }
+
+    body.dark-mode .facilities-page .facility-card:hover {
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
+        border-color: #60a5fa !important;
+    }
+
+    body.dark-mode .facilities-page .card-actions {
+        border-top-color: #334155;
+    }
+
+    body.dark-mode .facilities-page .type-badge {
+        background: #1e293b;
+        color: #c4b5fd;
+    }
+
+    body.dark-mode .facilities-page .action-icon.energy {
+        background: #3f2b1a;
+        color: #fbbf24;
+    }
+
+    body.dark-mode .facilities-page .action-icon.records {
+        background: #3f1d2e !important;
+        color: #fda4af !important;
+    }
+
+    body.dark-mode .facilities-page [style*="background:#fff"],
+    body.dark-mode .facilities-page [style*="background: #fff"],
+    body.dark-mode .facilities-page [style*="background:#ffffff"],
+    body.dark-mode .facilities-page [style*="background: #ffffff"],
+    body.dark-mode .facilities-page [style*="background:#f8fafc"],
+    body.dark-mode .facilities-page [style*="background: #f8fafc"],
+    body.dark-mode .facilities-page [style*="background:#f1f5f9"],
+    body.dark-mode .facilities-page [style*="background: #f1f5f9"] {
+        background: #111827 !important;
+        border-color: #334155 !important;
+    }
+
+    body.dark-mode .facilities-page [style*="color:#222"],
+    body.dark-mode .facilities-page [style*="color: #222"],
+    body.dark-mode .facilities-page [style*="color:#1e293b"],
+    body.dark-mode .facilities-page [style*="color: #1e293b"],
+    body.dark-mode .facilities-page [style*="color:#334155"],
+    body.dark-mode .facilities-page [style*="color: #334155"],
+    body.dark-mode .facilities-page [style*="color:#64748b"],
+    body.dark-mode .facilities-page [style*="color: #64748b"],
+    body.dark-mode .facilities-page [style*="color:#94a3b8"],
+    body.dark-mode .facilities-page [style*="color: #94a3b8"] {
+        color: #e2e8f0 !important;
+    }
+
     @media (max-width: 768px) {
         .dashboard-header { flex-direction: column; align-items: stretch; text-align: center; }
         .btn-gradient { justify-content: center; }
     }
 </style>
 
-<div style="width:100%; margin:0 auto;">
+<div class="facilities-page" style="width:100%; margin:0 auto;">
     <div class="report-card-container">
         
         <div class="dashboard-header">

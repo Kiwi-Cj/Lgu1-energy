@@ -5,211 +5,500 @@
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+
+    $rows = collect($energyRows ?? []);
+    $toNumber = function ($value) {
+        $clean = preg_replace('/[^0-9.\-]/', '', (string) $value);
+        return is_numeric($clean) ? (float) $clean : null;
+    };
+
+    $totalActual = $rows->sum(function ($row) use ($toNumber) {
+        return $toNumber($row['actual_kwh'] ?? 0) ?? 0;
+    });
+    $totalBaseline = $rows->sum(function ($row) use ($toNumber) {
+        return $toNumber($row['baseline_kwh'] ?? 0) ?? 0;
+    });
+    $totalVariance = $rows->sum(function ($row) use ($toNumber) {
+        return $toNumber($row['variance'] ?? 0) ?? 0;
+    });
+    $increasingCount = $rows->where('trend', 'up')->count();
+    $decreasingCount = $rows->where('trend', 'down')->count();
 @endphp
 
+@section('content')
 <style>
-    /* Desktop & Base Styles */
-    .report-card {
-        background: #fff; 
-        border-radius: 18px; 
-        box-shadow: 0 2px 8px rgba(31,38,135,0.08); 
-        margin-bottom: 1.2rem; 
-        padding: 24px;
+.energy-report-page {
+    width: 100%;
+}
+
+.energy-report-shell {
+    background: linear-gradient(160deg, #f8fbff 0%, #eef5ff 45%, #f8fafc 100%);
+    border: 1px solid #e2ebf7;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    padding: 24px 20px;
+}
+
+.energy-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.energy-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.62rem;
+    font-weight: 900;
+}
+
+.energy-header p {
+    margin: 6px 0 0;
+    color: #475569;
+    font-size: 0.93rem;
+}
+
+.energy-actions {
+    display: inline-flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 0.86rem;
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.btn-excel {
+    background: linear-gradient(90deg, #15803d, #16a34a);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
+}
+
+.btn-pdf {
+    background: linear-gradient(90deg, #be123c, #e11d48);
+    box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25);
+}
+
+.energy-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.kpi-card {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    padding: 11px 12px;
+}
+
+.kpi-label {
+    display: block;
+    font-size: 0.71rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.kpi-value {
+    font-size: 1.33rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.kpi-total { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.kpi-actual { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+.kpi-baseline { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+.kpi-var { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+.kpi-trend { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+
+.energy-filters {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 1.6fr 0.8fr 0.8fr 1fr auto auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 0.73rem;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.filter-group select,
+.filter-group input {
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 0.92rem;
+    color: #0f172a;
+    background: #fff;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.btn-filter,
+.btn-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-filter {
+    background: linear-gradient(90deg, #2563eb, #6366f1);
+    color: #fff;
+}
+
+.btn-reset {
+    background: #fff;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.energy-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.energy-table {
+    width: 100%;
+    min-width: 860px;
+    border-collapse: collapse;
+}
+
+.energy-table thead {
+    background: #f8fafc;
+}
+
+.energy-table th {
+    padding: 12px 14px;
+    text-align: left;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.energy-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.9rem;
+}
+
+.energy-table tr:hover {
+    background: #f8fbff;
+}
+
+.facility-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.facility-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+}
+
+.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.trend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.trend-up { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.trend-down { background: #dcfce7; color: #166534; border-color: #86efac; }
+.trend-stable { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+.empty-row {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 30px 16px;
+}
+
+/* Page-level dark mode */
+body.dark-mode .energy-report-shell {
+    background: linear-gradient(160deg, #0f172a 0%, #111827 100%);
+    border-color: #1f2937;
+}
+body.dark-mode .energy-header h2 { color: #e2e8f0; }
+body.dark-mode .energy-header p { color: #94a3b8; }
+body.dark-mode .energy-filters,
+body.dark-mode .energy-table-wrap { background: #111827; border-color: #1f2937; }
+body.dark-mode .filter-group label { color: #cbd5e1; }
+body.dark-mode .filter-group select,
+body.dark-mode .filter-group input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .btn-reset {
+    background: #1f2937;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .energy-table thead { background: #0f172a; }
+body.dark-mode .energy-table th { color: #94a3b8; border-bottom-color: #1f2937; }
+body.dark-mode .energy-table td { color: #e2e8f0; border-bottom-color: #1f2937; }
+body.dark-mode .energy-table tr:hover { background: #1f2937; }
+body.dark-mode .facility-cell { color: #f8fafc; }
+body.dark-mode .empty-row { color: #94a3b8; }
+
+@media (max-width: 1100px) {
+    .energy-kpis {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
     }
-    .energy-report-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-        gap: 20px;
+    .energy-filters {
+        grid-template-columns: 1fr 1fr;
     }
-    .energy-report-buttons {
-        display: flex; 
-        gap: 12px;
-    }
-    .btn-export {
-        padding: 12px 24px;
-        border-radius: 10px;
-        font-weight: 700;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: #fff;
-        transition: 0.2s;
-    }
-    .filter-form {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        margin-bottom: 24px;
-    }
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 200px; /* Base width for desktop */
-    }
-    .form-control {
+    .btn-filter,
+    .btn-reset {
         width: 100%;
-        padding: 8px;
-        border: 1px solid #c3cbe5;
-        border-radius: 8px;
     }
+}
 
-    /* Mobile Responsive Fixes */
-    @media (max-width: 768px) {
-        .report-card { padding: 15px; }
-        
-        .energy-report-header {
-            flex-direction: column;
-            align-items: stretch;
-            text-align: center;
-        }
-
-        .energy-report-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn-export {
-            padding: 10px 5px;
-            font-size: 0.9rem;
-            justify-content: center;
-        }
-
-        .filter-form {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .filter-group {
-            min-width: 100% !important; /* Force full width to prevent overlap */
-            width: 100%;
-        }
-
-        .btn-filter {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        /* Table container ensures internal content doesn't break parent */
-        .table-responsive {
-            display: block;
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-        }
-
-        table thead th {
-            font-size: 0.8rem !important;
-            padding: 10px 5px !important;
-        }
-
-        table tbody td {
-            font-size: 0.85rem !important;
-            padding: 10px 5px !important;
-            white-space: nowrap;
-        }
+@media (max-width: 760px) {
+    .energy-report-shell {
+        padding: 14px 10px;
     }
+    .energy-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .energy-actions {
+        width: 100%;
+    }
+    .btn-action {
+        flex: 1;
+        justify-content: center;
+    }
+    .energy-kpis {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+    .energy-filters {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
-@section('content')
-<div style="width:100%; margin:0 auto;">
-    <div class="report-card">
-        <div class="energy-report-header">
+<div class="energy-report-page">
+    <div class="energy-report-shell">
+        <div class="energy-header">
             <div>
-                <h2 style="font-size:1.8rem; font-weight:700; color:#3762c8; margin:0;">📘 Energy Report</h2>
-                <p style="color:#555; margin-top:4px;">Facility consumption and trends.</p>
+                <h2>Energy Report</h2>
+                <p>Track facility consumption variance and trend behavior by period.</p>
             </div>
-            <div class="energy-report-buttons">
-                <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-export" style="background:#22c55e;">
-                    <i class="fa fa-download"></i> Export
+            <div class="energy-actions">
+                <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-action btn-excel">
+                    <i class="fa fa-download"></i> Export Excel
                 </a>
-                <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-export" style="background:#e11d48;">
-                    <i class="fa fa-file-pdf-o"></i> PDF
+                <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-action btn-pdf">
+                    <i class="fa fa-file-pdf-o"></i> Export PDF
                 </a>
             </div>
         </div>
 
-        <form method="GET" action="" class="filter-form">
+        <div class="energy-kpis">
+            <div class="kpi-card kpi-total">
+                <span class="kpi-label">Rows</span>
+                <div class="kpi-value">{{ $rows->count() }}</div>
+            </div>
+            <div class="kpi-card kpi-actual">
+                <span class="kpi-label">Total Actual</span>
+                <div class="kpi-value">{{ number_format($totalActual, 2) }}</div>
+            </div>
+            <div class="kpi-card kpi-baseline">
+                <span class="kpi-label">Total Baseline</span>
+                <div class="kpi-value">{{ number_format($totalBaseline, 2) }}</div>
+            </div>
+            <div class="kpi-card kpi-var">
+                <span class="kpi-label">Total Variance</span>
+                <div class="kpi-value">{{ number_format($totalVariance, 2) }}</div>
+            </div>
+            <div class="kpi-card kpi-trend">
+                <span class="kpi-label">Trend (Up/Down)</span>
+                <div class="kpi-value">{{ $increasingCount }}/{{ $decreasingCount }}</div>
+            </div>
+        </div>
+
+        <form method="GET" action="" class="energy-filters">
             <div class="filter-group">
-                <label style="font-weight:700; margin-bottom:5px;">Facility</label>
-                <select name="facility_id" class="form-control">
+                <label for="facility_id">Facility</label>
+                <select name="facility_id" id="facility_id">
                     <option value="">All Facilities</option>
                     @foreach($facilities ?? [] as $facility)
-                        <option value="{{ $facility->id }}" {{ (request('facility_id') == $facility->id) ? 'selected' : '' }}>{{ $facility->name }}</option>
+                        <option value="{{ $facility->id }}" {{ (request('facility_id') == $facility->id) ? 'selected' : '' }}>
+                            {{ $facility->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="filter-group" style="flex: 0.5; min-width: 100px;">
-                <label style="font-weight:700; margin-bottom:5px;">Year</label>
-                <select name="year" class="form-control">
+            <div class="filter-group">
+                <label for="year">Year</label>
+                <select name="year" id="year">
                     @foreach($years ?? [] as $year)
                         <option value="{{ $year }}" {{ request('year', date('Y')) == $year ? 'selected' : '' }}>{{ $year }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <div class="filter-group" style="flex: 0.5; min-width: 100px;">
-                <label style="font-weight:700; margin-bottom:5px;">Month</label>
-                <select name="month" class="form-control">
+            <div class="filter-group">
+                <label for="month">Month</label>
+                <select name="month" id="month">
                     <option value="">All Months</option>
                     @php $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec']; @endphp
-                    @foreach($months as $num=>$name)
+                    @foreach($months as $num => $name)
                         <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
                     @endforeach
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-filter" style="padding:10px 25px; border-radius:8px; background:linear-gradient(90deg,#2563eb,#6366f1); border:none; font-weight:600; color:#fff;">
-                Filter
+            <div class="filter-group">
+                <label for="tableSearch">Quick Search</label>
+                <input id="tableSearch" type="text" placeholder="Search facility..." />
+            </div>
+
+            <button type="submit" class="btn-filter">
+                <i class="fa fa-filter"></i> Apply
             </button>
+            <a href="{{ url()->current() }}" class="btn-reset">Reset</a>
         </form>
 
-        <div class="table-responsive">
-            <table style="width:100%; border-collapse:collapse; background:#fff;">
-                <thead style="background:#e9effc;">
+        <div class="energy-table-wrap">
+            <table class="energy-table" id="energyTable">
+                <thead>
                     <tr>
-                        <th style="padding:14px; text-align:left; color:#3762c8; border-bottom:2px solid #c3cbe5;">Facility</th>
-                        <th style="padding:14px; text-align:left; color:#3762c8; border-bottom:2px solid #c3cbe5;">Month</th>
-                        <th style="padding:14px; text-align:right; color:#3762c8; border-bottom:2px solid #c3cbe5;">Actual</th>
-                        <th style="padding:14px; text-align:right; color:#3762c8; border-bottom:2px solid #c3cbe5;">Baseline</th>
-                        <th style="padding:14px; text-align:right; color:#3762c8; border-bottom:2px solid #c3cbe5;">Var</th>
-                        <th style="padding:14px; text-align:center; color:#3762c8; border-bottom:2px solid #c3cbe5;">Trend</th>
+                        <th>Facility</th>
+                        <th>Month</th>
+                        <th class="num">Actual</th>
+                        <th class="num">Baseline</th>
+                        <th class="num">Variance</th>
+                        <th>Trend</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($energyRows ?? [] as $row)
-                    <tr style="background:{{ $loop->even ? '#f8fafc' : '#fff' }}; border-bottom:1px solid #eee;">
-                        <td style="padding:12px;">{{ $row['facility'] }}</td>
-                        <td style="padding:12px;">{{ $row['month'] }}</td>
-                        <td style="padding:12px; text-align:right;">{{ $row['actual_kwh'] }}</td>
-                        <td style="padding:12px; text-align:right;">{{ $row['baseline_kwh'] }}</td>
-                        <td style="padding:12px; text-align:right;">{{ $row['variance'] }}</td>
-                        <td style="padding:12px; text-align:center;">
-                            @if($row['trend'] === 'up')
-                                <span style="color:#dc2626;">↑</span>
-                            @elseif($row['trend'] === 'down')
-                                <span style="color:#16a34a;">↓</span>
-                            @else
-                                <span style="color:#6b7280;">→</span>
-                            @endif
-                        </td>
-                    </tr>
+                        @php
+                            $trend = $row['trend'] ?? 'stable';
+                            $trendClass = $trend === 'up' ? 'trend-up' : ($trend === 'down' ? 'trend-down' : 'trend-stable');
+                            $trendLabel = $trend === 'up' ? 'Increasing' : ($trend === 'down' ? 'Decreasing' : 'Stable');
+                            $trendIcon = $trend === 'up' ? 'fa-arrow-up' : ($trend === 'down' ? 'fa-arrow-down' : 'fa-minus');
+                        @endphp
+                        <tr class="energy-row" data-search="{{ strtolower((string)($row['facility'] ?? '')) }}">
+                            <td>
+                                <div class="facility-cell">
+                                    <span class="facility-dot"></span>
+                                    <span>{{ $row['facility'] }}</span>
+                                </div>
+                            </td>
+                            <td>{{ $row['month'] }}</td>
+                            <td class="num">{{ $row['actual_kwh'] }}</td>
+                            <td class="num">{{ $row['baseline_kwh'] }}</td>
+                            <td class="num">{{ $row['variance'] }}</td>
+                            <td>
+                                <span class="trend-pill {{ $trendClass }}">
+                                    <i class="fa {{ $trendIcon }}"></i> {{ $trendLabel }}
+                                </span>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" style="padding:30px; text-align:center; color:#6b7280;">No records.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="6" class="empty-row">No records found.</td>
+                        </tr>
                     @endforelse
+                    <tr id="energyNoMatch" style="display:none;">
+                        <td colspan="6" class="empty-row">No matching facility in current result.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('tableSearch');
+    const rows = Array.from(document.querySelectorAll('.energy-row'));
+    const noMatch = document.getElementById('energyNoMatch');
+
+    const applySearch = () => {
+        const q = (input?.value || '').toLowerCase().trim();
+        let visible = 0;
+        rows.forEach((row) => {
+            const hay = (row.dataset.search || '').toLowerCase();
+            const show = q === '' || hay.includes(q);
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        if (noMatch) {
+            noMatch.style.display = visible === 0 && rows.length ? '' : 'none';
+        }
+    };
+
+    if (input) {
+        input.addEventListener('input', applySearch);
+    }
+});
+</script>
 @endsection

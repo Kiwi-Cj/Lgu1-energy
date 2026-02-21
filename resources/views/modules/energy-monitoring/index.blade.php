@@ -15,21 +15,271 @@
         transition: left 0.2s;
     }
     .skip-link:focus { left: 10px; }
-    
-    /* Report Card Styling */
-    .report-card {
-        background: #ffffff;
+
+    .energy-monitor-page .report-card {
+        background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
         border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
         padding: 30px;
-        border: 1px solid #eef2f6;
+        border: 1px solid #e7eef8;
         margin-bottom: 2rem;
     }
 
+    .energy-monitor-page .monitor-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .energy-monitor-page .monitor-title {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #1e293b;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .energy-monitor-page .monitor-title-accent {
+        color: #2563eb;
+    }
+
+    .energy-monitor-page .monitor-subtitle {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    .energy-monitor-page .search-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .energy-monitor-page .search-field {
+        position: relative;
+    }
+
+    .energy-monitor-page .search-input {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 10px 10px 35px;
+        font-size: 0.9rem;
+        width: 220px;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+        color: #0f172a;
+    }
+
+    .energy-monitor-page .search-input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+    }
+
+    .energy-monitor-page .search-btn {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .energy-monitor-page .search-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+    }
+
+    .energy-monitor-page .clear-link {
+        color: #e11d48;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .energy-monitor-page .overview-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .energy-monitor-page .metric-card {
+        padding: 20px;
+        border-radius: 14px;
+        border-left: 4px solid transparent;
+        border: 1px solid transparent;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    .energy-monitor-page .metric-card .metric-label {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.4px;
+    }
+
+    .energy-monitor-page .metric-card .metric-value {
+        font-weight: 800;
+        font-size: 1.8rem;
+        color: #1e293b;
+    }
+
+    .energy-monitor-page .metric-facilities {
+        background: linear-gradient(140deg, #f4f9ff, #f8fbff);
+        border-color: #dbeafe;
+        border-left-color: #2563eb;
+    }
+    .energy-monitor-page .metric-facilities .metric-label { color: #64748b; }
+
+    .energy-monitor-page .metric-alert {
+        background: linear-gradient(140deg, #fff3f5, #fff7f8);
+        border-color: #fecdd3;
+        border-left-color: #e11d48;
+    }
+    .energy-monitor-page .metric-alert .metric-label { color: #e11d48; }
+
+    .energy-monitor-page .metric-cost {
+        background: linear-gradient(140deg, #f2fdf7, #f8fffb);
+        border-color: #bbf7d0;
+        border-left-color: #16a34a;
+    }
+    .energy-monitor-page .metric-cost .metric-label { color: #166534; }
+
+    .energy-monitor-page .monitor-table-wrap {
+        overflow-x: auto;
+    }
+
+    .energy-monitor-page .monitor-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 1000px;
+    }
+
+    .energy-monitor-page .monitor-table thead tr {
+        background: #f1f5f9;
+    }
+
+    .energy-monitor-page .monitor-table th {
+        padding: 15px;
+        color: #475569;
+        font-weight: 700;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .energy-monitor-page .monitor-table td {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
+
+    .energy-monitor-page .monitor-row:hover {
+        background: #fafcff;
+    }
+
+    .energy-monitor-page .monitor-alert-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+
+    .energy-monitor-page .recommendation-btn {
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        cursor: pointer;
+    }
+
+    .energy-monitor-page .pagination-wrap {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    body.dark-mode .energy-monitor-page .report-card {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+        box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-title,
+    body.dark-mode .energy-monitor-page .metric-value,
+    body.dark-mode .energy-monitor-page .monitor-table td {
+        color: #e2e8f0 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-subtitle,
+    body.dark-mode .energy-monitor-page .metric-label,
+    body.dark-mode .energy-monitor-page .monitor-table th {
+        color: #94a3b8 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .search-input {
+        background: #0b1220 !important;
+        color: #e2e8f0 !important;
+        border-color: #334155 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-table thead tr {
+        background: #111827 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-table th,
+    body.dark-mode .energy-monitor-page .monitor-table td {
+        border-color: #334155 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-row:hover {
+        background: #1f2937 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .metric-facilities {
+        background: linear-gradient(145deg, #102138, #111827) !important;
+        border-color: #2f4c72 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .metric-alert {
+        background: linear-gradient(145deg, #321923, #111827) !important;
+        border-color: #7f1d1d !important;
+    }
+
+    body.dark-mode .energy-monitor-page .metric-cost {
+        background: linear-gradient(145deg, #0f2a22, #111827) !important;
+        border-color: #166534 !important;
+    }
+
+    body.dark-mode #recommendationModalBox {
+        background: #111827 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155;
+    }
+
+    body.dark-mode #recommendationModalTitle {
+        color: #f8fafc !important;
+    }
+
     @media (max-width: 600px) {
-        h1 { font-size: 1.5rem !important; }
-        .overview-cards { flex-direction: column !important; gap: 12px !important; }
-        .report-card { padding: 15px; }
+        .energy-monitor-page .monitor-title { font-size: 1.5rem !important; }
+        .energy-monitor-page .overview-cards { grid-template-columns: 1fr; gap: 12px; }
+        .energy-monitor-page .report-card { padding: 15px; }
+        .energy-monitor-page .search-form { width: 100%; flex-wrap: wrap; }
+        .energy-monitor-page .search-field,
+        .energy-monitor-page .search-input { width: 100%; }
+        .energy-monitor-page .search-btn { width: 100%; }
     }
 </style>
 
@@ -54,24 +304,25 @@
 </div>
 @endif
 
+<div class="energy-monitor-page">
 <div class="report-card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:25px; gap: 20px; flex-wrap: wrap;">
+    <div class="monitor-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:25px; gap: 20px; flex-wrap: wrap;">
         <div>
-            <h1 style="margin:0; font-size:1.8rem; color:#1e293b; font-weight:800; letter-spacing:-0.5px;">
-                Energy Trend Monitoring <span style="color:#2563eb;">Dashboard</span>
+            <h1 class="monitor-title" style="margin:0; font-size:1.8rem; color:#1e293b; font-weight:800; letter-spacing:-0.5px;">
+                Energy Trend Monitoring <span class="monitor-title-accent" style="color:#2563eb;">Dashboard</span>
             </h1>
-            <p style="margin:4px 0 0; color:#64748b; font-size:1rem;">Overview of all facility energy performance</p>
+            <p class="monitor-subtitle" style="margin:4px 0 0; color:#64748b; font-size:1rem;">Overview of all facility energy performance</p>
         </div>
         
-        <form method="GET" action="" style="display:flex; gap:10px; align-items:center;">
-            <div style="position:relative;">
+        <form class="search-form" method="GET" action="" style="display:flex; gap:10px; align-items:center;">
+            <div class="search-field" style="position:relative;">
                 <i class="fa fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search facility..." 
+                <input class="search-input" type="text" name="search" value="{{ request('search') }}" placeholder="Search facility..." 
                     style="border-radius:10px; border:1px solid #e2e8f0; padding:10px 10px 10px 35px; font-size:0.9rem; width:220px; outline:none; transition:border 0.2s;">
             </div>
-            <button type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; transition:0.2s;">Search</button>
+            <button class="search-btn" type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 20px; font-weight:600; cursor:pointer; transition:0.2s;">Search</button>
             @if(request('search'))
-                <a href="{{ url()->current() }}" style="color:#e11d48; text-decoration:none; font-weight:600; font-size:0.9rem;">Clear</a>
+                <a class="clear-link" href="{{ url()->current() }}" style="color:#e11d48; text-decoration:none; font-weight:600; font-size:0.9rem;">Clear</a>
             @endif
         </form>
     </div>

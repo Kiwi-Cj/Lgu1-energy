@@ -9,6 +9,66 @@
         margin-bottom: 1.2rem;
         padding: 24px;
     }
+
+    body.dark-mode .monthly-record-page.report-card {
+        background: #0f172a !important;
+        border: 1px solid #1f2937;
+        box-shadow: 0 12px 30px rgba(2, 6, 23, 0.55);
+    }
+
+    body.dark-mode .monthly-record-page [style*="background:#fff"],
+    body.dark-mode .monthly-record-page [style*="background: #fff"],
+    body.dark-mode .monthly-record-page [style*="background:#ffffff"],
+    body.dark-mode .monthly-record-page [style*="background: #ffffff"],
+    body.dark-mode .monthly-record-page [style*="background:#f1f5f9"],
+    body.dark-mode .monthly-record-page [style*="background: #f1f5f9"],
+    body.dark-mode .monthly-record-page [style*="background:#f3f4f6"],
+    body.dark-mode .monthly-record-page [style*="background: #f3f4f6"] {
+        background: #111827 !important;
+        border-color: #334155 !important;
+    }
+
+    body.dark-mode .monthly-record-page [style*="color:#222"],
+    body.dark-mode .monthly-record-page [style*="color: #222"],
+    body.dark-mode .monthly-record-page [style*="color:#1e293b"],
+    body.dark-mode .monthly-record-page [style*="color: #1e293b"],
+    body.dark-mode .monthly-record-page [style*="color:#475569"],
+    body.dark-mode .monthly-record-page [style*="color: #475569"],
+    body.dark-mode .monthly-record-page [style*="color:#64748b"],
+    body.dark-mode .monthly-record-page [style*="color: #64748b"] {
+        color: #e2e8f0 !important;
+    }
+
+    body.dark-mode .monthly-record-page table thead,
+    body.dark-mode .monthly-record-page table thead tr {
+        background: #111827 !important;
+    }
+
+    body.dark-mode .monthly-record-page table th,
+    body.dark-mode .monthly-record-page table td,
+    body.dark-mode .monthly-record-page table tr {
+        border-color: #334155 !important;
+        color: #e2e8f0 !important;
+    }
+
+    body.dark-mode #addModal .modal-content,
+    body.dark-mode #duplicateModal .modal-content,
+    body.dark-mode #energyActionModal .modal-content,
+    body.dark-mode #monthlyRecommendationModalBox,
+    body.dark-mode #deleteMonthlyRecordModal .modal-content {
+        background: #111827 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155;
+    }
+
+    body.dark-mode #addModal input,
+    body.dark-mode #addModal select,
+    body.dark-mode #addModal textarea,
+    body.dark-mode #addModal input[type="file"] {
+        background: #0b1220 !important;
+        color: #e2e8f0 !important;
+        border-color: #334155 !important;
+    }
 </style>
 @php
     // Ensure notifications and unreadNotifCount are available for the notification bell
@@ -39,7 +99,7 @@
 @endphp
 
 
-<div class="report-card">
+<div class="report-card monthly-record-page">
 @if(session('success'))
 <div id="successAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
     <div style="background:#dcfce7;color:#166534;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #16a34a22;display:flex;align-items:center;gap:10px;">
@@ -225,9 +285,18 @@ window.addEventListener('DOMContentLoaded', function() {
                         ₱{{ number_format($computedCost, 2) }}
                     </td>
                     <td style="padding:10px 14px; text-align:center;">
-                        @if($record->bill_image)
-                            <a href="{{ asset('storage/' . $record->bill_image) }}" target="_blank" style="display:inline-block;">
-                                <img src="{{ asset('storage/' . $record->bill_image) }}" alt="Bill Image" style="max-width:60px;max-height:60px;border-radius:7px;box-shadow:0 2px 8px #2563eb22;object-fit:cover;">
+                        @php
+                            $billPath = ltrim((string) ($record->bill_image ?? ''), '/');
+                            if (str_starts_with($billPath, 'storage/')) {
+                                $billPath = substr($billPath, strlen('storage/'));
+                            }
+                            $billImageUrl = ($billPath !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($billPath))
+                                ? asset('storage/' . $billPath)
+                                : null;
+                        @endphp
+                        @if($billImageUrl)
+                            <a href="{{ $billImageUrl }}" target="_blank" style="display:inline-block;">
+                                <img src="{{ $billImageUrl }}" alt="Bill Image" style="max-width:60px;max-height:60px;border-radius:7px;box-shadow:0 2px 8px #2563eb22;object-fit:cover;">
                             </a>
                         @else
                             &nbsp;

@@ -1,158 +1,796 @@
-<?php $__env->startSection('title', 'Energy'); ?>
+<?php $__env->startSection('title', 'Energy Incidents'); ?>
 
 <?php
-    // Ensure notifications and unreadNotifCount are available for the notification bell
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+
+    $incidentRows = collect(method_exists($incidents, 'items') ? $incidents->items() : $incidents);
+    $totalOnPage = $incidentRows->count();
+    $openCount = $incidentRows->filter(function ($incident) {
+        return str_contains(strtolower((string) ($incident->status ?? 'open')), 'open');
+    })->count();
+    $pendingCount = $incidentRows->filter(function ($incident) {
+        return str_contains(strtolower((string) ($incident->status ?? '')), 'pending');
+    })->count();
+    $ongoingCount = $incidentRows->filter(function ($incident) {
+        return str_contains(strtolower((string) ($incident->status ?? '')), 'ongoing');
+    })->count();
+    $criticalCount = $incidentRows->filter(function ($incident) {
+        $level = strtolower((string) ($incident->severity_key ?? 'normal'));
+        return in_array($level, ['critical', 'very-high'], true);
+    })->count();
 ?>
 
 <?php $__env->startSection('content'); ?>
+<div class="incident-page">
+    <div class="incident-shell">
+        <div class="incident-header">
+            <div>
+                <h2>Incident Records</h2>
+                <p>Track active energy anomalies and inspect details for immediate action.</p>
+            </div>
+            <a href="<?php echo e(route('energy-incidents.history')); ?>" class="history-btn">
+                <i class="fa-solid fa-clock-rotate-left"></i> View History
+            </a>
+        </div>
 
-        <div class="report card" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;">
-            <h3 style="font-size:1.35rem;font-weight:700;color:#2563eb;margin:0;letter-spacing:0.5px;">Incident Records</h3>
-            <div style="display:flex;gap:14px;">
-                <a href="<?php echo e(route('energy-incidents.history')); ?>" style="background:linear-gradient(90deg,#6366f1,#2563eb);color:#fff;padding:10px 28px;font-weight:600;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.13);font-size:1.05rem;transition:0.2s;text-decoration:none;display:flex;align-items:center;gap:8px;">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    View History
-                </a>
+        <div class="incident-metrics">
+            <div class="metric-card total">
+                <span class="metric-label">On This Page</span>
+                <strong class="metric-value"><?php echo e($totalOnPage); ?></strong>
+            </div>
+            <div class="metric-card critical">
+                <span class="metric-label">Critical/Very High</span>
+                <strong class="metric-value"><?php echo e($criticalCount); ?></strong>
+            </div>
+            <div class="metric-card open">
+                <span class="metric-label">Open</span>
+                <strong class="metric-value"><?php echo e($openCount); ?></strong>
+            </div>
+            <div class="metric-card pending">
+                <span class="metric-label">Pending</span>
+                <strong class="metric-value"><?php echo e($pendingCount); ?></strong>
+            </div>
+            <div class="metric-card ongoing">
+                <span class="metric-label">Ongoing</span>
+                <strong class="metric-value"><?php echo e($ongoingCount); ?></strong>
             </div>
         </div>
+
+        <form class="incident-filters" method="GET" action="<?php echo e(route('energy-incidents.index')); ?>">
+            <input type="text" name="q" id="incidentSearch" placeholder="Search facility, description, status..." value="<?php echo e($filters['q'] ?? ''); ?>" />
+            <select name="status" id="incidentStatusFilter">
+                <option value="all" <?php echo e(($filters['status'] ?? 'all') === 'all' ? 'selected' : ''); ?>>All Status</option>
+                <option value="open" <?php echo e(($filters['status'] ?? 'all') === 'open' ? 'selected' : ''); ?>>Open</option>
+                <option value="pending" <?php echo e(($filters['status'] ?? 'all') === 'pending' ? 'selected' : ''); ?>>Pending</option>
+                <option value="ongoing" <?php echo e(($filters['status'] ?? 'all') === 'ongoing' ? 'selected' : ''); ?>>Ongoing</option>
+            </select>
+            <select name="severity" id="incidentSeverityFilter">
+                <option value="all" <?php echo e(($filters['severity'] ?? 'all') === 'all' ? 'selected' : ''); ?>>All Severity</option>
+                <option value="critical" <?php echo e(($filters['severity'] ?? 'all') === 'critical' ? 'selected' : ''); ?>>Critical</option>
+                <option value="very-high" <?php echo e(($filters['severity'] ?? 'all') === 'very-high' ? 'selected' : ''); ?>>Very High</option>
+            </select>
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn apply">Apply</button>
+                <a href="<?php echo e(route('energy-incidents.index')); ?>" class="filter-btn clear">Reset</a>
+            </div>
+        </form>
+
         <div class="incident-list-container">
-        <?php $__empty_1 = true; $__currentLoopData = $incidents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $incident): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-            <?php
-                $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                $monthNum = isset($incident->month) && $incident->month ? (int) $incident->month : (isset($incident->energyRecord) && $incident->energyRecord->month ? (int) $incident->energyRecord->month : null);
-                $yearNum = isset($incident->year) && $incident->year ? $incident->year : (isset($incident->energyRecord) && $incident->energyRecord->year ? $incident->energyRecord->year : null);
-                $monthLabel = $monthNum && $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum-1] : '-';
-                $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : (isset($incident->energyRecord) && isset($incident->energyRecord->deviation_percent) ? $incident->energyRecord->deviation_percent : null);
-                $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-');
-            ?>
-            <div class="incident-list-row" tabindex="0" onclick="showIncidentModal(<?php echo e($incident->id); ?>)">
-                <div class="incident-list-main">
-                    <div class="incident-facility"><?php echo e($incident->facility->name ?? '-'); ?></div>
-                    <div class="incident-detected" style="text-align:right;min-width:120px;"><?php echo e($dateDetected); ?></div>
+            <?php $__empty_1 = true; $__currentLoopData = $incidents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $incident): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
+                    $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    $monthNum = (int) ($incident->month ?? 0);
+                    $yearNum = $incident->year ?? null;
+                    $monthLabel = $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum - 1] : '-';
+                    $facilityName = $incident->facility->name ?? 'Unknown Facility';
+                    $deviation = $incident->deviation_percent;
+                    $deviationText = $deviation !== null ? number_format((float) $deviation, 2) . '%' : 'N/A';
+                    $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : 'N/A');
+
+                    $levelKey = strtolower((string) ($incident->severity_key ?? 'normal'));
+                    if (!in_array($levelKey, ['critical', 'very-high', 'high', 'warning', 'normal'], true)) {
+                        $normalizedLevel = str_replace(' ', '-', $levelKey);
+                        $levelKey = in_array($normalizedLevel, ['critical', 'very-high', 'high', 'warning', 'normal'], true)
+                            ? $normalizedLevel
+                            : 'normal';
+                    }
+                    $levelLabel = (string) ($incident->severity_label ?? '');
+                    if ($levelLabel === '') {
+                        $levelLabel = $levelKey === 'very-high'
+                            ? 'Very High'
+                            : ucfirst(str_replace('-', ' ', $levelKey));
+                    }
+
+                    $statusRaw = strtolower((string) ($incident->status ?? 'Open'));
+                    $statusKey = 'open';
+                    $statusLabel = 'Open';
+                    if (str_contains($statusRaw, 'resolved') || str_contains($statusRaw, 'closed')) {
+                        $statusKey = 'resolved';
+                        $statusLabel = 'Resolved';
+                    } elseif (str_contains($statusRaw, 'ongoing')) {
+                        $statusKey = 'ongoing';
+                        $statusLabel = 'Ongoing';
+                    } elseif (str_contains($statusRaw, 'pending')) {
+                        $statusKey = 'pending';
+                        $statusLabel = 'Pending';
+                    }
+
+                    $defaultDescription = match ($statusKey) {
+                        'resolved' => $levelKey === 'critical'
+                            ? 'Critical energy spike for this billing period was resolved after corrective action.'
+                            : 'Very high energy deviation for this billing period has been resolved and stabilized.',
+                        'ongoing' => $levelKey === 'critical'
+                            ? 'Critical energy spike is under active mitigation and continuous monitoring.'
+                            : 'Very high energy deviation is undergoing corrective action and close monitoring.',
+                        'pending' => $levelKey === 'critical'
+                            ? 'Critical energy spike detected for this billing period and queued for urgent review.'
+                            : 'Very high energy deviation detected for this billing period and queued for validation.',
+                        default => $levelKey === 'critical'
+                            ? 'Critical energy spike is active and requires immediate intervention.'
+                            : 'Very high energy deviation is active and under close monitoring.',
+                    };
+                    $legacyDescriptions = [
+                        'High energy consumption detected for this billing period.',
+                        'System detected unusually high energy consumption for this period. Please review and validate.',
+                    ];
+                    $descriptionText = trim((string) ($incident->description ?? ''));
+                    if ($descriptionText === '' || in_array($descriptionText, $legacyDescriptions, true)) {
+                        $descriptionText = $defaultDescription;
+                    }
+                    $descriptionPreview = \Illuminate\Support\Str::limit($descriptionText, 140);
+                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $descriptionText);
+
+                    $probableCause = $incident->probable_cause;
+                    if (is_array($probableCause)) {
+                        $probableCause = implode(', ', $probableCause);
+                    }
+                    $probableCause = $probableCause ?: 'Automated system analysis: Abnormal usage pattern detected based on recent records.';
+
+                    $immediateAction = $incident->immediate_action ?: 'Incident flagged for LGU review and action.';
+                    $resolutionSummary = $incident->resolution_summary ?: 'Pending review by LGU energy officer or facility manager.';
+                    $defaultRecommendation = match ($statusKey) {
+                        'resolved' => $levelKey === 'critical'
+                            ? 'Keep weekly load audits and retain corrective controls to prevent another critical spike.'
+                            : 'Continue monthly variance checks and maintain current demand-control adjustments.',
+                        'ongoing' => $levelKey === 'critical'
+                            ? 'Continue technical mitigation, monitor demand in near-real time, and verify equipment stability daily.'
+                            : 'Continue corrective maintenance and validate consumption trend every operating shift.',
+                        'pending' => $levelKey === 'critical'
+                            ? 'Dispatch urgent technical inspection, isolate suspect equipment, and validate meter data immediately.'
+                            : 'Prioritize equipment checks, verify operating schedules, and monitor peak-hour consumption.',
+                        default => $levelKey === 'critical'
+                            ? 'Apply immediate load-shedding controls and assign a response owner for 24-hour follow-up.'
+                            : 'Implement short-term consumption controls and track daily usage until variance drops.',
+                    };
+                    $preventiveRecommendation = trim((string) ($incident->preventive_recommendation ?? ''));
+                    if ($preventiveRecommendation === '') {
+                        $preventiveRecommendation = $defaultRecommendation;
+                    }
+
+                    $attachments = [];
+                    if (is_array($incident->attachments)) {
+                        $attachments = $incident->attachments;
+                    } elseif (is_string($incident->attachments) && trim($incident->attachments) !== '') {
+                        $decoded = json_decode($incident->attachments, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $attachments = $decoded;
+                        } else {
+                            $attachments = [$incident->attachments];
+                        }
+                    }
+                ?>
+                <div class="incident-list-row"
+                    tabindex="0"
+                    data-id="<?php echo e($incident->id); ?>"
+                    data-status="<?php echo e($statusKey); ?>"
+                    data-level="<?php echo e($levelKey); ?>"
+                    data-search="<?php echo e($searchText); ?>"
+                    onclick="openIncidentModal(<?php echo e($incident->id); ?>)">
+                    <div class="row-main">
+                        <div class="facility-col">
+                            <div class="facility-name"><?php echo e($facilityName); ?></div>
+                            <div class="facility-desc"><?php echo e($descriptionPreview); ?></div>
+                        </div>
+                        <div class="meta-col">
+                            <span class="chip severity <?php echo e($levelKey); ?>"><?php echo e($levelLabel); ?></span>
+                            <span class="chip status <?php echo e($statusKey); ?>"><?php echo e($statusLabel); ?></span>
+                        </div>
+                        <div class="value-col">
+                            <div class="value-label">Deviation</div>
+                            <div class="value-main <?php echo e($deviation !== null && $deviation >= 0 ? 'up' : 'down'); ?>"><?php echo e($deviationText); ?></div>
+                        </div>
+                        <div class="value-col">
+                            <div class="value-label">Detected</div>
+                            <div class="value-main"><?php echo e($dateDetected); ?></div>
+                            <div class="value-sub"><?php echo e($monthLabel); ?>/<?php echo e($yearNum ?? '-'); ?></div>
+                        </div>
+                        <div class="action-col">
+                            <button type="button" class="detail-btn" onclick="event.stopPropagation(); openIncidentModal(<?php echo e($incident->id); ?>)">
+                                Details
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div id="incident-modal-<?php echo e($incident->id); ?>" class="incident-modal" style="display:none;">
-                <div class="incident-modal-content" style="max-width:520px;padding:38px 36px 32px 36px;border-radius:20px;background:#f8fafc;box-shadow:0 12px 40px rgba(37,99,235,0.13); position:relative;">
-                    <button class="incident-modal-close" onclick="closeIncidentModal(<?php echo e($incident->id); ?>)" aria-label="Close modal">&times;</button>
-                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-                        <div style="font-size:2.1rem;color:#e11d48;"><i class='fa fa-bolt'></i></div>
-                        <h3 style="margin:0;font-size:1.45rem;font-weight:900;color:#1e293b;letter-spacing:-0.5px;">Energy Incident Report</h3>
-                    </div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Facility:</span> <span style="font-weight:800;color:#2563eb;"><?php echo e($incident->facility->name ?? '-'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Month/Year:</span> <span style="font-weight:800;"><?php echo e($monthLabel); ?>/<?php echo e($yearNum ?? '-'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Deviation:</span> <span style="font-weight:800;color:#e11d48;"><?php echo e($dpn !== null ? number_format($dpn, 2) . '%' : '-'); ?></span></div>
-                    <div style="margin-bottom:18px;">
-                        <span style="font-weight:700;color:#64748b;">Alert Severity:</span> 
-                        <?php
-                            $alert = $incident->energyRecord->alert ?? $incident->alert_level ?? 'High';
-                            $alertColor = $alert === 'High' ? '#e11d48' : ($alert === 'Medium' ? '#f59e42' : '#16a34a');
-                        ?>
-                        <span style="font-weight:900;color:<?php echo e($alertColor); ?>;text-transform:uppercase;"><?php echo e($alert); ?></span>
-                    </div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Status:</span> <span style="font-weight:800;"><?php echo e($incident->status ?? 'Open'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Date Detected:</span> <span style="font-weight:800;"><?php echo e($dateDetected); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Description:</span> <span style="font-weight:500;"><?php echo e($incident->description ?? 'System detected unusually high energy consumption for this period. Please review and validate.'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Probable Cause:</span> <span style="font-weight:500;"><?php echo e($incident->probable_cause ?: 'Automated system analysis: Abnormal usage pattern detected based on recent records.'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Immediate Action:</span> <span style="font-weight:500;"><?php echo e($incident->immediate_action ?: 'Incident flagged for LGU review and action.'); ?></span></div>
-                    <div style="margin-bottom:18px;"><span style="font-weight:700;color:#64748b;">Resolution:</span> <span style="font-weight:500;"><?php echo e($incident->resolution_summary ?: 'Pending review by LGU energy officer or facility manager.'); ?></span></div>
-                    <div style="margin-bottom:24px;"><span style="font-weight:700;color:#64748b;">Preventive Recommendation:</span> <span style="font-weight:500;"><?php echo e($incident->preventive_recommendation ?: 'Regularly monitor facility energy trends and investigate any unusual spikes immediately.'); ?></span></div>
-                    <?php if(!empty($incident->attachments)): ?>
-                        <div style="margin-bottom:24px;"><span style="font-weight:700;color:#64748b;">Attachments:</span> <a href="<?php echo e(asset('storage/'.$incident->attachments)); ?>" target="_blank">View</a></div>
-                    <?php endif; ?>
-                    <div style="margin-top:32px; text-align:right;">
-                        <a href="<?php echo e(route('modules.maintenance.index')); ?>?facility_id=<?php echo e($incident->facility->id ?? ''); ?>" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:12px 30px;font-weight:800;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(31,38,135,0.13);font-size:1.08rem;transition:0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-                            View Maintenance
-                        </a>
+
+                <div id="incident-modal-<?php echo e($incident->id); ?>" class="incident-modal" style="display:none;" aria-hidden="true">
+                    <div class="incident-modal-content">
+                        <button class="incident-modal-close" onclick="closeIncidentModal(<?php echo e($incident->id); ?>)" aria-label="Close modal">&times;</button>
+                        <div class="modal-top">
+                            <h3>Energy Incident Report</h3>
+                            <div class="modal-chip-group">
+                                <span class="chip severity <?php echo e($levelKey); ?>"><?php echo e($levelLabel); ?></span>
+                                <span class="chip status <?php echo e($statusKey); ?>"><?php echo e($statusLabel); ?></span>
+                            </div>
+                        </div>
+
+                        <div class="detail-grid">
+                            <div class="detail-item"><span>Facility</span><strong><?php echo e($facilityName); ?></strong></div>
+                            <div class="detail-item"><span>Month/Year</span><strong><?php echo e($monthLabel); ?>/<?php echo e($yearNum ?? '-'); ?></strong></div>
+                            <div class="detail-item"><span>Deviation</span><strong><?php echo e($deviationText); ?></strong></div>
+                            <div class="detail-item"><span>Date Detected</span><strong><?php echo e($dateDetected); ?></strong></div>
+                        </div>
+
+                        <div class="detail-block"><span>Description</span><p><?php echo e($descriptionText); ?></p></div>
+                        <div class="detail-block"><span>Probable Cause</span><p><?php echo e($probableCause); ?></p></div>
+                        <div class="detail-block"><span>Immediate Action</span><p><?php echo e($immediateAction); ?></p></div>
+                        <div class="detail-block"><span>Resolution</span><p><?php echo e($resolutionSummary); ?></p></div>
+                        <div class="detail-block"><span>Preventive Recommendation</span><p><?php echo e($preventiveRecommendation); ?></p></div>
+
+                        <?php if(count($attachments)): ?>
+                            <div class="detail-block">
+                                <span>Attachments</span>
+                                <ul class="attachment-list">
+                                    <?php $__currentLoopData = $attachments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $attachment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php if(is_string($attachment) && trim($attachment) !== ''): ?>
+                                            <li>
+                                                <a href="<?php echo e(asset('storage/' . ltrim($attachment, '/'))); ?>" target="_blank" rel="noopener">
+                                                    <?php echo e(basename($attachment)); ?>
+
+                                                </a>
+                                            </li>
+                                        <?php endif; ?>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="modal-actions">
+                            <a href="<?php echo e(route('modules.maintenance.index')); ?>?facility_id=<?php echo e($incident->facility->id ?? ''); ?>" class="maintenance-btn">
+                                <i class="fa-solid fa-screwdriver-wrench"></i> Open Maintenance
+                            </a>
+                        </div>
                     </div>
                 </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <div class="empty-state">No incidents found for the selected period.</div>
+            <?php endif; ?>
+
+        </div>
+
+        <?php if(method_exists($incidents, 'links')): ?>
+            <div class="incident-pagination">
+                <?php echo e($incidents->onEachSide(1)->links()); ?>
+
             </div>
-        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-            <div style="text-align:center; color:#64748b; padding:18px 0;">No incidents found.</div>
         <?php endif; ?>
     </div>
 </div>
-<?php $__currentLoopData = $incidents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $incident): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-    <?php if($incident->facility): ?>
-        <div id="facility-modal-<?php echo e($incident->facility->id); ?>" class="incident-modal" style="display:none;">
-            <div class="incident-modal-content" style="position:relative;">
-                <button class="incident-modal-close" onclick="closeFacilityModal(<?php echo e($incident->facility->id); ?>)" aria-label="Close modal">&times;</button>
-                <h3 style="margin-top:0;margin-bottom:24px;font-size:1.3rem;font-weight:700;color:#2563eb;">Facility Details</h3>
-                <div style="margin-bottom:18px;"><b>Name:</b> <?php echo e($incident->facility->name ?? '-'); ?></div>
-                <div style="margin-bottom:18px;"><b>Type:</b> <?php echo e($incident->facility->type ?? '-'); ?></div>
-                <div style="margin-bottom:18px;"><b>Size:</b> <?php echo e($incident->facility->size ?? '-'); ?></div>
-                <div style="margin-bottom:18px;"><b>Status:</b> <?php echo e($incident->facility->status ?? '-'); ?></div>
-                <div style="margin-bottom:18px;"><b>Address:</b> <?php echo e($incident->facility->address ?? '-'); ?></div>
-            </div>
-        </div>
-    <?php endif; ?>
-<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
 <script>
-function showIncidentModal(id) {
-    document.getElementById('incident-modal-' + id).style.display = 'flex';
+function openIncidentModal(id) {
+    const modal = document.getElementById('incident-modal-' + id);
+    if (!modal) return;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 }
+
 function closeIncidentModal(id) {
-    document.getElementById('incident-modal-' + id).style.display = 'none';
+    const modal = document.getElementById('incident-modal-' + id);
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
 }
-function showFacilityModal(id) {
-    document.getElementById('facility-modal-' + id).style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-function closeFacilityModal(id) {
-    document.getElementById('facility-modal-' + id).style.display = 'none';
-    document.body.style.overflow = '';
-}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const rows = Array.from(document.querySelectorAll('.incident-list-row'));
+
+    rows.forEach((row) => {
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const id = row.dataset.id;
+                if (id) openIncidentModal(id);
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        document.querySelectorAll('.incident-modal').forEach((modal) => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        });
+        document.body.style.overflow = '';
+    });
+
+    document.querySelectorAll('.incident-modal').forEach((modal) => {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+});
 </script>
+
 <style>
+.incident-page {
+    width: 100%;
+}
+
+.incident-shell {
+    background: #f8fafc;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.09);
+    padding: 28px 22px;
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.incident-header h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.55rem;
+    font-weight: 800;
+}
+
+.incident-header p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 0.93rem;
+}
+
+.history-btn {
+    background: linear-gradient(90deg, #6366f1, #2563eb);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.incident-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.metric-card {
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+}
+
+.metric-value {
+    font-size: 1.45rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.metric-card.total { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.metric-card.critical { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+.metric-card.open { background: #fffbeb; border-color: #fde68a; color: #a16207; }
+.metric-card.pending { background: #fff7ed; border-color: #fdba74; color: #c2410c; }
+.metric-card.ongoing { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+
+.incident-filters {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr auto;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.incident-filters input,
+.incident-filters select {
+    border: 1px solid #dbe2ef;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    color: #1f2937;
+    background: #fff;
+}
+
+.incident-filters input:focus,
+.incident-filters select:focus {
+    outline: none;
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.22);
+}
+
+.filter-actions {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.filter-btn.apply {
+    background: #2563eb;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+.filter-btn.apply:hover {
+    background: #1d4ed8;
+}
+
+.filter-btn.clear {
+    background: #fff;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.filter-btn.clear:hover {
+    background: #f8fafc;
+}
+
 .incident-list-container {
-    background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(31,38,135,0.08); padding:0; margin-bottom:32px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
 }
+
 .incident-list-row {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:18px 24px;
-    border-bottom:1px solid #e5e7eb;
-    cursor:pointer;
-    background:#fff;
-    border-radius:14px;
-    margin:10px 18px;
-    box-shadow:0 1px 4px rgba(31,38,135,0.06);
-    transition:box-shadow 0.18s, background 0.18s, transform 0.16s;
-    position:relative;
+    border-bottom: 1px solid #edf2f7;
+    cursor: pointer;
+    transition: background 0.16s ease, transform 0.16s ease;
 }
-.incident-list-row:last-child { border-bottom:none; }
-.incident-list-row:hover, .incident-list-row:focus {
-    background:#f5f8ff;
-    box-shadow:0 6px 24px rgba(55,98,200,0.13);
-    transform:translateY(-2px) scale(1.012);
-    z-index:2;
+
+.incident-list-row:hover,
+.incident-list-row:focus {
+    background: #f8fbff;
+    transform: translateY(-1px);
+    outline: none;
 }
-.incident-list-main { display:grid; grid-template-columns:2fr 1.5fr; gap:48px; width:100%; align-items:center; }
-.incident-facility { font-weight:600; color:#222; }
-.incident-date, .incident-deviation, .incident-status, .incident-detected { color:#334155; font-size:1.01rem; }
-.incident-alert.high { color:#e11d48; font-weight:700; }
-.incident-alert.medium { color:#f59e42; font-weight:700; }
-.incident-alert.low { color:#2563eb; font-weight:700; }
+
+.incident-list-row:last-child {
+    border-bottom: none;
+}
+
+.row-main {
+    display: grid;
+    grid-template-columns: 2.2fr 1.25fr 0.9fr 1fr 0.7fr;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+}
+
+.facility-name {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.facility-desc {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
+.meta-col {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+}
+
+.chip.severity.critical { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.chip.severity.very-high { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+.chip.severity.high { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+.chip.severity.warning { background: #fffbeb; color: #a16207; border-color: #fde68a; }
+.chip.severity.normal { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+
+.chip.status.open { background: #fffbeb; color: #a16207; border-color: #fde68a; }
+.chip.status.pending { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+.chip.status.ongoing { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+.chip.status.resolved { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+
+.value-label {
+    color: #64748b;
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+    font-weight: 700;
+}
+
+.value-main {
+    color: #1e293b;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.value-main.up { color: #dc2626; }
+.value-main.down { color: #16a34a; }
+
+.value-sub {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+
+.action-col {
+    text-align: right;
+}
+
+.detail-btn {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.detail-btn:hover {
+    background: #e0e7ff;
+}
+
+.empty-state {
+    text-align: center;
+    color: #64748b;
+    padding: 20px 16px;
+}
+
 .incident-modal {
-    position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,41,59,0.18); display:flex; align-items:center; justify-content:center; z-index:1000;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
+
 .incident-modal-content {
-    background:#fff; border-radius:16px; box-shadow:0 8px 32px rgba(31,38,135,0.18); padding:36px 24px 28px 24px; min-width:340px; max-width:95vw; max-height:90vh; overflow-y:auto; position:relative;
+    width: min(760px, 94vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
+    padding: 22px 20px 18px;
+    position: relative;
 }
+
 .incident-modal-close {
-    position:absolute; top:18px; right:18px; background:none; border:none; font-size:2rem; color:#64748b; cursor:pointer; transition:color 0.15s;
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: none;
+    font-size: 2rem;
+    color: #64748b;
+    cursor: pointer;
 }
-.incident-modal-close:hover { color:#e11d48; }
-@media (max-width: 900px) {
-    .incident-list-main { grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1.2fr; font-size:0.98rem; }
-    .incident-modal-content { padding:18px 8px; }
+
+.incident-modal-close:hover {
+    color: #dc2626;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-right: 20px;
+    margin-bottom: 14px;
+}
+
+.modal-top h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+.modal-chip-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.detail-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+}
+
+.detail-item span {
+    display: block;
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+    font-weight: 700;
+}
+
+.detail-item strong {
+    color: #0f172a;
+}
+
+.detail-block {
+    margin-bottom: 12px;
+}
+
+.detail-block span {
+    display: block;
+    color: #334155;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+
+.detail-block p {
+    margin: 0;
+    color: #475569;
+    line-height: 1.45;
+    font-size: 0.94rem;
+}
+
+.attachment-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.attachment-list a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.attachment-list a:hover {
+    text-decoration: underline;
+}
+
+.modal-actions {
+    margin-top: 16px;
+    text-align: right;
+}
+
+.maintenance-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 800;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(90deg, #2563eb, #6366f1);
+}
+
+.incident-pagination {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 1024px) {
+    .incident-metrics {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+    }
+    .row-main {
+        grid-template-columns: 1.8fr 1.2fr 0.9fr 1fr;
+    }
+    .action-col {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+}
+
+@media (max-width: 760px) {
+    .incident-shell {
+        padding: 16px 12px;
+    }
+    .incident-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .history-btn {
+        justify-content: center;
+    }
+    .incident-metrics {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+    .incident-filters {
+        grid-template-columns: 1fr;
+    }
+    .filter-actions {
+        width: 100%;
+    }
+    .filter-btn {
+        flex: 1;
+    }
+    .row-main {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-top {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-right: 22px;
+    }
 }
 </style>
 <?php $__env->stopSection(); ?>
