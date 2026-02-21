@@ -1,10 +1,40 @@
+<?php
+    // Ensure absolute URLs for assets - works with both public root and project root
+    $baseUrl = config('app.url');
+    if (empty($baseUrl) || $baseUrl === 'http://localhost') {
+        // Fallback to current request URL if APP_URL not set
+        $baseUrl = request()->getSchemeAndHttpHost();
+    }
+    $baseUrl = rtrim($baseUrl, '/');
+    
+    $assetUrl = function($path) use ($baseUrl) {
+        // Use asset() helper which handles public folder correctly
+        $asset = asset($path);
+        
+        // If already absolute, return as is
+        if (preg_match('/^https?:\/\//', $asset)) {
+            return $asset;
+        }
+        
+        // Make it absolute
+        $assetPath = ltrim($asset, '/');
+        
+        // Since document root might be project root (not public), 
+        // always add /public/ prefix to ensure it works
+        if (!str_starts_with($assetPath, 'public/')) {
+            $assetPath = 'public/' . $assetPath;
+        }
+        
+        return $baseUrl . '/' . $assetPath;
+    };
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Energy System Portal</title>
-    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('img/logocityhall.jpg')); ?>" />
+    <link rel="icon" type="image/x-icon" href="<?php echo e($assetUrl('img/logocityhall.jpg')); ?>" />
    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -23,7 +53,7 @@
         }
         .hero-section {
             min-height: 90vh;
-            background: url('<?php echo e(asset('img/energy illustration.jpg')); ?>') center center/cover no-repeat;
+            background: url('<?php echo e($assetUrl('img/energy illustration.jpg')); ?>') center center/cover no-repeat;
             color: #fff;
             display: flex;
             align-items: center;
@@ -138,7 +168,7 @@
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="<?php echo e(asset('img/logocityhall.jpg')); ?>" alt="Logo">
+            <img src="<?php echo e($assetUrl('img/logocityhall.jpg')); ?>" alt="Logo">
             <span class="fw-bold" style="font-size:1.25rem;">Energy System Portal</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,7 +180,7 @@
                 <li class="nav-item"><a class="nav-link" href="#partners">Partners</a></li>
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
+                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="<?php echo e((route('login'))); ?>">Login</a></li>
             </ul>
         </div>
     </div>
