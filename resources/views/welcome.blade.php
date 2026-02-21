@@ -1,5 +1,5 @@
 @php
-    // Ensure absolute URLs for assets
+    // Ensure absolute URLs for assets - works with both public root and project root
     $baseUrl = config('app.url');
     if (empty($baseUrl) || $baseUrl === 'http://localhost') {
         // Fallback to current request URL if APP_URL not set
@@ -8,13 +8,24 @@
     $baseUrl = rtrim($baseUrl, '/');
     
     $assetUrl = function($path) use ($baseUrl) {
+        // Use asset() helper which handles public folder correctly
         $asset = asset($path);
+        
         // If already absolute, return as is
         if (preg_match('/^https?:\/\//', $asset)) {
             return $asset;
         }
+        
         // Make it absolute
-        return $baseUrl . '/' . ltrim($asset, '/');
+        $assetPath = ltrim($asset, '/');
+        
+        // Since document root might be project root (not public), 
+        // always add /public/ prefix to ensure it works
+        if (!str_starts_with($assetPath, 'public/')) {
+            $assetPath = 'public/' . $assetPath;
+        }
+        
+        return $baseUrl . '/' . $assetPath;
     };
 @endphp
 <!DOCTYPE html>
