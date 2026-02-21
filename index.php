@@ -1,25 +1,17 @@
 <?php
-// Directly include the home page (no redirect)
-$welcomePath = __DIR__ . '/resources/views/welcome.blade.php';
 
-if (!file_exists($welcomePath)) {
-    die('Welcome page not found.');
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+
+define('LARAVEL_START', microtime(true));
+
+if (file_exists($maintenance = __DIR__.'/storage/framework/maintenance.php')) {
+    require $maintenance;
 }
 
-// Read the Blade template
-$content = file_get_contents($welcomePath);
+require __DIR__.'/vendor/autoload.php';
 
-// Replace Blade asset() helper with actual asset paths
-// asset() in Laravel points to public directory
-$content = preg_replace_callback(
-    "/\{\{\s*asset\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
-    function($matches) {
-        // Remove leading slash if present, then add it back for web path
-        $path = ltrim($matches[1], '/');
-        return '/' . $path;
-    },
-    $content
-);
+/** @var Application $app */
+$app = require_once __DIR__.'/bootstrap/app.php';
 
-// Output the processed content
-echo $content;
+$app->handleRequest(Request::capture());
