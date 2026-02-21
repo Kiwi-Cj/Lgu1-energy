@@ -5,22 +5,48 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-$basePath = __DIR__;
+$explicitBasePath = getenv('LARAVEL_BASE_PATH') ?: ($_SERVER['LARAVEL_BASE_PATH'] ?? null);
+$publicPath = __DIR__;
+$parentPath = dirname(__DIR__);
+$checkedPaths = [];
+$candidatePaths = array_filter([
+    $explicitBasePath,
+    $publicPath,
+    $parentPath,
+    $publicPath.'/laravel',
+    $publicPath.'/laravel_app',
+    $publicPath.'/app',
+    $parentPath.'/laravel',
+    $parentPath.'/laravel_app',
+    $parentPath.'/app',
+]);
 
-if (! file_exists($basePath.'/vendor/autoload.php') || ! file_exists($basePath.'/bootstrap/app.php')) {
-    $parentPath = dirname(__DIR__);
-    if (file_exists($parentPath.'/vendor/autoload.php') && file_exists($parentPath.'/bootstrap/app.php')) {
-        $basePath = $parentPath;
+if (is_dir($parentPath)) {
+    foreach (glob($parentPath.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+        $candidatePaths[] = $dir;
     }
+}
+
+$basePath = null;
+foreach (array_values(array_unique($candidatePaths)) as $candidate) {
+    $checkedPaths[] = $candidate;
+    if (file_exists($candidate.'/vendor/autoload.php') && file_exists($candidate.'/bootstrap/app.php')) {
+        $basePath = $candidate;
+        break;
+    }
+}
+
+if ($basePath === null) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "Laravel bootstrap files not found.\n";
+    echo "Set LARAVEL_BASE_PATH to your Laravel app directory.\n";
+    echo "Checked paths:\n - ".implode("\n - ", $checkedPaths);
+    exit;
 }
 
 if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) {
     require $maintenance;
-}
-
-if (! file_exists($basePath.'/vendor/autoload.php')) {
-    http_response_code(500);
-    exit('Laravel autoload not found. Check deployment paths and run composer install.');
 }
 
 require $basePath.'/vendor/autoload.php';
