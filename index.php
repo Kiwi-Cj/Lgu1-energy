@@ -27,6 +27,21 @@ if (is_dir($parentPath)) {
     }
 }
 
+if (is_dir($publicPath)) {
+    foreach (glob($publicPath.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+        $candidatePaths[] = $dir;
+    }
+}
+
+// Scan one more level for common shared-hosting layouts like:
+// /home/user/repositories/project or /home/user/public_html/project
+$levelOneDirs = array_values(array_unique(array_filter($candidatePaths, 'is_dir')));
+foreach ($levelOneDirs as $dir) {
+    foreach (glob($dir.'/*', GLOB_ONLYDIR) ?: [] as $subdir) {
+        $candidatePaths[] = $subdir;
+    }
+}
+
 $basePath = null;
 foreach (array_values(array_unique($candidatePaths)) as $candidate) {
     $checkedPaths[] = $candidate;
