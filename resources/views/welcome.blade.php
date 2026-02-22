@@ -134,7 +134,7 @@
                 <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
+                <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="{{ url('/login') }}">Login</a></li>
             </ul>
         </div>
     </div>
