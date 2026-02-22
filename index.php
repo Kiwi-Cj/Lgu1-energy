@@ -229,14 +229,24 @@ foreach (array_values(array_unique($candidatePaths)) as $dir) {
 }
 
 $basePath = null;
+$autoloadFile = null;
 foreach (array_values(array_unique($candidatePaths)) as $candidate) {
     $checkedPaths[] = $candidate;
 
     $autoloadPath = $candidate.'/vendor/autoload.php';
+    $nestedAutoloadPath = $candidate.'/vendor/vendor/autoload.php';
     $bootstrapPath = $candidate.'/bootstrap/app.php';
+    $resolvedAutoloadPath = null;
 
-    if ($safeFileExists($autoloadPath) && $safeFileExists($bootstrapPath)) {
+    if ($safeFileExists($autoloadPath)) {
+        $resolvedAutoloadPath = $autoloadPath;
+    } elseif ($safeFileExists($nestedAutoloadPath)) {
+        $resolvedAutoloadPath = $nestedAutoloadPath;
+    }
+
+    if ($resolvedAutoloadPath !== null && $safeFileExists($bootstrapPath)) {
         $basePath = $candidate;
+        $autoloadFile = $resolvedAutoloadPath;
         break;
     }
 
@@ -247,10 +257,11 @@ foreach (array_values(array_unique($candidatePaths)) as $candidate) {
         $safeFileExists($candidate.'/public/index.php')
     ) {
         $laravelLikePaths[] = sprintf(
-            '%s (bootstrap/app.php: %s, vendor/autoload.php: %s)',
+            '%s (bootstrap/app.php: %s, vendor/autoload.php: %s%s)',
             $candidate,
             $safeFileExists($bootstrapPath) ? 'found' : 'missing',
-            $safeFileExists($autoloadPath) ? 'found' : 'missing'
+            $safeFileExists($autoloadPath) ? 'found' : 'missing',
+            $safeFileExists($nestedAutoloadPath) ? ', nested vendor/vendor/autoload.php: found' : ''
         );
     }
 }
@@ -284,8 +295,10 @@ if ($safeFileExists($maintenance = $basePath.'/storage/framework/maintenance.php
 }
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$autoloadRealPath = $basePath.'/vendor/composer/autoload_real.php';
-$classLoaderPath = $basePath.'/vendor/composer/ClassLoader.php';
+$autoloadFile ??= $basePath.'/vendor/autoload.php';
+$vendorDir = dirname($autoloadFile);
+$autoloadRealPath = $vendorDir.'/composer/autoload_real.php';
+$classLoaderPath = $vendorDir.'/composer/ClassLoader.php';
 
 if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath)) {
     if ($requestPath === '/' || $requestPath === '/index.php') {
@@ -295,15 +308,18 @@ if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath))
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
     echo "Composer vendor files are incomplete.\n";
-    echo "Missing required bootstrap files under vendor/composer.\n";
+    echo "Missing required bootstrap files under {$vendorDir}/composer.\n";
     echo "Expected:\n";
     echo " - {$autoloadRealPath}\n";
     echo " - {$classLoaderPath}\n";
     echo "Fix: run 'composer install --no-dev --optimize-autoloader' in {$basePath}\n";
+    if (str_contains($autoloadFile, '/vendor/vendor/')) {
+        echo "Note: nested vendor folder detected. Move contents of {$basePath}/vendor/vendor into {$basePath}/vendor.\n";
+    }
     exit;
 }
 
-require $basePath.'/vendor/autoload.php';
+require $autoloadFile;
 
 /** @var Application $app */
 $app = require_once $basePath.'/bootstrap/app.php';
