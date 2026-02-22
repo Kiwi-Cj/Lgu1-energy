@@ -319,7 +319,29 @@ if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath))
     exit;
 }
 
-require $autoloadFile;
+try {
+    require $autoloadFile;
+} catch (\Throwable $e) {
+    $isPlatformCheckError = str_contains($e->getMessage(), 'Composer detected issues in your platform');
+
+    if ($isPlatformCheckError && ($requestPath === '/' || $requestPath === '/index.php')) {
+        $renderWelcomeFallback();
+    }
+
+    if ($isPlatformCheckError) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "PHP version mismatch for this Laravel app.\n";
+        echo "Current PHP version: ".PHP_VERSION."\n";
+        echo "Composer dependencies require a newer PHP version (see composer.json require.php).\n";
+        echo "Fix options:\n";
+        echo " - Upgrade hosting PHP to 8.2+ (recommended for this project)\n";
+        echo " - Or install dependencies compatible with your server PHP version\n";
+        exit;
+    }
+
+    throw $e;
+}
 
 /** @var Application $app */
 $app = require_once $basePath.'/bootstrap/app.php';
