@@ -30,14 +30,79 @@ $parentPath = dirname(__DIR__);
 $checkedPaths = [];
 $candidatePaths = [];
 $laravelLikePaths = [];
+$openBaseDirRaw = (string) ini_get('open_basedir');
+$openBaseDirs = [];
 
-$pushCandidate = static function (?string $path) use (&$candidatePaths): void {
+if ($openBaseDirRaw !== '') {
+    foreach (explode(PATH_SEPARATOR, $openBaseDirRaw) as $allowedPath) {
+        $allowedPath = trim($allowedPath);
+        if ($allowedPath === '') {
+            continue;
+        }
+
+        $openBaseDirs[] = rtrim(str_replace('\\', '/', $allowedPath), '/');
+    }
+}
+
+$normalizePath = static function (string $path): string {
+    return rtrim(str_replace('\\', '/', $path), '/');
+};
+
+$isPathAllowed = static function (?string $path) use ($openBaseDirs, $normalizePath): bool {
+    if (! is_string($path) || trim($path) === '') {
+        return false;
+    }
+
+    if ($openBaseDirs === []) {
+        return true;
+    }
+
+    $normalizedPath = $normalizePath(trim($path));
+
+    foreach ($openBaseDirs as $allowedPath) {
+        if (
+            $normalizedPath === $allowedPath ||
+            str_starts_with($normalizedPath.'/', $allowedPath.'/')
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+$safeIsDir = static function (?string $path) use ($isPathAllowed): bool {
+    return $isPathAllowed($path) && is_dir($path);
+};
+
+$safeFileExists = static function (?string $path) use ($isPathAllowed): bool {
+    return $isPathAllowed($path) && file_exists($path);
+};
+
+$safeGlobDirs = static function (?string $pathPattern) use ($isPathAllowed): array {
+    if (! is_string($pathPattern) || $pathPattern === '') {
+        return [];
+    }
+
+    $baseDir = dirname($pathPattern);
+    if (! $isPathAllowed($baseDir)) {
+        return [];
+    }
+
+    return glob($pathPattern, GLOB_ONLYDIR) ?: [];
+};
+
+$pushCandidate = static function (?string $path) use (&$candidatePaths, $isPathAllowed): void {
     if (! is_string($path)) {
         return;
     }
 
     $path = trim($path);
     if ($path === '') {
+        return;
+    }
+
+    if (! $isPathAllowed($path)) {
         return;
     }
 
@@ -57,36 +122,36 @@ $pushCandidate($parentPath.'/laravel');
 $pushCandidate($parentPath.'/laravel_app');
 $pushCandidate($parentPath.'/app');
 
-if (is_dir($parentPath)) {
-    foreach (glob($parentPath.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+if ($safeIsDir($parentPath)) {
+    foreach ($safeGlobDirs($parentPath.'/*') as $dir) {
         $candidatePaths[] = $dir;
     }
 }
 
-if (is_dir($publicPath)) {
-    foreach (glob($publicPath.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+if ($safeIsDir($publicPath)) {
+    foreach ($safeGlobDirs($publicPath.'/*') as $dir) {
         $candidatePaths[] = $dir;
     }
 }
 
-$levelOneDirs = array_values(array_unique(array_filter($candidatePaths, 'is_dir')));
+$levelOneDirs = array_values(array_unique(array_filter($candidatePaths, $safeIsDir)));
 foreach ($levelOneDirs as $dir) {
-    foreach (glob($dir.'/*', GLOB_ONLYDIR) ?: [] as $subdir) {
+    foreach ($safeGlobDirs($dir.'/*') as $subdir) {
         $candidatePaths[] = $subdir;
     }
 }
 
 foreach (array_values(array_unique($candidatePaths)) as $dir) {
-    if (! is_dir($dir)) {
+    if (! $safeIsDir($dir)) {
         continue;
     }
 
-    if (is_dir($dir.'/current')) {
+    if ($safeIsDir($dir.'/current')) {
         $candidatePaths[] = $dir.'/current';
     }
 
-    if (is_dir($dir.'/releases')) {
-        foreach (glob($dir.'/releases/*', GLOB_ONLYDIR) ?: [] as $releaseDir) {
+    if ($safeIsDir($dir.'/releases')) {
+        foreach ($safeGlobDirs($dir.'/releases/*') as $releaseDir) {
             $candidatePaths[] = $releaseDir;
         }
     }
@@ -103,22 +168,22 @@ foreach (array_values(array_unique($candidatePaths)) as $candidate) {
     $autoloadPath = $candidate.'/vendor/autoload.php';
     $bootstrapPath = $candidate.'/bootstrap/app.php';
 
-    if (file_exists($autoloadPath) && file_exists($bootstrapPath)) {
+    if ($safeFileExists($autoloadPath) && $safeFileExists($bootstrapPath)) {
         $basePath = $candidate;
         break;
     }
 
     if (
-        file_exists($bootstrapPath) ||
-        is_dir($candidate.'/bootstrap') ||
-        is_dir($candidate.'/vendor') ||
-        file_exists($candidate.'/public/index.php')
+        $safeFileExists($bootstrapPath) ||
+        $safeIsDir($candidate.'/bootstrap') ||
+        $safeIsDir($candidate.'/vendor') ||
+        $safeFileExists($candidate.'/public/index.php')
     ) {
         $laravelLikePaths[] = sprintf(
             '%s (bootstrap/app.php: %s, vendor/autoload.php: %s)',
             $candidate,
-            file_exists($bootstrapPath) ? 'found' : 'missing',
-            file_exists($autoloadPath) ? 'found' : 'missing'
+            $safeFileExists($bootstrapPath) ? 'found' : 'missing',
+            $safeFileExists($autoloadPath) ? 'found' : 'missing'
         );
     }
 }
@@ -142,7 +207,7 @@ if ($basePath === null) {
     exit;
 }
 
-if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) {
+if ($safeFileExists($maintenance = $basePath.'/storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
