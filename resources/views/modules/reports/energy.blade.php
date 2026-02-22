@@ -98,11 +98,18 @@
 .kpi-card {
     border-radius: 12px;
     border: 1px solid transparent;
-    padding: 11px 12px;
+    padding: 12px 12px;
+    min-height: 96px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .kpi-label {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.71rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -111,9 +118,16 @@
 }
 
 .kpi-value {
-    font-size: 1.33rem;
+    font-size: 1.36rem;
     font-weight: 900;
     line-height: 1;
+}
+
+.kpi-note {
+    font-size: 0.72rem;
+    font-weight: 700;
+    opacity: 0.9;
+    margin-top: 6px;
 }
 
 .kpi-total { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
@@ -282,6 +296,15 @@ body.dark-mode .energy-report-shell {
 }
 body.dark-mode .energy-header h2 { color: #e2e8f0; }
 body.dark-mode .energy-header p { color: #94a3b8; }
+body.dark-mode .kpi-card {
+    border-color: #334155;
+    box-shadow: none;
+}
+body.dark-mode .kpi-total { background: rgba(37, 99, 235, 0.2); color: #93c5fd; border-color: rgba(147, 197, 253, 0.3); }
+body.dark-mode .kpi-actual { background: rgba(14, 116, 144, 0.2); color: #67e8f9; border-color: rgba(125, 211, 252, 0.28); }
+body.dark-mode .kpi-baseline { background: rgba(51, 65, 85, 0.32); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.25); }
+body.dark-mode .kpi-var { background: rgba(194, 65, 12, 0.2); color: #fdba74; border-color: rgba(251, 146, 60, 0.28); }
+body.dark-mode .kpi-trend { background: rgba(22, 101, 52, 0.24); color: #86efac; border-color: rgba(74, 222, 128, 0.25); }
 body.dark-mode .energy-filters,
 body.dark-mode .energy-table-wrap { background: #111827; border-color: #1f2937; }
 body.dark-mode .filter-group label { color: #cbd5e1; }
@@ -359,24 +382,29 @@ body.dark-mode .empty-row { color: #94a3b8; }
 
         <div class="energy-kpis">
             <div class="kpi-card kpi-total">
-                <span class="kpi-label">Rows</span>
+                <span class="kpi-label"><i class="fa fa-table"></i> Rows</span>
                 <div class="kpi-value">{{ $rows->count() }}</div>
+                <span class="kpi-note">records loaded</span>
             </div>
             <div class="kpi-card kpi-actual">
-                <span class="kpi-label">Total Actual</span>
+                <span class="kpi-label"><i class="fa fa-bolt"></i> Total Actual</span>
                 <div class="kpi-value">{{ number_format($totalActual, 2) }}</div>
+                <span class="kpi-note">kWh consumed</span>
             </div>
             <div class="kpi-card kpi-baseline">
-                <span class="kpi-label">Total Baseline</span>
+                <span class="kpi-label"><i class="fa fa-balance-scale"></i> Total Baseline</span>
                 <div class="kpi-value">{{ number_format($totalBaseline, 2) }}</div>
+                <span class="kpi-note">kWh target</span>
             </div>
             <div class="kpi-card kpi-var">
-                <span class="kpi-label">Total Variance</span>
+                <span class="kpi-label"><i class="fa fa-exchange"></i> Total Variance</span>
                 <div class="kpi-value">{{ number_format($totalVariance, 2) }}</div>
+                <span class="kpi-note">actual vs baseline</span>
             </div>
             <div class="kpi-card kpi-trend">
-                <span class="kpi-label">Trend (Up/Down)</span>
+                <span class="kpi-label"><i class="fa fa-line-chart"></i> Trend (Up/Down)</span>
                 <div class="kpi-value">{{ $increasingCount }}/{{ $decreasingCount }}</div>
+                <span class="kpi-note">increasing/decreasing</span>
             </div>
         </div>
 

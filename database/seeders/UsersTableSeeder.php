@@ -70,20 +70,34 @@ class UsersTableSeeder extends Seeder
             ],
         ];
 
-        DB::table('users')->upsert(
-            $users,
-            ['email'],
-            [
-                'facility_id',
-                'full_name',
-                'username',
-                'password',
-                'role',
-                'status',
-                'contact_number',
-                'department',
-                'updated_at',
-            ]
-        );
+        foreach ($users as $user) {
+            $existingByUsername = DB::table('users')->where('username', $user['username'])->first();
+            $existingByEmail = DB::table('users')->where('email', $user['email'])->first();
+
+            // If username and email point to different rows, remove stale email row first.
+            if ($existingByUsername && $existingByEmail && $existingByUsername->id !== $existingByEmail->id) {
+                DB::table('users')->where('id', $existingByEmail->id)->delete();
+                $existingByEmail = null;
+            }
+
+            $existing = $existingByUsername ?: $existingByEmail;
+
+            if ($existing) {
+                DB::table('users')->where('id', $existing->id)->update([
+                    'facility_id' => $user['facility_id'],
+                    'full_name' => $user['full_name'],
+                    'email' => $user['email'],
+                    'username' => $user['username'],
+                    'password' => $user['password'],
+                    'role' => $user['role'],
+                    'status' => $user['status'],
+                    'contact_number' => $user['contact_number'],
+                    'department' => $user['department'],
+                    'updated_at' => $now,
+                ]);
+            } else {
+                DB::table('users')->insert($user);
+            }
+        }
     }
 }

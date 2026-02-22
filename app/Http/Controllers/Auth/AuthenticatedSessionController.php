@@ -39,9 +39,24 @@ class AuthenticatedSessionController extends Controller
             }
             return back()->withErrors(['email' => $errorMsg]);
         }
+
+        $otpEnabled = (bool) config('otp.enabled', true);
+        if (! $otpEnabled) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            \Illuminate\Support\Facades\RateLimiter::clear($request->throttleKey());
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'redirect' => route('dashboard'),
+                    'otp_enabled' => false,
+                ]);
+            }
+            return redirect()->route('dashboard');
+        }
+
         session(['otp_user_id' => $user->id]);
         $otp = rand(100000, 999999);
-        $expireMinutes = (int) env('OTP_EXPIRE_MINUTES', 5);
+        $expireMinutes = max(1, (int) config('otp.expire_minutes', 5));
         $expiresAt = now()->addMinutes($expireMinutes);
         \App\Models\Otp::create([
             'user_id' => $user->id,
@@ -52,7 +67,8 @@ class AuthenticatedSessionController extends Controller
         $user->notify(new \App\Notifications\SendOtpNotification($otp));
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
-                'show_otp_modal' => true
+                'show_otp_modal' => true,
+                'otp_expire_minutes' => $expireMinutes,
             ]);
         }
         return redirect()->back();

@@ -5,7 +5,7 @@
 
 
 @section('content')
-<div class="report card" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
+<div class="report card users-shell" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
 
 @php
 	// Ensure notifications and unreadNotifCount are available for the notification bell
@@ -25,6 +25,79 @@
 	</div>
 @else
 	<style>
+		.users-shell {
+			border: 1px solid #dbe6f5;
+			background: linear-gradient(180deg, #f8fbff 0%, #f1f6fd 100%) !important;
+		}
+		.users-title {
+			color: #1e1b4b !important;
+			text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+		}
+		.users-stat-grid {
+			display: grid !important;
+			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+			gap: 16px !important;
+			margin-bottom: 28px !important;
+		}
+		.users-stat-card {
+			max-width: none !important;
+			margin: 0 !important;
+			border: 1px solid rgba(148, 163, 184, 0.24);
+			transition: transform .18s ease, box-shadow .18s ease;
+		}
+		.users-stat-card:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 14px 28px rgba(37, 99, 235, 0.13) !important;
+		}
+		.users-actions {
+			margin-bottom: 18px !important;
+			padding: 4px 0;
+		}
+		.users-btn-primary,
+		.users-btn-secondary {
+			border: 1px solid transparent !important;
+			transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
+		}
+		.users-btn-primary:hover,
+		.users-btn-secondary:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18) !important;
+		}
+		.users-btn-secondary {
+			background: #eef2ff !important;
+			border-color: #c7d2fe !important;
+		}
+		.users-table-wrap {
+			border: 1px solid #dbe6f5;
+		}
+		.users-table thead tr {
+			background: linear-gradient(135deg, #edf3ff 0%, #e5ecff 100%) !important;
+		}
+		.users-table th {
+			color: #334155;
+			font-size: .9rem;
+			text-transform: uppercase;
+			letter-spacing: .03em;
+			border-bottom: 1px solid #dbe6f5;
+		}
+		.users-table td {
+			color: #0f172a;
+			border-top: 1px solid #edf2fb;
+			vertical-align: middle;
+		}
+		.users-table tbody tr:hover {
+			background: #f8fbff;
+		}
+		.users-role-overview {
+			padding: 16px 18px;
+			background: #f8fbff;
+			border: 1px solid #dde7f4;
+			border-radius: 12px;
+		}
+		.users-role-overview ul li {
+			margin-bottom: 6px;
+			color: #334155;
+		}
 		.action-btn-view:hover .action-label-view,
 		.action-btn-edit:hover .action-label-edit,
 		.action-btn-delete:hover .action-label-delete {
@@ -55,18 +128,149 @@
 			background: #fff;
 			border-radius: 14px;
 		}
+		body.dark-mode .users-shell {
+			background: linear-gradient(170deg, #0f172a 0%, #111827 100%) !important;
+			border-color: #1f2c44 !important;
+			box-shadow: 0 14px 30px rgba(2, 6, 23, 0.42) !important;
+		}
+		body.dark-mode .users-title {
+			color: #e2e8f0 !important;
+			text-shadow: none;
+		}
+		body.dark-mode .users-stat-card {
+			background: #0f172a !important;
+			color: #e2e8f0 !important;
+			border-color: #253043 !important;
+			box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45) !important;
+		}
+		body.dark-mode .users-stat-card > div {
+			color: #cbd5e1 !important;
+		}
+		body.dark-mode .users-stat-card > div:first-child span {
+			color: inherit !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-total {
+			background: linear-gradient(145deg, #1e293b 0%, #172554 100%) !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-active {
+			background: linear-gradient(145deg, #0f2f2a 0%, #14532d 100%) !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-roles {
+			background: linear-gradient(145deg, #1f2540 0%, #312e81 100%) !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-roles > div:nth-child(2) > span {
+			background: #2e275a !important;
+			color: #ede9fe !important;
+			box-shadow: 0 0 0 1px rgba(196, 181, 253, 0.36) !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-roles > div:nth-child(2) > span > span:last-child {
+			background: #a78bfa !important;
+			color: #1e1b4b !important;
+		}
+		body.dark-mode .users-stat-card.users-stat-inactive {
+			background: linear-gradient(145deg, #312027 0%, #7f1d1d 100%) !important;
+		}
+		body.dark-mode .users-btn-secondary {
+			background: #1e293b !important;
+			color: #c4b5fd !important;
+			border-color: #334155 !important;
+		}
+		body.dark-mode .users-btn-secondary:hover {
+			background: #334155 !important;
+			color: #e2e8f0 !important;
+		}
+		body.dark-mode .users-table-wrap,
+		body.dark-mode .users-table {
+			background: #0f172a !important;
+			border-color: #223047 !important;
+		}
+		body.dark-mode .users-table thead tr {
+			background: #172132 !important;
+		}
+		body.dark-mode .users-table th {
+			color: #cbd5e1 !important;
+			border-color: #253043 !important;
+		}
+		body.dark-mode .users-table td {
+			color: #e2e8f0 !important;
+			border-color: #1f2a3d !important;
+		}
+		body.dark-mode .users-table tbody tr:hover {
+			background: #131f31 !important;
+		}
+		body.dark-mode .users-role-overview {
+			background: #111a2a !important;
+			border-color: #253043 !important;
+		}
+		body.dark-mode .users-role-overview ul li {
+			color: #cbd5e1 !important;
+		}
+		body.dark-mode .user-edit-modal-pro,
+		body.dark-mode .user-view-modal-pro,
+		body.dark-mode .modal-card {
+			background: #0f172a !important;
+			border: 1px solid #253043 !important;
+			box-shadow: 0 20px 40px rgba(2, 6, 23, 0.6) !important;
+		}
+		body.dark-mode .uv-modal-title,
+		body.dark-mode .uv-value {
+			color: #f1f5f9 !important;
+		}
+		body.dark-mode .uv-modal-subtitle,
+		body.dark-mode .uv-label,
+		body.dark-mode .uv-password-hint {
+			color: #94a3b8 !important;
+		}
+		body.dark-mode .uv-modal-row {
+			border-bottom-color: #1f2a3d !important;
+		}
+		body.dark-mode .uv-form-field label {
+			color: #dbeafe !important;
+		}
+		body.dark-mode .uv-form-field input,
+		body.dark-mode .uv-form-field select,
+		body.dark-mode #facilitySearch {
+			background: #111827 !important;
+			border-color: #334155 !important;
+			color: #e2e8f0 !important;
+		}
+		body.dark-mode .facility-checkbox-scroll,
+		body.dark-mode .facility-checkbox-item {
+			background: #111827 !important;
+			border-color: #334155 !important;
+			color: #e2e8f0 !important;
+		}
+		body.dark-mode .facility-checkbox-item:hover {
+			background: #1f2937 !important;
+		}
+		body.dark-mode .facility-badge {
+			background: #1e293b !important;
+			color: #dbeafe !important;
+			box-shadow: 0 0 0 1px #334155 !important;
+		}
+		@media (max-width: 680px) {
+			.users-shell {
+				padding: 20px 14px !important;
+			}
+			.users-title {
+				font-size: 1.5rem !important;
+			}
+			.users-actions {
+				gap: 10px !important;
+			}
+		}
 	</style>
-	<h1 style="font-size:2.1rem;font-weight:800;color:#312e81;margin-bottom:10px;letter-spacing:-1px;">Users and Roles</h1>
-	<div style="display:flex;flex-wrap:wrap;gap:24px 2%;margin-bottom:32px;justify-content:space-between;">
-		<div style="flex:1 1 220px;min-width:220px;max-width:24%;background:#fff;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(55,98,200,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
+	<h1 class="users-title" style="font-size:2.1rem;font-weight:800;color:#312e81;margin-bottom:10px;letter-spacing:-1px;">Users and Roles</h1>
+	<div class="users-stat-grid" style="display:flex;flex-wrap:wrap;gap:24px 2%;margin-bottom:32px;justify-content:space-between;">
+		<div class="users-stat-card users-stat-total" style="flex:1 1 220px;min-width:220px;max-width:24%;background:#fff;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(55,98,200,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
 			<div style="font-size:1.1rem;font-weight:600;color:#4f46e5;display:flex;align-items:center;gap:8px;"><span style='font-size:1.3rem;'>👥</span> Total Users</div>
 			<div style="font-size:2.5rem;font-weight:800;margin:12px 0 0 0;line-height:1;">{{ $totalUsers ?? '-' }}</div>
 		</div>
-		<div style="flex:1 1 220px;min-width:220px;max-width:24%;background:#ecfdf5;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(34,197,94,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
+		<div class="users-stat-card users-stat-active" style="flex:1 1 220px;min-width:220px;max-width:24%;background:#ecfdf5;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(34,197,94,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
 			<div style="font-size:1.1rem;font-weight:600;color:#16a34a;display:flex;align-items:center;gap:8px;"><span style='font-size:1.3rem;'>🟢</span> Active Users</div>
 			<div style="font-size:2.5rem;font-weight:800;margin:12px 0 0 0;line-height:1;">{{ $activeUsers ?? '-' }}</div>
 		</div>
-		<div style="flex:1 1 220px;min-width:220px;max-width:24%;background:#f5f3ff;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(139,92,246,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
+		<div class="users-stat-card users-stat-roles" style="flex:1 1 220px;min-width:220px;max-width:24%;background:#f5f3ff;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(139,92,246,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
 			<div style="font-size:1.1rem;font-weight:600;color:#8b5cf6;display:flex;align-items:center;gap:8px;"><span style='font-size:1.3rem;'>🔐</span> Roles</div>
 			<div style="display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:14px;">
 				@php
@@ -92,17 +296,17 @@
 				@endforeach
 			</div>
 		</div>
-		<div style="flex:1 1 220px;min-width:220px;max-width:24%;background:#fef2f2;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(225,29,72,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
+		<div class="users-stat-card users-stat-inactive" style="flex:1 1 220px;min-width:220px;max-width:24%;background:#fef2f2;padding:24px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(225,29,72,0.10);margin-bottom:0;display:flex;flex-direction:column;align-items:flex-start;">
 			<div style="font-size:1.1rem;font-weight:600;color:#e11d48;display:flex;align-items:center;gap:8px;"><span style='font-size:1.3rem;'>🚫</span> Inactive Users</div>
 			<div style="font-size:2.5rem;font-weight:800;margin:12px 0 0 0;line-height:1;">{{ $inactiveUsers ?? '-' }}</div>
 		</div>
 	</div>
 	<!-- 4️⃣ ACTION BUTTONS -->
-	<div style="margin-bottom:24px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
-		<button type="button" onclick="openUserModalCreate()" style="display:flex;align-items:center;gap:8px;padding:10px 22px;font-size:1.08rem;font-weight:600;background:#4f46e5;color:#fff;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(79,70,229,0.10);transition:background 0.18s,box-shadow 0.18s;cursor:pointer;outline:none;">
+	<div class="users-actions" style="margin-bottom:24px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+		<button type="button" onclick="openUserModalCreate()" class="users-btn-primary" style="display:flex;align-items:center;gap:8px;padding:10px 22px;font-size:1.08rem;font-weight:600;background:#4f46e5;color:#fff;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(79,70,229,0.10);transition:background 0.18s,box-shadow 0.18s;cursor:pointer;outline:none;">
 			<span style="font-size:1.25rem;display:flex;align-items:center;">➕</span> Add New User
 		</button>
-		<a href="{{ route('users.roles') }}"
+		<a href="{{ route('users.roles') }}" class="users-btn-secondary"
 		   style="display:flex;align-items:center;gap:8px;padding:10px 22px;font-size:1.08rem;font-weight:600;background:#ede9fe;color:#7c3aed;border:none;border-radius:10px;box-shadow:0 2px 8px rgba(124,58,237,0.10);text-decoration:none;transition:background 0.18s,box-shadow 0.18s,color 0.18s;cursor:pointer;outline:none;"
 		   onmouseover="this.style.background='#c7d2fe';this.style.color='#4f46e5'"
 		   onmouseout="this.style.background='#ede9fe';this.style.color='#7c3aed'">
@@ -110,8 +314,8 @@
 		</a>
 	</div>
 	<!-- 3️⃣ USERS TABLE -->
-	<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(55,98,200,0.07);padding:18px;">
-		<table class="table" style="width:100%;background:#fff;border-radius:10px;overflow:hidden;text-align:center;">
+	<div class="users-table-wrap" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(55,98,200,0.07);padding:18px;">
+		<table class="table users-table" style="width:100%;background:#fff;border-radius:10px;overflow:hidden;text-align:center;">
 			<thead style="background:#e9effc;">
 				<tr>
 					<th>User ID</th>
@@ -196,7 +400,7 @@
 		</table>
 	</div>
 	<!-- 5️⃣ ROLES OVERVIEW (Optional) -->
-	<div style="margin-top:2.5rem;">
+	<div class="users-role-overview" style="margin-top:2.5rem;">
 		<h3 style="font-size:1.2rem;font-weight:700;color:#3762c8;margin-bottom:10px;">Roles Overview</h3>
 		<ul style="list-style:none;padding:0;">
 			<li><b>Admin:</b> Full system access</li>
@@ -818,5 +1022,5 @@
 
 	</script>
 @endif
-@endsection
 </div>
+@endsection

@@ -19,8 +19,13 @@ class UsersController extends Controller
         }
         // Super admin has full access (no block)
 
-        // Get all users with their assigned facilities (many-to-many)
-        $users = User::with('facilities')->get();
+        // Get users with optional role filter (used by roles action buttons)
+        $selectedRole = strtolower(trim((string) request('role', '')));
+        $usersQuery = User::with('facilities');
+        if ($selectedRole !== '') {
+            $usersQuery->whereRaw('LOWER(role) = ?', [$selectedRole]);
+        }
+        $users = $usersQuery->get();
         $facilities = Facility::all();
         $totalUsers = $users->count();
         $activeUsers = $users->where('status', 'active')->count();
@@ -30,7 +35,7 @@ class UsersController extends Controller
         $role = strtolower($user->role ?? '');
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'notifications', 'unreadNotifCount'));
+        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'notifications', 'unreadNotifCount', 'selectedRole'));
     }
 
     public function edit($id)
@@ -118,5 +123,101 @@ class UsersController extends Controller
         }
         return redirect()->route('users.index')
             ->with('success', 'User updated successfully!');
+    }
+
+    public function roles()
+    {
+        // Block Staff from accessing Roles page
+        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+            return redirect()->route('modules.energy.index')
+                ->with('error', 'You do not have permission to access User Roles.');
+        }
+
+        $users = User::query()->select(['id', 'role', 'status'])->get();
+        $groupedUsers = $users->groupBy(function ($user) {
+            return strtolower(trim((string) ($user->role ?? '')));
+        });
+
+        $roleMeta = [
+            'super admin' => [
+                'name' => 'Super Admin',
+                'description' => 'Full system access including security, configuration, and user management.',
+                'permissions' => 'All Permissions',
+                'badge_color' => '#4f46e5',
+            ],
+            'admin' => [
+                'name' => 'Admin',
+                'description' => 'Operational management with access to reports, users, and maintenance modules.',
+                'permissions' => 'Manage Users / Reports / Operations',
+                'badge_color' => '#2563eb',
+            ],
+            'energy_officer' => [
+                'name' => 'Energy Officer',
+                'description' => 'Monitors energy trends, validates records, and manages analytics outputs.',
+                'permissions' => 'Energy Monitoring / Reports',
+                'badge_color' => '#0ea5e9',
+            ],
+            'staff' => [
+                'name' => 'Staff',
+                'description' => 'Limited access for facility-level data entry and daily operational updates.',
+                'permissions' => 'View / Encode',
+                'badge_color' => '#6b7280',
+            ],
+        ];
+
+        $roles = collect($roleMeta)->map(function ($meta, $key) use ($groupedUsers) {
+            $usersPerRole = $groupedUsers->get($key, collect());
+            $activeUsers = $usersPerRole->filter(function ($user) {
+                return strtolower((string) ($user->status ?? '')) === 'active';
+            })->count();
+
+            return [
+                'id' => null,
+                'key' => $key,
+                'name' => $meta['name'],
+                'description' => $meta['description'],
+                'permissions' => $meta['permissions'],
+                'badge_color' => $meta['badge_color'],
+                'assigned_users' => $usersPerRole->count(),
+                'active_users' => $activeUsers,
+                'inactive_users' => max($usersPerRole->count() - $activeUsers, 0),
+            ];
+        })->values();
+
+        // Include unexpected role strings found in DB so they are visible in the table.
+        foreach ($groupedUsers as $roleKey => $usersPerRole) {
+            if ($roleKey === '' || collect($roleMeta)->has($roleKey)) {
+                continue;
+            }
+
+            $activeUsers = $usersPerRole->filter(function ($user) {
+                return strtolower((string) ($user->status ?? '')) === 'active';
+            })->count();
+
+            $roles->push([
+                'id' => null,
+                'key' => $roleKey,
+                'name' => ucwords(str_replace('_', ' ', $roleKey)),
+                'description' => 'Custom role detected from existing user records.',
+                'permissions' => 'Custom',
+                'badge_color' => '#9333ea',
+                'assigned_users' => $usersPerRole->count(),
+                'active_users' => $activeUsers,
+                'inactive_users' => max($usersPerRole->count() - $activeUsers, 0),
+            ]);
+        }
+
+        $roles = $roles->values()->map(function ($role, $index) {
+            $role['id'] = $index + 1;
+            return $role;
+        });
+
+        $totalRoles = $roles->count();
+        $assignedUsers = $users->count();
+        $activeRoles = $roles->filter(function ($role) {
+            return (int) ($role['active_users'] ?? 0) > 0;
+        })->count();
+
+        return view('modules.users.roles', compact('roles', 'totalRoles', 'assignedUsers', 'activeRoles'));
     }
 }

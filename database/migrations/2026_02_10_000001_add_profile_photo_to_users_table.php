@@ -6,15 +6,27 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->string('profile_photo_path')->nullable()->after('email');
+            if (!Schema::hasColumn('users', 'profile_photo_path')) {
+                $table->string('profile_photo_path')->nullable()->after('email');
+            }
         });
     }
 
     public function down(): void
     {
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('profile_photo_path');
+            if (Schema::hasColumn('users', 'profile_photo_path')) {
+                $table->dropColumn('profile_photo_path');
+            }
         });
     }
 };

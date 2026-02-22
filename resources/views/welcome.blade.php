@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Energy System Portal</title>
-    <link rel="icon" type="image/x-icon" href="/public/img/logocityhall.jpg" /> 
+    <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" /> 
    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
         }
         .hero-section {
             min-height: 90vh;
-            background: url('/public/img/energy illustration.jpg') center center/cover no-repeat;
+            background: url("{{ asset('img/energy illustration.jpg') }}") center center/cover no-repeat;
             color: #fff;
             display: flex;
             align-items: center;
@@ -90,21 +90,6 @@
             font-weight: 600;
             margin-bottom: 8px;
         }
-        .partners-section {
-            background: #f8fafc;
-            padding: 32px 0 24px 0;
-        }
-        .partner-logo {
-            max-height: 48px;
-            margin: 0 24px;
-            opacity: 0.8;
-            filter: grayscale(1);
-            transition: filter 0.2s, opacity 0.2s;
-        }
-        .partner-logo:hover {
-            filter: grayscale(0);
-            opacity: 1;
-        }
         .testimonials-section {
             background: #fff;
             border-radius: 18px;
@@ -138,7 +123,7 @@
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="/public/img/logocityhall.jpg" alt="Logo">
+            <img src="{{ asset('img/logocityhall.jpg') }}" alt="Logo">
             <span class="fw-bold" style="font-size:1.25rem;">Energy System Portal</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,7 +132,6 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
-                <li class="nav-item"><a class="nav-link" href="#partners">Partners</a></li>
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                 <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="{{ route('login') }}">Login</a></li>
@@ -185,17 +169,6 @@
                 <div class="feature-title">Secure Access</div>
                 <div class="text-muted">Role-based access for staff and administrators with strong security.</div>
             </div>
-        </div>
-    </div>
-</section>
-<section class="partners-section" id="partners">
-    <div class="container text-center">
-        <h3 class="mb-4">Our Partners</h3>
-        <div class="d-flex flex-wrap justify-content-center align-items-center gap-4">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_Meralco.png" class="partner-logo" alt="Meralco" loading="lazy">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Department_of_Energy_%28DOE%29.png" class="partner-logo" alt="DOE" loading="lazy">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/Quezon_City_Logo.png" class="partner-logo" alt="Quezon City" loading="lazy">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Philippine_Energy_Regulatory_Commission_%28ERC%29.png" class="partner-logo" alt="ERC" loading="lazy">
         </div>
     </div>
 </section>

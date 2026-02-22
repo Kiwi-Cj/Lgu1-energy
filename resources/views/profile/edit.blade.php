@@ -1,131 +1,321 @@
 @extends('layouts.qc-admin')
+@section('title', 'Edit Profile')
 
 @section('content')
 @php
-	// Ensure notifications and unreadNotifCount are available for the notification bell
-	$user = auth()->user();
-	$notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-	$unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+    $user = auth()->user();
+    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
+    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 @endphp
 
 @if(session('success'))
-<div id="successAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
-    <div style="background:#dcfce7;color:#166534;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #16a34a22;display:flex;align-items:center;gap:10px;">
-        <i class="fa fa-check-circle" style="color:#22c55e;font-size:1.3rem;"></i>
-        <span>{{ session('success') }}</span>
-    </div>
+<div id="successAlert" class="profile-alert profile-alert-success">
+    <i class="fa fa-check-circle"></i>
+    <span>{{ session('success') }}</span>
 </div>
 @endif
+
 @if(session('error'))
-<div id="errorAlert" style="position:fixed;top:32px;right:32px;z-index:99999;min-width:280px;max-width:420px;">
-    <div style="background:#fee2e2;color:#b91c1c;padding:16px 24px;border-radius:12px;font-weight:700;font-size:1.08rem;box-shadow:0 2px 8px #e11d4822;display:flex;align-items:center;gap:10px;">
-        <i class="fa fa-times-circle" style="color:#e11d48;font-size:1.3rem;"></i>
-        <span>{{ session('error') }}</span>
-    </div>
+<div id="errorAlert" class="profile-alert profile-alert-error">
+    <i class="fa fa-times-circle"></i>
+    <span>{{ session('error') }}</span>
 </div>
 @endif
-<script>
-window.addEventListener('DOMContentLoaded', function() {
-        var success = document.getElementById('successAlert');
-        var error = document.getElementById('errorAlert');
-        if (success) setTimeout(() => success.style.display = 'none', 3000);
-        if (error) setTimeout(() => error.style.display = 'none', 3000);
-});
-</script>
 
-<div style="max-width: 800px; margin: 40px auto; padding: 0 20px; font-family: 'Inter', -apple-system, sans-serif;">
-    
-    {{-- Breadcrumbs / Back Link --}}
-    <div style="margin-bottom: 24px;">
-        <a href="/profile" style="color: #64748b; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; transition: color 0.2s;" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#64748b'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-            </svg>
-            Back to Profile view
-        </a>
-    </div>
+<div class="profile-edit-page">
+    <a href="{{ route('profile.show') }}" class="profile-back-link">
+        <i class="fa-solid fa-arrow-left"></i> Back to Profile
+    </a>
 
-    {{-- Profile Header Card --}}
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 32px; margin-bottom: 24px; display: flex; align-items: center; gap: 28px; position: relative; overflow: hidden;">
-        {{-- Decorative Background Accent --}}
-        <div style="position: absolute; top: 0; right: 0; width: 150px; height: 100%; background: linear-gradient(225deg, #eff6ff 0%, transparent 100%); z-index: 0;"></div>
-
-        <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 24px; width: 100%;">
-            <div style="position: relative;">
-                <img src="{{ auth()->user()->profile_photo_url ?? '/img/default-avatar.png' }}" 
-                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                <div style="position: absolute; bottom: 5px; right: 5px; background: #22c55e; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff;"></div>
-            </div>
-
-            <div style="flex: 1;">
-                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; color: #1e293b; letter-spacing: -0.025em;">Settings</h1>
-                <p style="margin: 4px 0 0; color: #64748b; font-size: 1rem;">
-                    Manage your account details and preferences.
-                </p>
-                <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
-                    <span style="background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; border: 1px solid #e2e8f0;">
-                        {{ ucfirst(auth()->user()->role) }}
-                    </span>
-                    <span style="color: #94a3b8; font-size: 0.85rem;">•</span>
-                    <span style="color: #64748b; font-size: 0.85rem;">{{ auth()->user()->email }}</span>
-                </div>
-            </div>
+    <div class="profile-edit-header">
+        <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo">
+        <div>
+            <h1>Account Settings</h1>
+            <p>Update your profile details, password, and account preferences.</p>
         </div>
     </div>
 
-    {{-- Main Content Sections --}}
-    <div style="display: grid; gap: 24px;">
-        
-        {{-- Section: Information --}}
-        <section style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
-            <div style="padding: 24px 32px; border-bottom: 1px solid #f1f5f9; background: #fafafa;">
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #334155;">Profile Information</h3>
-                <p style="margin: 4px 0 0; font-size: 0.9rem; color: #64748b;">Update your account's profile information and email address.</p>
+    <div class="profile-edit-grid">
+        <section class="profile-edit-card">
+            <div class="profile-edit-card-head">
+                <h3>Profile Information</h3>
+                <p>Update your name, email, and profile photo.</p>
             </div>
-            <div style="padding: 32px;">
-                @include('profile.partials.update-profile-information-form', ['user' => auth()->user()])
-            </div>
+            @include('profile.partials.update-profile-information-form', ['user' => $user])
         </section>
 
-        {{-- Section: Security --}}
-        <section style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
-            <div style="padding: 24px 32px; border-bottom: 1px solid #f1f5f9; background: #fafafa;">
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #334155;">Security</h3>
-                <p style="margin: 4px 0 0; font-size: 0.9rem; color: #64748b;">Ensure your account is using a long, random password to stay secure.</p>
+        <section class="profile-edit-card">
+            <div class="profile-edit-card-head">
+                <h3>Password and Security</h3>
+                <p>Use a strong password and change it regularly.</p>
             </div>
-            <div style="padding: 32px;">
-                @include('profile.partials.update-password-form')
-            </div>
+            @include('profile.partials.update-password-form')
         </section>
 
-        {{-- Section: Danger Zone --}}
-        <section style="background: #fff; border: 1px solid #fee2e2; border-radius: 16px; overflow: hidden;">
-            <div style="padding: 24px 32px; border-bottom: 1px solid #fee2e2; background: #fffafb;">
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #991b1b;">Danger Zone</h3>
-                <p style="margin: 4px 0 0; font-size: 0.9rem; color: #b91c1c;">Irreversibly delete your account and all associated data.</p>
+        <section class="profile-edit-card profile-danger-zone">
+            <div class="profile-edit-card-head">
+                <h3>Danger Zone</h3>
+                <p>Deleting your account is irreversible.</p>
             </div>
-            <div style="padding: 32px;">
-                @include('profile.partials.delete-user-form')
-            </div>
+            @include('profile.partials.delete-user-form')
         </section>
-
     </div>
 </div>
 
 <style>
-    /* Simpleng hover effect para sa mga buttons sa loob ng partials kung walang styling */
-    input[type="text"], input[type="email"], input[type="password"] {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        margin-top: 6px;
-        transition: border-color 0.2s, box-shadow 0.2s;
+.profile-edit-page {
+    max-width: 980px;
+    margin: 26px auto 42px;
+}
+
+.profile-alert {
+    position: fixed;
+    top: 22px;
+    right: 22px;
+    z-index: 99999;
+    min-width: 280px;
+    max-width: 420px;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
+}
+
+.profile-alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.profile-alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.profile-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #475569;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.profile-back-link:hover {
+    color: #1d4ed8;
+}
+
+.profile-edit-header {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.profile-edit-header img {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dbeafe;
+}
+
+.profile-edit-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #0f172a;
+}
+
+.profile-edit-header p {
+    margin: 4px 0 0;
+    color: #64748b;
+}
+
+.profile-edit-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.profile-edit-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.profile-edit-card-head {
+    padding: 16px 18px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.profile-edit-card-head h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.04rem;
+}
+
+.profile-edit-card-head p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.profile-edit-card > form,
+.profile-edit-card > section {
+    padding: 18px;
+}
+
+.profile-edit-card label {
+    display: block;
+    font-size: 0.86rem;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.profile-edit-card input[type="text"],
+.profile-edit-card input[type="email"],
+.profile-edit-card input[type="password"],
+.profile-edit-card input[type="file"] {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 10px 12px;
+}
+
+.profile-edit-card input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.profile-edit-card button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-edit-card button[type="submit"] {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+}
+
+.profile-danger-zone {
+    border-color: #fecaca;
+}
+
+.profile-danger-zone .profile-edit-card-head {
+    border-bottom-color: #fecaca;
+    background: #fff1f2;
+}
+
+.profile-danger-zone .profile-edit-card-head h3 {
+    color: #991b1b;
+}
+
+.profile-danger-zone .profile-edit-card-head p {
+    color: #b91c1c;
+}
+
+body.dark-mode .profile-alert-success {
+    background: #14532d;
+    color: #dcfce7;
+    border-color: #166534;
+}
+
+body.dark-mode .profile-alert-error {
+    background: #7f1d1d;
+    color: #fee2e2;
+    border-color: #991b1b;
+}
+
+body.dark-mode .profile-back-link {
+    color: #93c5fd;
+}
+
+body.dark-mode .profile-back-link:hover {
+    color: #bfdbfe;
+}
+
+body.dark-mode .profile-edit-header,
+body.dark-mode .profile-edit-card {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .profile-edit-header img {
+    border-color: #1e3a8a;
+}
+
+body.dark-mode .profile-edit-header h1,
+body.dark-mode .profile-edit-card-head h3,
+body.dark-mode .profile-edit-card label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .profile-edit-header p,
+body.dark-mode .profile-edit-card-head p {
+    color: #94a3b8;
+}
+
+body.dark-mode .profile-edit-card-head {
+    background: #111827;
+    border-bottom-color: #334155;
+}
+
+body.dark-mode .profile-edit-card input[type="text"],
+body.dark-mode .profile-edit-card input[type="email"],
+body.dark-mode .profile-edit-card input[type="password"],
+body.dark-mode .profile-edit-card input[type="file"] {
+    background: #0b1220;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .profile-danger-zone {
+    border-color: #7f1d1d;
+}
+
+body.dark-mode .profile-danger-zone .profile-edit-card-head {
+    background: #3f0d12;
+    border-bottom-color: #7f1d1d;
+}
+
+body.dark-mode .profile-danger-zone .profile-edit-card-head h3 {
+    color: #fecaca;
+}
+
+body.dark-mode .profile-danger-zone .profile-edit-card-head p {
+    color: #fca5a5;
+}
+
+@media (max-width: 720px) {
+    .profile-edit-header {
+        align-items: flex-start;
+        flex-direction: column;
     }
-    input:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
+}
 </style>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    var success = document.getElementById('successAlert');
+    var error = document.getElementById('errorAlert');
+    if (success) setTimeout(function () { success.remove(); }, 3000);
+    if (error) setTimeout(function () { error.remove(); }, 3000);
+});
+</script>
 @endsection

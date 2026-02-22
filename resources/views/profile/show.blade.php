@@ -1,120 +1,327 @@
-
 @extends('layouts.qc-admin')
+@section('title', 'My Profile')
 
 @php
-    // Ensure notifications and unreadNotifCount are available for the notification bell
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+
+    $roleValue = $user?->role;
+    if (is_array($roleValue)) {
+        $roleLabel = collect($roleValue)->filter()->map(fn ($item) => ucfirst((string) $item))->join(', ');
+    } else {
+        $roleLabel = ucfirst((string) ($roleValue ?? 'User'));
+    }
+
+    $statusLabel = ucfirst((string) ($user?->status ?? 'active'));
+    $isActive = strtolower((string) ($user?->status ?? 'active')) === 'active';
+
+    $lastLogin = 'N/A';
+    if (!empty($user?->last_login_at)) {
+        try {
+            $lastLogin = \Carbon\Carbon::parse($user->last_login_at)->format('M d, Y h:i A');
+        } catch (\Throwable $e) {
+            $lastLogin = (string) $user->last_login_at;
+        }
+    }
 @endphp
 
 @section('content')
-
-<div style="max-width:900px;margin:40px auto 60px;">
-    {{-- PAGE HEADER --}}
-    <div style="display:flex;align-items:center;gap:28px;margin-bottom:36px;background:#f8fafc;border-radius:18px;padding:32px 36px 28px 36px;box-shadow:0 2px 16px #3762c81a;">
-        <img src="{{ auth()->user()->profile_photo_url ?? '/img/default-avatar.png' }}"
-             style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #e0e7ff;box-shadow:0 2px 12px #3762c822;">
-        <div style="flex:1;">
-            <h1 style="margin:0;font-size:2.3rem;font-weight:800;letter-spacing:1px;color:#222;">
-                {{ auth()->user()->full_name ?? auth()->user()->name }}
-            </h1>
-            <div style="margin-top:10px;display:flex;align-items:center;gap:14px;">
-                <span style="background:#e0e7ff;color:#3762c8;padding:6px 18px;border-radius:14px;font-size:1.08rem;font-weight:600;display:inline-block;">{{ ucfirst(auth()->user()->role) }}</span>
-                <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:{{ auth()->user()->status === 'active' ? '#22c55e' : '#ef4444' }};border:2px solid #e0e7ff;"></span>
-                <span style="font-size:1.08rem;color:#222;">{{ ucfirst(auth()->user()->status) }}</span>
+<div class="profile-view-page">
+    <div class="profile-header-card">
+        <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" class="profile-avatar">
+        <div class="profile-header-main">
+            <h1>{{ $user?->full_name ?? $user?->name ?? 'User' }}</h1>
+            <p>{{ $user?->email }}</p>
+            <div class="profile-meta">
+                <span class="role-pill">{{ $roleLabel }}</span>
+                <span class="status-pill {{ $isActive ? 'is-active' : 'is-inactive' }}">
+                    <i class="fa-solid fa-circle"></i> {{ $statusLabel }}
+                </span>
             </div>
         </div>
+        <a href="{{ route('profile.edit') }}" class="profile-edit-btn">
+            <i class="fa-solid fa-pen"></i> Edit Profile
+        </a>
     </div>
 
-    {{-- ================= BASIC INFO ================= --}}
-    <section style="margin-bottom:40px;">
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">Basic Information</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px 18px;">
-            <div><label style="color:#64748b;font-size:0.98rem;">Employee/User ID</label><div style="font-size:1.08rem;font-weight:600;">{{ auth()->user()->id }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Username</label><div style="font-size:1.08rem;">{{ auth()->user()->username }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Position / Role</label><div style="font-size:1.08rem;">{{ ucfirst(auth()->user()->role) }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Department / Office</label><div style="font-size:1.08rem;">{{ auth()->user()->department ?? '-' }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Assigned Facility</label><div style="font-size:1.08rem;">{{ auth()->user()->facility?->name ?? 'None' }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Email Address</label><div style="font-size:1.08rem;">{{ auth()->user()->email }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Contact Number</label><div style="font-size:1.08rem;">{{ auth()->user()->contact_number ?? '-' }}</div></div>
-        </div>
-    </section>
-
-    {{-- ================= ACCOUNT & SECURITY ================= --}}
-    <section style="margin-bottom:40px;">
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">Account & Security</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px 18px;align-items:center;">
-            <div><label style="color:#64748b;font-size:0.98rem;">Status</label><div style="font-size:1.08rem;">{{ ucfirst(auth()->user()->status) }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">Last Login</label><div style="font-size:1.08rem;">{{ auth()->user()->last_login_at ?? 'N/A' }}</div></div>
-            <div><label style="color:#64748b;font-size:0.98rem;">2FA / OTP</label><div style="font-size:1.08rem;">{{ auth()->user()->otp_enabled ? 'Enabled' : 'Disabled' }}</div></div>
-            <div style="grid-column:1/-1;text-align:right;">
-
+    <div class="profile-cards-grid">
+        <section class="profile-card">
+            <h3>Basic Information</h3>
+            <div class="info-grid">
+                <div><label>User ID</label><strong>{{ $user?->id }}</strong></div>
+                <div><label>Username</label><strong>{{ $user?->username ?? '-' }}</strong></div>
+                <div><label>Role</label><strong>{{ $roleLabel }}</strong></div>
+                <div><label>Department</label><strong>{{ $user?->department ?? '-' }}</strong></div>
+                <div><label>Assigned Facility</label><strong>{{ $user?->facility?->name ?? 'None' }}</strong></div>
+                <div><label>Contact Number</label><strong>{{ $user?->contact_number ?? '-' }}</strong></div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    {{-- ================= ROLE & PERMISSIONS ================= --}}
-    <section style="margin-bottom:40px;">
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">System Role & Permissions</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px 14px;align-items:center;">
-            <div><i class="fa fa-eye" style="color:#3762c8;margin-right:8px;"></i>View Energy Records</div>
-            <div><i class="fa fa-plus-circle" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->can_create_actions ? '✔' : '✖' }} Create Energy Actions</div>
-            <div><i class="fa fa-check-circle" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->can_approve_actions ? '✔' : '✖' }} Approve Actions</div>
-                <!-- Billing feature removed -->
-            <div><i class="fa fa-cogs" style="color:#3762c8;margin-right:8px;"></i>{{ auth()->user()->is_admin ? '✔' : '✖' }} Admin Settings</div>
-        </div>
-        <small style="color:#6b7280;">Permissions are read-only</small>
-    </section>
-
-    {{-- ================= NOTIFICATIONS ================= --}}
-    <section style="margin-bottom:40px;">
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">Notification Preferences</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 12px;align-items:center;">
-            <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Energy Alerts</label>
-            <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Incident Updates</label>
-                <!-- Billing Notifications removed -->
-            <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Due Date Reminders</label>
-            <label style="font-size:1.05rem;"><input type="checkbox" checked disabled style="margin-right:7px;"> Email</label>
-            <label style="font-size:1.05rem;"><input type="checkbox" disabled style="margin-right:7px;"> SMS</label>
-        </div>
-    </section>
-
-    {{-- ================= RESPONSIBILITIES ================= --}}
-    <section style="margin-bottom:40px;">
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">Assigned Responsibilities</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px 18px;align-items:center;">
-            <div style="text-align:center;">
-                <div style="font-size:1.35rem;font-weight:700;color:#3762c8;">{{ auth()->user()->facility?->name ?? 'None' }}</div>
-                <div style="color:#64748b;font-size:0.98rem;">Facilities</div>
+        <section class="profile-card">
+            <h3>Account and Security</h3>
+            <div class="info-grid">
+                <div><label>Status</label><strong>{{ $statusLabel }}</strong></div>
+                <div><label>Last Login</label><strong>{{ $lastLogin }}</strong></div>
+                <div><label>OTP</label><strong>{{ !empty($user?->otp_enabled) ? 'Enabled' : 'Disabled' }}</strong></div>
+                <div><label>Created At</label><strong>{{ optional($user?->created_at)->format('M d, Y h:i A') }}</strong></div>
+                <div><label>Updated At</label><strong>{{ optional($user?->updated_at)->format('M d, Y h:i A') }}</strong></div>
+                <div><label>Created By</label><strong>{{ $user?->created_by ?? 'System Admin' }}</strong></div>
             </div>
-            <div style="text-align:center;">
-                <div style="font-size:1.35rem;font-weight:700;color:#3762c8;">{{ auth()->user()->assigned_equipment_count ?? 0 }}</div>
-                <div style="color:#64748b;font-size:0.98rem;">Equipment</div>
-            </div>
-            <div style="text-align:center;">
-                <div style="font-size:1.35rem;font-weight:700;color:#3762c8;">{{ auth()->user()->active_actions_count ?? 0 }}</div>
-                <div style="color:#64748b;font-size:0.98rem;">Active Actions</div>
-            </div>
-            <div style="text-align:center;">
-                <div style="font-size:1.35rem;font-weight:700;color:#3762c8;">{{ auth()->user()->open_incidents_count ?? 0 }}</div>
-                <div style="color:#64748b;font-size:0.98rem;">Open Incidents</div>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    {{-- ================= AUDIT ================= --}}
-    <section>
-        <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:18px;letter-spacing:0.5px;color:#1e293b;">Audit & System Info</h3>
-        <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px #3762c80d;padding:28px 24px 18px 24px;color:#4b5563;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;align-items:center;">
-            <div><span style="color:#64748b;font-size:0.98rem;">Account Created</span><div style="font-size:1.08rem;">{{ auth()->user()->created_at }}</div></div>
-            <div><span style="color:#64748b;font-size:0.98rem;">Last Updated</span><div style="font-size:1.08rem;">{{ auth()->user()->updated_at }}</div></div>
-            <div><span style="color:#64748b;font-size:0.98rem;">Created By</span><div style="font-size:1.08rem;">{{ auth()->user()->created_by ?? 'System Admin' }}</div></div>
-        </div>
-    </section>
+        <section class="profile-card">
+            <h3>System Permissions</h3>
+            <div class="permission-list">
+                <div><i class="fa fa-eye"></i> View Energy Records</div>
+                <div><i class="fa fa-plus-circle"></i> {{ !empty($user?->can_create_actions) ? 'Yes' : 'No' }} - Create Energy Actions</div>
+                <div><i class="fa fa-check-circle"></i> {{ !empty($user?->can_approve_actions) ? 'Yes' : 'No' }} - Approve Actions</div>
+                <div><i class="fa fa-cogs"></i> {{ !empty($user?->is_admin) ? 'Yes' : 'No' }} - Admin Settings</div>
+            </div>
+        </section>
 
-    <div style="text-align:right;margin-top:32px;">
-        <a href="/profile/edit" style="display:inline-block;padding:12px 32px;background:#3762c8;color:#fff;border-radius:8px;text-decoration:none;font-size:1.08rem;font-weight:600;box-shadow:0 2px 8px rgba(55,98,200,0.10);transition:background 0.18s;">Edit Profile</a>
+        <section class="profile-card">
+            <h3>Assignments</h3>
+            <div class="stats-grid">
+                <div>
+                    <strong>{{ $user?->facility?->name ?? 'None' }}</strong>
+                    <span>Facilities</span>
+                </div>
+                <div>
+                    <strong>{{ $user?->assigned_equipment_count ?? 0 }}</strong>
+                    <span>Equipment</span>
+                </div>
+                <div>
+                    <strong>{{ $user?->active_actions_count ?? 0 }}</strong>
+                    <span>Active Actions</span>
+                </div>
+                <div>
+                    <strong>{{ $user?->open_incidents_count ?? 0 }}</strong>
+                    <span>Open Incidents</span>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
+
+<style>
+.profile-view-page {
+    max-width: 1100px;
+    margin: 26px auto 40px;
+}
+
+.profile-header-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    margin-bottom: 18px;
+}
+
+.profile-avatar {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dbeafe;
+}
+
+.profile-header-main {
+    flex: 1;
+}
+
+.profile-header-main h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #0f172a;
+}
+
+.profile-header-main p {
+    margin: 4px 0 0;
+    color: #64748b;
+}
+
+.profile-meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.role-pill,
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.role-pill {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.status-pill.is-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-pill.is-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.profile-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.profile-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.profile-card h3 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.info-grid label {
+    display: block;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.info-grid strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.94rem;
+    color: #0f172a;
+}
+
+.permission-list {
+    display: grid;
+    gap: 8px;
+    color: #334155;
+}
+
+.permission-list i {
+    width: 18px;
+    color: #2563eb;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.stats-grid div {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.stats-grid strong {
+    display: block;
+    color: #1d4ed8;
+    font-size: 1.04rem;
+}
+
+.stats-grid span {
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+body.dark-mode .profile-header-card,
+body.dark-mode .profile-card {
+    background: #0f172a;
+    border-color: #334155;
+    box-shadow: none;
+}
+
+body.dark-mode .profile-avatar {
+    border-color: #1e3a8a;
+}
+
+body.dark-mode .profile-header-main h1,
+body.dark-mode .profile-card h3,
+body.dark-mode .info-grid strong,
+body.dark-mode .permission-list {
+    color: #e2e8f0;
+}
+
+body.dark-mode .profile-header-main p,
+body.dark-mode .info-grid label,
+body.dark-mode .stats-grid span {
+    color: #94a3b8;
+}
+
+body.dark-mode .role-pill {
+    background: #1e3a8a;
+    color: #dbeafe;
+}
+
+body.dark-mode .status-pill.is-active {
+    background: #14532d;
+    color: #dcfce7;
+}
+
+body.dark-mode .status-pill.is-inactive {
+    background: #7f1d1d;
+    color: #fee2e2;
+}
+
+body.dark-mode .stats-grid div {
+    border-color: #334155;
+    background: #111827;
+}
+
+body.dark-mode .stats-grid strong {
+    color: #93c5fd;
+}
+
+@media (max-width: 900px) {
+    .profile-header-card {
+        flex-wrap: wrap;
+    }
+
+    .profile-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 @endsection

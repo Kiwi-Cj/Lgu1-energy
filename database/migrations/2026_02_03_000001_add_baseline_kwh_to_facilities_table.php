@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
         // Only add column if it does not exist
         if (!Schema::hasColumn('facilities', 'baseline_kwh')) {
             Schema::table('facilities', function (Blueprint $table) {
@@ -24,8 +28,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
         Schema::table('facilities', function (Blueprint $table) {
-            $table->dropColumn('baseline_kwh');
+            if (Schema::hasColumn('facilities', 'baseline_kwh')) {
+                $table->dropColumn('baseline_kwh');
+            }
         });
     }
 };

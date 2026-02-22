@@ -7,11 +7,13 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    $password = 'StrongPass!123';
+
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => $password,
+        'password_confirmation' => $password,
     ]);
 
     $this->assertAuthenticated();

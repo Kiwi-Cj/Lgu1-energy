@@ -38,17 +38,18 @@ test('reset password screen can be rendered', function () {
 
 test('password can be reset with valid token', function () {
     Notification::fake();
+    $newPassword = 'StrongPass!123';
 
     $user = User::factory()->create();
 
     $this->post('/forgot-password', ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user, $newPassword) {
         $response = $this->post('/reset-password', [
             'token' => $notification->token,
             'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
         ]);
 
         $response

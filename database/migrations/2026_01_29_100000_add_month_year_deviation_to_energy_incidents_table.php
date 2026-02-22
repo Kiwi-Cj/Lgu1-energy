@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up()
     {
+        if (!Schema::hasTable('energy_incidents')) {
+            return;
+        }
+
         Schema::table('energy_incidents', function (Blueprint $table) {
             if (!Schema::hasColumn('energy_incidents', 'month')) {
                 $table->integer('month')->nullable()->after('facility_id');
@@ -23,6 +27,10 @@ return new class extends Migration
 
     public function down()
     {
+        if (!Schema::hasTable('energy_incidents')) {
+            return;
+        }
+
         Schema::table('energy_incidents', function (Blueprint $table) {
             if (Schema::hasColumn('energy_incidents', 'deviation_percent')) {
                 $table->dropColumn('deviation_percent');

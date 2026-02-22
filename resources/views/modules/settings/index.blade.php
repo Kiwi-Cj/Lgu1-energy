@@ -3,371 +3,555 @@
 
 @section('content')
 @php
-    // Ensure notifications and unreadNotifCount are available for the notification bell
-    $user = auth()->user();
-    $userRole = strtolower($user?->role ?? '');
-    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
-    if($userRole === 'staff'){
-        header('Location: ' . route('modules.energy.index'));
-        exit;
-    }
+    $getSetting = function (string $key, $fallback = '') use ($settings, $defaults) {
+        return old($key, $settings[$key] ?? ($defaults[$key] ?? $fallback));
+    };
 @endphp
 
 <style>
-/* REPORT CARD CONTAINER - Added per instruction */
-.report-card {
+.settings-page {
+    max-width: 1240px;
+    margin: 0 auto;
+}
+.settings-shell {
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-    padding: 30px;
-    border: 1px solid #eef2f6;
-    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+    padding: 24px;
+}
+.settings-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.settings-title-wrap h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.settings-title-wrap p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+.settings-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.settings-btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.settings-btn.back {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+.settings-btn.save {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+.settings-btn.save:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+.settings-alert {
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.settings-alert.success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+.settings-alert.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+.settings-alert ul {
+    margin: 8px 0 0 16px;
+    padding: 0;
 }
 
-:root{
-    --primary:#2563eb;
-    --bg:#f4f6fb;
-    --card:#ffffff;
-    --border:#e5e7eb;
-    --text:#1f2937;
-    --muted:#6b7280;
-    --radius:14px;
-    --shadow:0 6px 28px rgba(0,0,0,.08);
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
-.settings-wrap{
-    width:100%;
-    margin:0;
-    padding:10px 0 20px 0; /* Adjusted padding since it's now inside a card */
+.settings-card {
+    border: 1px solid #dbe6f3;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
 }
-.settings-card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    margin-bottom:22px;
-    box-shadow:var(--shadow);
+.settings-head {
+    width: 100%;
+    border: none;
+    background: linear-gradient(90deg, #f8fbff 0%, #f1f5ff 100%);
+    color: #1e293b;
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
 }
-.settings-header{
-    padding:24px 30px;
-    font-weight:700;
-    font-size:1.15rem;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    cursor:pointer;
-    background:#f8fafc;
+.settings-head small {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 600;
 }
-.settings-arrow{transition:.3s;}
-.settings-card.open .settings-arrow{transform:rotate(90deg);}
-.settings-body{
-    display:none;
-    padding:36px 36px 24px 36px;
-    border-top:1px solid var(--border);
-    flex-direction:column;
-    align-items:flex-start;
-    gap:0;
+.settings-chevron {
+    transition: transform .2s ease;
+    color: #475569;
 }
-.settings-card.open .settings-body{display:flex;}
-.settings-grid{
-    width:100%;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:28px 36px;
-    align-items:center;
+.settings-card.open .settings-chevron {
+    transform: rotate(90deg);
 }
-.settings-field{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:flex-start;
-    min-width:0;
+.settings-body {
+    display: none;
+    border-top: 1px solid #e2e8f0;
+    padding: 16px;
+    background: #ffffff;
 }
-.settings-field label{
-    font-weight:600;
-    margin-bottom:6px;
-    display:block;
-    color:var(--text);
-    font-size:1rem;
+.settings-card.open .settings-body {
+    display: block;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px 16px;
+}
+.settings-subblock {
+    margin-bottom: 14px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fbfdff;
+}
+.settings-subblock h3 {
+    margin: 0 0 10px;
+    color: #1d4ed8;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.settings-field label {
+    font-weight: 700;
+    color: #334155;
+    font-size: 0.85rem;
 }
 .settings-field input,
-.settings-field select{
-    width:100%;
-    padding:12px 14px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    font-size:1rem;
-    background:#f9fafb;
-    color:var(--text);
-    transition:border-color .2s, box-shadow .2s;
+.settings-field select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 11px;
+    font-size: 0.92rem;
+    background: #ffffff;
+    color: #0f172a;
 }
 .settings-field input:focus,
-.settings-field select:focus{
-    border-color:var(--primary);
-    outline:none;
-    box-shadow:0 0 0 2px #2563eb33;
+.settings-field select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    outline: none;
 }
-@media(max-width:1100px){
-    .settings-grid{grid-template-columns:repeat(2,1fr);}
-    .settings-body{padding:24px;}
+.settings-help {
+    font-size: 0.76rem;
+    color: #64748b;
 }
-@media(max-width:768px){
-    .settings-grid{grid-template-columns:1fr;}
-    .settings-body{padding:12px;}
+.settings-file-chip {
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 0.76rem;
+}
+.settings-error {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+body.dark-mode .settings-shell {
+    background: #0f172a;
+    border-color: #253043;
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.56);
+}
+body.dark-mode .settings-title-wrap h1 {
+    color: #e2e8f0;
+}
+body.dark-mode .settings-title-wrap p {
+    color: #94a3b8;
+}
+body.dark-mode .settings-btn.back {
+    background: #111827;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .settings-alert.success {
+    background: #14532d;
+    color: #dcfce7;
+    border-color: #166534;
+}
+body.dark-mode .settings-alert.error {
+    background: #3f1517;
+    color: #fecaca;
+    border-color: #7f1d1d;
+}
+body.dark-mode .settings-card {
+    background: #0f172a;
+    border-color: #253043;
+}
+body.dark-mode .settings-head {
+    background: #111827;
+    color: #e2e8f0;
+}
+body.dark-mode .settings-head small,
+body.dark-mode .settings-chevron {
+    color: #94a3b8;
+}
+body.dark-mode .settings-body {
+    background: #0f172a;
+    border-top-color: #253043;
+}
+body.dark-mode .settings-subblock {
+    background: #111827;
+    border-color: #253043;
+}
+body.dark-mode .settings-subblock h3 {
+    color: #93c5fd;
+}
+body.dark-mode .settings-field label {
+    color: #cbd5e1;
+}
+body.dark-mode .settings-field input,
+body.dark-mode .settings-field select {
+    background: #111827;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .settings-help {
+    color: #94a3b8;
+}
+body.dark-mode .settings-file-chip {
+    background: #1e293b;
+    color: #bfdbfe;
+    border-color: #334155;
+}
+
+@media (max-width: 720px) {
+    .settings-shell {
+        padding: 14px;
+    }
+    .settings-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 </style>
 
-<div class="report-card">
-    <div class="settings-wrap">
-        <h1 style="font-size:2.3rem;font-weight:800;color:#2563eb;">System Settings</h1>
-        <p style="color:#6b7280;margin-bottom:26px;">System-wide configuration & behavior</p>
-
-        <form method="POST" action="{{ url('/modules/settings') }}" enctype="multipart/form-data">
-        @csrf
-
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">General / App Settings <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label for="system_name">System Name</label>
-                        <input type="text" id="system_name" name="system_name" value="{{ $settings['general'][0]->value ?? '' }}" placeholder="System Name">
-                    </div>
-                    <div class="settings-field">
-                        <label for="short_name">Short Name</label>
-                        <input type="text" id="short_name" name="short_name" value="{{ $settings['general'][1]->value ?? '' }}" placeholder="Short Name">
-                    </div>
-                    <div class="settings-field">
-                        <label for="org_name">Organization</label>
-                        <input type="text" id="org_name" name="org_name" value="{{ $settings['general'][2]->value ?? '' }}" placeholder="Organization">
-                    </div>
-                    <div class="settings-field">
-                        <label for="system_logo">System Logo</label>
-                        <input type="file" id="system_logo" name="system_logo">
-                    </div>
-                    <div class="settings-field">
-                        <label for="favicon">Favicon</label>
-                        <input type="file" id="favicon" name="favicon">
-                    </div>
-                    <div class="settings-field">
-                        <label for="timezone">Timezone</label>
-                        <select id="timezone" name="timezone"><option>Asia/Manila</option></select>
-                    </div>
-                </div>
+<div class="settings-page">
+    <div class="settings-shell">
+        <div class="settings-topbar">
+            <div class="settings-title-wrap">
+                <h1>System Settings</h1>
+                <p>Configure app behavior, security, notification, and threshold rules.</p>
+            </div>
+            <div class="settings-actions">
+                <a href="{{ route('dashboard.index') }}" class="settings-btn back"><i class="fa fa-arrow-left"></i> Back</a>
+                <button type="submit" form="settingsForm" class="settings-btn save"><i class="fa fa-floppy-disk"></i> Save Settings</button>
             </div>
         </div>
 
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">User & Security <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label for="otp_expiration">OTP Expiration</label>
-                        <input type="number" id="otp_expiration" name="otp_expiration" value="{{ $settings['user'][1]->value ?? 5 }}" placeholder="OTP Expiration">
-                    </div>
-                    <div class="settings-field">
-                        <label for="max_login_attempts">Max Attempts</label>
-                        <input type="number" id="max_login_attempts" name="max_login_attempts" value="{{ $settings['user'][2]->value ?? 5 }}" placeholder="Max Attempts">
-                    </div>
-                    <div class="settings-field">
-                        <label for="session_timeout">Session Timeout</label>
-                        <input type="number" id="session_timeout" name="session_timeout" value="{{ $settings['user'][3]->value ?? 120 }}" placeholder="Session Timeout">
-                    </div>
-                    <div class="settings-field">
-                        <label for="enable_otp_login">OTP Login</label>
-                        <select id="enable_otp_login" name="enable_otp_login"><option value="1">OTP ON</option><option value="0">OTP OFF</option></select>
+        @if(session('success'))
+            <div class="settings-alert success">{{ session('success') }}</div>
+        @endif
+
+        @if($errors->any())
+            <div class="settings-alert error">
+                Please fix the highlighted fields.
+                <ul>
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form id="settingsForm" class="settings-form" method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
+            @csrf
+
+            <section class="settings-card open">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-sliders"></i> General / App Settings</span>
+                    <span><small>Branding + timezone</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label for="system_name">System Name</label>
+                            <input type="text" id="system_name" name="system_name" value="{{ $getSetting('system_name') }}" required>
+                            @error('system_name') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="short_name">Short Name</label>
+                            <input type="text" id="short_name" name="short_name" value="{{ $getSetting('short_name') }}" required>
+                            @error('short_name') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="org_name">Organization</label>
+                            <input type="text" id="org_name" name="org_name" value="{{ $getSetting('org_name') }}" required>
+                            @error('org_name') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="timezone">Timezone</label>
+                            <select id="timezone" name="timezone" required>
+                                @foreach(['Asia/Manila', 'UTC', 'Asia/Singapore', 'Asia/Tokyo'] as $tz)
+                                    <option value="{{ $tz }}" {{ (string) $getSetting('timezone', 'Asia/Manila') === $tz ? 'selected' : '' }}>{{ $tz }}</option>
+                                @endforeach
+                            </select>
+                            @error('timezone') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="system_logo">System Logo</label>
+                            <input type="file" id="system_logo" name="system_logo" accept=".jpg,.jpeg,.png,.webp,.svg">
+                            <span class="settings-help">Max 2MB. JPG/PNG/WEBP/SVG</span>
+                            @if($getSetting('system_logo'))
+                                <span class="settings-file-chip"><i class="fa fa-image"></i> {{ basename((string) $getSetting('system_logo')) }}</span>
+                            @endif
+                            @error('system_logo') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="favicon">Favicon</label>
+                            <input type="file" id="favicon" name="favicon" accept=".ico,.png,.jpg,.jpeg,.svg">
+                            <span class="settings-help">Max 1MB. ICO/PNG/JPG/SVG</span>
+                            @if($getSetting('favicon'))
+                                <span class="settings-file-chip"><i class="fa fa-star"></i> {{ basename((string) $getSetting('favicon')) }}</span>
+                            @endif
+                            @error('favicon') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">Energy Monitoring <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div style="width:100%;display:flex;flex-direction:column;gap:32px;">
-                    <div>
-                        <h3 style="font-size:1.08rem;font-weight:700;color:#2563eb;margin-bottom:12px;">Small Facility</h3>
-                        <div class="settings-grid">
-                            <div class="settings-field">
-                                <label for="alert_level1_small">Level 1 (Very Low) %</label>
-                                <input type="number" id="alert_level1_small" name="alert_level1_small" value="{{ $settings['energy'][0]->level1_small ?? 3 }}" placeholder="Level 1 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level2_small">Level 2 (Low) %</label>
-                                <input type="number" id="alert_level2_small" name="alert_level2_small" value="{{ $settings['energy'][0]->level2_small ?? 5 }}" placeholder="Level 2 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level3_small">Level 3 (Medium) %</label>
-                                <input type="number" id="alert_level3_small" name="alert_level3_small" value="{{ $settings['energy'][0]->level3_small ?? 10 }}" placeholder="Level 3 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level4_small">Level 4 (High) %</label>
-                                <input type="number" id="alert_level4_small" name="alert_level4_small" value="{{ $settings['energy'][0]->level4_small ?? 20 }}" placeholder="Level 4 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level5_small">Level 5 (Extreme) %</label>
-                                <input type="number" id="alert_level5_small" name="alert_level5_small" value="{{ $settings['energy'][0]->level5_small ?? 30 }}" placeholder="Level 5 %">
-                            </div>
+            <section class="settings-card">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-shield-halved"></i> User & Security</span>
+                    <span><small>Session + login controls</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label for="otp_expiration">OTP Expiration (minutes)</label>
+                            <input type="number" id="otp_expiration" name="otp_expiration" min="1" max="60" value="{{ $getSetting('otp_expiration', 5) }}">
+                            @error('otp_expiration') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="max_login_attempts">Max Login Attempts</label>
+                            <input type="number" id="max_login_attempts" name="max_login_attempts" min="1" max="15" value="{{ $getSetting('max_login_attempts', 5) }}">
+                            @error('max_login_attempts') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="session_timeout">Session Timeout (minutes)</label>
+                            <input type="number" id="session_timeout" name="session_timeout" min="5" max="720" value="{{ $getSetting('session_timeout', 120) }}">
+                            @error('session_timeout') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="enable_otp_login">OTP Login</label>
+                            <select id="enable_otp_login" name="enable_otp_login">
+                                <option value="1" {{ (string) $getSetting('enable_otp_login', '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                <option value="0" {{ (string) $getSetting('enable_otp_login', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                            </select>
+                            @error('enable_otp_login') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
-                    <div>
-                        <h3 style="font-size:1.08rem;font-weight:700;color:#2563eb;margin-bottom:12px;">Medium Facility</h3>
-                        <div class="settings-grid">
-                            <div class="settings-field">
-                                <label for="alert_level1_medium">Level 1 (Very Low) %</label>
-                                <input type="number" id="alert_level1_medium" name="alert_level1_medium" value="{{ $settings['energy'][0]->level1_medium ?? 5 }}" placeholder="Level 1 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level2_medium">Level 2 (Low) %</label>
-                                <input type="number" id="alert_level2_medium" name="alert_level2_medium" value="{{ $settings['energy'][0]->level2_medium ?? 7 }}" placeholder="Level 2 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level3_medium">Level 3 (Medium) %</label>
-                                <input type="number" id="alert_level3_medium" name="alert_level3_medium" value="{{ $settings['energy'][0]->level3_medium ?? 13 }}" placeholder="Level 3 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level4_medium">Level 4 (High) %</label>
-                                <input type="number" id="alert_level4_medium" name="alert_level4_medium" value="{{ $settings['energy'][0]->level4_medium ?? 23 }}" placeholder="Level 4 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level5_medium">Level 5 (Extreme) %</label>
-                                <input type="number" id="alert_level5_medium" name="alert_level5_medium" value="{{ $settings['energy'][0]->level5_medium ?? 35 }}" placeholder="Level 5 %">
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 style="font-size:1.08rem;font-weight:700;color:#2563eb;margin-bottom:12px;">Large Facility</h3>
-                        <div class="settings-grid">
-                            <div class="settings-field">
-                                <label for="alert_level1_large">Level 1 (Very Low) %</label>
-                                <input type="number" id="alert_level1_large" name="alert_level1_large" value="{{ $settings['energy'][0]->level1_large ?? 7 }}" placeholder="Level 1 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level2_large">Level 2 (Low) %</label>
-                                <input type="number" id="alert_level2_large" name="alert_level2_large" value="{{ $settings['energy'][0]->level2_large ?? 10 }}" placeholder="Level 2 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level3_large">Level 3 (Medium) %</label>
-                                <input type="number" id="alert_level3_large" name="alert_level3_large" value="{{ $settings['energy'][0]->level3_large ?? 16 }}" placeholder="Level 3 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level4_large">Level 4 (High) %</label>
-                                <input type="number" id="alert_level4_large" name="alert_level4_large" value="{{ $settings['energy'][0]->level4_large ?? 26 }}" placeholder="Level 4 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level5_large">Level 5 (Extreme) %</label>
-                                <input type="number" id="alert_level5_large" name="alert_level5_large" value="{{ $settings['energy'][0]->level5_large ?? 40 }}" placeholder="Level 5 %">
+                </div>
+            </section>
+
+            <section class="settings-card">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-bolt"></i> Energy Monitoring</span>
+                    <span><small>Alert thresholds + incident rules</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
+                        <div class="settings-subblock">
+                            <h3>{{ $sizeLabel }} Facility Thresholds (%)</h3>
+                            <div class="settings-grid">
+                                @for($lvl = 1; $lvl <= 5; $lvl++)
+                                    @php $field = "alert_level{$lvl}_{$sizeKey}"; @endphp
+                                    <div class="settings-field">
+                                        <label for="{{ $field }}">Level {{ $lvl }}</label>
+                                        <input type="number" step="0.01" min="0" max="500" id="{{ $field }}" name="{{ $field }}" value="{{ $getSetting($field) }}">
+                                        @error($field) <div class="settings-error">{{ $message }}</div> @enderror
+                                    </div>
+                                @endfor
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <h3 style="font-size:1.08rem;font-weight:700;color:#2563eb;margin-bottom:12px;">Extra Large Facility</h3>
-                        <div class="settings-grid">
-                            <div class="settings-field">
-                                <label for="alert_level1_xlarge">Level 1 (Very Low) %</label>
-                                <input type="number" id="alert_level1_xlarge" name="alert_level1_xlarge" value="{{ $settings['energy'][0]->level1_xlarge ?? 10 }}" placeholder="Level 1 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level2_xlarge">Level 2 (Low) %</label>
-                                <input type="number" id="alert_level2_xlarge" name="alert_level2_xlarge" value="{{ $settings['energy'][0]->level2_xlarge ?? 12 }}" placeholder="Level 2 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level3_xlarge">Level 3 (Medium) %</label>
-                                <input type="number" id="alert_level3_xlarge" name="alert_level3_xlarge" value="{{ $settings['energy'][0]->level3_xlarge ?? 18 }}" placeholder="Level 3 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level4_xlarge">Level 4 (High) %</label>
-                                <input type="number" id="alert_level4_xlarge" name="alert_level4_xlarge" value="{{ $settings['energy'][0]->level4_xlarge ?? 28 }}" placeholder="Level 4 %">
-                            </div>
-                            <div class="settings-field">
-                                <label for="alert_level5_xlarge">Level 5 (Extreme) %</label>
-                                <input type="number" id="alert_level5_xlarge" name="alert_level5_xlarge" value="{{ $settings['energy'][0]->level5_xlarge ?? 45 }}" placeholder="Level 5 %">
-                            </div>
-                        </div>
-                    </div>
+                    @endforeach
+
                     <div class="settings-grid">
                         <div class="settings-field">
                             <label for="auto_log_incident">Auto Log Incident</label>
-                            <select id="auto_log_incident" name="auto_log_incident"><option value="1">Auto Log YES</option><option value="0">NO</option></select>
+                            <select id="auto_log_incident" name="auto_log_incident">
+                                <option value="1" {{ (string) $getSetting('auto_log_incident', '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                <option value="0" {{ (string) $getSetting('auto_log_incident', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                            </select>
+                            @error('auto_log_incident') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">Facility Settings <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label for="facility_image_size">Image Size MB</label>
-                        <input type="number" id="facility_image_size" name="facility_image_size" value="{{ $settings['facility'][0]->value ?? 5 }}" placeholder="Image Size MB">
-                    </div>
-                    <div class="settings-field">
-                        <label for="allowed_image_types">Allowed Image Types</label>
-                        <input type="text" id="allowed_image_types" name="allowed_image_types" value="{{ $settings['facility'][1]->value ?? 'jpg,png' }}">
-                    </div>
-                    <div class="settings-field">
-                        <label for="default_facility_status">Default Facility Status</label>
-                        <select id="default_facility_status" name="default_facility_status"><option>active</option><option>inactive</option></select>
+            <section class="settings-card">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-building"></i> Facility Settings</span>
+                    <span><small>Uploads + defaults</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label for="facility_image_size">Max Facility Image Size (MB)</label>
+                            <input type="number" id="facility_image_size" name="facility_image_size" min="1" max="20" value="{{ $getSetting('facility_image_size', 5) }}">
+                            @error('facility_image_size') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="allowed_image_types">Allowed Image Types</label>
+                            <input type="text" id="allowed_image_types" name="allowed_image_types" value="{{ $getSetting('allowed_image_types', 'jpg,png,jpeg') }}">
+                            @error('allowed_image_types') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="default_facility_status">Default Facility Status</label>
+                            <select id="default_facility_status" name="default_facility_status">
+                                <option value="active" {{ (string) $getSetting('default_facility_status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ (string) $getSetting('default_facility_status', 'active') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            @error('default_facility_status') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">Email & Notifications <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label for="mail_host">Mail Host</label>
-                        <input type="text" id="mail_host" name="mail_host" value="{{ $settings['email'][1]->value ?? '' }}">
-                    </div>
-                    <div class="settings-field">
-                        <label for="mail_port">Mail Port</label>
-                        <input type="number" id="mail_port" name="mail_port" value="{{ $settings['email'][2]->value ?? 587 }}">
-                    </div>
-                    <div class="settings-field">
-                        <label for="enable_email_notifications">Email Notifications</label>
-                        <select id="enable_email_notifications" name="enable_email_notifications"><option value="1">ON</option><option value="0">OFF</option></select>
+            <section class="settings-card">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-envelope"></i> Email & Notifications</span>
+                    <span><small>SMTP + notification toggle</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label for="mail_host">Mail Host</label>
+                            <input type="text" id="mail_host" name="mail_host" value="{{ $getSetting('mail_host', '') }}">
+                            @error('mail_host') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="mail_port">Mail Port</label>
+                            <input type="number" id="mail_port" name="mail_port" min="1" max="65535" value="{{ $getSetting('mail_port', 587) }}">
+                            @error('mail_port') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="enable_email_notifications">Email Notifications</label>
+                            <select id="enable_email_notifications" name="enable_email_notifications">
+                                <option value="1" {{ (string) $getSetting('enable_email_notifications', '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                <option value="0" {{ (string) $getSetting('enable_email_notifications', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                            </select>
+                            @error('enable_email_notifications') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div class="settings-card">
-            <div class="settings-header" onclick="toggleCard(this)">Reports & Audit Trail <span class="settings-arrow">▶</span></div>
-            <div class="settings-body">
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label for="enable_audit_logs">Enable Audit Logs</label>
-                        <select id="enable_audit_logs" name="enable_audit_logs"><option value="1">YES</option><option value="0">NO</option></select>
-                    </div>
-                    <div class="settings-field">
-                        <label for="retention_period">Retention Period (months)</label>
-                        <input type="number" id="retention_period" name="retention_period" value="{{ $settings['reports'][2]->value ?? 12 }}">
-                    </div>
-                    <div class="settings-field">
-                        <label for="export_format">Export Format</label>
-                        <select id="export_format" name="export_format"><option>pdf</option><option>excel</option></select>
+            <section class="settings-card">
+                <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
+                    <span><i class="fa fa-file-lines"></i> Reports & Audit Trail</span>
+                    <span><small>Retention + export rules</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                </button>
+                <div class="settings-body">
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label for="enable_audit_logs">Enable Audit Logs</label>
+                            <select id="enable_audit_logs" name="enable_audit_logs">
+                                <option value="1" {{ (string) $getSetting('enable_audit_logs', '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                <option value="0" {{ (string) $getSetting('enable_audit_logs', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                            </select>
+                            @error('enable_audit_logs') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="retention_period">Retention Period (months)</label>
+                            <input type="number" id="retention_period" name="retention_period" min="1" max="120" value="{{ $getSetting('retention_period', 12) }}">
+                            @error('retention_period') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="settings-field">
+                            <label for="export_format">Default Export Format</label>
+                            <select id="export_format" name="export_format">
+                                <option value="pdf" {{ (string) $getSetting('export_format', 'pdf') === 'pdf' ? 'selected' : '' }}>PDF</option>
+                                <option value="excel" {{ (string) $getSetting('export_format', 'pdf') === 'excel' ? 'selected' : '' }}>Excel</option>
+                            </select>
+                            @error('export_format') <div class="settings-error">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div style="text-align:right;margin-top:32px;">
-            <button type="submit" style="padding:14px 46px;border-radius:14px;border:none;font-weight:700;background:#2563eb;color:#fff; cursor:pointer;">
-            Save Settings
-            </button>
-        </div>
-
+            </section>
         </form>
     </div>
 </div>
 
 <script>
-function toggleCard(header){
-    // Toggle only the clicked card, allow multiple open
-    header.parentElement.classList.toggle('open');
+function toggleSettingsCard(btn) {
+    const card = btn.closest('.settings-card');
+    if (!card) return;
+    card.classList.toggle('open');
 }
+
+document.getElementById('settingsForm')?.addEventListener('submit', function (e) {
+    const sizes = ['small', 'medium', 'large', 'xlarge'];
+    for (const size of sizes) {
+        const levels = [];
+        for (let i = 1; i <= 5; i += 1) {
+            const el = document.getElementById(`alert_level${i}_${size}`);
+            levels.push(parseFloat(el?.value || '0'));
+        }
+        for (let i = 1; i < levels.length; i += 1) {
+            if (!(levels[i] > levels[i - 1])) {
+                e.preventDefault();
+                alert(`${size.toUpperCase()} thresholds must be strictly increasing from Level 1 to Level 5.`);
+                const target = document.getElementById(`alert_level${i + 1}_${size}`);
+                if (target) target.focus();
+                return;
+            }
+        }
+    }
+});
 </script>
 @endsection

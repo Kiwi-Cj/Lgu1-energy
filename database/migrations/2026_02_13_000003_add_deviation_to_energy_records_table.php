@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up()
     {
+        if (!Schema::hasTable('energy_records')) {
+            return;
+        }
+
         Schema::table('energy_records', function (Blueprint $table) {
             if (!Schema::hasColumn('energy_records', 'deviation')) {
                 $table->decimal('deviation', 8, 2)->nullable();
@@ -16,8 +20,14 @@ return new class extends Migration {
 
     public function down()
     {
+        if (!Schema::hasTable('energy_records')) {
+            return;
+        }
+
         Schema::table('energy_records', function (Blueprint $table) {
-            $table->dropColumn('deviation');
+            if (Schema::hasColumn('energy_records', 'deviation')) {
+                $table->dropColumn('deviation');
+            }
         });
     }
 };

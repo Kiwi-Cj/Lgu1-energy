@@ -7,17 +7,19 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // Disabled: settings table is created by schema.sql
-        // Schema::create('settings', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('key')->unique();
-        //     $table->string('value');
-        //     $table->timestamps();
-        // });
+        if (!Schema::hasTable('settings')) {
+            Schema::create('settings', function (Blueprint $table) {
+                $table->id();
+                $table->string('key')->unique();
+                $table->text('value')->nullable();
+                $table->string('group')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void
     {
-        // Schema::dropIfExists('settings');
+        Schema::dropIfExists('settings');
     }
 };

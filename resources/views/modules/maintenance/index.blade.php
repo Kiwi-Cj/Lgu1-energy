@@ -39,6 +39,31 @@
         letter-spacing: -0.5px;
     }
     .page-header h2 span { color: #2563eb; }
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .quick-add-btn,
+    .history-link-btn {
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .quick-add-btn { background: #10b981; }
+    .history-link-btn { background: #2563eb; }
+    .quick-add-btn:hover,
+    .history-link-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+    }
 
     /* Stats Grid */
     .stats-grid {
@@ -57,6 +82,14 @@
     .stat-box:hover { transform: translateY(-3px); }
     .stat-label { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
     .stat-value { font-size: 2.2rem; font-weight: 800; margin-top: 10px; color: #1e293b; }
+    .stat-needing { background: #fff1f2; }
+    .stat-needing .stat-label { color: #e11d48; }
+    .stat-pending { background: #fefce8; }
+    .stat-pending .stat-label { color: #a16207; }
+    .stat-ongoing { background: #f0fdf4; }
+    .stat-ongoing .stat-label { color: #15803d; }
+    .stat-completed { background: #ecfeff; }
+    .stat-completed .stat-label { color: #0e7490; }
 
     /* Filter Section */
     .filter-section {
@@ -91,6 +124,12 @@
         transition: 0.2s;
     }
     .btn-filter:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-filter.btn-reset {
+        background: #fff;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        text-decoration: none;
+    }
 
     /* Table Styling */
     .maint-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
@@ -143,6 +182,19 @@
         max-width: 300px;
         margin: 0 auto;
         text-align: left;
+    }
+    .facility-cell {
+        font-weight: 700;
+    }
+    .remarks-muted {
+        color: #64748b;
+    }
+    .empty-row-cell {
+        padding: 40px;
+        color: #94a3b8;
+    }
+    .empty-row-cell.compact {
+        padding: 28px;
     }
     .hidden-row {
         display: none;
@@ -260,6 +312,141 @@
         background: #2563eb;
         color: #fff;
     }
+
+    body.dark-mode .maintenance-page .report-card {
+        background: #0f172a;
+        border-color: #334155;
+        box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+    }
+    body.dark-mode .maintenance-page .page-header h2,
+    body.dark-mode .maintenance-page .stat-value,
+    body.dark-mode .maintenance-page .maint-table td,
+    body.dark-mode .maintenance-page .maintenance-modal-title {
+        color: #e2e8f0;
+    }
+    body.dark-mode .maintenance-page .filter-group label,
+    body.dark-mode .maintenance-page .result-count,
+    body.dark-mode .maintenance-page .maintenance-form .field-label,
+    body.dark-mode .maintenance-page .remarks-cell,
+    body.dark-mode .maintenance-page .remarks-muted {
+        color: #94a3b8;
+    }
+    body.dark-mode .maintenance-page .filter-section {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-page .filter-group select,
+    body.dark-mode .maintenance-page .filter-group input,
+    body.dark-mode .maintenance-page .table-search,
+    body.dark-mode .maintenance-page .maintenance-form .field-control {
+        background: #0b1220;
+        color: #e2e8f0;
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-page .table-search::placeholder,
+    body.dark-mode .maintenance-page .maintenance-form .field-control::placeholder {
+        color: #64748b;
+    }
+    body.dark-mode .maintenance-page .btn-filter.btn-reset {
+        background: #111827;
+        color: #e2e8f0;
+        border-color: #475569;
+    }
+    body.dark-mode .maintenance-page .maint-table-wrapper,
+    body.dark-mode .maintenance-page .maint-table {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-page .maint-table thead {
+        background: #111827;
+    }
+    body.dark-mode .maintenance-page .maint-table th,
+    body.dark-mode .maintenance-page .maint-table td {
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-page .maint-table th {
+        color: #94a3b8;
+    }
+    body.dark-mode .maintenance-page .maint-table tr:hover {
+        background-color: #1f2937;
+    }
+    body.dark-mode .maintenance-page .status-pill.pending {
+        background: rgba(146, 64, 14, 0.3);
+        color: #fde68a;
+        border-color: rgba(251, 191, 36, 0.35);
+    }
+    body.dark-mode .maintenance-page .status-pill.ongoing {
+        background: rgba(14, 116, 144, 0.25);
+        color: #67e8f9;
+        border-color: rgba(125, 211, 252, 0.35);
+    }
+    body.dark-mode .maintenance-page .status-pill.completed {
+        background: rgba(22, 101, 52, 0.25);
+        color: #86efac;
+        border-color: rgba(74, 222, 128, 0.3);
+    }
+    body.dark-mode .maintenance-page .stat-box {
+        border-color: #334155;
+        box-shadow: none;
+    }
+    body.dark-mode .maintenance-page .stat-needing {
+        background: rgba(190, 24, 93, 0.18);
+    }
+    body.dark-mode .maintenance-page .stat-needing .stat-label {
+        color: #fda4af;
+    }
+    body.dark-mode .maintenance-page .stat-pending {
+        background: rgba(146, 64, 14, 0.22);
+    }
+    body.dark-mode .maintenance-page .stat-pending .stat-label {
+        color: #fde68a;
+    }
+    body.dark-mode .maintenance-page .stat-ongoing {
+        background: rgba(22, 101, 52, 0.22);
+    }
+    body.dark-mode .maintenance-page .stat-ongoing .stat-label {
+        color: #86efac;
+    }
+    body.dark-mode .maintenance-page .stat-completed {
+        background: rgba(14, 116, 144, 0.22);
+    }
+    body.dark-mode .maintenance-page .stat-completed .stat-label {
+        color: #67e8f9;
+    }
+    body.dark-mode .maintenance-page .maintenance-modal {
+        background: #111827;
+        border: 1px solid #334155;
+    }
+    body.dark-mode .maintenance-page .maintenance-modal-header {
+        background: #0f172a;
+        border-bottom-color: #334155;
+    }
+    body.dark-mode .maintenance-page .maintenance-modal-close {
+        color: #94a3b8;
+    }
+    body.dark-mode .maintenance-page .maintenance-modal-close:hover {
+        color: #e2e8f0;
+    }
+    body.dark-mode .maintenance-page .maintenance-form .field-control[disabled] {
+        background: #1f2937;
+        color: #94a3b8;
+    }
+    body.dark-mode .maintenance-page .maintenance-btn-cancel {
+        background: #1f2937;
+        color: #cbd5e1;
+    }
+    body.dark-mode .maintenance-page .maintenance-btn-save {
+        background: #1d4ed8;
+    }
+    body.dark-mode .maintenance-page .empty-row-cell {
+        color: #94a3b8;
+    }
+    body.dark-mode #successAlert > div {
+        background: #14532d !important;
+        color: #dcfce7 !important;
+        border: 1px solid #166534;
+    }
+
     @media (max-width: 760px) {
         .maintenance-form-grid {
             grid-template-columns: 1fr;
@@ -277,34 +464,35 @@
 </div>
 @endif
 
+<div class="maintenance-page">
 <div class="report-card">
     <div class="page-header">
         <h2>Facilities Needing <span>Maintenance</span></h2>
-        <div style="display:flex; gap:10px;">
-             <button id="addMaintenanceBtn" class="btn btn-primary" style="background:#10b981; color:#fff; padding:10px 20px; border-radius:10px; font-weight:700; border:none; cursor:pointer;">
+        <div class="header-actions">
+             <button id="addMaintenanceBtn" class="btn btn-primary quick-add-btn">
                 <i class="fa fa-plus"></i> Add Manual
             </button>
-            <a href="{{ route('maintenance.history') }}" style="background:#2563eb; color:#fff; padding:10px 20px; border-radius:10px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:8px;">
+            <a href="{{ route('maintenance.history') }}" class="history-link-btn">
                 <i class="fa fa-history"></i> History
             </a>
         </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-box" style="background: #fff1f2;">
-            <div class="stat-label" style="color: #e11d48;">🔴 Needing Maint.</div>
+        <div class="stat-box stat-needing">
+            <div class="stat-label">🔴 Needing Maint.</div>
             <div class="stat-value">{{ $needingCount ?? 0 }}</div>
         </div>
-        <div class="stat-box" style="background: #fefce8;">
-            <div class="stat-label" style="color: #a16207;">🟡 Pending</div>
+        <div class="stat-box stat-pending">
+            <div class="stat-label">🟡 Pending</div>
             <div class="stat-value">{{ $pendingCount ?? 0 }}</div>
         </div>
-        <div class="stat-box" style="background: #f0fdf4;">
-            <div class="stat-label" style="color: #15803d;">🔧 Ongoing</div>
+        <div class="stat-box stat-ongoing">
+            <div class="stat-label">🔧 Ongoing</div>
             <div class="stat-value">{{ $ongoingCount ?? 0 }}</div>
         </div>
-        <div class="stat-box" style="background: #ecfeff;">
-            <div class="stat-label" style="color: #0e7490;">✅ Completed</div>
+        <div class="stat-box stat-completed">
+            <div class="stat-label">✅ Completed</div>
             <div class="stat-value">{{ $completedCount ?? 0 }}</div>
         </div>
     </div>
@@ -346,7 +534,7 @@
             </select>
         </div>
         <button type="submit" class="btn-filter">Filter</button>
-        <a href="{{ route('modules.maintenance.index') }}" class="btn-filter" style="background:#fff;color:#334155;border:1px solid #cbd5e1;text-decoration:none;">Reset</a>
+        <a href="{{ route('modules.maintenance.index') }}" class="btn-filter btn-reset">Reset</a>
     </form>
 
     <div class="table-toolbar">
@@ -395,22 +583,22 @@
                     data-scheduled_date="{{ $row['scheduled_date'] ?? '' }}" 
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
                     data-completed_date="{{ $row['completed_date'] ?? '' }}">
-                    <td style="font-weight:700;">{{ $row['facility'] }}</td>
+                    <td class="facility-cell">{{ $row['facility'] }}</td>
                     <td>{{ $row['issue_type'] }}</td>
                     <td>{{ $row['trigger_month'] }}</td>
                     <!-- Efficiency value removed -->
                     <td><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
                     <td>{{ $row['scheduled_date'] }}</td>
-                    <td style="color:#64748b;">
+                    <td class="remarks-muted">
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
                     </td>
                     <td>{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
                 </tr>
                 @empty
-                <tr><td colspan="7" style="padding:40px; color:#94a3b8;">No facilities needing maintenance found.</td></tr>
+                <tr><td colspan="7" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
                 @endforelse
                 <tr id="maintenanceNoMatchRow" class="hidden-row">
-                    <td colspan="7" style="padding:28px; color:#94a3b8;">No matching maintenance records found.</td>
+                    <td colspan="7" class="empty-row-cell compact">No matching maintenance records found.</td>
                 </tr>
             </tbody>
         </table>
@@ -526,6 +714,8 @@
             </form>
         </div>
     </div>
+</div>
+
 </div>
 
 <script>

@@ -10,7 +10,7 @@
 
 <style>
     /* Report Card Container */
-    .report-card {
+    .energy-trend-page .report-card {
         background: #ffffff;
         border-radius: 16px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.06);
@@ -20,7 +20,7 @@
     }
 
     /* Header Styling */
-    .page-header h1 {
+    .energy-trend-page .page-header h1 {
         font-size: 1.8rem;
         font-weight: 800;
         color: #1e293b;
@@ -30,15 +30,15 @@
         gap: 12px;
         letter-spacing: -0.5px;
     }
-    .page-header h1 span { color: #2563eb; }
-    .page-header p {
+    .energy-trend-page .page-header h1 span { color: #2563eb; }
+    .energy-trend-page .page-header p {
         margin: 4px 0 0;
         color: #64748b;
         font-size: 1rem;
     }
 
     /* Filter Bar */
-    .filter-bar {
+    .energy-trend-page .filter-bar {
         display: flex;
         gap: 15px;
         align-items: flex-end;
@@ -49,18 +49,18 @@
         border-radius: 12px;
         border: 1px solid #e2e8f0;
     }
-    .filter-group {
+    .energy-trend-page .filter-group {
         display: flex;
         flex-direction: column;
         gap: 6px;
     }
-    .filter-group label {
+    .energy-trend-page .filter-group label {
         font-size: 0.85rem;
         font-weight: 700;
         color: #475569;
         text-transform: uppercase;
     }
-    .filter-group select {
+    .energy-trend-page .filter-group select {
         padding: 10px 15px;
         border-radius: 10px;
         border: 1px solid #cbd5e1;
@@ -68,7 +68,7 @@
         min-width: 180px;
         outline: none;
     }
-    .filter-btn {
+    .energy-trend-page .filter-btn {
         background: #2563eb;
         color: #fff;
         padding: 11px 24px;
@@ -78,24 +78,24 @@
         cursor: pointer;
         transition: 0.2s;
     }
-    .filter-btn:hover { background: #1d4ed8; }
+    .energy-trend-page .filter-btn:hover { background: #1d4ed8; }
 
     /* Summary Grid */
-    .summary-grid {
+    .energy-trend-page .summary-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
-    .summary-card {
+    .energy-trend-page .summary-card {
         background: #fff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
         padding: 20px;
         transition: transform 0.2s;
     }
-    .summary-card:hover { transform: translateY(-3px); }
-    .summary-card span {
+    .energy-trend-page .summary-card:hover { transform: translateY(-3px); }
+    .energy-trend-page .summary-card span {
         display: block;
         font-size: 0.75rem;
         font-weight: 700;
@@ -103,25 +103,29 @@
         text-transform: uppercase;
         margin-bottom: 8px;
     }
-    .summary-card h2 {
+    .energy-trend-page .summary-card h2 {
         margin: 0;
         font-size: 1.6rem;
         font-weight: 800;
         color: #1e293b;
     }
-    .summary-card p {
+    .energy-trend-page .summary-card p {
         margin: 5px 0 0;
         font-size: 0.85rem;
         color: #94a3b8;
     }
+    .energy-trend-page .summary-unit {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
 
     /* Analysis Box */
-    .analysis-container {
+    .energy-trend-page .analysis-container {
         border: 1px solid #e2e8f0;
         border-radius: 16px;
         overflow: hidden;
     }
-    .analysis-header {
+    .energy-trend-page .analysis-header {
         background: #f1f5f9;
         padding: 15px 20px;
         font-weight: 700;
@@ -131,8 +135,19 @@
         align-items: center;
         gap: 10px;
     }
-    .analysis-body { padding: 25px; }
-    .insight-box {
+    .energy-trend-page .analysis-body { padding: 25px; }
+    .energy-trend-page .analysis-description {
+        color: #64748b;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .energy-trend-page .chart-shell {
+        min-height: 300px;
+        background: #fcfcfc;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    .energy-trend-page .insight-box {
         margin-top: 25px;
         background: #eff6ff;
         padding: 15px 20px;
@@ -142,9 +157,66 @@
         color: #1e3a8a;
     }
 
+    body.dark-mode .energy-trend-page .report-card {
+        background: #0f172a;
+        border-color: #334155;
+        box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+    }
+    body.dark-mode .energy-trend-page .page-header h1,
+    body.dark-mode .energy-trend-page .summary-card h2,
+    body.dark-mode .energy-trend-page .analysis-header {
+        color: #e2e8f0;
+    }
+    body.dark-mode .energy-trend-page .page-header p,
+    body.dark-mode .energy-trend-page .summary-card span,
+    body.dark-mode .energy-trend-page .summary-card p,
+    body.dark-mode .energy-trend-page .summary-unit,
+    body.dark-mode .energy-trend-page .analysis-description {
+        color: #94a3b8;
+    }
+    body.dark-mode .energy-trend-page .filter-bar {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .energy-trend-page .filter-group label {
+        color: #cbd5e1;
+    }
+    body.dark-mode .energy-trend-page .filter-group select {
+        background: #0b1220;
+        color: #e2e8f0;
+        border-color: #334155;
+    }
+    body.dark-mode .energy-trend-page .filter-btn {
+        background: #1d4ed8;
+    }
+    body.dark-mode .energy-trend-page .summary-card {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .energy-trend-page .analysis-container {
+        border-color: #334155;
+    }
+    body.dark-mode .energy-trend-page .analysis-header {
+        background: #111827;
+        border-bottom-color: #334155;
+    }
+    body.dark-mode .energy-trend-page .chart-shell {
+        background: #0b1220;
+    }
+    body.dark-mode .energy-trend-page .insight-box {
+        background: #172554;
+        border-left-color: #3b82f6;
+        color: #dbeafe;
+    }
+    body.dark-mode #successAlert > div {
+        background: #14532d !important;
+        color: #dcfce7 !important;
+        border: 1px solid #166534;
+    }
+
     @media (max-width: 600px) {
-        .filter-bar { flex-direction: column; align-items: stretch; }
-        .filter-group select { min-width: 100%; }
+        .energy-trend-page .filter-bar { flex-direction: column; align-items: stretch; }
+        .energy-trend-page .filter-group select { min-width: 100%; }
     }
 </style>
 
@@ -158,6 +230,7 @@
 </div>
 @endif
 
+<div class="energy-trend-page">
 <div class="report-card">
     <div class="page-header">
         <h1>
@@ -171,7 +244,7 @@
         <div class="filter-group">
             <label>Facility</label>
             <select name="facility_id" id="facility_id">
-                <option value="" disabled selected>Select Facility</option>
+                <option value="" {{ request('facility_id') ? '' : 'selected' }}>Select Facility</option>
                 @foreach($facilities as $facility)
                     <option value="{{ $facility->id }}" {{ request('facility_id') == $facility->id ? 'selected' : '' }}>{{ $facility->name }}</option>
                 @endforeach
@@ -190,7 +263,7 @@
         <div class="filter-group">
             <label>Month</label>
             <select name="month" id="month">
-                <option value="" disabled selected>Select Month</option>
+                <option value="" {{ request('month') ? '' : 'selected' }}>All Months</option>
                 @foreach($months as $month)
                     <option value="{{ $month['value'] }}" {{ request('month') == $month['value'] ? 'selected' : '' }}>
                         {{ \Carbon\Carbon::createFromFormat('Y-m', substr($month['value'],0,7))->format('F') }}
@@ -205,20 +278,26 @@
     <div class="summary-grid">
         <div class="summary-card" style="border-top: 4px solid #2563eb;">
             <span>Total Consumption</span>
-            <h2>{{ number_format($totalConsumption ?? 0, 2) }} <small style="font-size:0.9rem; color:#64748b;">kWh</small></h2>
+            <h2>{{ number_format($totalConsumption ?? 0, 2) }} <small class="summary-unit">kWh</small></h2>
             <p>Aggregate usage for period</p>
         </div>
 
         <div class="summary-card" style="border-top: 4px solid #e11d48;">
             <span>Peak Usage</span>
-            <h2>{{ number_format($peakUsage ?? 0, 2) }} <small style="font-size:0.9rem; color:#64748b;">kWh</small></h2>
+            <h2>{{ number_format($peakUsage ?? 0, 2) }} <small class="summary-unit">kWh</small></h2>
             <p>Highest recorded point</p>
         </div>
 
         <div class="summary-card" style="border-top: 4px solid #16a34a;">
-            <span>Lowest Usage</span>
-            <h2>{{ number_format($lowestUsage ?? 0, 2) }} <small style="font-size:0.9rem; color:#64748b;">kWh</small></h2>
-            <p>Most efficient point</p>
+            <span>Trend Direction</span>
+            <h2>{{ $trendDirection ?? 'Stable' }}</h2>
+            <p>
+                @if(isset($trendChangePercent) && $trendChangePercent !== null)
+                    Change: {{ $trendChangePercent > 0 ? '+' : '' }}{{ number_format($trendChangePercent, 2) }}%
+                @else
+                    Insufficient baseline for percent change
+                @endif
+            </p>
         </div>
     </div>
 
@@ -229,13 +308,13 @@
         </div>
 
         <div class="analysis-body">
-            <p style="color:#64748b; margin-bottom:20px; line-height:1.6;">
+            <p class="analysis-description">
                 The visualization below represents your facility's energy demand. Significant spikes may indicate equipment malfunction or 
                 increased operational hours that require review.
             </p>
 
             {{-- CHART PARTIAL --}}
-            <div style="min-height: 300px; background: #fcfcfc; border-radius: 8px; padding: 15px;">
+            <div class="chart-shell">
                 @include('modules.energy-monitoring.partials.charts', [
                     'chartData' => $trendData
                 ])
@@ -245,12 +324,12 @@
                 <i class="fa-solid fa-lightbulb" style="margin-right:8px;"></i>
                 <strong>Trend Insight:</strong>
                 <span>
-                    Energy consumption usually follows operational cycles. Consistently high peaks during off-hours may suggest 
-                    opportunities for automated power-down protocols.
+                    {{ $trendInsight ?? 'Select a facility and period to generate trend analysis.' }}
                 </span>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <script>

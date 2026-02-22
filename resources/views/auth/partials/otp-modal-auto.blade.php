@@ -7,7 +7,7 @@
         </button>
         <img src="{{ asset('img/logocityhall.jpg') }}" class="otp-logo" alt="LGU Logo">
         <h2 class="otp-title">Verify Your Identity</h2>
-        <div id="otpTimer" class="otp-timer">01:00</div>
+        <div id="otpTimer" class="otp-timer">{{ str_pad((string) max(1, (int) config('otp.expire_minutes', 5)), 2, '0', STR_PAD_LEFT) }}:00</div>
         <p class="otp-desc">Enter the One-Time Password (OTP) sent to your email.</p>
         <form id="otpModalAutoForm" method="POST" action="{{ route('otp.verify.submit') }}">
             @csrf
@@ -17,7 +17,6 @@
         </form>
         <button type="button" id="otpResendBtn" class="otp-btn pro" style="margin-top:8px;background:#e0e7ef;color:#2563eb;" onclick="resendOtpAuto()" disabled>Resend OTP</button>
         <div id="otpResendMsg" class="otp-success" style="display:none;margin-top:10px;"></div>
-        </form>
         <div id="otpExpiredMsg" class="otp-error" style="display:none">OTP expired. Please request a new code.</div>
         @if($errors->any())
             <div class="otp-error">{{ $errors->first() }}</div>
@@ -257,7 +256,7 @@ function resendOtpAuto() {
 
 
 let otpInterval;
-const OTP_DURATION = 60; // 1 minute in seconds
+const OTP_DURATION = {{ max(1, (int) config('otp.expire_minutes', 5)) * 60 }};
 const OTP_TIMER_KEY = 'otp_timer_start';
 function getOtpSecondsLeft() {
     const start = parseInt(localStorage.getItem(OTP_TIMER_KEY), 10);

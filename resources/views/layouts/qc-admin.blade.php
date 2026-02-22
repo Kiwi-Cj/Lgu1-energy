@@ -48,35 +48,234 @@ body {
     padding:0 32px;
     z-index:900;
     transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .header-left h1{
     font-size:1.4rem;
     font-weight:600;
     color:#1f2937;
+    line-height: 1.1;
 }
 .header-sub{
     font-size:.85rem;
     color:#6b7280;
+    margin-top: 3px;
 }
 
 .header-right{
     display:flex;
     align-items:center;
-    gap:18px;
+    gap:10px;
 }
 
 .header-user{
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
     font-size:.9rem;
     color:#374151;
 }
 
-.header-user i{
-    font-size:1.4rem;
-    color:#3762c8;
+.header-icon-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #dbe4f0;
+    border-radius: 11px;
+    background: #f8fbff;
+    color: #3762c8;
+    font-size: 1.08rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, color .2s ease, transform .15s ease;
+}
+
+.header-icon-btn:hover {
+    background: #ecf3ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.header-icon-btn:active {
+    transform: scale(0.96);
+}
+
+.has-hover-label {
+    position: relative;
+}
+
+.has-hover-label::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 10px);
+    transform: translateX(-50%) translateY(-4px);
+    background: #0f172a;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.24);
+    transition: opacity .16s ease, transform .16s ease, visibility .16s ease;
+    z-index: 1200;
+}
+
+.has-hover-label::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 4px);
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .16s ease, visibility .16s ease;
+    z-index: 1200;
+}
+
+.has-hover-label:hover::after,
+.has-hover-label:hover::before,
+.has-hover-label:focus-visible::after,
+.has-hover-label:focus-visible::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.notif-btn {
+    position: relative;
+}
+
+.notif-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.73rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    border: 2px solid #fff;
+}
+
+.notif-count.is-hidden {
+    display: none;
+}
+
+.user-menu-wrap {
+    position: relative;
+}
+
+.user-menu-btn {
+    border: 1px solid #dbe4f0;
+    background: #f8fbff;
+    border-radius: 999px;
+    height: 40px;
+    padding: 0 12px 0 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #334155;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+
+.user-menu-btn:hover {
+    background: #ecf3ff;
+    border-color: #bfdbfe;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #dbeafe;
+    background: #fff;
+}
+
+.user-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-menu-caret {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.user-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+    overflow: hidden;
+    z-index: 999;
+}
+
+.user-dropdown-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.user-dropdown-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.user-dropdown-role {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
+.user-dropdown-link {
+    display: block;
+    padding: 10px 14px;
+    color: #1f2937;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.user-dropdown-link:hover {
+    background: #f8fafc;
+}
+
+.user-dropdown-link i {
+    margin-right: 8px;
+    color: #3762c8;
+}
+
+.user-dropdown .logout-btn {
+    margin: 0;
+    border-radius: 0;
+    width: 100%;
+    background: #2563eb;
 }
 
 /* ===== SIDEBAR ===== */
@@ -187,6 +386,57 @@ html.dark-mode .main-content-inner {
 body.dark-mode { background: #111827; }
 body.dark-mode .top-header, body.dark-mode .sidebar-nav{ background:rgba(24,24,27,.96); color: white; }
 body.dark-mode .header-left h1, body.dark-mode .header-user, body.dark-mode .nav-link { color: #f9fafb; }
+body.dark-mode .header-icon-btn {
+    background: #1f2937;
+    border-color: #374151;
+    color: #93c5fd;
+}
+body.dark-mode .header-icon-btn:hover {
+    background: #111827;
+    border-color: #475569;
+}
+body.dark-mode .notif-count {
+    border-color: #1f2937;
+}
+body.dark-mode .user-menu-btn {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f1f5f9;
+}
+body.dark-mode .user-menu-btn:hover {
+    background: #111827;
+    border-color: #475569;
+}
+body.dark-mode .user-avatar {
+    border-color: #334155;
+}
+body.dark-mode .user-menu-caret {
+    color: #94a3b8;
+}
+body.dark-mode .user-dropdown {
+    background: #111827;
+    border-color: #334155;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55);
+}
+body.dark-mode .user-dropdown-head,
+body.dark-mode .user-dropdown-link {
+    border-color: #1f2937;
+}
+body.dark-mode .user-dropdown-name {
+    color: #f8fafc;
+}
+body.dark-mode .user-dropdown-role {
+    color: #94a3b8;
+}
+body.dark-mode .user-dropdown-link {
+    color: #e2e8f0;
+}
+body.dark-mode .user-dropdown-link:hover {
+    background: #1f2937;
+}
+body.dark-mode .user-dropdown .logout-btn {
+    background: #1d4ed8;
+}
 body.dark-mode .main-content { background: #0b1220; }
 body.dark-mode .main-content-inner {
     background: linear-gradient(160deg, #111827 0%, #0f172a 100%);
@@ -307,19 +557,18 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     .sidebar-backdrop.active { display: block; }
 }
 
-@media(max-width:991px){
-    .header-right form { display: none !important; }
-}
 @media(max-width:480px){
     .header-sub { display: none; }
     .main-content-inner { padding: 20px 15px; }
     .header-left h1 { font-size: 1.1rem; }
+    .user-name { display: none; }
+    .user-menu-btn { padding-right: 8px; }
 }
 
 /* Additional Styles from Original */
 .user-info{ padding:16px; text-align:center; border-top:1px solid rgba(0,0,0,.1); }
 .logout-btn{ margin-top:8px; background:#3762c8; border:none; color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; width: 100%; }
-.notif-btn:hover .fa-bell { color: #ef4444; }
+.notif-btn:hover .fa-bell { color: #1d4ed8; }
 
 .notif-dropdown {
     display: none;
@@ -567,6 +816,111 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     color: #1e3a8a;
 }
 
+/* Notification dropdown dark mode */
+body.dark-mode .notif-dropdown {
+    background: #0f172a;
+    border-color: #253043;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.6);
+}
+body.dark-mode .notif-header {
+    background: #0f172a;
+    border-bottom-color: #1f2a3d;
+    color: #93c5fd;
+}
+body.dark-mode .notif-mark-btn {
+    background: #1e293b;
+    border-color: #334155;
+    color: #bfdbfe;
+}
+body.dark-mode .notif-mark-btn:hover {
+    background: #334155;
+}
+body.dark-mode .notif-filter-bar {
+    background: #0f172a;
+    border-bottom-color: #1f2a3d;
+}
+body.dark-mode .notif-filter-btn {
+    background: #111827;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+body.dark-mode .notif-filter-btn:hover {
+    background: #1e293b;
+    border-color: #475569;
+    color: #dbeafe;
+}
+body.dark-mode .notif-filter-btn.active {
+    background: #1d4ed8;
+    border-color: #2563eb;
+    color: #eff6ff;
+}
+body.dark-mode .notif-item {
+    border-bottom-color: #1f2a3d;
+}
+body.dark-mode .notif-item:hover {
+    background: #162235;
+}
+body.dark-mode .notif-item.is-read {
+    background: #111827;
+    opacity: 0.78;
+}
+body.dark-mode .notif-item.is-unread {
+    background: #0f172a;
+}
+body.dark-mode .notif-title {
+    color: #e2e8f0;
+}
+body.dark-mode .notif-time {
+    color: #94a3b8;
+}
+body.dark-mode .notif-filter-empty,
+body.dark-mode #notifEmpty {
+    color: #94a3b8 !important;
+}
+body.dark-mode .notif-unread-dot {
+    background: #60a5fa;
+}
+body.dark-mode .notif-sev-critical .notif-icon,
+body.dark-mode .notif-sev-critical .notif-level-badge {
+    background: #3f1517;
+    color: #fca5a5;
+}
+body.dark-mode .notif-sev-critical .notif-message {
+    color: #fca5a5;
+}
+body.dark-mode .notif-sev-very-high .notif-icon,
+body.dark-mode .notif-sev-very-high .notif-level-badge {
+    background: #3b1420;
+    color: #f9a8d4;
+}
+body.dark-mode .notif-sev-very-high .notif-message {
+    color: #f9a8d4;
+}
+body.dark-mode .notif-sev-high .notif-icon,
+body.dark-mode .notif-sev-high .notif-level-badge {
+    background: #3a200f;
+    color: #fdba74;
+}
+body.dark-mode .notif-sev-high .notif-message {
+    color: #fdba74;
+}
+body.dark-mode .notif-sev-warning .notif-icon,
+body.dark-mode .notif-sev-warning .notif-level-badge {
+    background: #3a3012;
+    color: #fde68a;
+}
+body.dark-mode .notif-sev-warning .notif-message {
+    color: #fde68a;
+}
+body.dark-mode .notif-sev-info .notif-icon,
+body.dark-mode .notif-sev-info .notif-level-badge {
+    background: #132a4a;
+    color: #93c5fd;
+}
+body.dark-mode .notif-sev-info .notif-message {
+    color: #bfdbfe;
+}
+
 @media(max-width:640px) {
     .notif-dropdown {
         right: 12px;
@@ -600,15 +954,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
         </div>
     </div>
     <div class="header-right">
-        <form action="#" method="get" style="display:flex;align-items:center;gap:8px;background:#f1f5f9;padding:6px 12px;border-radius:8px;">
-            <input type="text" placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:1rem; width: 100px;">
-            <button type="submit" style="background:none;border:none;color:#3762c8;font-size:1.1rem;cursor:pointer;"><i class="fa fa-search"></i></button>
-        </form>
-
-
-        <button class="notif-btn" id="notifBtn" style="background:none;border:none;color:#3762c8;font-size:1.5rem;cursor:pointer;position:relative;">
+        <button class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
             <i class="fa fa-bell"></i>
-            <span id="notifCount" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:0.75rem;font-weight:700;padding:2px 6px;border-radius:12px;{{ ($unreadNotifCount ?? 0) > 0 ? '' : 'display:none;' }}">{{ $unreadNotifCount ?? 0 }}</span>
+            <span id="notifCount" class="notif-count {{ ($unreadNotifCount ?? 0) > 0 ? '' : 'is-hidden' }}">{{ $unreadNotifCount ?? 0 }}</span>
         </button>
 
         <div id="notifDropdown" class="notif-dropdown">
@@ -709,27 +1057,27 @@ if (document.documentElement.classList.contains('dark-mode')) {
             </div>
         </div>
 
-        <button id="darkToggleHeader" style="background:none;border:none;color:#3762c8;font-size:1.4rem;cursor:pointer;">
+        <button id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
             <i id="darkModeIcon" class="fa fa-moon"></i>
         </button>
 
-        <div class="header-user" style="position:relative;">
-            <button id="userMenuBtn" style="background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer; color: inherit;">
-                <img src="{{ auth()->user()->profile_photo_url }}" alt="Profile Photo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e8f0; background: #fff;"> 
-                <span>{{ $user->full_name ?? $user->name ?? 'Admin' }}</span>
-                <i class="fa fa-caret-down"></i>
+        <div class="header-user user-menu-wrap">
+            <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
+                <img src="{{ auth()->user()->profile_photo_url }}" alt="Profile Photo" class="user-avatar">
+                <span class="user-name">{{ $user->full_name ?? $user->name ?? 'Admin' }}</span>
+                <i class="fa fa-caret-down user-menu-caret"></i>
             </button>
-            <div id="userDropdown" style="display:none;position:absolute;right:0;top:120%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:8px;min-width:180px;z-index:999;">
-                <div style="padding:12px 16px;border-bottom:1px solid #eee; color: #333;">
-                    <strong>{{ $user->full_name ?? $user->name ?? 'Admin' }}</strong><br>
-                    <small style="color:#666;">{{ ucfirst($role ?? 'User') }}</small>
+            <div id="userDropdown" class="user-dropdown">
+                <div class="user-dropdown-head">
+                    <div class="user-dropdown-name">{{ $user->full_name ?? $user->name ?? 'Admin' }}</div>
+                    <div class="user-dropdown-role">{{ ucwords(str_replace('_', ' ', is_string(auth()->user()?->role) ? auth()->user()->role : 'User')) }}</div>
                 </div>
-                <a href="{{ route('profile.show') }}" style="display:block;padding:10px 16px;color:#222;text-decoration:none;font-size:0.97rem;">
-                    <i class="fa fa-user" style="margin-right:8px;color:#3762c8;"></i> My Profile
+                <a href="{{ route('profile.show') }}" class="user-dropdown-link">
+                    <i class="fa fa-user"></i> My Profile
                 </a>
-                <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button class="logout-btn" style="border-radius:0 0 8px 8px;">Logout</button>
+                    <button class="logout-btn">Logout</button>
                 </form>
             </div>
         </div>
@@ -1073,15 +1421,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 5. Session Timeout Logic
-    var timeoutMinutes = {{ env('SESSION_LIFETIME', 15) }};
+    var timeoutMinutes = {{ (int) config('session.lifetime', 20) }};
     var timeoutMs = timeoutMinutes * 60 * 1000;
-    var timer = setTimeout(() => { document.getElementById('sessionTimeoutModal').style.display='flex'; }, timeoutMs);
+    var timeoutModal = document.getElementById('sessionTimeoutModal');
+    var timer = null;
 
-    ['click','mousemove','keydown'].forEach(evt => {
-        window.addEventListener(evt, () => {
-            clearTimeout(timer);
-            timer = setTimeout(() => { document.getElementById('sessionTimeoutModal').style.display='flex'; }, timeoutMs);
-        });
+    var resetSessionTimer = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            if (timeoutModal) {
+                timeoutModal.style.display = 'flex';
+            }
+        }, timeoutMs);
+    };
+
+    resetSessionTimer();
+
+    // Track more real user activity to avoid false timeout while actively using the app.
+    ['click', 'mousemove', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'].forEach(evt => {
+        window.addEventListener(evt, resetSessionTimer, { passive: true });
     });
 });
 

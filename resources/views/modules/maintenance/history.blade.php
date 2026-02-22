@@ -374,6 +374,97 @@ document.addEventListener('DOMContentLoaded', function () {
     padding: 22px 10px;
     text-align: center;
 }
+
+body.dark-mode .history-page .history-shell {
+    background: #0f172a;
+    border-color: #334155;
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+}
+body.dark-mode .history-page .history-header h2 {
+    color: #e2e8f0;
+}
+body.dark-mode .history-page .back-btn {
+    color: #dbeafe;
+    background: #1e3a8a;
+    border-color: #1d4ed8;
+}
+body.dark-mode .history-page .metric-card.total {
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(147, 197, 253, 0.35);
+    color: #93c5fd;
+}
+body.dark-mode .history-page .metric-card.pending {
+    background: rgba(146, 64, 14, 0.22);
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fde68a;
+}
+body.dark-mode .history-page .metric-card.ongoing {
+    background: rgba(14, 116, 144, 0.22);
+    border-color: rgba(125, 211, 252, 0.35);
+    color: #67e8f9;
+}
+body.dark-mode .history-page .metric-card.completed {
+    background: rgba(22, 101, 52, 0.22);
+    border-color: rgba(74, 222, 128, 0.3);
+    color: #86efac;
+}
+body.dark-mode .history-page .filter-item label,
+body.dark-mode .history-page .result-count,
+body.dark-mode .history-page .remarks-cell {
+    color: #94a3b8;
+}
+body.dark-mode .history-page .filter-item select,
+body.dark-mode .history-page .search-input {
+    background: #0b1220;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+body.dark-mode .history-page .search-input::placeholder {
+    color: #64748b;
+}
+body.dark-mode .history-page .reset-btn {
+    background: #111827;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+body.dark-mode .history-page .table-shell {
+    background: #0f172a;
+    border-color: #334155;
+}
+body.dark-mode .history-page .history-table th {
+    background: #111827;
+    color: #94a3b8;
+    border-bottom-color: #334155;
+}
+body.dark-mode .history-page .history-table td {
+    color: #e2e8f0;
+    border-bottom-color: #334155;
+}
+body.dark-mode .history-page .history-table tr:hover {
+    background: #1f2937;
+}
+body.dark-mode .history-page .facility-cell {
+    color: #93c5fd;
+}
+body.dark-mode .history-page .status-pill.pending {
+    background: rgba(146, 64, 14, 0.3);
+    color: #fde68a;
+    border-color: rgba(251, 191, 36, 0.35);
+}
+body.dark-mode .history-page .status-pill.ongoing {
+    background: rgba(14, 116, 144, 0.25);
+    color: #67e8f9;
+    border-color: rgba(125, 211, 252, 0.35);
+}
+body.dark-mode .history-page .status-pill.completed {
+    background: rgba(22, 101, 52, 0.25);
+    color: #86efac;
+    border-color: rgba(74, 222, 128, 0.3);
+}
+body.dark-mode .history-page .empty-cell {
+    color: #94a3b8;
+}
+
 @media (max-width: 980px) {
     .metrics-grid {
         grid-template-columns: repeat(2, minmax(130px, 1fr));

@@ -10,7 +10,7 @@ namespace App\Models;
 
     class User extends Authenticatable
     {
-        use Notifiable;
+        use HasFactory, Notifiable;
 
         // OTP relationship
         public function otps()
@@ -27,6 +27,7 @@ namespace App\Models;
         // Add your fillable, hidden, casts, etc. as needed
         protected $fillable = [
             'full_name',
+            'name',
             'email',
             'username',
             'password',

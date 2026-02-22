@@ -7,6 +7,10 @@ return new class extends Migration
 {
     public function up()
     {
+        if (!Schema::hasTable('energy_records')) {
+            return;
+        }
+
         Schema::table('energy_records', function (Blueprint $table) {
             if (!Schema::hasColumn('energy_records', 'day')) {
                 $table->integer('day')->nullable()->after('month');
@@ -16,6 +20,10 @@ return new class extends Migration
 
     public function down()
     {
+        if (!Schema::hasTable('energy_records')) {
+            return;
+        }
+
         Schema::table('energy_records', function (Blueprint $table) {
             if (Schema::hasColumn('energy_records', 'day')) {
                 $table->dropColumn('day');

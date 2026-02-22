@@ -6,15 +6,27 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
         Schema::table('facilities', function (Blueprint $table) {
-            $table->string('image_path')->nullable()->after('status');
+            if (!Schema::hasColumn('facilities', 'image_path')) {
+                $table->string('image_path')->nullable()->after('status');
+            }
         });
     }
 
     public function down(): void
     {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
         Schema::table('facilities', function (Blueprint $table) {
-            $table->dropColumn('image_path');
+            if (Schema::hasColumn('facilities', 'image_path')) {
+                $table->dropColumn('image_path');
+            }
         });
     }
 };
