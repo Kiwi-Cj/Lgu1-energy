@@ -28,7 +28,13 @@ $renderWelcomeFallback = static function (): void {
     $content = preg_replace_callback(
         "/\{\{\s*asset\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
         static function (array $matches): string {
-            return '/'.ltrim($matches[1], '/');
+            $path = ltrim($matches[1], '/');
+
+            if (file_exists(__DIR__.'/public/'.$path)) {
+                return '/public/'.$path;
+            }
+
+            return '/'.$path;
         },
         $content
     );
