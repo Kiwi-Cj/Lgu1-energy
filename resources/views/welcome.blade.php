@@ -136,9 +136,7 @@
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                 @guest
                     <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="{{ route('login') }}">Login</a></li>
-                @else
-                    <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="{{ route('dashboard') }}">Dashboard</a></li>
-                @endguest
+                
             </ul>
         </div>
     </div>
