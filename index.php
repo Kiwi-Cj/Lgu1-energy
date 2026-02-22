@@ -283,6 +283,26 @@ if ($safeFileExists($maintenance = $basePath.'/storage/framework/maintenance.php
     require $maintenance;
 }
 
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$autoloadRealPath = $basePath.'/vendor/composer/autoload_real.php';
+$classLoaderPath = $basePath.'/vendor/composer/ClassLoader.php';
+
+if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath)) {
+    if ($requestPath === '/' || $requestPath === '/index.php') {
+        $renderWelcomeFallback();
+    }
+
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "Composer vendor files are incomplete.\n";
+    echo "Missing required bootstrap files under vendor/composer.\n";
+    echo "Expected:\n";
+    echo " - {$autoloadRealPath}\n";
+    echo " - {$classLoaderPath}\n";
+    echo "Fix: run 'composer install --no-dev --optimize-autoloader' in {$basePath}\n";
+    exit;
+}
+
 require $basePath.'/vendor/autoload.php';
 
 /** @var Application $app */
