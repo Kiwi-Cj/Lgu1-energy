@@ -49,11 +49,17 @@ $renderWelcomeFallback = static function (): void {
     $content = preg_replace_callback(
         "/\{\{\s*route\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
         static function (array $matches): string {
-            return match ($matches[1]) {
-                'login' => '/login',
-                'dashboard', 'dashboard.index' => '/dashboard',
-                default => '#',
-            };
+            $routeName = $matches[1];
+
+            if ($routeName === 'login') {
+                return '/login';
+            }
+
+            if ($routeName === 'dashboard' || $routeName === 'dashboard.index') {
+                return '/dashboard';
+            }
+
+            return '#';
         },
         $content
     );
@@ -115,7 +121,23 @@ $normalizePath = static function (string $path): string {
     return rtrim(str_replace('\\', '/', $path), '/');
 };
 
-$isPathAllowed = static function (?string $path) use ($openBaseDirs, $normalizePath): bool {
+$startsWith = static function (string $haystack, string $needle): bool {
+    if ($needle === '') {
+        return true;
+    }
+
+    return substr($haystack, 0, strlen($needle)) === $needle;
+};
+
+$contains = static function (string $haystack, string $needle): bool {
+    if ($needle === '') {
+        return true;
+    }
+
+    return strpos($haystack, $needle) !== false;
+};
+
+$isPathAllowed = static function (?string $path) use ($openBaseDirs, $normalizePath, $startsWith): bool {
     if (! is_string($path) || trim($path) === '') {
         return false;
     }
@@ -129,7 +151,7 @@ $isPathAllowed = static function (?string $path) use ($openBaseDirs, $normalizeP
     foreach ($openBaseDirs as $allowedPath) {
         if (
             $normalizedPath === $allowedPath ||
-            str_starts_with($normalizedPath.'/', $allowedPath.'/')
+            $startsWith($normalizedPath.'/', $allowedPath.'/')
         ) {
             return true;
         }
@@ -313,7 +335,7 @@ if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath))
     echo " - {$autoloadRealPath}\n";
     echo " - {$classLoaderPath}\n";
     echo "Fix: run 'composer install --no-dev --optimize-autoloader' in {$basePath}\n";
-    if (str_contains($autoloadFile, '/vendor/vendor/')) {
+    if ($contains($autoloadFile, '/vendor/vendor/')) {
         echo "Note: nested vendor folder detected. Move contents of {$basePath}/vendor/vendor into {$basePath}/vendor.\n";
     }
     exit;
@@ -322,7 +344,7 @@ if (! $safeFileExists($autoloadRealPath) || ! $safeFileExists($classLoaderPath))
 try {
     require $autoloadFile;
 } catch (\Throwable $e) {
-    $isPlatformCheckError = str_contains($e->getMessage(), 'Composer detected issues in your platform');
+    $isPlatformCheckError = $contains($e->getMessage(), 'Composer detected issues in your platform');
 
     if ($isPlatformCheckError && ($requestPath === '/' || $requestPath === '/index.php')) {
         $renderWelcomeFallback();
@@ -343,7 +365,18 @@ try {
     throw $e;
 }
 
-/** @var Application $app */
-$app = require_once $basePath.'/bootstrap/app.php';
+try {
+    /** @var Application $app */
+    $app = require_once $basePath.'/bootstrap/app.php';
+    $app->handleRequest(Request::capture());
+} catch (\Throwable $e) {
+    if ($requestPath === '/' || $requestPath === '/index.php') {
+        $renderWelcomeFallback();
+    }
 
-$app->handleRequest(Request::capture());
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "Application failed to boot.\n";
+    echo get_class($e).": ".$e->getMessage()."\n";
+    exit;
+}
