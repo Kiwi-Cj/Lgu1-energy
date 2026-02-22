@@ -5,6 +5,73 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+$renderWelcomeFallback = static function (): void {
+    $welcomePath = __DIR__.'/resources/views/welcome.blade.php';
+
+    if (! file_exists($welcomePath)) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Welcome page not found.';
+        exit;
+    }
+
+    $content = file_get_contents($welcomePath);
+    if ($content === false) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Unable to read welcome page.';
+        exit;
+    }
+
+    // Basic Blade-like replacements so the public landing page can render
+    // even when Laravel cannot boot (e.g., missing vendor on shared hosting).
+    $content = preg_replace_callback(
+        "/\{\{\s*asset\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
+        static function (array $matches): string {
+            return '/'.ltrim($matches[1], '/');
+        },
+        $content
+    );
+
+    $content = preg_replace_callback(
+        "/\{\{\s*url\(['\"]([^'\"]*)['\"]\)\s*\}\}/",
+        static function (array $matches): string {
+            $path = $matches[1];
+            if ($path === '' || $path === '/') {
+                return '/';
+            }
+
+            return '/'.ltrim($path, '/');
+        },
+        $content
+    );
+
+    $content = preg_replace_callback(
+        "/\{\{\s*route\(['\"]([^'\"]+)['\"]\)\s*\}\}/",
+        static function (array $matches): string {
+            return match ($matches[1]) {
+                'login' => '/login',
+                'dashboard', 'dashboard.index' => '/dashboard',
+                default => '#',
+            };
+        },
+        $content
+    );
+
+    // Render guest block only (fallback has no auth/session awareness).
+    $content = preg_replace('/@guest\s*/', '', $content);
+    $content = preg_replace('/@else[\s\S]*?@endguest/', '', $content);
+    $content = str_replace('@endguest', '', $content);
+
+    // Remove remaining Blade echoes/directives to avoid raw tags in output.
+    $content = preg_replace('/\{\{[\s\S]*?\}\}/', '', $content);
+    $content = preg_replace('/^\s*@\w+.*$/m', '', $content);
+
+    header('Content-Type: text/html; charset=utf-8');
+    echo $content;
+    exit;
+};
+
 $envCandidates = [
     getenv('LARAVEL_BASE_PATH') ?: null,
     $_SERVER['LARAVEL_BASE_PATH'] ?? null,
@@ -189,6 +256,11 @@ foreach (array_values(array_unique($candidatePaths)) as $candidate) {
 }
 
 if ($basePath === null) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if ($requestPath === '/' || $requestPath === '/index.php') {
+        $renderWelcomeFallback();
+    }
+
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
     echo "Laravel bootstrap files not found.\n";
