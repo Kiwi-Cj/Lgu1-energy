@@ -135,7 +135,7 @@
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
     
-                    <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="/login">Login</a></li>
+                   <a class="btn btn-primary ms-lg-3" href="{{ url('/index.php/login') }}">Login</a>
                 
             </ul>
         </div>
@@ -184,7 +184,7 @@
             </div>
             <div class="col-md-4">
                 <div class="testimonial">"We love the analytics and reporting features. It helps us make data-driven decisions for energy savings."</div>
-                <div class="testimonial-author">— Energy Officer, Public School</div>
+                <div class="testimonial-author"> Energy Officer, Public School</div>
             </div>
             <div class="col-md-4">
                 <div class="testimonial">"Secure and easy to use. Our staff can now access records anytime, anywhere."</div>
