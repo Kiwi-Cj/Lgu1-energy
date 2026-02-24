@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Modules\EnergyMonitoringController;
 use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\NotificationController;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::view('/features', 'landing.features')->name('landing.features');
+Route::view('/testimonials', 'landing.testimonials')->name('landing.testimonials');
+Route::view('/contact', 'landing.contact')->name('landing.contact');
+Route::post('/contact', [ContactMessageController::class, 'store'])->name('landing.contact.store');
 
 // Maintenance History Route
 Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');

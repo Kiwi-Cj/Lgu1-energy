@@ -320,7 +320,7 @@
         </form>
         <div style="margin-top:18px;font-size:0.97rem;color:var(--text-muted);">
             <span style="opacity:0.7;">Forgot your password?</span>
-            <a href="{{ route('password.request') }}" style="color:var(--primary);font-weight:600;text-decoration:none;">Contact admin</a>
+            <a href="{{ route('password.request') }}" style="color:var(--primary);font-weight:600;text-decoration:none;">Reset it</a>
         </div>
     </div>
 </div>

@@ -131,9 +131,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
-                <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
-                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('landing.features') }}">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('landing.testimonials') }}">Testimonials</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('landing.contact') }}">Contact</a></li>
     
                    <a class="btn btn-primary ms-lg-3" href="{{ url('/login') }}">Login</a>
                 
@@ -145,7 +145,7 @@
     <div class="container">
         <h1>Energy System Portal</h1>
         <p>Monitor, analyze, and manage your energy records and facilities in one secure, user-friendly platform.</p>
-        <a href="#features" class="btn btn-primary">Explore Features</a>
+        <a href="{{ route('landing.features') }}" class="btn btn-primary">Explore Features</a>
     </div>
 </section>
 <section class="features-section" id="features">
@@ -198,16 +198,41 @@
         <div class="col-lg-7 text-center">
             <h2 class="mb-3">Get in Touch</h2>
             <p class="mb-4 text-muted">Have a concern or inquiry? Send us a message and our team will respond as soon as possible to assist you.</p>
-            <form>
+            @if (session('contact_success'))
+                <div class="alert alert-success text-start">{{ session('contact_success') }}</div>
+            @endif
+            @if (session('contact_warning'))
+                <div class="alert alert-warning text-start">{{ session('contact_warning') }}</div>
+            @endif
+            @if ($errors->any())
+                <div class="alert alert-danger text-start">Please review the highlighted fields and try again.</div>
+            @endif
+            <form method="POST" action="{{ route('landing.contact.store') }}">
+                @csrf
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <input type="text" class="form-control" placeholder="Full Name" required>
+                        <input type="text" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" placeholder="Full Name" required>
+                        @error('name')
+                            <div class="invalid-feedback text-start">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6">
-                        <input type="email" class="form-control" placeholder="Email Address" required>
+                        <input type="email" name="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" placeholder="Email Address" required>
+                        @error('email')
+                            <div class="invalid-feedback text-start">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-12">
-                        <textarea class="form-control" rows="4" placeholder="Your Message" required></textarea>
+                        <input type="text" name="subject" value="{{ old('subject') }}" class="form-control @error('subject') is-invalid @enderror" placeholder="Subject (optional)">
+                        @error('subject')
+                            <div class="invalid-feedback text-start">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-12">
+                        <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="4" placeholder="Your Message" required>{{ old('message') }}</textarea>
+                        @error('message')
+                            <div class="invalid-feedback text-start">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-12 d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">Send Message</button>

@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
@@ -42,10 +43,15 @@ class NewPasswordController extends Controller
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user) use ($request) {
-                $user->forceFill([
+                $updates = [
                     'password' => Hash::make($request->password),
-                    'remember_token' => Str::random(60),
-                ])->save();
+                ];
+
+                if (Schema::hasColumn($user->getTable(), $user->getRememberTokenName())) {
+                    $updates[$user->getRememberTokenName()] = Str::random(60);
+                }
+
+                $user->forceFill($updates)->save();
 
                 event(new PasswordReset($user));
             }
@@ -55,7 +61,13 @@ class NewPasswordController extends Controller
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         return $status == Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('status', __($status))
+                    ? redirect()->route('password.reset', [
+                        'token' => $request->input('token'),
+                        'email' => $request->input('email'),
+                    ])->with([
+                        'password_reset_success' => true,
+                        'status' => 'Password reset successful. You can now continue to login.',
+                    ])
                     : back()->withInput($request->only('email'))
                         ->withErrors(['email' => __($status)]);
     }

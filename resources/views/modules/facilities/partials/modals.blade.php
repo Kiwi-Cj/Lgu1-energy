@@ -186,6 +186,10 @@ function openAddFacilityModal() {
 function closeAddFacilityModal() {
     document.getElementById('addFacilityModal').style.display = 'none';
 }
+function closeEditFacilityModal() {
+    var modal = document.getElementById('editFacilityModal');
+    if (modal) modal.style.display = 'none';
+}
 </script>
 
 <!-- Edit Facility Modal -->

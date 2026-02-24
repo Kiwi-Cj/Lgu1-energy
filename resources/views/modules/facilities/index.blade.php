@@ -359,7 +359,12 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById('fabAddFacility')?.addEventListener('click', openModal);
 
         document.querySelectorAll('.modal-close').forEach(btn => {
-            btn.addEventListener('click', () => btn.closest('.modal').style.display = 'none');
+            btn.addEventListener('click', () => {
+                const modalRoot = btn.closest('.modal, .modal-overlay');
+                if (modalRoot) {
+                    modalRoot.style.display = 'none';
+                }
+            });
         });
     });
 </script>
