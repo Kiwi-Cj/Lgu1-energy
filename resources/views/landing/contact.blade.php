@@ -20,6 +20,9 @@
     $supportEmail = env('ADMIN_SUPPORT_EMAIL', 'energyconservemgmt@gmail.com');
     $supportPhone = env('ADMIN_SUPPORT_PHONE', '+1 (555) 123-4567');
     $supportPhoneHref = preg_replace('/[^0-9+]/', '', $supportPhone);
+    $contactUser = auth()->user();
+    $prefillName = old('name', $contactUser?->full_name ?? $contactUser?->name ?? $contactUser?->username ?? '');
+    $prefillEmail = old('email', $contactUser?->email ?? '');
 @endphp
 
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
@@ -62,24 +65,29 @@
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <input type="text" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" placeholder="Full Name" required>
+                                <label class="form-label fw-semibold mb-1">Full Name</label>
+                                <input type="text" name="name" value="{{ $prefillName }}" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Juan Dela Cruz" required>
+                                <div class="form-text text-start">Use your personal full name, not office/facility name.</div>
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6">
-                                <input type="email" name="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" placeholder="Email Address" required>
+                                <label class="form-label fw-semibold mb-1">Email Address</label>
+                                <input type="email" name="email" value="{{ $prefillEmail }}" class="form-control @error('email') is-invalid @enderror" placeholder="name@example.com" required>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-12">
-                                <input type="text" name="subject" value="{{ old('subject') }}" class="form-control @error('subject') is-invalid @enderror" placeholder="Subject (optional)">
+                                <label class="form-label fw-semibold mb-1">Subject (Optional)</label>
+                                <input type="text" name="subject" value="{{ old('subject') }}" class="form-control @error('subject') is-invalid @enderror" placeholder="e.g. Police Station 12 concern">
                                 @error('subject')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-12">
+                                <label class="form-label fw-semibold mb-1">Message</label>
                                 <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="4" placeholder="Your Message" required>{{ old('message') }}</textarea>
                                 @error('message')
                                     <div class="invalid-feedback">{{ $message }}</div>

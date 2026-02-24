@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\FacilityController;
+use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +57,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');
+    Route::get('/modules/contact-messages', [ContactInboxController::class, 'index'])->name('modules.contact-messages.index');
+    Route::post('/modules/contact-messages/{contactMessage}/mark-read', [ContactInboxController::class, 'markRead'])->name('modules.contact-messages.mark-read');
+    Route::post('/modules/contact-messages/{contactMessage}/mark-unread', [ContactInboxController::class, 'markUnread'])->name('modules.contact-messages.mark-unread');
+    Route::post('/modules/contact-messages/{contactMessage}/reply', [ContactInboxController::class, 'reply'])->name('modules.contact-messages.reply');
 
     // Energy
     Route::get('/modules/energy/index', function (\Illuminate\Http\Request $request) {

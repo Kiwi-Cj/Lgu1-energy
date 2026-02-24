@@ -1071,6 +1071,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             'maintenance' => 'Maintenance Alert',
                             'consumption' => 'Consumption Alert',
                             'record' => 'Energy Alert',
+                            'contact' => 'Contact Inbox',
                             default => 'System Alert',
                         };
                         $notifStoredTitle = trim((string) ($notif->title ?? ''));
@@ -1085,6 +1086,11 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             $notifTargetUrl = \Illuminate\Support\Str::contains($notifLower, 'completed')
                                 ? route('maintenance.history')
                                 : route('modules.maintenance.index');
+                        } elseif ($notifType === 'contact' || \Illuminate\Support\Str::contains($notifLower, 'contact message')) {
+                            $canAccessContactInbox = \App\Support\RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+                            $notifTargetUrl = $canAccessContactInbox
+                                ? route('modules.contact-messages.index')
+                                : route('dashboard.index');
                         } elseif ($notifType === 'record' || $notifType === 'consumption' || \Illuminate\Support\Str::contains($notifLower, 'alert:') || \Illuminate\Support\Str::contains($notifLower, 'baseline')) {
                             $notifTargetUrl = route('dashboard.index');
                         }
@@ -1233,6 +1239,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @if($role=='super admin'||$role=='admin')
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
+                <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
                 @if($role=='super admin')
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
@@ -1318,6 +1325,7 @@ document.addEventListener('DOMContentLoaded', function() {
         incident: "{{ route('energy-incidents.index') }}",
         maintenance: "{{ route('modules.maintenance.index') }}",
         maintenanceHistory: "{{ route('maintenance.history') }}",
+        contactInbox: "{{ route('modules.contact-messages.index') }}",
         dashboard: "{{ route('dashboard.index') }}"
     };
     let activeNotifFilter = 'all';
@@ -1338,6 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (t === 'maintenance' || text.includes('maintenance:')) {
             return text.includes('completed') ? notifRoutes.maintenanceHistory : notifRoutes.maintenance;
         }
+        if (t === 'contact' || text.includes('contact message')) return notifRoutes.contactInbox;
         return notifRoutes.dashboard;
     };
 
@@ -1349,6 +1358,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isGeneric) return rawTitle;
         if (t === 'incident' || text.includes('incident:')) return 'Incident Alert';
         if (t === 'maintenance' || text.includes('maintenance:')) return 'Maintenance Alert';
+        if (t === 'contact' || text.includes('contact message')) return 'Contact Inbox';
         if (t === 'consumption' || text.includes('baseline')) return 'Consumption Alert';
         if (t === 'record' || text.includes('alert:')) return 'Energy Alert';
         return 'System Alert';
@@ -1610,8 +1620,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
-
-
 
 

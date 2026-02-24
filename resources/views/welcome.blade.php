@@ -194,6 +194,11 @@
     </div>
 </section>
 <section class="container my-5" id="contact">
+    @php
+        $contactUser = auth()->user();
+        $prefillName = old('name', $contactUser?->full_name ?? $contactUser?->name ?? $contactUser?->username ?? '');
+        $prefillEmail = old('email', $contactUser?->email ?? '');
+    @endphp
     <div class="row justify-content-center">
         <div class="col-lg-7 text-center">
             <h2 class="mb-3">Get in Touch</h2>
@@ -211,24 +216,29 @@
                 @csrf
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <input type="text" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" placeholder="Full Name" required>
+                        <label class="form-label fw-semibold text-start d-block mb-1">Full Name</label>
+                        <input type="text" name="name" value="{{ $prefillName }}" class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Juan Dela Cruz" required>
+                        <div class="form-text text-start">Use your personal full name, not office/facility name.</div>
                         @error('name')
                             <div class="invalid-feedback text-start">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-6">
-                        <input type="email" name="email" value="{{ old('email') }}" class="form-control @error('email') is-invalid @enderror" placeholder="Email Address" required>
+                        <label class="form-label fw-semibold text-start d-block mb-1">Email Address</label>
+                        <input type="email" name="email" value="{{ $prefillEmail }}" class="form-control @error('email') is-invalid @enderror" placeholder="name@example.com" required>
                         @error('email')
                             <div class="invalid-feedback text-start">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-12">
-                        <input type="text" name="subject" value="{{ old('subject') }}" class="form-control @error('subject') is-invalid @enderror" placeholder="Subject (optional)">
+                        <label class="form-label fw-semibold text-start d-block mb-1">Subject (Optional)</label>
+                        <input type="text" name="subject" value="{{ old('subject') }}" class="form-control @error('subject') is-invalid @enderror" placeholder="e.g. Police Station 12 concern">
                         @error('subject')
                             <div class="invalid-feedback text-start">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-12">
+                        <label class="form-label fw-semibold text-start d-block mb-1">Message</label>
                         <textarea name="message" class="form-control @error('message') is-invalid @enderror" rows="4" placeholder="Your Message" required>{{ old('message') }}</textarea>
                         @error('message')
                             <div class="invalid-feedback text-start">{{ $message }}</div>
