@@ -3,6 +3,7 @@
 
 @php
     $user = auth()->user();
+    $roleKey = $user?->role_key ?? str_replace(' ', '_', strtolower((string) ($user?->role ?? '')));
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 
@@ -371,9 +372,11 @@ body.dark-mode .empty-row { color: #94a3b8; }
                 <p>Track facility consumption variance and trend behavior by period.</p>
             </div>
             <div class="energy-actions">
+                @if($roleKey !== 'staff')
                 <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-action btn-excel">
                     <i class="fa fa-download"></i> Export Excel
                 </a>
+                @endif
                 <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-action btn-pdf">
                     <i class="fa fa-file-pdf-o"></i> Export PDF
                 </a>

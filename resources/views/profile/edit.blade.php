@@ -28,10 +28,13 @@
     </a>
 
     <div class="profile-edit-header">
-        <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo">
+        <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="profile-header-avatar-fallback" style="display:none;">
+            {{ strtoupper(substr(trim((string) ($user->full_name ?? $user->name ?? 'U')), 0, 1)) }}
+        </div>
         <div>
             <h1>Account Settings</h1>
-            <p>Update your profile details, password, and account preferences.</p>
+            <p>Update your profile photo and password.</p>
         </div>
     </div>
 
@@ -39,7 +42,7 @@
         <section class="profile-edit-card">
             <div class="profile-edit-card-head">
                 <h3>Profile Information</h3>
-                <p>Update your name, email, and profile photo.</p>
+                <p>Photo only. Name and email are read-only on this page.</p>
             </div>
             @include('profile.partials.update-profile-information-form', ['user' => $user])
         </section>
@@ -52,13 +55,6 @@
             @include('profile.partials.update-password-form')
         </section>
 
-        <section class="profile-edit-card profile-danger-zone">
-            <div class="profile-edit-card-head">
-                <h3>Danger Zone</h3>
-                <p>Deleting your account is irreversible.</p>
-            </div>
-            @include('profile.partials.delete-user-form')
-        </section>
     </div>
 </div>
 
@@ -129,6 +125,20 @@
     border: 3px solid #dbeafe;
 }
 
+.profile-header-avatar-fallback {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: #1e3a8a;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    border: 3px solid #dbeafe;
+}
+
 .profile-edit-header h1 {
     margin: 0;
     font-size: 1.5rem;
@@ -175,6 +185,10 @@
     padding: 18px;
 }
 
+.profile-edit-card .profile-form-wrap {
+    padding: 18px;
+}
+
 .profile-edit-card label {
     display: block;
     font-size: 0.86rem;
@@ -213,23 +227,6 @@
     color: #ffffff;
 }
 
-.profile-danger-zone {
-    border-color: #fecaca;
-}
-
-.profile-danger-zone .profile-edit-card-head {
-    border-bottom-color: #fecaca;
-    background: #fff1f2;
-}
-
-.profile-danger-zone .profile-edit-card-head h3 {
-    color: #991b1b;
-}
-
-.profile-danger-zone .profile-edit-card-head p {
-    color: #b91c1c;
-}
-
 body.dark-mode .profile-alert-success {
     background: #14532d;
     color: #dcfce7;
@@ -260,6 +257,12 @@ body.dark-mode .profile-edit-header img {
     border-color: #1e3a8a;
 }
 
+body.dark-mode .profile-header-avatar-fallback {
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    border-color: #1e3a8a;
+    color: #dbeafe;
+}
+
 body.dark-mode .profile-edit-header h1,
 body.dark-mode .profile-edit-card-head h3,
 body.dark-mode .profile-edit-card label {
@@ -283,23 +286,6 @@ body.dark-mode .profile-edit-card input[type="file"] {
     background: #0b1220;
     color: #e2e8f0;
     border-color: #334155;
-}
-
-body.dark-mode .profile-danger-zone {
-    border-color: #7f1d1d;
-}
-
-body.dark-mode .profile-danger-zone .profile-edit-card-head {
-    background: #3f0d12;
-    border-bottom-color: #7f1d1d;
-}
-
-body.dark-mode .profile-danger-zone .profile-edit-card-head h3 {
-    color: #fecaca;
-}
-
-body.dark-mode .profile-danger-zone .profile-edit-card-head p {
-    color: #fca5a5;
 }
 
 @media (max-width: 720px) {

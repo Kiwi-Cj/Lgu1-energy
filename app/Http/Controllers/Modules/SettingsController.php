@@ -2,19 +2,19 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Setting;
+use App\Support\RoleAccess;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class SettingsController extends Controller
 {
     /**
-     * Only admin/super admin can access settings page.
+     * Only super admin can access settings page.
      */
     protected function ensureSettingsAccess()
     {
-        $role = strtolower((string) (auth()->user()->role ?? ''));
-        if (!in_array($role, ['super admin', 'admin'], true)) {
+        if (! RoleAccess::can(auth()->user(), 'access_settings')) {
             abort(403, 'You do not have permission to access Settings.');
         }
     }
@@ -25,7 +25,7 @@ class SettingsController extends Controller
 
         $settings = Setting::query()->pluck('value', 'key')->toArray();
         $user = auth()->user();
-        $role = strtolower((string) ($user->role ?? ''));
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
@@ -114,7 +114,6 @@ class SettingsController extends Controller
                 $rules["alert_level{$level}_{$size}"] = 'required|numeric|min:0|max:500';
             }
         }
-
         $validated = $request->validate($rules);
 
         // Ensure alert thresholds are ascending per facility size.
@@ -183,3 +182,4 @@ class SettingsController extends Controller
         return redirect()->route('settings.index')->with('success', 'Settings updated successfully.');
     }
 }
+

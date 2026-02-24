@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
+use App\Observers\EnergyIncidentObserver;
 use App\Observers\EnergyRecordObserver;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Schema;
@@ -25,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         EnergyRecord::observe(EnergyRecordObserver::class);
+        EnergyIncident::observe(EnergyIncidentObserver::class);
 
         // Enforce a strong password policy across registration, reset, and profile updates.
         Password::defaults(function () {

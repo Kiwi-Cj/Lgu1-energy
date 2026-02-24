@@ -5,6 +5,7 @@
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+    $userRole = strtolower($user->role ?? '');
 @endphp
 
 @section('content')
@@ -103,7 +104,9 @@
                         <th>Assigned</th>
                         <th>Completed</th>
                         <th>Remarks</th>
+                        @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                         <th>Action</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -135,6 +138,7 @@
                             <td>{{ $row['assigned_to'] }}</td>
                             <td>{{ $row['completed_date'] }}</td>
                             <td><div class="remarks-cell" title="{{ $row['remarks'] }}">{{ \Illuminate\Support\Str::limit((string) $row['remarks'], 90) }}</div></td>
+                            @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                             <td>
                                 <form action="{{ route('modules.maintenance.history.destroy', $row['id']) }}" method="POST" style="display:inline;">
                                     @csrf
@@ -144,14 +148,15 @@
                                     </button>
                                 </form>
                             </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="empty-cell">No maintenance history found.</td>
+                            <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No maintenance history found.</td>
                         </tr>
                     @endforelse
                     <tr id="historyNoMatchRow" style="display:none;">
-                        <td colspan="12" class="empty-cell">No matching records found.</td>
+                        <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No matching records found.</td>
                     </tr>
                 </tbody>
             </table>

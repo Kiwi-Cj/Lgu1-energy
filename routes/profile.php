@@ -2,6 +2,20 @@
 
 use Illuminate\Support\Facades\Route;
 
+$resolvePublicUploadRoot = function (): string {
+    $configured = (string) env('PUBLIC_UPLOAD_ROOT', '');
+    if ($configured !== '' && is_dir($configured)) {
+        return rtrim($configured, DIRECTORY_SEPARATOR);
+    }
+
+    $cpanelPublicHtml = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
+    if (is_dir($cpanelPublicHtml)) {
+        return rtrim($cpanelPublicHtml, DIRECTORY_SEPARATOR);
+    }
+
+    return public_path();
+};
+
 // --- User Profile Route ---
 Route::get('/profile', function () {
     return view('profile.show');
@@ -12,35 +26,31 @@ Route::get('/profile/edit', function () {
     return view('profile.edit');
 })->name('profile.edit');
 
-// --- Update Profile Route ---
-Route::patch('/profile', function (\Illuminate\Http\Request $request) {
+// --- Update Profile Route (photo-only) ---
+Route::patch('/profile', function (\Illuminate\Http\Request $request) use ($resolvePublicUploadRoot) {
     $user = auth()->user();
-    $validated = $request->validate([
-        'name' => 'nullable|string|max:255',
-        'full_name' => 'nullable|string|max:255',
-        'email' => 'required|email|max:255',
+
+    $request->validate([
         'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
     ]);
-    $resolvedName = trim((string) ($validated['full_name'] ?? $validated['name'] ?? $user->full_name ?? $user->name ?? ''));
-    if ($resolvedName === '') {
-        return redirect('/profile')->withErrors(['name' => 'Name is required.']);
-    }
 
-    $emailChanged = $user->email !== $validated['email'];
-
-    $user->full_name = $resolvedName;
-    $user->name = $resolvedName;
-    $user->email = $validated['email'];
-    if ($emailChanged) {
-        $user->email_verified_at = null;
-    }
     if ($request->hasFile('profile_photo')) {
         $file = $request->file('profile_photo');
-        $path = $file->store('profile_photos', 'public');
-        $user->profile_photo_path = $path;
+        $directory = $resolvePublicUploadRoot() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile_photos';
+
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $filename = uniqid('profile_', true) . '.' . $file->getClientOriginalExtension();
+        $file->move($directory, $filename);
+
+        $user->profile_photo_path = 'uploads/profile_photos/' . $filename;
     }
+
     $user->save();
-    return redirect('/profile')->with('status', 'profile-updated');
+
+    return redirect('/profile/edit')->with('status', 'profile-updated');
 })->name('profile.update');
 
 // --- Delete Profile Route ---

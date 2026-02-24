@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Facility;
+use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
@@ -13,17 +14,24 @@ class UsersController extends Controller
     {
         // Block Staff from accessing User Management
         // Only restrict staff; super admin, admin, and energy_officer have access
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
         // Super admin has full access (no block)
 
         // Get users with optional role filter (used by roles action buttons)
-        $selectedRole = strtolower(trim((string) request('role', '')));
+        $selectedRole = RoleAccess::normalize(request('role', ''));
+        $actorRole = RoleAccess::normalize(auth()->user());
         $usersQuery = User::with('facilities');
+        if ($actorRole === 'admin') {
+            $usersQuery->whereRaw('LOWER(role) NOT IN (?, ?)', ['super admin', 'admin']);
+        }
         if ($selectedRole !== '') {
-            $usersQuery->whereRaw('LOWER(role) = ?', [$selectedRole]);
+            $usersQuery->whereRaw(
+                "REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?",
+                [$selectedRole]
+            );
         }
         $users = $usersQuery->get();
         $facilities = Facility::all();
@@ -32,7 +40,7 @@ class UsersController extends Controller
         $inactiveUsers = $users->where('status', 'inactive')->count();
         $rolesList = $users->pluck('role')->unique()->implode(', ');
         $user = auth()->user();
-        $role = strtolower($user->role ?? '');
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'notifications', 'unreadNotifCount', 'selectedRole'));
@@ -41,7 +49,7 @@ class UsersController extends Controller
     public function edit($id)
     {
         // Block Staff from accessing User Management
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
@@ -54,7 +62,7 @@ class UsersController extends Controller
     public function store(Request $request)
     {
         // Block Staff from accessing User Management
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
@@ -72,6 +80,14 @@ class UsersController extends Controller
             'contact_number' => 'nullable|string|max:20',
         ]);
 
+        $actorRole = RoleAccess::normalize(auth()->user());
+        $targetRole = RoleAccess::normalize($validated['role'] ?? '');
+        if ($actorRole !== 'super_admin' && in_array($targetRole, ['super_admin', 'admin'], true)) {
+            return redirect()->route('users.index')
+                ->withInput()
+                ->with('error', 'Only Super Admin can assign Admin or Super Admin roles.');
+        }
+
         $facilityIds = $request->input('facility_id', []);
         $validated['password'] = Hash::make($validated['password']);
         unset($validated['facility_id']);
@@ -80,6 +96,7 @@ class UsersController extends Controller
         if (strtolower($validated['role']) === 'staff') {
             $user->facilities()->sync($facilityIds);
         }
+
         return redirect()->route('users.index')
             ->with('success', 'User created successfully!');
     }
@@ -87,7 +104,7 @@ class UsersController extends Controller
     public function update(Request $request, $id)
     {
         // Block Staff from accessing User Management
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
@@ -106,6 +123,14 @@ class UsersController extends Controller
             'department' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string|max:20',
         ]);
+
+        $actorRole = RoleAccess::normalize(auth()->user());
+        $targetRole = RoleAccess::normalize($validated['role'] ?? '');
+        if ($actorRole !== 'super_admin' && in_array($targetRole, ['super_admin', 'admin'], true)) {
+            return redirect()->route('users.index')
+                ->withInput()
+                ->with('error', 'Only Super Admin can assign Admin or Super Admin roles.');
+        }
 
         $facilityIds = $request->input('facility_id', []);
         unset($validated['facility_id']);
@@ -128,18 +153,24 @@ class UsersController extends Controller
     public function roles()
     {
         // Block Staff from accessing Roles page
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()->route('modules.energy.index')
                 ->with('error', 'You do not have permission to access User Roles.');
         }
 
-        $users = User::query()->select(['id', 'role', 'status'])->get();
+        $actorRole = RoleAccess::normalize(auth()->user());
+        $usersQuery = User::query()->select(['id', 'role', 'status']);
+        if ($actorRole === 'admin') {
+            $usersQuery->whereRaw('LOWER(role) NOT IN (?, ?)', ['super admin', 'admin']);
+        }
+
+        $users = $usersQuery->get();
         $groupedUsers = $users->groupBy(function ($user) {
-            return strtolower(trim((string) ($user->role ?? '')));
+            return RoleAccess::normalize($user->role ?? '');
         });
 
         $roleMeta = [
-            'super admin' => [
+            'super_admin' => [
                 'name' => 'Super Admin',
                 'description' => 'Full system access including security, configuration, and user management.',
                 'permissions' => 'All Permissions',
@@ -164,6 +195,10 @@ class UsersController extends Controller
                 'badge_color' => '#6b7280',
             ],
         ];
+
+        if ($actorRole === 'admin') {
+            unset($roleMeta['super_admin'], $roleMeta['admin']);
+        }
 
         $roles = collect($roleMeta)->map(function ($meta, $key) use ($groupedUsers) {
             $usersPerRole = $groupedUsers->get($key, collect());
@@ -220,4 +255,37 @@ class UsersController extends Controller
 
         return view('modules.users.roles', compact('roles', 'totalRoles', 'assignedUsers', 'activeRoles'));
     }
+
+    public function disable($id)
+    {
+        // Block Staff from accessing User Management actions
+        if (RoleAccess::is(auth()->user(), 'staff')) {
+            return redirect()->route('modules.energy.index')
+                ->with('error', 'You do not have permission to manage users.');
+        }
+
+        $user = User::findOrFail($id);
+        $actor = auth()->user();
+        $actorRole = RoleAccess::normalize($actor);
+        $targetRole = RoleAccess::normalize($user->role ?? '');
+
+        if ($actor && (int) $actor->id === (int) $user->id) {
+            return redirect()->route('users.index')
+                ->with('error', 'You cannot disable your own account.');
+        }
+
+        if ($actorRole !== 'super_admin' && in_array($targetRole, ['super_admin', 'admin'], true)) {
+            return redirect()->route('users.index')
+                ->with('error', 'Only Super Admin can disable Admin or Super Admin accounts.');
+        }
+
+        $user->status = 'inactive';
+        $user->save();
+
+        return redirect()->route('users.index')
+            ->with('success', 'User disabled successfully.');
+    }
 }
+
+
+

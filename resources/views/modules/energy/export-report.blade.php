@@ -5,6 +5,7 @@
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+    $userRole = str_replace(' ', '_', strtolower((string) ($user?->role ?? '')));
 @endphp
 
 @section('content')
@@ -55,9 +56,11 @@
                 <a href="#" onclick="exportCOAPdf(this);return false;" class="btn btn-danger" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #e11d480a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-pdf"></i> Download PDF
                 </a>
+                @if($userRole !== 'staff')
                 <button type="submit" class="btn btn-success" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #22c55e0a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </button>
+                @endif
             </div>
             <script>
             function exportCOAPdf(btn) {

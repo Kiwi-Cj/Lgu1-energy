@@ -119,7 +119,7 @@
 </head>
 <body>
     @php
-        $supportEmail = env('ADMIN_SUPPORT_EMAIL', 'support@energysystem.com');
+        $supportEmail = env('ADMIN_SUPPORT_EMAIL', 'energyconservemgmt@gmail.com');
         $supportPhone = env('ADMIN_SUPPORT_PHONE', '+1 (555) 123-4567');
     @endphp
 

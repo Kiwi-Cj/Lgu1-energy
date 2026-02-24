@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EnergyActionController;
 use App\Http\Controllers\Reports\EnergyReportController;
+use App\Support\RoleAccess;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use Carbon\Carbon;
@@ -16,7 +17,7 @@ Route::post('/energy-actions/store', [EnergyActionController::class, 'store']);
 
 Route::get('/modules/energy/trend', function (Request $request) {
     $user = auth()->user();
-    $isStaff = strtolower((string) ($user?->role ?? '')) === 'staff';
+    $isStaff = RoleAccess::is($user, 'staff');
     $facilityQuery = Facility::query()->orderBy('name');
     if ($isStaff) {
         $staffFacilityIds = $user->facilities()->pluck('facilities.id')->toArray();
@@ -157,6 +158,12 @@ Route::get('/modules/energy/get-kwh-consumed', function (HttpRequest $request) {
 
 // Energy Monitoring Excel Export (CSV fallback)
 Route::get('/modules/energy/export-excel', function (Request $request) {
+    if (RoleAccess::is(auth()->user(), 'staff')) {
+        return redirect()
+            ->route('energy.exportReport', array_filter($request->query()))
+            ->with('error', 'Excel/CSV export is not available for staff accounts.');
+    }
+
     $query = EnergyRecord::with('facility');
     if ($request->filled('facility_id')) {
         $query->where('facility_id', $request->facility_id);
@@ -198,6 +205,12 @@ Route::get('/modules/energy/export-excel', function (Request $request) {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Annual Energy Summary Excel Export (CSV fallback)
     Route::get('/modules/energy/annual/export-excel', function (Request $request) {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
+            return redirect()
+                ->route('modules.energy.annual', array_filter($request->query()))
+                ->with('error', 'Excel export is not available for staff accounts.');
+        }
+
         $years = range(date('Y'), date('Y') - 10);
         $selectedYear = $request->query('year', date('Y'));
         $facilities = Facility::all();

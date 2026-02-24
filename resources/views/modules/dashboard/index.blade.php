@@ -518,11 +518,6 @@
                 <div style="font-size:2rem; font-weight:800; color:#78350f;">₱{{ number_format($totalCost ?? 0, 0) }}</div>
             </div>
 
-            <div class="stat-card" style="background:#fef2f2;">
-                <div style="color:#dc2626; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">System Alerts</div>
-                <div style="font-size:2rem; font-weight:800; color:#7f1d1d;">{{ $activeAlerts ?? 0 }}</div>
-            </div>
-
             <div class="stat-card" style="background:#fff7ed;">
                 <div style="color:#c2410c; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Unresolved Incidents</div>
                 <div style="font-size:2rem; font-weight:800; color:#9a3412;">{{ $unresolvedIncidentCount ?? 0 }}</div>

@@ -97,6 +97,35 @@
     $filteredRecords = $records->where('year', $selectedYear);
     $sortedRecords = $filteredRecords->sortBy(fn($r) => $r->year . str_pad($r->month, 2, '0', STR_PAD_LEFT));
 @endphp
+@php
+    // Load Energy Monitoring alert thresholds from System Settings (single query for page render).
+    $alertThresholdDefaults = [
+        'small' => ['level1' => 3, 'level2' => 5, 'level3' => 10, 'level4' => 20, 'level5' => 30],
+        'medium' => ['level1' => 5, 'level2' => 7, 'level3' => 13, 'level4' => 23, 'level5' => 35],
+        'large' => ['level1' => 7, 'level2' => 10, 'level3' => 16, 'level4' => 26, 'level5' => 40],
+        'xlarge' => ['level1' => 10, 'level2' => 12, 'level3' => 18, 'level4' => 28, 'level5' => 45],
+    ];
+
+    $alertThresholdKeys = [];
+    foreach (array_keys($alertThresholdDefaults) as $sizeKey) {
+        for ($lvl = 1; $lvl <= 5; $lvl++) {
+            $alertThresholdKeys[] = "alert_level{$lvl}_{$sizeKey}";
+        }
+    }
+
+    $alertThresholdSettings = \App\Models\Setting::whereIn('key', $alertThresholdKeys)->pluck('value', 'key');
+
+    $alertThresholdsBySize = [];
+    foreach ($alertThresholdDefaults as $sizeKey => $levels) {
+        $alertThresholdsBySize[$sizeKey] = [];
+        foreach ($levels as $levelKey => $defaultValue) {
+            $settingKey = "alert_{$levelKey}_{$sizeKey}";
+            $rawValue = $alertThresholdSettings[$settingKey] ?? $defaultValue;
+            $alertThresholdsBySize[$sizeKey][$levelKey] = is_numeric($rawValue) ? (float) $rawValue : (float) $defaultValue;
+        }
+    }
+
+@endphp
 
 
 <div class="report-card monthly-record-page">
@@ -167,15 +196,7 @@ window.addEventListener('DOMContentLoaded', function() {
     @php
         $sizeLabel = '';
         if ($hasBaseline) {
-            if ($baselineAvg <= 1000) {
-                $sizeLabel = 'Small';
-            } elseif ($baselineAvg <= 3000) {
-                $sizeLabel = 'Medium';
-            } elseif ($baselineAvg <= 10000) {
-                $sizeLabel = 'Large';
-            } else {
-                $sizeLabel = 'Extra Large';
-            }
+            $sizeLabel = \App\Models\Facility::resolveSizeLabelFromBaseline($baselineAvg) ?? '';
         }
     @endphp
 
@@ -240,22 +261,15 @@ window.addEventListener('DOMContentLoaded', function() {
                             $baseline = $record->baseline_kwh;
                             $alertColor = '#2563eb'; // Default color
                             if ($deviation !== null && $baseline !== null) {
-                                if ($baseline <= 1000) {
-                                    $size = 'Small';
-                                } elseif ($baseline <= 3000) {
-                                    $size = 'Medium';
-                                } elseif ($baseline <= 10000) {
-                                    $size = 'Large';
-                                } else {
-                                    $size = 'Extra Large';
-                                }
-                                $thresholds = [
-                                    'Small' =>    [ 'level5' => 80,  'level4' => 50,  'level3' => 30,  'level2' => 15 ],
-                                    'Medium' =>   [ 'level5' => 60,  'level4' => 40,  'level3' => 20,  'level2' => 10 ],
-                                    'Large' =>    [ 'level5' => 30,  'level4' => 20,  'level3' => 12,  'level2' => 5  ],
-                                    'Extra Large'=>[ 'level5' => 20,  'level4' => 12,  'level3' => 7,   'level2' => 3  ],
-                                ];
-                                $t = $thresholds[$size];
+                                $size = \App\Models\Facility::resolveSizeLabelFromBaseline($baseline) ?? 'Small';
+                                $sizeThresholdKey = match ($size) {
+                                    'Small' => 'small',
+                                    'Medium' => 'medium',
+                                    'Large' => 'large',
+                                    'Extra Large' => 'xlarge',
+                                    default => 'small',
+                                };
+                                $t = $alertThresholdsBySize[$sizeThresholdKey] ?? $alertThresholdsBySize['small'];
                                 if ($deviation > $t['level5']) {
                                     $alert = 'Critical';
                                     $alertColor = '#7c1d1d'; // dark red
@@ -287,12 +301,20 @@ window.addEventListener('DOMContentLoaded', function() {
                     <td style="padding:10px 14px; text-align:center;">
                         @php
                             $billPath = ltrim((string) ($record->bill_image ?? ''), '/');
-                            if (str_starts_with($billPath, 'storage/')) {
+                            if (str_starts_with($billPath, 'http://') || str_starts_with($billPath, 'https://')) {
+                                $billImageUrl = $billPath;
+                            } elseif (str_starts_with($billPath, 'uploads/')) {
+                                $billImageUrl = asset($billPath);
+                            } elseif (str_starts_with($billPath, 'storage/')) {
                                 $billPath = substr($billPath, strlen('storage/'));
+                                $billImageUrl = ($billPath !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($billPath))
+                                    ? asset('storage/' . $billPath)
+                                    : null;
+                            } else {
+                                $billImageUrl = ($billPath !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($billPath))
+                                    ? asset('storage/' . $billPath)
+                                    : null;
                             }
-                            $billImageUrl = ($billPath !== '' && \Illuminate\Support\Facades\Storage::disk('public')->exists($billPath))
-                                ? asset('storage/' . $billPath)
-                                : null;
                         @endphp
                         @if($billImageUrl)
                             <a href="{{ $billImageUrl }}" target="_blank" style="display:inline-block;">
@@ -347,22 +369,30 @@ window.addEventListener('DOMContentLoaded', function() {
                         const title = document.getElementById('monthlyRecommendationModalTitle');
                         const text  = document.getElementById('monthlyRecommendationText');
                         const box   = document.getElementById('monthlyRecommendationModalBox');
+                        const isDark = document.body.classList.contains('dark-mode');
+
                         const alertStyles = {
-                            'Critical': { color: '#fff', bg: '#7c1d1d' },
-                            'Very High': { color: '#fff', bg: '#e11d48' },
-                            'High':    { color: '#fff', bg: '#f59e42' },
-                            'Warning': { color: '#222', bg: '#fde68a' },
-                            'Normal':      { color: '#222', bg: '#bbf7d0' },
-                            '-':                { color: '#222', bg: '#f8fafc' },
+                            'Critical': { color: '#7f1d1d', bg: '#fee2e2', border: '#fca5a5', icon: '!', darkBg: 'rgba(127,29,29,0.26)', darkBorder: 'rgba(248,113,113,0.35)' },
+                            'Very High': { color: '#9f1239', bg: '#ffe4e6', border: '#fda4af', icon: '!', darkBg: 'rgba(190,18,60,0.22)', darkBorder: 'rgba(244,114,182,0.35)' },
+                            'High': { color: '#9a3412', bg: '#ffedd5', border: '#fdba74', icon: '!', darkBg: 'rgba(194,65,12,0.22)', darkBorder: 'rgba(251,146,60,0.35)' },
+                            'Warning': { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', icon: 'i', darkBg: 'rgba(146,64,14,0.20)', darkBorder: 'rgba(251,191,36,0.30)' },
+                            'Normal': { color: '#1d4ed8', bg: '#dbeafe', border: '#93c5fd', icon: 'i', darkBg: 'rgba(37,99,235,0.18)', darkBorder: 'rgba(147,197,253,0.28)' },
+                            '-': { color: '#475569', bg: '#e2e8f0', border: '#cbd5e1', icon: 'i', darkBg: 'rgba(51,65,85,0.25)', darkBorder: 'rgba(148,163,184,0.22)' },
                         };
-                        const style = alertStyles[alert] || { color: '#222', bg: '#f8fafc' };
-                        title.innerHTML = `<span style='font-size:1.5rem;margin-right:8px;'>${icon}</span> Recommendation for ${facilityName}`;
-                        text.textContent = recommendation;
-                        text.style.color = style.color;
-                        text.style.background = style.bg;
+
+                        const style = alertStyles[alert] || { color: '#475569', bg: '#f1f5f9', border: '#e2e8f0', icon: 'i', darkBg: 'rgba(51,65,85,0.25)', darkBorder: 'rgba(148,163,184,0.22)' };
+                        const badgeIcon = style.icon;
+
+                        title.innerHTML = `<span style='display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;margin-right:8px;font-size:1rem;font-weight:800;background:${isDark ? '#1f2937' : '#ffffff'};border:1px solid ${isDark ? style.darkBorder : style.border};color:${isDark ? '#e2e8f0' : style.color};'>${badgeIcon}</span> Recommendation for ${facilityName}`;
+                        text.textContent = recommendation || 'No recommendation.';
+                        text.style.color = isDark ? '#e2e8f0' : style.color;
+                        text.style.background = isDark ? style.darkBg : style.bg;
+                        text.style.border = `1px solid ${isDark ? style.darkBorder : style.border}`;
                         text.style.padding = '12px 16px';
-                        text.style.borderRadius = '8px';
-                        box.style.background = '#fff';
+                        text.style.borderRadius = '10px';
+                        text.style.lineHeight = '1.45';
+                        text.style.fontWeight = '600';
+                        box.style.background = isDark ? '#111827' : '#fff';
                         modal.style.display = 'flex';
                     }
                     function closeMonthlyRecommendationModal() {
@@ -391,9 +421,9 @@ window.addEventListener('DOMContentLoaded', function() {
                         <form id="deleteMonthlyRecordForm-{{ $record->id }}" action="{{ route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id]) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="button" title="Delete"
+                            <button type="submit" title="Delete"
                                 style="background:none;border:none;color:#e11d48;font-size:1.2rem;cursor:pointer;"
-                                onclick="openDeleteMonthlyRecordModal({{ $record->id }}, '{{ $months[$record->month-1] }}', {{ $record->year }})"
+                                onclick="return confirm('Delete monthly record for {{ $months[$record->month-1] }} {{ $record->year }}?');"
                                 data-id="{{ $record->id }}"
                             >
                                 <i class="fa fa-trash"></i>

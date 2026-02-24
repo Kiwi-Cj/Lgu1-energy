@@ -43,6 +43,7 @@ class AuthenticatedSessionController extends Controller
         $otpEnabled = (bool) config('otp.enabled', true);
         if (! $otpEnabled) {
             Auth::login($user);
+            $user->forceFill(['last_login' => now()])->save();
             $request->session()->regenerate();
             \Illuminate\Support\Facades\RateLimiter::clear($request->throttleKey());
             if ($request->expectsJson() || $request->wantsJson()) {

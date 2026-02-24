@@ -107,19 +107,12 @@ background:#fff;padding:10px 22px;
 border-radius:14px;font-weight:800;
 color:#2563eb;text-decoration:none;
 box-shadow:0 4px 16px #2563eb33;">
-← Back
+<i class="fa fa-arrow-left" style="margin-right:6px;"></i> Back
 </a>
 
 
 @php
-$imageUrl = null;
-if($facility->image_path){
-	$imageUrl = asset('storage/' . $facility->image_path);
-} elseif($facility->image){
-	$imageUrl = str_starts_with($facility->image,'img/')
-		? asset($facility->image)
-		: asset('storage/'.$facility->image);
-}
+$imageUrl = $facility->resolved_image_url;
 @endphp
 
 <!-- HEADER -->
@@ -141,11 +134,13 @@ font-size:2.5rem;color:#9ca3af;">
 	{{ $facility->name }}
 </h1>
 <div style="color:#6366f1;font-weight:700;margin-top:6px;">
-	{{ $facility->type }} • {{ $facility->department }}
+	{{ $facility->type }} &bull; {{ $facility->department }}
 </div>
+@if(!in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
 <button type="button" onclick="openEditFacilityModal()" style="margin-top:18px;background:#2563eb;color:#fff;padding:8px 22px;border:none;border-radius:8px;font-weight:600;font-size:1.05rem;cursor:pointer;">
 	<i class="fa fa-edit" style="margin-right:6px;"></i> Edit Facility
 </button>
+@endif
 
 <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
 <span style="padding:6px 18px;border-radius:999px;
@@ -161,13 +156,13 @@ color:
 <span style="padding:6px 18px;border-radius:999px;
 font-weight:800;font-size:.9rem;
 background:#e0f2fe;color:#0369a1;">
-✔ Engineer Approved
+<i class="fa fa-check" style="margin-right:6px;"></i> Engineer Approved
 </span>
 @else
 <span style="padding:6px 18px;border-radius:999px;
 font-weight:800;font-size:.9rem;
 background:#f1f5f9;color:#64748b;">
-✖ Not Approved
+<i class="fa fa-times" style="margin-right:6px;"></i> Not Approved
 </span>
 @endif
 </div>
@@ -179,35 +174,34 @@ background:#f1f5f9;color:#64748b;">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:24px;">
 
 @php
-// Get latest monthly record for this facility
-$latestRecord = $facility->energyRecords()->orderByDesc('year')->orderByDesc('month')->first();
+// Facility size should be based on baseline kWh (Energy Profile baseline first, fallback to facility baseline).
+$latestProfileForSize = $facility->energyProfiles()->latest()->first();
+$baselineForSize = null;
 $sizeLabel = '-';
-if ($latestRecord && $latestRecord->actual_kwh !== null) {
-	$kwh = $latestRecord->actual_kwh;
-	if ($kwh < 1500) {
-		$sizeLabel = 'Small';
-	} elseif ($kwh < 3000) {
-		$sizeLabel = 'Medium';
-	} elseif ($kwh < 6000) {
-		$sizeLabel = 'Large';
-	} else {
-		$sizeLabel = 'Extra Large';
-	}
+
+if ($latestProfileForSize && is_numeric($latestProfileForSize->baseline_kwh) && (float) $latestProfileForSize->baseline_kwh > 0) {
+	$baselineForSize = (float) $latestProfileForSize->baseline_kwh;
+} elseif (is_numeric($facility->baseline_kwh) && (float) $facility->baseline_kwh > 0) {
+	$baselineForSize = (float) $facility->baseline_kwh;
+}
+
+if ($baselineForSize !== null) {
+	$sizeLabel = \App\Models\Facility::resolveSizeLabelFromBaseline($baselineForSize) ?? '-';
 }
 @endphp
 
 @foreach([
-	['📍','Address',$facility->address],
-	['🏘','Barangay',$facility->barangay],
-	['📐','Floor Area',$facility->floor_area.' sqm'],
-	['🏢','Floors',$facility->floors],
-	['📅','Year Built',$facility->year_built],
-	['⏱','Operating Hours',$facility->operating_hours],
-	['📊','Facility Size',$sizeLabel]
+	['<i class="fa fa-map-marker"></i>','Address',$facility->address],
+	['<i class="fa fa-map"></i>','Barangay',$facility->barangay],
+	['<i class="fa fa-expand"></i>','Floor Area',$facility->floor_area.' sqm'],
+	['<i class="fa fa-building"></i>','Floors',$facility->floors],
+	['<i class="fa fa-calendar"></i>','Year Built',$facility->year_built],
+	['<i class="fa fa-clock-o"></i>','Operating Hours',$facility->operating_hours],
+	['<i class="fa fa-bar-chart"></i>','Facility Size',$sizeLabel]
 ] as $info)
 	<div style="background:#fff;padding:18px;border-radius:16px;display:flex;gap:14px;box-shadow:0 6px 18px rgba(0,0,0,.08);">
 		<div style="width:44px;height:44px;border-radius:14px;background:#2563eb1a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#2563eb;">
-			{{ $info[0] }}
+			{!! $info[0] !!}
 		</div>
 		<div>
 			<div style="font-size:.85rem;color:#64748b;font-weight:700;">{{ $info[1] }}</div>
@@ -247,7 +241,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 				<div>
 					<span style="color:#64748b;font-weight:700;">Baseline Locked:</span><br>
 					@php
-						$role = strtolower(auth()->user()->role ?? '');
+						$role = auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')));
 					@endphp
 					@if($role === 'staff')
 						<span style="display:inline-flex;align-items-center;gap:6px;font-weight:800;color:#0ea5e9;background:#e0f2fe;padding:6px 14px;border-radius:999px;" title="Baseline is locked for staff and cannot be changed.">
@@ -281,7 +275,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 @if($energyProfile && !$energyProfile->engineer_approved)
 <div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);text-align:center;">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
-		⚡ Energy Performance
+		<i class="fa fa-bolt" style="margin-right:6px;"></i> Energy Performance
 	</h3>
 	<div style="color:#64748b;font-weight:700;font-size:1.1rem;padding:18px 0;">
 		<i class="fa fa-clock" style="color:#2563eb;font-size:1.5rem;margin-bottom:8px;"></i><br>
@@ -292,7 +286,7 @@ $profile = $facility->energyProfiles()->latest()->first();
 @elseif($hasBaseline)
 <div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
-		⚡ Energy Performance
+		<i class="fa fa-bolt" style="margin-right:6px;"></i> Energy Performance
 	</h3>
 	<div style="font-size:1.7rem;font-weight:900;color:#2563eb;">
 		{{ number_format($baselineKwh,2) }} kWh
@@ -304,10 +298,10 @@ $profile = $facility->energyProfiles()->latest()->first();
 @else
 <div class="energy-performance-card" style="margin-top:32px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#eff6ff,#ffffff);box-shadow:0 10px 30px rgba(37,99,235,.15);">
 	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
-		⚡ Energy Performance
+		<i class="fa fa-bolt" style="margin-right:6px;"></i> Energy Performance
 	</h3>
 	<div class="energy-warning" style="color:#b91c1c;font-weight:700;">
-		⚠ Insufficient data (no baseline set in energy profile)
+		<i class="fa fa-exclamation-triangle" style="margin-right:6px;"></i> Insufficient data (no baseline set in energy profile)
 	</div>
 </div>
 @endif
@@ -315,7 +309,9 @@ $profile = $facility->energyProfiles()->latest()->first();
 <!-- ACTIONS -->
 <div style="display:flex;gap:14px;justify-content:flex-end;margin-top:30px;">
 	<!-- Edit Facility button removed -->
-	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" style="background:#e11d48;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;">🗑 Delete</button>
+	@if(!in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
+	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" style="background:#e11d48;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;"><i class="fa fa-trash" style="margin-right:6px;"></i> Delete</button>
+	@endif
 </div>
 
 </div>
@@ -345,12 +341,15 @@ function openEditFacilityModal() {
 	document.getElementById('editFacilityForm').action = '/facilities/' + facility.id;
 	// Image preview
 	var preview = document.getElementById('edit_image_preview');
-	if (facility.image) {
+	var imagePath = facility.image_path || facility.image || '';
+	if (imagePath) {
 		let imageUrl = '';
-		if (facility.image.startsWith('img/')) {
-			imageUrl = '/' + facility.image;
+		if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+			imageUrl = imagePath;
+		} else if (imagePath.startsWith('img/') || imagePath.startsWith('uploads/') || imagePath.startsWith('storage/')) {
+			imageUrl = '/' + imagePath;
 		} else {
-			imageUrl = '/storage/' + facility.image;
+			imageUrl = '/storage/' + imagePath;
 		}
 		preview.innerHTML = '<img src="' + imageUrl + '" style="max-width:100%;max-height:120px;border-radius:10px;">';
 	} else {

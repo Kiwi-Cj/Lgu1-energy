@@ -42,10 +42,11 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 	<div class="modal-content" style="max-width:520px;background:#fff;border-radius:18px;padding:32px 28px;position:relative;">
 		<button class="modal-close" type="button" onclick="closeAddEnergyProfileModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
 
-		<h2 style="margin-bottom:18px;font-size:1.7rem;font-weight:700;color:#2563eb;">Add Energy Profile</h2>
+		<h2 id="energyProfileModalTitle" style="margin-bottom:18px;font-size:1.7rem;font-weight:700;color:#2563eb;">Add Energy Profile</h2>
 
-		<form method="POST" style="display:flex;flex-direction:column;gap:18px;">
+		<form id="energyProfileForm" method="POST" action="{{ route('modules.facilities.energy-profile.store', ['facility' => $facilityModel->id]) }}" style="display:flex;flex-direction:column;gap:18px;">
 			@csrf
+			<input type="hidden" name="_method" id="energy_profile_form_method" value="PUT" disabled>
 			<input type="hidden" name="facility_id" id="add_energy_facility_id">
 
 			<div style="display:flex;gap:14px;">
@@ -128,7 +129,7 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 			</div>
 			<div style="display:flex;gap:12px;margin-top:8px;">
 				<button type="button" class="energy-modal-btn cancel" onclick="closeAddEnergyProfileModal()" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
-				<button type="submit" class="energy-modal-btn save" style="width:100%;padding:10px 0;border-radius:8px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1.1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);">Add Energy Profile</button>
+				<button type="submit" id="energyProfileSubmitBtn" class="energy-modal-btn save" style="width:100%;padding:10px 0;border-radius:8px;background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;font-weight:600;border:none;font-size:1.1rem;box-shadow:0 2px 6px rgba(55,98,200,0.07);">Add Energy Profile</button>
 			</div>
 		</form>
 	</div>
@@ -136,31 +137,77 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 
 
 
-<!-- DELETE ENERGY PROFILE MODAL -->
-<div id="deleteEnergyProfileModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:10000;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
-    <div class="modal-content" style="max-width:400px;background:#fff;border-radius:16px;padding:32px 28px;position:relative;box-shadow:0 4px 24px rgba(0,0,0,0.10);display:flex;flex-direction:column;align-items:center;">
-        <button class="modal-close" type="button" onclick="closeDeleteEnergyProfileModal()" style="position:absolute;top:18px;right:18px;font-size:1.7rem;border:none;background:none;">&times;</button>
-        <h2 style="margin-bottom:18px;font-size:1.3rem;font-weight:700;color:#e11d48;text-align:center;">Delete Energy Profile?</h2>
-        <p style="color:#64748b;font-size:1.05rem;text-align:center;margin-bottom:24px;">Are you sure you want to delete this energy profile? This action cannot be undone.</p>
-        <form method="POST" id="deleteEnergyProfileForm" style="width:100%;display:flex;flex-direction:column;gap:14px;align-items:center;">
-            @csrf
-            @method('DELETE')
-            <input type="hidden" name="energy_profile_id" id="delete_energy_profile_id">
-            <div style="display:flex;gap:12px;justify-content:center;width:100%;">
-                <button type="button" class="energy-modal-btn cancel" onclick="closeDeleteEnergyProfileModal()" style="background:#f3f4f6;color:#222;font-weight:500;border:none;border-radius:8px;padding:10px 22px;">Cancel</button>
-                <button type="submit" class="energy-modal-btn delete" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;">Delete</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
+function resetEnergyProfileFormForAdd(facilityId) {
+    const modal = document.getElementById('addEnergyProfileModal');
+    const form = document.getElementById('energyProfileForm');
+    const methodInput = document.getElementById('energy_profile_form_method');
+    const title = document.getElementById('energyProfileModalTitle');
+    const submitBtn = document.getElementById('energyProfileSubmitBtn');
+    if (!modal || !form) return;
+
+    form.reset();
+    form.action = `/modules/facilities/${facilityId}/energy-profile`;
+    if (methodInput) {
+        methodInput.disabled = true;
+        methodInput.value = 'PUT';
+    }
+    if (title) title.textContent = 'Add Energy Profile';
+    if (submitBtn) submitBtn.textContent = 'Add Energy Profile';
+    document.getElementById('add_energy_facility_id').value = facilityId;
+}
+
 function openAddEnergyProfileModal(facilityId) {
-	document.getElementById('addEnergyProfileModal').style.display = 'flex';
-	document.getElementById('add_energy_facility_id').value = facilityId;
+	resetEnergyProfileFormForAdd(facilityId);
+    const modal = document.getElementById('addEnergyProfileModal');
+    modal.style.display = 'flex';
+    modal.classList.add('show-modal');
+}
+
+function openEditEnergyProfileModal(profile) {
+    const modal = document.getElementById('addEnergyProfileModal');
+    const form = document.getElementById('energyProfileForm');
+    const methodInput = document.getElementById('energy_profile_form_method');
+    const title = document.getElementById('energyProfileModalTitle');
+    const submitBtn = document.getElementById('energyProfileSubmitBtn');
+    if (!modal || !form || !profile) return;
+
+    const facilityId = profile.facility_id || document.getElementById('add_energy_facility_id')?.value;
+    form.reset();
+    form.action = `/modules/facilities/${facilityId}/energy-profile/${profile.id}`;
+    if (methodInput) {
+        methodInput.disabled = false;
+        methodInput.value = 'PUT';
+    }
+    document.getElementById('add_energy_facility_id').value = facilityId;
+
+    const setValue = (name, value) => {
+        const field = form.querySelector(`[name="${name}"]`);
+        if (!field) return;
+        field.value = value ?? '';
+    };
+
+    setValue('electric_meter_no', profile.electric_meter_no);
+    setValue('utility_provider', profile.utility_provider);
+    setValue('contract_account_no', profile.contract_account_no);
+    setValue('baseline_kwh', profile.baseline_kwh);
+    setValue('main_energy_source', profile.main_energy_source);
+    setValue('backup_power', profile.backup_power);
+    setValue('transformer_capacity', profile.transformer_capacity);
+    setValue('number_of_meters', profile.number_of_meters);
+    setValue('baseline_source', profile.baseline_source);
+
+    if (title) title.textContent = 'Edit Energy Profile';
+    if (submitBtn) submitBtn.textContent = 'Save Changes';
+
+    modal.style.display = 'flex';
+    modal.classList.add('show-modal');
 }
 function closeAddEnergyProfileModal() {
-	document.getElementById('addEnergyProfileModal').style.display = 'none';
+    const modal = document.getElementById('addEnergyProfileModal');
+    if (!modal) return;
+	modal.style.display = 'none';
+    modal.classList.remove('show-modal');
 }
 
 // Robust fallback: always close modal on X or Cancel click
@@ -188,11 +235,4 @@ function closeAddMaintenanceModal() {
     document.getElementById('addMaintenanceModal').style.display = 'none';
 }
 
-function openDeleteEnergyProfileModal(profileId) {
-    document.getElementById('deleteEnergyProfileModal').style.display = 'flex';
-    document.getElementById('delete_energy_profile_id').value = profileId;
-}
-function closeDeleteEnergyProfileModal() {
-    document.getElementById('deleteEnergyProfileModal').style.display = 'none';
-}
 </script>

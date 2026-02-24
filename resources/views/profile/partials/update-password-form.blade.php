@@ -8,13 +8,13 @@
 
     <div>
         <label for="update_password_current_password">Current Password</label>
-        <input id="update_password_current_password" name="current_password" type="password" autocomplete="current-password">
+        <input id="update_password_current_password" name="current_password" type="password" autocomplete="current-password" required>
         <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
     </div>
 
     <div>
         <label for="update_password_password">New Password</label>
-        <input id="update_password_password" name="password" type="password" autocomplete="new-password">
+        <input id="update_password_password" name="password" type="password" autocomplete="new-password" required>
         <div class="profile-password-strength" id="profilePasswordStrength">
             <div class="strength-head">
                 <span>Password strength</span>
@@ -36,13 +36,14 @@
 
     <div>
         <label for="update_password_password_confirmation">Confirm Password</label>
-        <input id="update_password_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password">
+        <input id="update_password_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required>
         <p id="passwordMatchHint" class="profile-password-match-hint">Waiting for confirmation...</p>
         <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
     </div>
 
     <div class="profile-form-actions">
-        <button type="submit">Update Password</button>
+        <button type="submit" id="updatePasswordSubmitBtn" disabled>Update Password</button>
+        <p id="updatePasswordEnableHint" class="profile-password-enable-hint">Complete all requirements to enable Update Password.</p>
         @if (session('status') === 'password-updated')
             <p class="profile-success-note">Saved.</p>
         @endif
@@ -169,6 +170,12 @@ body.dark-mode .profile-password-hint {
     color: #b91c1c;
 }
 
+.profile-password-enable-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
 body.dark-mode .profile-password-strength {
     background: #111827;
     border-color: #334155;
@@ -216,17 +223,30 @@ body.dark-mode .profile-password-match-hint.is-match {
 body.dark-mode .profile-password-match-hint.is-mismatch {
     color: #fca5a5;
 }
+
+body.dark-mode .profile-password-enable-hint {
+    color: #94a3b8;
+}
+
+.profile-form-actions button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
 </style>
 
 <script>
 window.addEventListener('DOMContentLoaded', function () {
+    var currentPasswordInput = document.getElementById('update_password_current_password');
     var passwordInput = document.getElementById('update_password_password');
     var confirmInput = document.getElementById('update_password_password_confirmation');
+    var submitBtn = document.getElementById('updatePasswordSubmitBtn');
+    var enableHint = document.getElementById('updatePasswordEnableHint');
     var strengthLabel = document.getElementById('strengthLabel');
     var strengthBar = document.getElementById('strengthBar');
     var matchHint = document.getElementById('passwordMatchHint');
 
-    if (!passwordInput || !confirmInput || !strengthLabel || !strengthBar || !matchHint) {
+    if (!currentPasswordInput || !passwordInput || !confirmInput || !submitBtn || !enableHint || !strengthLabel || !strengthBar || !matchHint) {
         return;
     }
 
@@ -243,15 +263,20 @@ window.addEventListener('DOMContentLoaded', function () {
         element.classList.toggle('is-pass', isPass);
     }
 
-    function updateStrength() {
+    function getChecks() {
         var value = passwordInput.value || '';
-        var checks = {
+        return {
             length: value.length >= 12,
             upper: /[A-Z]/.test(value),
             lower: /[a-z]/.test(value),
             number: /\d/.test(value),
             symbol: /[^A-Za-z0-9]/.test(value)
         };
+    }
+
+    function updateStrength() {
+        var value = passwordInput.value || '';
+        var checks = getChecks();
 
         markRule(rules.length, checks.length);
         markRule(rules.upper, checks.upper);
@@ -307,14 +332,34 @@ window.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function updateSubmitState() {
+        var checks = getChecks();
+        var allRulesPass = Object.keys(checks).every(function (key) {
+            return checks[key];
+        });
+        var currentFilled = (currentPasswordInput.value || '').trim().length > 0;
+        var confirmFilled = (confirmInput.value || '').length > 0;
+        var passwordsMatch = (passwordInput.value || '') === (confirmInput.value || '');
+
+        submitBtn.disabled = !(currentFilled && allRulesPass && confirmFilled && passwordsMatch);
+        enableHint.style.display = submitBtn.disabled ? '' : 'none';
+    }
+
     passwordInput.addEventListener('input', function () {
         updateStrength();
         updateMatchHint();
+        updateSubmitState();
     });
 
-    confirmInput.addEventListener('input', updateMatchHint);
+    confirmInput.addEventListener('input', function () {
+        updateMatchHint();
+        updateSubmitState();
+    });
+
+    currentPasswordInput.addEventListener('input', updateSubmitState);
 
     updateStrength();
     updateMatchHint();
+    updateSubmitState();
 });
 </script>

@@ -199,6 +199,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Store new energy profile (controller-based)
     Route::post('/modules/facilities/{facility}/energy-profile', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'store'])->name('modules.facilities.energy-profile.store');
 
+    // Update energy profile
+    Route::match(['put', 'patch'], '/modules/facilities/{facility}/energy-profile/{profile}', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'update'])
+        ->name('modules.facilities.energy-profile.update');
+
     // Toggle engineer approval for energy profile
     Route::post('/modules/facilities/{facility}/energy-profile/{profile}/toggle-approval', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'toggleEngineerApproval'])->name('energy-profile.toggle-approval');
 
@@ -211,3 +215,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         abort(405, 'Profile ID required for delete.');
     });
 });
+
+

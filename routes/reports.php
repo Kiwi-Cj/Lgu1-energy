@@ -1,4 +1,5 @@
 <?php
+use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -12,6 +13,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/reports/dashboard-summary', [\App\Http\Controllers\Reports\DashboardSummaryController::class, 'summary'])->name('reports.dashboard-summary');
     // Energy Report Excel Export
     Route::get('/modules/reports/energy-export', function (\Illuminate\Http\Request $request) {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
+            $energyReportRoute = Route::has('reports.energy') ? 'reports.energy' : 'modules.reports.energy';
+            return redirect()
+                ->route($energyReportRoute, array_filter($request->query()))
+                ->with('error', 'Excel export is not available for staff accounts.');
+        }
+
         $facilityId = $request->input('facility_id');
         $year = $request->input('year');
         $month = $request->input('month');
@@ -55,3 +63,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\EnergyReportExport($energyRows), 'energy_report.xlsx');
     })->name('reports.energy-export');
 });
+
+

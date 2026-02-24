@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class Facility extends Model
 {
@@ -108,17 +109,39 @@ class Facility extends Model
      */
     public function getComputedSizeAttribute()
     {
-        $baseline = $this->baseline_kwh ?? 0;
+        $label = static::resolveSizeLabelFromBaseline($this->baseline_kwh);
 
-        if ($baseline < 1500) {
-            return 'SMALL';
-        } elseif ($baseline < 3000) {
-            return 'MEDIUM';
-        } elseif ($baseline < 6000) {
-            return 'LARGE';
-        } else {
-            return 'EXTRA_LARGE';
+        if (! $label) {
+            return 'N/A';
         }
+
+        return strtoupper(str_replace([' ', '-'], '_', $label));
+    }
+
+    /**
+     * Resolve facility size category from baseline kWh using configured operational ranges.
+     */
+    public static function resolveSizeLabelFromBaseline($baseline): ?string
+    {
+        if (! is_numeric($baseline) || (float) $baseline <= 0) {
+            return null;
+        }
+
+        $baseline = (float) $baseline;
+
+        if ($baseline < 3000) {
+            return 'Small';
+        }
+
+        if ($baseline < 10000) {
+            return 'Medium';
+        }
+
+        if ($baseline < 30000) {
+            return 'Large';
+        }
+
+        return 'Extra Large';
     }
 
     // Removed: getAverageMonthlyKwhAttribute (use baseline_kwh instead)
@@ -163,5 +186,38 @@ class Facility extends Model
     {
         // first3months_data table removed; fallback to baseline_kwh
         return $value;
+    }
+
+    public function getResolvedImageUrlAttribute(): ?string
+    {
+        $candidates = [];
+
+        if (!empty($this->image_path)) {
+            $candidates[] = ltrim((string) $this->image_path, '/');
+        }
+
+        if (!empty($this->image)) {
+            $candidates[] = ltrim((string) $this->image, '/');
+        }
+
+        foreach ($candidates as $path) {
+            if ($path === '') {
+                continue;
+            }
+
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+
+            if (str_starts_with($path, 'img/') || str_starts_with($path, 'uploads/') || str_starts_with($path, 'storage/')) {
+                return asset($path);
+            }
+
+            if (Storage::disk('public')->exists($path)) {
+                return asset('storage/' . $path);
+            }
+        }
+
+        return null;
     }
 }

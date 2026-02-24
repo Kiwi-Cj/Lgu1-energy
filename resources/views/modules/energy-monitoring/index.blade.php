@@ -260,6 +260,12 @@
         border-color: rgba(22, 101, 52, 0.2);
     }
 
+    .energy-monitor-page .alert-pill-level-no-data {
+        color: #475569;
+        background: #f1f5f9;
+        border-color: rgba(100, 116, 139, 0.22);
+    }
+
     .energy-monitor-page .recommendation-btn.level-critical,
     .energy-monitor-page .recommendation-btn.level-very-high {
         color: #e11d48;
@@ -274,6 +280,10 @@
     .energy-monitor-page .recommendation-btn.level-low,
     .energy-monitor-page .recommendation-btn.level-normal {
         color: #16a34a;
+    }
+
+    .energy-monitor-page .recommendation-btn.level-no-data {
+        color: #64748b;
     }
 
     .energy-monitor-page .recommendation-icon {
@@ -305,27 +315,113 @@
         align-items: center;
         width: 100vw;
         height: 100vh;
+        padding: 18px;
+    }
+
+    .energy-monitor-page .recommendation-modal-panel {
+        width: min(500px, 100%);
+        background: #ffffff;
+        border-radius: 22px;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+        border: 1px solid #e2e8f0;
+        padding: 22px 22px 18px;
+        position: relative;
+    }
+
+    .energy-monitor-page .recommendation-modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-right: 34px;
+    }
+
+    .energy-monitor-page .recommendation-title-wrap {
+        min-width: 0;
+    }
+
+    .energy-monitor-page .recommendation-title {
+        margin: 0;
+        font-size: 1.18rem;
+        font-weight: 800;
+        line-height: 1.45;
+        color: #0f172a;
+    }
+
+    .energy-monitor-page .recommendation-meta {
+        display: none;
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .energy-monitor-page .recommendation-alert-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        font-size: 1rem;
+        font-weight: 800;
+        flex-shrink: 0;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+    }
+
+    .energy-monitor-page .recommendation-message-card {
+        border-radius: 14px;
+        padding: 16px 18px;
+        border: 1px solid transparent;
+        font-size: 0.96rem;
+        line-height: 1.5;
+        font-weight: 700;
+        white-space: normal;
+        word-break: break-word;
     }
 
     .energy-monitor-page .recommendation-close-icon {
         position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 1.3rem;
-        background: none;
+        top: 12px;
+        right: 14px;
+        width: auto;
+        height: auto;
+        border-radius: 0;
+        font-size: 1.5rem;
+        line-height: 1;
+        background: transparent;
         border: none;
         color: #64748b;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color .16s ease, transform .16s ease;
+    }
+
+    .energy-monitor-page .recommendation-close-icon:hover {
+        color: #475569;
+        transform: scale(1.05);
     }
 
     .energy-monitor-page .recommendation-close-btn {
-        background: #2563eb;
+        background: linear-gradient(90deg, #2563eb, #1d4ed8);
         color: #fff;
-        padding: 8px 22px;
+        padding: 9px 18px;
         border: none;
-        border-radius: 7px;
-        font-weight: 600;
-        font-size: 1rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        box-shadow: none;
+    }
+
+    .energy-monitor-page .recommendation-footer {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
     }
 
     .energy-monitor-page .monitor-alert-pill {
@@ -469,14 +565,24 @@
         border-color: rgba(74, 222, 128, 0.28);
     }
 
-    body.dark-mode #recommendationModalBox {
-        background: #111827 !important;
-        color: #e2e8f0 !important;
-        border: 1px solid #334155;
+    body.dark-mode .energy-monitor-page .alert-pill-level-no-data {
+        color: #cbd5e1;
+        background: rgba(51, 65, 85, 0.35);
+        border-color: rgba(148, 163, 184, 0.25);
     }
 
-    body.dark-mode #recommendationModalTitle {
+    body.dark-mode .energy-monitor-page .recommendation-modal-panel {
+        background: #111827 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .recommendation-title {
         color: #f8fafc !important;
+    }
+
+    body.dark-mode .energy-monitor-page .recommendation-meta {
+        color: #94a3b8 !important;
     }
 
     body.dark-mode .energy-monitor-page .recommendation-modal {
@@ -485,6 +591,10 @@
 
     body.dark-mode .energy-monitor-page .recommendation-close-icon {
         color: #94a3b8;
+    }
+
+    body.dark-mode .energy-monitor-page .recommendation-close-icon:hover {
+        color: #cbd5e1;
     }
 
     body.dark-mode .energy-monitor-page .recommendation-close-btn {
@@ -631,7 +741,7 @@
                 @php 
                     $record = $facility->currentMonthRecord;
                     $trendAnalysis = $facility->trend_analysis ?? '-';
-                    $alertLevel = $facility->alert_level ?? 'Normal';
+                    $alertLevel = $facility->alert_level ?? 'No Data';
                     $eui = null;
                     $hasCurrentMonth = $record !== null;
                 @endphp
@@ -657,7 +767,7 @@
                             @endphp
                             {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
                         </td>
-                        <td class="trend-value {{ str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal' }}">
+                        <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
                             {{ $trendAnalysis }}
                         </td>
                         <td>{{ $eui ?? '-' }}</td>
@@ -684,10 +794,13 @@
                                 $trendRecommendation = $facility->trend_recommendation ?? 'No recommendation';
                                 $iconData = [
                                     'Critical' => ['icon' => '!', 'color' => '#7c1d1d'],
+                                    'Very High' => ['icon' => '!', 'color' => '#e11d48'],
                                     'High' => ['icon' => '!', 'color' => '#e11d48'],
                                     'Moderate' => ['icon' => 'i', 'color' => '#f59e42'],
+                                    'Warning' => ['icon' => 'i', 'color' => '#f59e42'],
                                     'Low' => ['icon' => 'i', 'color' => '#16a34a'],
                                     'Normal' => ['icon' => 'i', 'color' => '#2563eb'],
+                                    'No Data' => ['icon' => 'i', 'color' => '#64748b'],
                                 ][$alertLevel] ?? ['icon' => 'i', 'color' => '#64748b'];
                             @endphp
                             <button type="button" title="View Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation))'>
@@ -712,11 +825,17 @@
 <!-- Recommendation Modal -->
 <div id="recommendationModal" class="recommendation-modal">
     <div class="recommendation-modal-inner">
-        <div id="recommendationModalBox" style="max-width:400px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(31,38,135,0.13);padding:28px 24px;position:relative;">
+        <div id="recommendationModalBox" class="recommendation-modal-panel">
             <button type="button" onclick="closeRecommendationModal()" class="recommendation-close-icon">&times;</button>
-            <h2 id="recommendationModalTitle" style="margin-bottom:12px;font-size:1.3rem;font-weight:700;"></h2>
-            <div id="recommendationText" style="margin:0 0 10px 0;padding:0;font-size:1.08rem;"></div>
-            <div style="text-align:right;margin-top:18px;">
+            <div class="recommendation-modal-header">
+                <div id="recommendationAlertBadge" class="recommendation-alert-badge">i</div>
+                <div class="recommendation-title-wrap">
+                    <h2 id="recommendationModalTitle" class="recommendation-title"></h2>
+                    <div id="recommendationModalMeta" class="recommendation-meta"></div>
+                </div>
+            </div>
+            <div id="recommendationText" class="recommendation-message-card"></div>
+            <div class="recommendation-footer">
                 <button type="button" onclick="closeRecommendationModal()" class="recommendation-close-btn">Close</button>
             </div>
         </div>
@@ -746,25 +865,34 @@ function toggleEngineerApproval(facilityId) {
 function openRecommendationModal(facilityId, facilityName, alertLevel, trendRecommendation) {
     const modal = document.getElementById('recommendationModal');
     const title = document.getElementById('recommendationModalTitle');
+    const meta  = document.getElementById('recommendationModalMeta');
     const text  = document.getElementById('recommendationText');
     const box   = document.getElementById('recommendationModalBox');
+    const badge = document.getElementById('recommendationAlertBadge');
     const isDark = document.body.classList.contains('dark-mode');
     const alertStyles = {
-        'Critical': { color: '#fff', bg: '#7c1d1d', icon: '!' },
-        'Very High': { color: '#fff', bg: '#e11d48', icon: '!' },
-        'High': { color: '#fff', bg: '#f59e42', icon: '!' },
-        'Moderate': { color: '#111827', bg: '#fbbf24', icon: 'i' },
-        'Warning': { color: '#111827', bg: '#fde68a', icon: 'i' },
-        'Low': { color: '#111827', bg: '#bbf7d0', icon: 'i' },
-        'Normal': { color: '#111827', bg: '#bbf7d0', icon: 'i' },
+        'Critical': { color: '#991b1b', bg: '#fef2f2', border: '#fca5a5', badgeBg: '#ffffff', badgeColor: '#991b1b', darkBg: 'rgba(127,29,29,0.22)', darkBorder: 'rgba(248,113,113,0.35)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fecaca', icon: '!' },
+        'Very High': { color: '#be123c', bg: '#fff1f2', border: '#fda4af', badgeBg: '#ffffff', badgeColor: '#be123c', darkBg: 'rgba(190,18,60,0.18)', darkBorder: 'rgba(244,114,182,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fda4af', icon: '!' },
+        'High': { color: '#c2410c', bg: '#fff7ed', border: '#fdba74', badgeBg: '#ffffff', badgeColor: '#c2410c', darkBg: 'rgba(194,65,12,0.18)', darkBorder: 'rgba(251,146,60,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fdba74', icon: '!' },
+        'Moderate': { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', badgeBg: '#ffffff', badgeColor: '#92400e', darkBg: 'rgba(146,64,14,0.18)', darkBorder: 'rgba(251,191,36,0.28)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
+        'Warning': { color: '#9a4a12', bg: '#f7edc0', border: '#f3c23c', badgeBg: '#ffffff', badgeColor: '#b45309', darkBg: 'rgba(180,83,9,0.16)', darkBorder: 'rgba(251,191,36,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
+        'Low': { color: '#166534', bg: '#f0fdf4', border: '#86efac', badgeBg: '#ffffff', badgeColor: '#166534', darkBg: 'rgba(22,101,52,0.16)', darkBorder: 'rgba(74,222,128,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#86efac', icon: 'i' },
+        'Normal': { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', badgeBg: '#ffffff', badgeColor: '#1d4ed8', darkBg: 'rgba(37,99,235,0.14)', darkBorder: 'rgba(147,197,253,0.22)', darkBadgeBg: '#0f172a', darkBadgeColor: '#93c5fd', icon: 'i' },
+        'No Data': { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', badgeBg: '#ffffff', badgeColor: '#475569', darkBg: 'rgba(51,65,85,0.22)', darkBorder: 'rgba(148,163,184,0.20)', darkBadgeBg: '#0f172a', darkBadgeColor: '#cbd5e1', icon: 'i' },
     };
-    const style = alertStyles[alertLevel] || { color: '#111827', bg: '#f1f5f9', icon: 'i' };
-    title.innerHTML = `<span style="font-size:1.5rem;margin-right:8px;">${style.icon}</span> Recommendation for ${facilityName}`;
+    const style = alertStyles[alertLevel] || { color: '#475569', bg: '#f1f5f9', border: '#e2e8f0', badgeBg: '#64748b', badgeColor: '#ffffff', darkBg: 'rgba(51,65,85,0.25)', darkBorder: 'rgba(148,163,184,0.22)', darkBadgeBg: '#475569', darkBadgeColor: '#e2e8f0', icon: 'i' };
+    title.textContent = `Recommendation for ${facilityName}`;
+    if (meta) meta.textContent = '';
     text.textContent = trendRecommendation || 'No recommendation';
     text.style.color = isDark ? '#e2e8f0' : style.color;
-    text.style.background = isDark ? '#1f2937' : style.bg;
-    text.style.padding = '12px 16px';
-    text.style.borderRadius = '8px';
+    text.style.background = isDark ? style.darkBg : style.bg;
+    text.style.borderColor = isDark ? style.darkBorder : style.border;
+    if (badge) {
+        badge.textContent = style.icon;
+        badge.style.background = isDark ? style.darkBadgeBg : style.badgeBg;
+        badge.style.color = isDark ? style.darkBadgeColor : style.badgeColor;
+        badge.style.border = isDark ? `1.5px solid ${style.darkBorder}` : `1.5px solid ${style.border}`;
+    }
     box.style.background = isDark ? '#111827' : '#fff';
     modal.style.display = 'flex';
 }

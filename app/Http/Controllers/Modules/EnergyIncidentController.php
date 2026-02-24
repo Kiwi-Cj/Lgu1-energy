@@ -2,8 +2,9 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\EnergyIncident;
+use App\Support\RoleAccess;
+use Illuminate\Http\Request;
 
 class EnergyIncidentController extends Controller
 {
@@ -14,7 +15,7 @@ class EnergyIncidentController extends Controller
         $severity = strtolower((string) $request->query('severity', 'all'));
 
         $user = auth()->user();
-        $role = strtolower((string) ($user->role ?? ''));
+        $role = RoleAccess::normalize($user);
         $facilityIds = ($role === 'staff' && $user)
             ? $user->facilities()->pluck('facilities.id')->all()
             : null;
@@ -197,7 +198,7 @@ class EnergyIncidentController extends Controller
             ->get();
 
         $user = auth()->user();
-        $role = strtolower($user->role ?? '');
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 

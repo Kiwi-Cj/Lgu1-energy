@@ -14,6 +14,7 @@
     } catch (e) {}
 })();
 </script>
+
 <title>@yield('title','LGU Employee Portal')</title>
  <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" />
 
@@ -578,18 +579,18 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     background: #fff;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
     border-radius: 12px;
-    min-width: 340px;
-    max-width: 92vw;
+    width: clamp(320px, 34vw, 410px);
+    max-width: calc(100vw - 20px);
     z-index: 999;
-    max-height: 430px;
+    max-height: 380px;
     overflow-y: auto;
     border: 1px solid #e5e7eb;
 }
 
 .notif-header {
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-bottom: 1px solid #eef2f7;
-    font-size: 0.97rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: #3762c8;
     display: flex;
@@ -606,9 +607,9 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     background: #eff6ff;
     color: #1d4ed8;
     border-radius: 999px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 4px 9px;
     cursor: pointer;
 }
 
@@ -617,12 +618,12 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 }
 
 .notif-filter-bar {
-    padding: 8px 12px;
+    padding: 6px 10px;
     display: flex;
     gap: 8px;
     border-bottom: 1px solid #eef2f7;
     position: sticky;
-    top: 46px;
+    top: 42px;
     background: #fff;
     z-index: 2;
 }
@@ -632,9 +633,9 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     background: #f8fafc;
     color: #334155;
     border-radius: 999px;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 4px 9px;
     cursor: pointer;
 }
 
@@ -652,11 +653,12 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 .notif-item {
     display: block;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-bottom: 1px solid #eef2f7;
     text-decoration: none;
     color: inherit;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    position: relative;
 }
 
 .notif-item:hover {
@@ -665,11 +667,30 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 .notif-item.is-read {
     background: #f8fafc;
-    opacity: 0.85;
+    opacity: 0.84;
 }
 
 .notif-item.is-unread {
-    background: #ffffff;
+    background: linear-gradient(90deg, #eff6ff 0%, #ffffff 22%);
+    box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.notif-item.is-unread::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    opacity: 0.95;
+}
+
+.notif-item.is-unread:hover {
+    background: linear-gradient(90deg, #dbeafe 0%, #f8fbff 24%);
+    transform: translateY(-1px);
+    box-shadow: inset 3px 0 0 #1d4ed8, 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
 .notif-item.is-hidden {
@@ -679,18 +700,18 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 .notif-item-head {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
 }
 
 .notif-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .notif-head-copy {
@@ -700,7 +721,7 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 .notif-title {
     color: #0f172a;
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 700;
     display: block;
     line-height: 1.2;
@@ -708,13 +729,13 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 .notif-level-badge {
     display: inline-block;
-    margin-top: 4px;
-    font-size: 0.66rem;
+    margin-top: 3px;
+    font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.4px;
     text-transform: uppercase;
     border-radius: 999px;
-    padding: 2px 8px;
+    padding: 2px 7px;
 }
 
 .notif-unread-dot {
@@ -722,21 +743,36 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     height: 8px;
     border-radius: 999px;
     background: #2563eb;
-    margin-top: 4px;
+    margin-top: 3px;
     flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .notif-message {
-    margin: 8px 0 0 38px;
-    font-size: 0.92rem;
-    line-height: 1.38;
+    margin: 6px 0 0 32px;
+    font-size: 0.82rem;
+    line-height: 1.32;
     word-break: break-word;
 }
 
 .notif-time {
-    margin: 6px 0 0 38px;
-    font-size: 0.8rem;
+    margin: 5px 0 0 32px;
+    font-size: 0.74rem;
     color: #64748b;
+}
+
+.notif-item.is-unread .notif-title {
+    font-weight: 800;
+    color: #0b1f4a;
+}
+
+.notif-item.is-unread .notif-time {
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.notif-item.is-read .notif-level-badge {
+    opacity: 0.82;
 }
 
 .notif-filter-empty {
@@ -865,13 +901,27 @@ body.dark-mode .notif-item.is-read {
     opacity: 0.78;
 }
 body.dark-mode .notif-item.is-unread {
-    background: #0f172a;
+    background: linear-gradient(90deg, rgba(30, 58, 138, 0.28) 0%, #0f172a 26%);
+    box-shadow: inset 3px 0 0 #60a5fa;
+}
+body.dark-mode .notif-item.is-unread::before {
+    background: linear-gradient(180deg, #60a5fa, #2563eb);
+}
+body.dark-mode .notif-item.is-unread:hover {
+    background: linear-gradient(90deg, rgba(30, 64, 175, 0.35) 0%, #162235 28%);
+    box-shadow: inset 3px 0 0 #93c5fd, 0 8px 18px rgba(2, 6, 23, 0.35);
 }
 body.dark-mode .notif-title {
     color: #e2e8f0;
 }
+body.dark-mode .notif-item.is-unread .notif-title {
+    color: #eff6ff;
+}
 body.dark-mode .notif-time {
     color: #94a3b8;
+}
+body.dark-mode .notif-item.is-unread .notif-time {
+    color: #93c5fd;
 }
 body.dark-mode .notif-filter-empty,
 body.dark-mode #notifEmpty {
@@ -879,6 +929,7 @@ body.dark-mode #notifEmpty {
 }
 body.dark-mode .notif-unread-dot {
     background: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
 }
 body.dark-mode .notif-sev-critical .notif-icon,
 body.dark-mode .notif-sev-critical .notif-level-badge {
@@ -925,9 +976,9 @@ body.dark-mode .notif-sev-info .notif-message {
     .notif-dropdown {
         right: 12px;
         top: 58px;
-        left: 12px;
-        min-width: 0;
-        max-width: unset;
+        left: auto;
+        width: min(360px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
     }
 }
 </style>
@@ -1031,12 +1082,14 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         if ($notifType === 'incident' || \Illuminate\Support\Str::contains($notifLower, 'incident:')) {
                             $notifTargetUrl = route('energy-incidents.index');
                         } elseif ($notifType === 'maintenance' || \Illuminate\Support\Str::contains($notifLower, 'maintenance:')) {
-                            $notifTargetUrl = route('modules.maintenance.index');
+                            $notifTargetUrl = \Illuminate\Support\Str::contains($notifLower, 'completed')
+                                ? route('maintenance.history')
+                                : route('modules.maintenance.index');
                         } elseif ($notifType === 'record' || $notifType === 'consumption' || \Illuminate\Support\Str::contains($notifLower, 'alert:') || \Illuminate\Support\Str::contains($notifLower, 'baseline')) {
                             $notifTargetUrl = route('dashboard.index');
                         }
                     @endphp
-                    <a href="{{ $notifTargetUrl }}" class="notif-item notif-sev-{{ $notifSeverity }} {{ $notif->read_at ? 'is-read' : 'is-unread' }}" data-id="{{ $notif->id }}" data-level="{{ $notifSeverity }}" data-read="{{ $notif->read_at ? 'read' : 'unread' }}">
+                    <a href="{{ $notifTargetUrl }}" class="notif-item notif-sev-{{ $notifSeverity }} {{ $notif->read_at ? 'is-read' : 'is-unread' }}" data-id="{{ $notif->id }}" data-read-url="{{ route('notifications.markRead', $notif) }}" data-level="{{ $notifSeverity }}" data-read="{{ $notif->read_at ? 'read' : 'unread' }}">
                         <div class="notif-item-head">
                             <span class="notif-icon"><i class="fa-solid {{ $notifIcon }}"></i></span>
                             <div class="notif-head-copy">
@@ -1064,13 +1117,13 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <div class="header-user user-menu-wrap">
             <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
                 <img src="{{ auth()->user()->profile_photo_url }}" alt="Profile Photo" class="user-avatar">
-                <span class="user-name">{{ $user->full_name ?? $user->name ?? 'Admin' }}</span>
+                <span class="user-name">{{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}</span>
                 <i class="fa fa-caret-down user-menu-caret"></i>
             </button>
             <div id="userDropdown" class="user-dropdown">
                 <div class="user-dropdown-head">
-                    <div class="user-dropdown-name">{{ $user->full_name ?? $user->name ?? 'Admin' }}</div>
-                    <div class="user-dropdown-role">{{ ucwords(str_replace('_', ' ', is_string(auth()->user()?->role) ? auth()->user()->role : 'User')) }}</div>
+                    <div class="user-dropdown-name">{{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}</div>
+                    <div class="user-dropdown-role">{{ ucwords(str_replace('_', ' ', (string) (auth()->user()?->role_key ?? auth()->user()?->role ?? 'User'))) }}</div>
                 </div>
                 <a href="{{ route('profile.show') }}" class="user-dropdown-link">
                     <i class="fa fa-user"></i> My Profile
@@ -1094,74 +1147,84 @@ if (document.documentElement.classList.contains('dark-mode')) {
         @php
             $user = auth()->user();
             $role = strtolower($user?->role ?? '');
+            if (!isset($p) || !is_callable($p)) {
+                $p = fn ($path = '') => url($path);
+            }
+            $isEnergyMonitoringMenuActive = request()->routeIs('energy.dashboard')
+                || request()->routeIs('energy.trend')
+                || request()->routeIs('modules.energy.annual*');
+            $isReportsMenuActive = request()->is('modules/reports*')
+                || request()->routeIs('modules.reports.*')
+                || request()->routeIs('reports.*')
+                || request()->routeIs('energy-incidents.*');
         @endphp
 
         <ul class="nav-list">
-            <li><a href="/modules/dashboard/index" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+            <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
             @if($role=='energy_officer')
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
-                <li><a href="/modules/facilities/index" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle">
+                    <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
                         <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
-                        <li><a href="{{ route('energy.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
-                        <li><a href="{{ route('energy.trend') }}" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                        <li><a href="{{ route('energy.dashboard') }}" class="nav-link{{ request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                        <li><a href="{{ route('energy.trend') }}" class="nav-link{{ request()->routeIs('energy.trend') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
                         <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
                 </li>
-                <li><a href="/modules/maintenance/index" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
+                <li><a href="{{ $p('modules/maintenance/index') }}" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle">
+                    <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
                         <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
-                        <li><a href="/modules/reports/energy" class="nav-link"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
-                        <li><a href="/modules/reports/efficiency-summary" class="nav-link"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
-                        <li><a href="{{ route('energy-incidents.index') }}" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
+                        <li><a href="{{ $p('modules/reports/energy') }}" class="nav-link{{ (request()->routeIs('modules.reports.energy') || request()->routeIs('reports.energy') || request()->is('modules/reports/energy')) ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
+                        <li><a href="{{ $p('modules/reports/efficiency-summary') }}" class="nav-link{{ request()->routeIs('reports.efficiency-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                        <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
             @else
                 <!-- ...existing code for other roles... -->
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
                 @if($role=='super admin'||$role=='admin'||$role=='staff')
-                    <li><a href="/modules/facilities/index" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                    <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
                     @if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff')
                         <li class="nav-item-has-submenu">
-                            <a href="#" class="nav-link submenu-toggle">
+                            <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
                                 <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
                                 <i class="fa fa-caret-down"></i>
                             </a>
                             <ul class="nav-submenu">
-                                <li><a href="{{ route('energy.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
-                                <li><a href="{{ route('energy.trend') }}" class="nav-link"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
+                                <li><a href="{{ route('energy.dashboard') }}" class="nav-link{{ request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+                                <li><a href="{{ route('energy.trend') }}" class="nav-link{{ request()->routeIs('energy.trend') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
                                 <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>
                         </li>
                     @endif
-                    <li><a href="/modules/maintenance/index" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
+                    <li><a href="{{ $p('modules/maintenance/index') }}" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
                 @endif
 
-                @if($role=='super admin'||$role=='admin'||$role=='energy_officer')
+                @if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff')
                     <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
                     <li class="nav-item-has-submenu">
-                        <a href="#" class="nav-link submenu-toggle">
+                        <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
                             <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="nav-submenu">
-                            <li><a href="/modules/reports/energy" class="nav-link"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
-                            <li><a href="/modules/reports/efficiency-summary" class="nav-link"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
-                            <li><a href="{{ route('energy-incidents.index') }}" class="nav-link"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
+                            <li><a href="{{ $p('modules/reports/energy') }}" class="nav-link{{ (request()->routeIs('modules.reports.energy') || request()->routeIs('reports.energy') || request()->is('modules/reports/energy')) ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
+                            <li><a href="{{ $p('modules/reports/efficiency-summary') }}" class="nav-link{{ request()->routeIs('reports.efficiency-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                            <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                         </ul>
                     </li>
                 @endif
@@ -1169,15 +1232,17 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
             @if($role=='super admin'||$role=='admin')
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
-                <li><a href="/modules/users/index" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
-                <li><a href="/modules/settings/index" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
+                @if($role=='super admin')
+                <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                @endif
             @endif
         </ul>
     </div>
 
     <div class="user-info">
-        Welcome, {{ $user->name ?? 'Admin' }}<br>
-        <small style="color:#666;font-size:0.8rem;">{{ ucfirst($role ?? 'User') }}</small>
+        Welcome, {{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}<br>
+        <small style="color:#666;font-size:0.8rem;">{{ ucwords(str_replace('_', ' ', (string) ($role ?? auth()->user()?->role_key ?? 'User'))) }}</small>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="logout-btn">Logout</button>
@@ -1221,13 +1286,21 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // 2. Submenu Logic
-    document.querySelectorAll('.submenu-toggle').forEach(btn => {
+    document.querySelectorAll('.nav-item-has-submenu').forEach((item) => {
+        const btn = item.querySelector('.submenu-toggle');
+        const menu = item.querySelector('.nav-submenu');
+        if (!btn || !menu) return;
+
+        const hasActiveChild = !!menu.querySelector('.nav-link.active');
+        if (hasActiveChild || btn.classList.contains('active')) {
+            menu.style.display = 'block';
+        }
+
         btn.onclick = e => {
             e.preventDefault();
-            const menu = btn.nextElementSibling;
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
-        }
+        };
     });
 
     // 3. User & Notif Dropdown
@@ -1244,6 +1317,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const notifRoutes = {
         incident: "{{ route('energy-incidents.index') }}",
         maintenance: "{{ route('modules.maintenance.index') }}",
+        maintenanceHistory: "{{ route('maintenance.history') }}",
         dashboard: "{{ route('dashboard.index') }}"
     };
     let activeNotifFilter = 'all';
@@ -1261,7 +1335,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const t = String(type || '').toLowerCase();
         const text = String(message || '').toLowerCase();
         if (t === 'incident' || text.includes('incident:')) return notifRoutes.incident;
-        if (t === 'maintenance' || text.includes('maintenance:')) return notifRoutes.maintenance;
+        if (t === 'maintenance' || text.includes('maintenance:')) {
+            return text.includes('completed') ? notifRoutes.maintenanceHistory : notifRoutes.maintenance;
+        }
         return notifRoutes.dashboard;
     };
 
@@ -1356,6 +1432,62 @@ document.addEventListener('DOMContentLoaded', function() {
             applyNotifFilter();
         });
     });
+
+    const markNotifItemAsReadUi = (item) => {
+        if (!item || item.dataset.read === 'read') return;
+        item.classList.remove('is-unread');
+        item.classList.add('is-read');
+        item.dataset.read = 'read';
+        const dot = item.querySelector('.notif-unread-dot');
+        if (dot) dot.remove();
+
+        if (notifCountEl) {
+            const current = parseInt(notifCountEl.innerText, 10) || 0;
+            const next = Math.max(0, current - 1);
+            notifCountEl.innerText = String(next);
+            notifCountEl.style.display = next > 0 ? 'inline-block' : 'none';
+        }
+
+        updateMarkAllVisibility();
+        applyNotifFilter();
+    };
+
+    if (notifList) {
+        notifList.addEventListener('click', async (e) => {
+            const item = e.target.closest('.notif-item');
+            if (!item) return;
+
+            const href = item.getAttribute('href') || '#';
+            const readUrl = item.dataset.readUrl || '';
+            const alreadyRead = (item.dataset.read || '') === 'read';
+            const isPrimaryPlainClick = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+
+            if (!isPrimaryPlainClick || alreadyRead || !readUrl) {
+                return;
+            }
+
+            e.preventDefault();
+
+            try {
+                const res = await fetch(readUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (res.ok) {
+                    markNotifItemAsReadUi(item);
+                }
+            } catch (err) {
+                console.error('Failed to mark notification as read', err);
+            } finally {
+                window.location.href = href;
+            }
+        });
+    }
 
     userBtn.onclick = (e) => { e.stopPropagation(); userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block'; notifDrop.style.display = 'none'; };
     notifBtn.onclick = (e) => { e.stopPropagation(); notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block'; userDrop.style.display = 'none'; applyNotifFilter(); };
@@ -1478,3 +1610,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
+
+
+
+
+

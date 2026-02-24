@@ -12,7 +12,7 @@
 
 <style>
     /* --- Shared UI Variables (Same as Energy Report) --- */
-    :root {
+    .energy-profile-page {
         --report-bg: #ffffff;
         --report-text: #333333;
         --report-subtext: #555555;
@@ -22,16 +22,14 @@
         --table-border: #e5e7eb;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --report-bg: #1e293b;
-            --report-text: #f1f5f9;
-            --report-subtext: #94a3b8;
-            --card-shadow: rgba(0, 0, 0, 0.4);
-            --table-header-bg: #334155;
-            --table-row-even: #1e293b;
-            --table-border: #475569;
-        }
+    body.dark-mode .energy-profile-page {
+        --report-bg: #1e293b;
+        --report-text: #f1f5f9;
+        --report-subtext: #94a3b8;
+        --card-shadow: rgba(0, 0, 0, 0.4);
+        --table-header-bg: #334155;
+        --table-row-even: #1e293b;
+        --table-border: #475569;
     }
 
     .profile-card {
@@ -86,11 +84,6 @@
         border-bottom: 2px solid var(--table-border);
         font-size: 0.9rem;
     }
-    
-    @media (prefers-color-scheme: dark) {
-        .custom-table th { color: #60a5fa; }
-    }
-
     .custom-table td { padding: 12px; border-bottom: 1px solid var(--table-border); font-size: 0.95rem; }
     .row-even { background: var(--table-row-even); }
 
@@ -131,6 +124,10 @@
         color: #e2e8f0 !important;
     }
 
+    body.dark-mode .energy-profile-page .custom-table th {
+        color: #60a5fa !important;
+    }
+
     body.dark-mode .energy-profile-page .row-even {
         background: #111827 !important;
     }
@@ -166,7 +163,7 @@
                 <h2 style="font-size:1.8rem; font-weight:700; color:#3762c8; margin:0;">📋 Energy Profile</h2>
                 <p style="color:var(--report-subtext); margin-top:4px;">{{ $facilityModel->name ?? 'Facility Details' }}</p>
             </div>
-            @if($userRole !== 'energy_officer')
+            @if($userRole !== 'staff')
                 <button type="button" class="btn-action-main btn-add-energy-profile" 
                     @if($energyProfiles->count()) disabled @endif>
                     <i class="fa fa-plus"></i> Add Energy Profile
@@ -217,10 +214,33 @@
                                        style="font-size:1.4rem; color:{{ $profile->engineer_approved ? '#22c55e' : '#e11d48' }};"></i>
                                 @endif
 
+                                @if($userRole !== 'staff')
+                                <button type="button"
+                                    onclick="openEditEnergyProfileModal({{ \Illuminate\Support\Js::from([
+                                        'id' => $profile->id,
+                                        'facility_id' => $facilityModel->id,
+                                        'electric_meter_no' => $profile->electric_meter_no,
+                                        'utility_provider' => $profile->utility_provider,
+                                        'contract_account_no' => $profile->contract_account_no,
+                                        'baseline_kwh' => $profile->baseline_kwh,
+                                        'main_energy_source' => $profile->main_energy_source,
+                                        'backup_power' => $profile->backup_power,
+                                        'transformer_capacity' => $profile->transformer_capacity,
+                                        'number_of_meters' => $profile->number_of_meters,
+                                        'baseline_source' => $profile->baseline_source,
+                                    ]) }})"
+                                    style="background:none; border:none; color:#2563eb; font-size:1.1rem; cursor:pointer;"
+                                    title="Edit Energy Profile">
+                                    <i class="fa fa-pen"></i>
+                                </button>
+                                @endif
+
+                                @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                                 <button type="button" onclick="openDeleteEnergyProfileModal({{ $facilityModel->id }}, {{ $profile->id }})" 
                                     style="background:none; border:none; color:#e11d48; font-size:1.1rem; cursor:pointer;">
                                     <i class="fa fa-trash"></i>
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -248,11 +268,11 @@
     });
 
     document.querySelector('.btn-add-energy-profile')?.addEventListener('click', function(){
-        const modal = document.getElementById('addEnergyProfileModal');
-        modal.classList.add('show-modal');
-        modal.querySelector('#add_energy_facility_id').value = "{{ $facilityModel->id ?? 'null' }}";
+        openAddEnergyProfileModal("{{ $facilityModel->id ?? 'null' }}");
     });
 
     function closeModal(modalId){ document.getElementById(modalId).classList.remove('show-modal'); }
 </script>
 @endsection
+
+

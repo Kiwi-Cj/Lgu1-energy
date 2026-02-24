@@ -2,18 +2,21 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Support\RoleAccess;
+use Illuminate\Http\Request;
 
 class EnergyController extends Controller
 {
+    private ?array $trendPercentThresholdsBySize = null;
+
     public function destroy($id)
     {
         $usage = \App\Models\EnergyRecord::findOrFail($id);
         
         // Restrict Staff from deleting records (or only allow deletion of their assigned facility's records)
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $usage->facility_id != $userFacilityId) {
                 return redirect()->route('modules.energy.index')
@@ -39,7 +42,7 @@ class EnergyController extends Controller
         $usage = \App\Models\EnergyRecord::findOrFail($id);
         
         // Restrict Staff to only edit their assigned facility's records
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $usage->facility_id != $userFacilityId) {
                 return redirect()->route('modules.energy.index')
@@ -63,7 +66,7 @@ class EnergyController extends Controller
         $usage = \App\Models\EnergyRecord::findOrFail($id);
         
         // Restrict Staff to only update their assigned facility's records
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $usage->facility_id != $userFacilityId) {
                 return redirect()->route('modules.energy.index')
@@ -80,7 +83,7 @@ class EnergyController extends Controller
         ]);
 
         // Prevent Staff from changing facility_id to a different facility
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $validated['facility_id'] != $userFacilityId) {
                 return redirect()->back()->withInput()->withErrors(['facility_id' => 'You can only update records for your assigned facility.']);
@@ -107,7 +110,7 @@ class EnergyController extends Controller
     public function create()
     {
         // Restrict Staff to only create records for their assigned facility
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId) {
                 $facilities = \App\Models\Facility::where('id', $userFacilityId)->get();
@@ -132,7 +135,7 @@ class EnergyController extends Controller
         ]);
 
         // Restrict Staff to only create records for their assigned facility
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $validated['facility_id'] != $userFacilityId) {
                 return redirect()->back()->withInput()->withErrors(['facility_id' => 'You can only create records for your assigned facility.']);
@@ -230,7 +233,7 @@ class EnergyController extends Controller
         $query = EnergyRecord::with('facility');
         
         // Restrict Staff to only see their assigned facility's data
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId) {
                 $query->where('facility_id', $userFacilityId);
@@ -311,7 +314,7 @@ class EnergyController extends Controller
                 ->toArray();
         }
         $user = auth()->user();
-        $role = strtolower($user->role ?? '');
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.energy.index', [
@@ -338,7 +341,7 @@ class EnergyController extends Controller
         $usage = EnergyRecord::with('facility')->findOrFail($id);
         
         // Restrict Staff to only view their assigned facility's records
-        if (auth()->check() && strtolower(auth()->user()->role ?? '') === 'staff') {
+        if (RoleAccess::is(auth()->user(), 'staff')) {
             $userFacilityId = auth()->user()->facility_id;
             if ($userFacilityId && $usage->facility_id != $userFacilityId) {
                 return redirect()->route('modules.energy.index')
@@ -378,33 +381,15 @@ class EnergyController extends Controller
             ->orderByDesc('month')
             ->get();
 
+        $trendByRecordId = $this->buildTrendDirectionMap($records);
         $energyRows = [];
-        
+
         foreach ($records as $record) {
             $facility = $record->facility;
-            $facilityId = $facility ? $facility->id : null;
             $baseline = $record->baseline_kwh;
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
-
-            // Track previous actual kWh per facility
-            static $prevActualKwh = [];
-            $trend = 'stable';
-            if (isset($prevActualKwh[$facilityId])) {
-                $prev = $prevActualKwh[$facilityId];
-                if ($prev > 0) {
-                    $diff = $actualKwh - $prev;
-                    $pct = $diff / $prev;
-                    if ($pct > 0.05) {
-                        $trend = 'up';
-                    } elseif ($pct < -0.05) {
-                        $trend = 'down';
-                    } else {
-                        $trend = 'stable';
-                    }
-                }
-            }
-            $prevActualKwh[$facilityId] = $actualKwh;
+            $trend = $trendByRecordId[$record->id] ?? 'stable';
 
             // Format month display
             $monthNum = (int)ltrim($record->month, '0');
@@ -424,9 +409,87 @@ class EnergyController extends Controller
         $facilities = Facility::all();
         $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year');
         $user = auth()->user();
-        $role = strtolower($user->role ?? '');
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.reports.energy', compact('energyRows', 'facilities', 'years', 'role', 'user', 'notifications', 'unreadNotifCount'));
+    }
+
+    private function buildTrendDirectionMap($records): array
+    {
+        $thresholds = $this->getTrendPercentThresholdsBySize();
+        $trendByRecordId = [];
+
+        $records
+            ->groupBy('facility_id')
+            ->each(function ($facilityRecords) use (&$trendByRecordId, $thresholds) {
+                $history = [];
+
+                $facilityRecords
+                    ->sortBy(fn ($row) => sprintf('%04d-%02d-%06d', (int) $row->year, (int) $row->month, (int) $row->id))
+                    ->each(function ($record) use (&$history, &$trendByRecordId, $thresholds) {
+                        $baseline = is_numeric($record->baseline_kwh ?? null) ? (float) $record->baseline_kwh : null;
+                        $facilityBaseline = is_numeric(optional($record->facility)->baseline_kwh ?? null) ? (float) optional($record->facility)->baseline_kwh : null;
+                        $sizeLabel = Facility::resolveSizeLabelFromBaseline($baseline ?? $facilityBaseline) ?? 'Small';
+                        $threshold = $this->resolveTrendPercentTriggerForSize($sizeLabel, $thresholds);
+
+                        $reference = null;
+                        $historyCount = count($history);
+                        if ($historyCount >= 3) {
+                            $reference = array_sum(array_slice($history, -3)) / 3;
+                        } elseif ($historyCount >= 1) {
+                            $reference = end($history);
+                        }
+
+                        $trend = 'stable';
+                        $actual = is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : 0.0;
+                        if ($reference !== null && $reference > 0) {
+                            $trendPercent = (($actual - $reference) / $reference) * 100;
+                            if ($trendPercent > $threshold) {
+                                $trend = 'up';
+                            } elseif ($trendPercent < -$threshold) {
+                                $trend = 'down';
+                            }
+                        }
+
+                        $trendByRecordId[$record->id] = $trend;
+
+                        if ($actual > 0) {
+                            $history[] = $actual;
+                        }
+                    });
+            });
+
+        return $trendByRecordId;
+    }
+
+    private function resolveTrendPercentTriggerForSize(string $sizeLabel, ?array $thresholds = null): float
+    {
+        $sizeKey = match (strtolower(str_replace('_', '-', trim($sizeLabel)))) {
+            'small' => 'small',
+            'small-medium', 'small medium' => 'small', // legacy fallback
+            'medium' => 'medium',
+            'large' => 'large',
+            'extra-large', 'extra large', 'xlarge' => 'xlarge',
+            default => 'small',
+        };
+
+        $all = $thresholds ?? $this->getTrendPercentThresholdsBySize();
+
+        return (float) ($all[$sizeKey] ?? $all['small'] ?? 0);
+    }
+
+    private function getTrendPercentThresholdsBySize(): array
+    {
+        if ($this->trendPercentThresholdsBySize !== null) {
+            return $this->trendPercentThresholdsBySize;
+        }
+
+        return $this->trendPercentThresholdsBySize = [
+            'small' => 10,
+            'medium' => 7,
+            'large' => 4,
+            'xlarge' => 2,
+        ];
     }
 }

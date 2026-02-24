@@ -7,14 +7,12 @@ define('LARAVEL_START', microtime(true));
 
 /*
 |--------------------------------------------------------------------------
-| Set Laravel Base Path (Shared Hosting Setup)
+| Set Laravel Base Path (Local Setup)
 |--------------------------------------------------------------------------
-| Laravel folder:
-| /home/energy.infragovservices.com/lgu1_energy
-|
+| Local project root (one level above /public)
 */
 
-$basePath = realpath(__DIR__ . '/../lgu1_energy');
+$basePath = realpath(__DIR__ . '/..');
 
 if ($basePath === false
     || !file_exists($basePath.'/vendor/autoload.php')

@@ -558,7 +558,9 @@
                     <th>Status</th>
                     <th>Scheduled</th>
                     <th>Remarks</th>
+                    @if($userRole !== 'staff')
                     <th>Action</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -592,13 +594,15 @@
                     <td class="remarks-muted">
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
                     </td>
+                    @if($userRole !== 'staff')
                     <td>{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
+                    @endif
                 </tr>
                 @empty
-                <tr><td colspan="7" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
+                <tr><td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
                 @endforelse
                 <tr id="maintenanceNoMatchRow" class="hidden-row">
-                    <td colspan="7" class="empty-row-cell compact">No matching maintenance records found.</td>
+                    <td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="empty-row-cell compact">No matching maintenance records found.</td>
                 </tr>
             </tbody>
         </table>
@@ -697,7 +701,9 @@
                         <select id="modalStatus" class="field-control">
                             <option value="Pending">Pending</option>
                             <option value="Ongoing">Ongoing</option>
+                            @if($userRole !== 'energy_officer')
                             <option value="Completed">Completed</option>
+                            @endif
                         </select>
                     </div>
 
@@ -759,6 +765,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    const updateIssueTypeState = () => {
+        if (!modalStatus || !modalIssueType) return;
+        const completed = modalStatus.value === 'Completed';
+        modalIssueType.disabled = completed;
+    };
+
     const parseTriggerMonth = (triggerText) => {
         const text = String(triggerText || '').trim();
         const match = text.match(/^([A-Za-z]+)\s+(\d{4})$/);
@@ -814,7 +826,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (modalIssueType) {
                 modalIssueType.value = cells[1]?.innerText.trim() || '';
-                modalIssueType.disabled = true;
             }
 
             const triggerMonthText = row.getAttribute('data-trigger_month') || cells[2]?.innerText || '';
@@ -837,10 +848,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (modalStatus) {
                 const statusText = row.querySelector('.status-pill')?.innerText?.trim() || cells[3]?.innerText.trim() || 'Pending';
-                modalStatus.value = statusText;
+                const canUseStatus = Array.from(modalStatus.options || []).some((opt) => opt.value === statusText);
+                modalStatus.value = canUseStatus ? statusText : 'Ongoing';
             }
             if (modalCompletedDate) modalCompletedDate.value = row.getAttribute('data-completed_date') || '';
             updateCompletedDateState();
+            updateIssueTypeState();
             openScheduleModal();
         });
     });
@@ -857,11 +870,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTriggerYear) modalTriggerYear.disabled = false;
             if (modalStatus) modalStatus.value = 'Pending';
             updateCompletedDateState();
+            updateIssueTypeState();
             openScheduleModal();
         });
     }
 
-    if (modalStatus) modalStatus.addEventListener('change', updateCompletedDateState);
+    if (modalStatus) {
+        modalStatus.addEventListener('change', updateCompletedDateState);
+        modalStatus.addEventListener('change', updateIssueTypeState);
+    }
 
     if (scheduleForm) {
         scheduleForm.onsubmit = async function(e) {

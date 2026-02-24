@@ -245,7 +245,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
             </div>
             <div>
-                @if(strtolower(Auth::user()->role ?? '') !== 'energy_officer')
+                @if(!in_array(strtolower(Auth::user()->role ?? ''), ['energy_officer', 'staff'], true))
                     <button type="button" id="btnAddFacilityTop" class="btn-gradient">
                         <i class="fa fa-plus-circle"></i> Add New Facility
                     </button>
@@ -276,8 +276,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 <div class="facility-card">
                     <div class="image-wrapper">
                         @php
-                            $imageUrl = $facility->image_path ? asset('storage/' . $facility->image_path) : 
-                                       ($facility->image ? (str_starts_with($facility->image, 'img/') ? asset($facility->image) : asset('storage/'.$facility->image)) : null);
+                            $imageUrl = $facility->resolved_image_url;
                         @endphp
                         @if($imageUrl)
                             <img src="{{ $imageUrl }}" alt="{{ $facility->name }}">
@@ -295,11 +294,24 @@ window.addEventListener('DOMContentLoaded', function() {
                         <p style="font-size:0.88rem; color:#64748b; display:flex; align-items:flex-start; gap:6px; margin-bottom:12px;">
                             <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i> {{ Str::limit($facility->address ?? 'No address provided', 50) }}
                         </p>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                            <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:.04em;">Facility Size</span>
+                            <span style="display:inline-flex; align-items:center; gap:6px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:999px; padding:4px 10px; font-size:0.78rem; font-weight:800;">
+                                <i class="fa fa-chart-bar"></i> {{ $facility->dynamicSize ?? ($facility->size ?? 'N/A') }}
+                            </span>
+                            @if(isset($facility->resolvedBaselineKwh) && $facility->resolvedBaselineKwh !== null)
+                                <span style="font-size:0.78rem; color:#64748b; font-weight:600;">
+                                    Baseline: {{ number_format((float) $facility->resolvedBaselineKwh, 2) }} kWh
+                                </span>
+                            @endif
+                        </div>
 
                         <div class="card-actions" style="position:relative; z-index:2;">
+                            @if((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))) !== 'staff')
                             <a href="{{ url('/modules/facilities/' . $facility->id . '/energy-profile') }}" class="action-icon energy" title="Energy Profile">
                                 <i class="fas fa-bolt"></i>
                             </a>
+                            @endif
                             <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="action-icon records" title="Monthly Records" style="background:#fef2f2; color:#e11d48;">
                                 <i class="fas fa-file-lines"></i>
                             </a>
@@ -322,7 +334,7 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-@if(strtolower(Auth::user()->role ?? '') !== 'energy_officer')
+@if(!in_array(strtolower(Auth::user()->role ?? ''), ['energy_officer', 'staff'], true))
     <button type="button" id="fabAddFacility" class="btn-gradient" style="position:fixed; bottom:40px; right:40px; width:60px; height:60px; border-radius:30px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; z-index:99; display:none;">
         <i class="fas fa-plus"></i>
     </button>
@@ -352,3 +364,4 @@ window.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 @endsection
+

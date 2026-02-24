@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\Facility;
 use Illuminate\Http\Request;
 
 class EnergyReportController extends Controller
 {
+    private ?array $trendPercentThresholdsBySize = null;
+
     public function exportPdf(Request $request)
     {
         $query = \App\Models\EnergyRecord::with('facility');
@@ -26,19 +29,14 @@ class EnergyReportController extends Controller
         $totalBaselineKwh = 0.0;
         $totalVarianceKwh = 0.0;
 
+        $trendByRecordId = $this->buildTrendLabelMap($records);
+
         foreach ($records as $record) {
             $facility = $record->facility;
             $baseline = $record->baseline_kwh !== null ? (float) $record->baseline_kwh : null;
             $actualKwh = $record->actual_kwh !== null ? (float) $record->actual_kwh : 0.0;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
-            $trend = 'Stable';
-            if ($variance !== null && $baseline !== null && $baseline != 0) {
-                if ($variance > ($baseline * 0.05)) {
-                    $trend = 'Increasing';
-                } elseif ($variance < -($baseline * 0.05)) {
-                    $trend = 'Decreasing';
-                }
-            }
+            $trend = $trendByRecordId[$record->id] ?? 'Stable';
             $monthNum = (int)ltrim($record->month, '0');
             $monthName = date('M', mktime(0, 0, 0, $monthNum, 1));
             $monthYear = $monthName . ' ' . $record->year;
@@ -121,5 +119,83 @@ class EnergyReportController extends Controller
         $totalUsage = collect($energyData)->sum('usage');
 
         return view('admin.reports.energy', compact('energyData', 'totalUsage'));
+    }
+
+    private function buildTrendLabelMap($records): array
+    {
+        $thresholds = $this->getTrendPercentThresholdsBySize();
+        $trendByRecordId = [];
+
+        $records
+            ->groupBy('facility_id')
+            ->each(function ($facilityRecords) use (&$trendByRecordId, $thresholds) {
+                $history = [];
+
+                $facilityRecords
+                    ->sortBy(fn ($row) => sprintf('%04d-%02d-%06d', (int) $row->year, (int) $row->month, (int) $row->id))
+                    ->each(function ($record) use (&$history, &$trendByRecordId, $thresholds) {
+                        $baseline = is_numeric($record->baseline_kwh ?? null) ? (float) $record->baseline_kwh : null;
+                        $facilityBaseline = is_numeric(optional($record->facility)->baseline_kwh ?? null) ? (float) optional($record->facility)->baseline_kwh : null;
+                        $sizeLabel = Facility::resolveSizeLabelFromBaseline($baseline ?? $facilityBaseline) ?? 'Small';
+                        $threshold = $this->resolveTrendPercentTriggerForSize($sizeLabel, $thresholds);
+
+                        $reference = null;
+                        $historyCount = count($history);
+                        if ($historyCount >= 3) {
+                            $reference = array_sum(array_slice($history, -3)) / 3;
+                        } elseif ($historyCount >= 1) {
+                            $reference = end($history);
+                        }
+
+                        $trend = 'Stable';
+                        $actual = is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : 0.0;
+                        if ($reference !== null && $reference > 0) {
+                            $trendPercent = (($actual - $reference) / $reference) * 100;
+                            if ($trendPercent > $threshold) {
+                                $trend = 'Increasing';
+                            } elseif ($trendPercent < -$threshold) {
+                                $trend = 'Decreasing';
+                            }
+                        }
+
+                        $trendByRecordId[$record->id] = $trend;
+
+                        if ($actual > 0) {
+                            $history[] = $actual;
+                        }
+                    });
+            });
+
+        return $trendByRecordId;
+    }
+
+    private function resolveTrendPercentTriggerForSize(string $sizeLabel, ?array $thresholds = null): float
+    {
+        $sizeKey = match (strtolower(str_replace('_', '-', trim($sizeLabel)))) {
+            'small' => 'small',
+            'small-medium', 'small medium' => 'small', // legacy fallback
+            'medium' => 'medium',
+            'large' => 'large',
+            'extra-large', 'extra large', 'xlarge' => 'xlarge',
+            default => 'small',
+        };
+
+        $all = $thresholds ?? $this->getTrendPercentThresholdsBySize();
+
+        return (float) ($all[$sizeKey] ?? $all['small'] ?? 0);
+    }
+
+    private function getTrendPercentThresholdsBySize(): array
+    {
+        if ($this->trendPercentThresholdsBySize !== null) {
+            return $this->trendPercentThresholdsBySize;
+        }
+
+        return $this->trendPercentThresholdsBySize = [
+            'small' => 10,
+            'medium' => 7,
+            'large' => 4,
+            'xlarge' => 2,
+        ];
     }
 }

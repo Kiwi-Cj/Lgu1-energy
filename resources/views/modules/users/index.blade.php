@@ -10,17 +10,18 @@
 @php
 	// Ensure notifications and unreadNotifCount are available for the notification bell
 	$user = auth()->user();
-	$role = strtolower($user?->role ?? '');
+	$role = \App\Support\RoleAccess::normalize($user?->role ?? '');
 	$notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
 	$unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
-	$isSuperAdmin = strtolower($user->role ?? '') === 'super admin';
+	$isSuperAdmin = $role === 'super_admin';
+	$canAccessUsersPage = in_array($role, ['super_admin', 'admin'], true);
 @endphp
 
 
-@if($role !== 'super admin')
+@if(!$canAccessUsersPage)
 	<div style="max-width:600px;margin:60px auto 0 auto;padding:32px 24px;background:#fff0f3;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);text-align:center;">
 		<h2 style="color:#e11d48;font-size:2rem;font-weight:800;margin-bottom:12px;">Restricted Access</h2>
-		<div style="font-size:1.2rem;color:#b91c1c;margin-bottom:18px;">This page is for <b>Super Admin</b> only.</div>
+		<div style="font-size:1.2rem;color:#b91c1c;margin-bottom:18px;">This page is for <b>Super Admin</b> and <b>Admin</b> only.</div>
 		<a href="/modules/dashboard/index" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#3762c8;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Go to Dashboard</a>
 	</div>
 @else
@@ -474,14 +475,27 @@
 					   </div>
 				   </div>
 				   <div id="um_password_block" class="uv-password-block">
+					   <div class="uv-password-tools" id="um_password_tools">
+						   <label class="uv-password-autogen">
+							   <input type="checkbox" id="um_password_autogen_toggle">
+							   <span>Auto-generate strong password</span>
+						   </label>
+						   <button type="button" class="uv-password-generate-btn" id="um_password_generate_btn" onclick="generateUserModalPassword()" style="display:none;">Generate</button>
+					   </div>
 					   <div class="uv-form-grid uv-form-grid-2">
 						   <div class="uv-form-field">
 							   <label for="um_password" id="um_password_label">Password *</label>
-							   <input id="um_password" name="password" type="password" autocomplete="new-password">
+							   <div class="uv-password-input-wrap">
+								   <input id="um_password" name="password" type="password" autocomplete="new-password">
+								   <button type="button" class="uv-password-toggle-btn" id="um_password_toggle_btn" onclick="toggleUserModalPasswordVisibility('um_password', this)">Show</button>
+							   </div>
 						   </div>
 						   <div class="uv-form-field">
 							   <label for="um_password_confirmation" id="um_password_confirmation_label">Confirm Password *</label>
-							   <input id="um_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password">
+							   <div class="uv-password-input-wrap">
+								   <input id="um_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password">
+								   <button type="button" class="uv-password-toggle-btn" id="um_password_confirmation_toggle_btn" onclick="toggleUserModalPasswordVisibility('um_password_confirmation', this)">Show</button>
+							   </div>
 						   </div>
 					   </div>
 					   <div class="uv-password-hint" id="um_password_hint">Password is required when creating a new user.</div>
@@ -626,6 +640,59 @@
 	   }
 	   .uv-password-block {
 		   margin-top: 14px;
+	   }
+	   .uv-password-tools {
+		   display: flex;
+		   align-items: center;
+		   justify-content: space-between;
+		   gap: 10px;
+		   margin-bottom: 10px;
+		   flex-wrap: wrap;
+	   }
+	   .uv-password-autogen {
+		   display: inline-flex;
+		   align-items: center;
+		   gap: 8px;
+		   font-size: 0.95rem;
+		   color: #334155;
+		   font-weight: 600;
+		   cursor: pointer;
+	   }
+	   .uv-password-autogen input[type="checkbox"] {
+		   accent-color: #4f46e5;
+		   width: 16px;
+		   height: 16px;
+	   }
+	   .uv-password-generate-btn {
+		   border: 1px solid #c7d2fe;
+		   background: #eef2ff;
+		   color: #4338ca;
+		   border-radius: 8px;
+		   padding: 7px 12px;
+		   font-weight: 700;
+		   cursor: pointer;
+	   }
+	   .uv-password-input-wrap {
+		   position: relative;
+		   display: flex;
+		   align-items: center;
+	   }
+	   .uv-password-input-wrap input {
+		   padding-right: 64px !important;
+	   }
+	   .uv-password-toggle-btn {
+		   position: absolute;
+		   right: 8px;
+		   top: 50%;
+		   transform: translateY(-50%);
+		   border: 1px solid #dbeafe;
+		   background: #eff6ff;
+		   color: #1d4ed8;
+		   border-radius: 7px;
+		   padding: 4px 8px;
+		   font-size: 0.78rem;
+		   font-weight: 700;
+		   cursor: pointer;
 	   }
 	   .uv-password-hint {
 		   margin-top: 6px;
@@ -887,6 +954,94 @@
 		}
 	}
 
+	function generateUserModalStrongPassword(length) {
+		var targetLength = Math.max(12, Number(length || 14));
+		var upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+		var lower = 'abcdefghijkmnopqrstuvwxyz';
+		var number = '23456789';
+		var symbol = '!@#$%^&*_-+=?';
+		var all = upper + lower + number + symbol;
+
+		function pick(str) {
+			return str.charAt(Math.floor(Math.random() * str.length));
+		}
+
+		var chars = [
+			pick(upper),
+			pick(lower),
+			pick(number),
+			pick(symbol)
+		];
+
+		while (chars.length < targetLength) {
+			chars.push(pick(all));
+		}
+
+		for (var i = chars.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var tmp = chars[i];
+			chars[i] = chars[j];
+			chars[j] = tmp;
+		}
+
+		return chars.join('');
+	}
+
+	function resetUserModalPasswordUi() {
+		var autoToggle = document.getElementById('um_password_autogen_toggle');
+		var generateBtn = document.getElementById('um_password_generate_btn');
+		var passwordInput = document.getElementById('um_password');
+		var confirmInput = document.getElementById('um_password_confirmation');
+		var toggleBtns = [
+			document.getElementById('um_password_toggle_btn'),
+			document.getElementById('um_password_confirmation_toggle_btn')
+		];
+
+		if (autoToggle) autoToggle.checked = false;
+		if (generateBtn) generateBtn.style.display = 'none';
+		if (passwordInput) passwordInput.type = 'password';
+		if (confirmInput) confirmInput.type = 'password';
+		toggleBtns.forEach(function(btn) {
+			if (btn) btn.textContent = 'Show';
+		});
+	}
+
+	function generateUserModalPassword() {
+		var passwordInput = document.getElementById('um_password');
+		var confirmInput = document.getElementById('um_password_confirmation');
+		if (!passwordInput || !confirmInput) return;
+
+		var generated = generateUserModalStrongPassword(14);
+		passwordInput.value = generated;
+		confirmInput.value = generated;
+	}
+
+	function handleUserModalAutoPasswordToggle() {
+		var autoToggle = document.getElementById('um_password_autogen_toggle');
+		var generateBtn = document.getElementById('um_password_generate_btn');
+		var passwordInput = document.getElementById('um_password');
+		var confirmInput = document.getElementById('um_password_confirmation');
+		if (!autoToggle || !generateBtn || !passwordInput || !confirmInput) return;
+
+		generateBtn.style.display = autoToggle.checked ? 'inline-flex' : 'none';
+
+		if (autoToggle.checked) {
+			generateUserModalPassword();
+		} else {
+			passwordInput.value = '';
+			confirmInput.value = '';
+		}
+	}
+
+	function toggleUserModalPasswordVisibility(inputId, btn) {
+		var input = document.getElementById(inputId);
+		if (!input || !btn) return;
+
+		var show = input.type === 'password';
+		input.type = show ? 'text' : 'password';
+		btn.textContent = show ? 'Hide' : 'Show';
+	}
+
 	function resetUserModalFields() {
 		document.getElementById('um_full_name').value = '';
 		document.getElementById('um_email').value = '';
@@ -898,6 +1053,7 @@
 		document.getElementById('um_contact_number').value = '';
 		document.getElementById('um_password').value = '';
 		document.getElementById('um_password_confirmation').value = '';
+		resetUserModalPasswordUi();
 		toggleUserModalFacility();
 	}
 
@@ -913,6 +1069,7 @@
 
 		// Password required on create
 		document.getElementById('um_password_block').style.display = 'block';
+		document.getElementById('um_password_tools').style.display = 'flex';
 		document.getElementById('um_password').required = true;
 		document.getElementById('um_password_confirmation').required = true;
 		document.getElementById('um_password_label').textContent = 'Password *';
@@ -972,6 +1129,7 @@
 
 		// Password is optional on edit
 		document.getElementById('um_password_block').style.display = 'block';
+		document.getElementById('um_password_tools').style.display = 'none';
 		document.getElementById('um_password').required = false;
 		document.getElementById('um_password_confirmation').required = false;
 		document.getElementById('um_password_label').textContent = 'Password (optional)';
@@ -1018,6 +1176,13 @@
 	// ESC to close
 	document.addEventListener('keydown', function(e){
 		if (e.key === 'Escape') closeUserModal();
+	});
+
+	document.addEventListener('DOMContentLoaded', function () {
+		var autoToggle = document.getElementById('um_password_autogen_toggle');
+		if (autoToggle) {
+			autoToggle.addEventListener('change', handleUserModalAutoPasswordToggle);
+		}
 	});
 
 	</script>

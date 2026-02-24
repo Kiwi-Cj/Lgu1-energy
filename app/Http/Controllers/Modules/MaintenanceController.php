@@ -2,16 +2,22 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use App\Models\Facility;
 use App\Models\EnergyRecord;
+use App\Models\Facility;
+use App\Models\User;
+use App\Support\RoleAccess;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MaintenanceController extends Controller
 {
     public function destroyHistory($id)
     {
+        if (($blocked = $this->ensureMaintenanceHistoryDeleteAccess()) !== null) {
+            return $blocked;
+        }
+
         $history = \App\Models\MaintenanceHistory::findOrFail($id);
         $history->delete();
         return redirect()->route('maintenance.history')->with('success', 'History record deleted successfully!');
@@ -55,7 +61,7 @@ class MaintenanceController extends Controller
             ];
         }
         $user = auth()->user();
-        $role = strtolower($user->role ?? '');
+        $role = RoleAccess::normalize($user);
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.maintenance.history', [
@@ -69,6 +75,14 @@ class MaintenanceController extends Controller
 
     public function store(Request $request)
     {
+        if (($blocked = $this->ensureMaintenanceActionAccess($request)) !== null) {
+            return $blocked;
+        }
+
+        if (($blocked = $this->ensureMaintenanceCompletionAccess($request)) !== null) {
+            return $blocked;
+        }
+
         if (
             strtolower((string) $request->input('maintenance_status')) === 'completed'
             && !$request->filled('completed_date')
@@ -88,6 +102,7 @@ class MaintenanceController extends Controller
         ];
         if ($isUpdate) {
             $rules['maintenance_id'] = 'required|integer|exists:maintenance,id';
+            $rules['issue_type'] = 'nullable|string|max:255';
         } else {
             $rules['facility_id'] = 'required|integer|exists:facilities,id';
             $rules['issue_type'] = 'required|string';
@@ -110,12 +125,19 @@ class MaintenanceController extends Controller
         }
 
         try {
+            $previousStatus = null;
             if ($isUpdate) {
                 $maintenance = \App\Models\Maintenance::findOrFail($validated['maintenance_id']);
+                $previousStatus = $maintenance->maintenance_status;
                 $remarksInput = trim((string) ($validated['remarks'] ?? ''));
+                $newStatus = trim((string) ($validated['maintenance_status'] ?? ''));
+                $newIssueType = trim((string) ($validated['issue_type'] ?? ''));
                 $maintenance->maintenance_type = $validated['maintenance_type'];
                 $maintenance->scheduled_date = $validated['scheduled_date'];
                 $maintenance->assigned_to = $validated['assigned_to'];
+                if ($newStatus !== 'Completed' && $newIssueType !== '') {
+                    $maintenance->issue_type = $newIssueType;
+                }
                 $maintenance->remarks = $remarksInput !== ''
                     ? $validated['remarks']
                     : $this->resolveMaintenanceRemarks(
@@ -158,6 +180,9 @@ class MaintenanceController extends Controller
             }
             throw $e;
         }
+
+        $this->notifyMaintenanceStatusTransition($maintenance, $previousStatus ?? null);
+        $this->syncFacilityStatusFromMaintenance($maintenance, $previousStatus ?? null);
 
         if (in_array($maintenance->maintenance_status, ['Ongoing', 'Completed'], true)) {
             $this->syncIncidentStatusFromMaintenance($maintenance);
@@ -221,7 +246,7 @@ class MaintenanceController extends Controller
 public function index()
 {
     $user = auth()->user();
-    $role = strtolower($user->role ?? '');
+    $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
     $query = \App\Models\Maintenance::with('facility');
     if ($facilityIds) {
@@ -274,7 +299,13 @@ public function index()
             'remarks' => $resolvedRemarks,
             'action' => $row->maintenance_status === 'Pending'
                 ? '<button class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Schedule Maintenance"><i class="fa fa-calendar-plus"></i> Schedule</button>'
-                : ($row->maintenance_status === 'Ongoing' ? '<button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Mark as Complete"><i class="fa fa-check-circle"></i> Complete</button>' : '-')
+                : ($row->maintenance_status === 'Ongoing'
+                    ? (
+                        $role === 'energy_officer'
+                        ? '<button class="btn btn-sm" style="background:#0ea5e9;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Update Maintenance"><i class="fa fa-pen"></i> Update</button>'
+                        : '<button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Mark as Complete"><i class="fa fa-check-circle"></i> Complete</button>'
+                    )
+                    : '-')
         ];
     }
 
@@ -284,7 +315,7 @@ public function index()
     $reflaggedCount = $completed->intersect($pending)->count();
 
     $user = auth()->user();
-    $role = strtolower($user->role ?? '');
+    $role = RoleAccess::normalize($user);
     $facilities = ($role === 'staff') ? $user->facilities : Facility::orderBy('name')->get();
     // Filter notifications for staff: only those related to assigned facilities
     if ($role === 'staff') {
@@ -457,5 +488,168 @@ private function syncIncidentStatusFromMaintenance(\App\Models\Maintenance $main
             : now();
         $incident->save();
     }
+}
+
+private function syncFacilityStatusFromMaintenance(\App\Models\Maintenance $maintenance, ?string $previousStatus = null): void
+{
+    $newStatus = strtolower(trim((string) ($maintenance->maintenance_status ?? '')));
+    $oldStatus = strtolower(trim((string) ($previousStatus ?? '')));
+
+    if ($newStatus === $oldStatus) {
+        return;
+    }
+
+    if (!$maintenance->facility_id) {
+        return;
+    }
+
+    $facility = Facility::find($maintenance->facility_id);
+    if (!$facility) {
+        return;
+    }
+
+    if ($newStatus === 'ongoing') {
+        if (strtolower(trim((string) ($facility->status ?? ''))) !== 'maintenance') {
+            $facility->status = 'maintenance';
+            $facility->save();
+        }
+        return;
+    }
+
+    if ($newStatus !== 'completed') {
+        return;
+    }
+
+    $hasOtherOngoing = \App\Models\Maintenance::query()
+        ->where('facility_id', $maintenance->facility_id)
+        ->where('maintenance_status', 'Ongoing')
+        ->exists();
+
+    if ($hasOtherOngoing) {
+        return;
+    }
+
+    // Only auto-revert when the facility is currently in maintenance status.
+    if (strtolower(trim((string) ($facility->status ?? ''))) === 'maintenance') {
+        $facility->status = 'active';
+        $facility->save();
+    }
+}
+
+private function ensureMaintenanceActionAccess(?Request $request = null)
+{
+    if (RoleAccess::can(auth()->user(), 'maintenance_actions')) {
+        return null;
+    }
+
+    $request = $request ?: request();
+
+    if ($request && ($request->expectsJson() || $request->isJson() || $request->wantsJson())) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Staff accounts are not allowed to perform maintenance actions.',
+        ], 403);
+    }
+
+    return redirect()->back()->with('error', 'Staff accounts are not allowed to perform maintenance actions.');
+}
+
+private function ensureMaintenanceCompletionAccess(?Request $request = null)
+{
+    if (RoleAccess::can(auth()->user(), 'maintenance_complete')) {
+        return null;
+    }
+
+    $request = $request ?: request();
+    $targetStatus = strtolower((string) $request->input('maintenance_status'));
+    if ($targetStatus !== 'completed') {
+        return null;
+    }
+
+    $message = 'You do not have permission to mark maintenance as Completed.';
+
+    if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 403);
+    }
+
+    return redirect()->back()->with('error', $message);
+}
+
+private function ensureMaintenanceHistoryDeleteAccess(?Request $request = null)
+{
+    if (RoleAccess::can(auth()->user(), 'delete_maintenance_history')) {
+        return null;
+    }
+
+    $request = $request ?: request();
+    $message = 'You do not have permission to delete maintenance history records.';
+
+    if ($request && ($request->expectsJson() || $request->isJson() || $request->wantsJson())) {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+        ], 403);
+    }
+
+    return redirect()->back()->with('error', $message);
+}
+
+private function notifyMaintenanceStatusTransition(\App\Models\Maintenance $maintenance, ?string $previousStatus = null): void
+{
+    $newStatus = strtolower(trim((string) ($maintenance->maintenance_status ?? '')));
+    $oldStatus = strtolower(trim((string) ($previousStatus ?? '')));
+
+    if (!in_array($newStatus, ['ongoing', 'completed'], true)) {
+        return;
+    }
+
+    if ($newStatus === $oldStatus) {
+        return;
+    }
+
+    $maintenance->loadMissing('facility:id,name');
+
+    $facilityName = trim((string) ($maintenance->facility?->name ?? 'Unknown Facility'));
+    $period = trim((string) ($maintenance->trigger_month ?? 'Unknown Period'));
+    $statusLabel = $newStatus === 'ongoing' ? 'Ongoing' : 'Completed';
+    $title = $newStatus === 'ongoing' ? 'Maintenance In Progress' : 'Maintenance Completed';
+    $message = "Maintenance: {$facilityName} ({$period}) status updated to {$statusLabel}.";
+
+    User::query()
+        ->with('facilities:id')
+        ->get()
+        ->filter(function (User $user) use ($maintenance) {
+            $role = RoleAccess::normalize($user);
+
+            if (in_array($role, ['super_admin', 'admin', 'energy_officer'], true)) {
+                return true;
+            }
+
+            if ($role === 'staff' && $maintenance->facility_id) {
+                return $user->facilities->contains('id', (int) $maintenance->facility_id);
+            }
+
+            return false;
+        })
+        ->each(function (User $user) use ($title, $message) {
+            $exists = $user->notifications()
+                ->where('type', 'maintenance')
+                ->where('message', $message)
+                ->whereDate('created_at', now()->toDateString())
+                ->exists();
+
+            if ($exists) {
+                return;
+            }
+
+            $user->notifications()->create([
+                'title' => $title,
+                'message' => $message,
+                'type' => 'maintenance',
+            ]);
+        });
 }
 }

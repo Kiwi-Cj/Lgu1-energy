@@ -7,26 +7,168 @@
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 
     $roleValue = $user?->role;
+    $formatRoleText = static function ($value): string {
+        $text = trim(str_replace(['_', '-'], ' ', (string) $value));
+        return $text === '' ? 'User' : ucwords($text);
+    };
+
     if (is_array($roleValue)) {
-        $roleLabel = collect($roleValue)->filter()->map(fn ($item) => ucfirst((string) $item))->join(', ');
+        $roleLabel = collect($roleValue)->filter()->map(fn ($item) => $formatRoleText($item))->join(', ');
     } else {
-        $roleLabel = ucfirst((string) ($roleValue ?? 'User'));
+        $roleLabel = $formatRoleText($roleValue ?? 'User');
     }
+    $roleKey = str_replace(' ', '_', strtolower((string) ($user?->role ?? 'user')));
 
     $statusLabel = ucfirst((string) ($user?->status ?? 'active'));
     $isActive = strtolower((string) ($user?->status ?? 'active')) === 'active';
 
-    $lastLogin = 'N/A';
-    if (!empty($user?->last_login_at)) {
-        try {
-            $lastLogin = \Carbon\Carbon::parse($user->last_login_at)->format('M d, Y h:i A');
-        } catch (\Throwable $e) {
-            $lastLogin = (string) $user->last_login_at;
+    $formatDateValue = static function ($value): string {
+        if (empty($value)) {
+            return 'N/A';
         }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('M d, Y h:i A');
+        } catch (\Throwable $e) {
+            return (string) $value;
+        }
+    };
+
+    $lastLogin = $formatDateValue($user?->last_login_at ?? $user?->last_login ?? null);
+
+    $otpEnabledValue = $user?->otp_enabled ?? config('otp.enabled', true);
+    if (is_string($otpEnabledValue)) {
+        $otpEnabledValue = in_array(strtolower(trim($otpEnabledValue)), ['1', 'true', 'yes', 'on', 'enabled'], true);
     }
+    $otpStatusLabel = (bool) $otpEnabledValue ? 'Enabled' : 'Disabled';
+
+    $createdAtLabel = $formatDateValue($user?->created_at);
+    $updatedAtLabel = $formatDateValue($user?->updated_at);
+
+    $createdByRaw = $user?->created_by ?? null;
+    $createdByLabel = 'N/A';
+    if (is_numeric($createdByRaw)) {
+        $creator = \App\Models\User::query()->select(['id', 'full_name', 'name'])->find((int) $createdByRaw);
+        if ($creator) {
+            $createdByLabel = $creator->full_name ?? $creator->name ?? ('User #' . $creator->id);
+        } else {
+            $createdByLabel = 'User #' . (int) $createdByRaw;
+        }
+    } elseif (is_string($createdByRaw) && trim($createdByRaw) !== '') {
+        $createdByLabel = trim($createdByRaw);
+    }
+
+    $assignedFacilitiesCount = 0;
+    try {
+        if ($user && method_exists($user, 'facilities')) {
+            $assignedFacilitiesCount = $user->relationLoaded('facilities')
+                ? (int) $user->facilities->count()
+                : (int) $user->facilities()->count();
+        }
+    } catch (\Throwable $e) {
+        $assignedFacilitiesCount = 0;
+    }
+
+    $assignedFacilityNames = collect();
+    try {
+        if ($user && method_exists($user, 'facilities')) {
+            $assignedFacilityNames = $user->relationLoaded('facilities')
+                ? $user->facilities->pluck('name')->filter()->values()
+                : $user->facilities()->pluck('facilities.name');
+        }
+    } catch (\Throwable $e) {
+        $assignedFacilityNames = collect();
+    }
+
+    $basicFacilityLabel = in_array($roleKey, ['super_admin', 'admin'], true)
+        ? 'Facility Scope'
+        : (($assignedFacilitiesCount > 1) ? 'Assigned Facilities' : 'Assigned Facility');
+
+    if (in_array($roleKey, ['super_admin', 'admin'], true)) {
+        $basicFacilityValue = 'All Facilities';
+    } elseif ($assignedFacilityNames->count() > 1) {
+        $basicFacilityValue = $assignedFacilityNames->count() . ' facilities assigned';
+    } elseif ($assignedFacilityNames->count() === 1) {
+        $basicFacilityValue = (string) $assignedFacilityNames->first();
+    } else {
+        $basicFacilityValue = $user?->facility?->name ?? 'None';
+    }
+
+    $permissionItems = match ($roleKey) {
+        'super_admin' => [
+            ['icon' => 'fa-shield', 'text' => 'Full system access (all modules)'],
+            ['icon' => 'fa-users', 'text' => 'Manage users and roles'],
+            ['icon' => 'fa-building', 'text' => 'Create / edit / delete facilities'],
+            ['icon' => 'fa-clipboard-list', 'text' => 'Manage energy profiles and records'],
+            ['icon' => 'fa-chart-line', 'text' => 'Reports and analytics (PDF/Excel exports)'],
+            ['icon' => 'fa-gear', 'text' => 'System settings and configuration'],
+        ],
+        'admin' => [
+            ['icon' => 'fa-users', 'text' => 'Users module access (limited role visibility)'],
+            ['icon' => 'fa-building', 'text' => 'Create / edit / delete facilities'],
+            ['icon' => 'fa-clipboard-list', 'text' => 'Manage energy profiles and records'],
+            ['icon' => 'fa-chart-bar', 'text' => 'Analytics / reports access'],
+            ['icon' => 'fa-screwdriver-wrench', 'text' => 'Maintenance scheduling and updates'],
+            ['icon' => 'fa-ban', 'text' => 'No system settings access'],
+        ],
+        'energy_officer' => [
+            ['icon' => 'fa-eye', 'text' => 'View facilities and energy monitoring'],
+            ['icon' => 'fa-id-card', 'text' => 'Add / edit energy profiles (auto-approved on create)'],
+            ['icon' => 'fa-ban', 'text' => 'Cannot delete energy profiles'],
+            ['icon' => 'fa-chart-line', 'text' => 'Reports and analytics access (PDF/Excel)'],
+            ['icon' => 'fa-wrench', 'text' => 'Maintenance schedule/update (no Complete/archive)'],
+            ['icon' => 'fa-ban', 'text' => 'No users / settings access'],
+        ],
+        'staff' => [
+            ['icon' => 'fa-building', 'text' => 'Assigned facilities only'],
+            ['icon' => 'fa-bolt', 'text' => 'Energy monitoring and analytics access'],
+            ['icon' => 'fa-file-pdf-o', 'text' => 'Reports PDF export only (Excel blocked)'],
+            ['icon' => 'fa-wrench', 'text' => 'Maintenance view only (actions restricted)'],
+            ['icon' => 'fa-ban', 'text' => 'No facility master-data create/edit/delete'],
+            ['icon' => 'fa-ban', 'text' => 'No users / settings access'],
+        ],
+        default => [
+            ['icon' => 'fa-eye', 'text' => 'Standard authenticated access'],
+            ['icon' => 'fa-user', 'text' => 'Profile and account management'],
+        ],
+    };
+
+    $assignmentCards = match ($roleKey) {
+        'super_admin' => [
+            ['value' => 'All', 'label' => 'Facility Scope'],
+            ['value' => 'Full', 'label' => 'Admin Control'],
+            ['value' => 'All', 'label' => 'Reports Access'],
+            ['value' => 'All', 'label' => 'System Modules'],
+        ],
+        'admin' => [
+            ['value' => 'All', 'label' => 'Facility Scope'],
+            ['value' => 'Users', 'label' => 'Admin Module'],
+            ['value' => 'Full', 'label' => 'Reports Access'],
+            ['value' => 'Restricted', 'label' => 'Settings Access'],
+        ],
+        'energy_officer' => [
+            ['value' => $assignedFacilitiesCount > 0 ? $assignedFacilitiesCount : 'All', 'label' => 'Facility Scope'],
+            ['value' => 'Yes', 'label' => 'Energy Profile Edit'],
+            ['value' => 'Yes', 'label' => 'Reports Access'],
+            ['value' => 'No', 'label' => 'Maintenance Complete'],
+        ],
+        'staff' => [
+            ['value' => max($assignedFacilitiesCount, 1), 'label' => 'Assigned Facilities'],
+            ['value' => 'PDF Only', 'label' => 'Report Export'],
+            ['value' => 'No', 'label' => 'Facility Admin'],
+            ['value' => 'Restricted', 'label' => 'Maintenance Actions'],
+        ],
+        default => [
+            ['value' => $user?->facility?->name ?? 'None', 'label' => 'Facility'],
+            ['value' => $user?->active_actions_count ?? 0, 'label' => 'Active Actions'],
+            ['value' => $user?->open_incidents_count ?? 0, 'label' => 'Open Incidents'],
+            ['value' => '-', 'label' => 'Scope'],
+        ],
+    };
 @endphp
 
 @section('content')
+<div class="report-card-container profile-report-card-container">
 <div class="profile-view-page">
     <div class="profile-header-card">
         <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" class="profile-avatar">
@@ -53,7 +195,7 @@
                 <div><label>Username</label><strong>{{ $user?->username ?? '-' }}</strong></div>
                 <div><label>Role</label><strong>{{ $roleLabel }}</strong></div>
                 <div><label>Department</label><strong>{{ $user?->department ?? '-' }}</strong></div>
-                <div><label>Assigned Facility</label><strong>{{ $user?->facility?->name ?? 'None' }}</strong></div>
+                <div><label>{{ $basicFacilityLabel }}</label><strong>{{ $basicFacilityValue }}</strong></div>
                 <div><label>Contact Number</label><strong>{{ $user?->contact_number ?? '-' }}</strong></div>
             </div>
         </section>
@@ -63,51 +205,55 @@
             <div class="info-grid">
                 <div><label>Status</label><strong>{{ $statusLabel }}</strong></div>
                 <div><label>Last Login</label><strong>{{ $lastLogin }}</strong></div>
-                <div><label>OTP</label><strong>{{ !empty($user?->otp_enabled) ? 'Enabled' : 'Disabled' }}</strong></div>
-                <div><label>Created At</label><strong>{{ optional($user?->created_at)->format('M d, Y h:i A') }}</strong></div>
-                <div><label>Updated At</label><strong>{{ optional($user?->updated_at)->format('M d, Y h:i A') }}</strong></div>
-                <div><label>Created By</label><strong>{{ $user?->created_by ?? 'System Admin' }}</strong></div>
+                <div><label>OTP</label><strong>{{ $otpStatusLabel }}</strong></div>
+                <div><label>Created At</label><strong>{{ $createdAtLabel }}</strong></div>
+                <div><label>Updated At</label><strong>{{ $updatedAtLabel }}</strong></div>
+                <div><label>Created By</label><strong>{{ $createdByLabel }}</strong></div>
             </div>
         </section>
 
         <section class="profile-card">
             <h3>System Permissions</h3>
             <div class="permission-list">
-                <div><i class="fa fa-eye"></i> View Energy Records</div>
-                <div><i class="fa fa-plus-circle"></i> {{ !empty($user?->can_create_actions) ? 'Yes' : 'No' }} - Create Energy Actions</div>
-                <div><i class="fa fa-check-circle"></i> {{ !empty($user?->can_approve_actions) ? 'Yes' : 'No' }} - Approve Actions</div>
-                <div><i class="fa fa-cogs"></i> {{ !empty($user?->is_admin) ? 'Yes' : 'No' }} - Admin Settings</div>
+                @foreach($permissionItems as $item)
+                    <div><i class="fa {{ $item['icon'] }}"></i> {{ $item['text'] }}</div>
+                @endforeach
             </div>
         </section>
 
         <section class="profile-card">
             <h3>Assignments</h3>
             <div class="stats-grid">
-                <div>
-                    <strong>{{ $user?->facility?->name ?? 'None' }}</strong>
-                    <span>Facilities</span>
-                </div>
-                <div>
-                    <strong>{{ $user?->assigned_equipment_count ?? 0 }}</strong>
-                    <span>Equipment</span>
-                </div>
-                <div>
-                    <strong>{{ $user?->active_actions_count ?? 0 }}</strong>
-                    <span>Active Actions</span>
-                </div>
-                <div>
-                    <strong>{{ $user?->open_incidents_count ?? 0 }}</strong>
-                    <span>Open Incidents</span>
-                </div>
+                @foreach($assignmentCards as $card)
+                    <div>
+                        <strong>{{ $card['value'] }}</strong>
+                        <span>{{ $card['label'] }}</span>
+                    </div>
+                @endforeach
             </div>
         </section>
     </div>
 </div>
+</div>
 
 <style>
+.report-card-container.profile-report-card-container {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(31,38,135,0.06);
+    padding: 30px;
+    margin-bottom: 2rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.report-card-container.profile-report-card-container,
+.report-card-container.profile-report-card-container * {
+    box-sizing: border-box;
+}
+
 .profile-view-page {
     max-width: 1100px;
-    margin: 26px auto 40px;
+    margin: 0 auto;
 }
 
 .profile-header-card {
@@ -269,6 +415,12 @@ body.dark-mode .profile-card {
     box-shadow: none;
 }
 
+body.dark-mode .profile-report-card-container {
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    box-shadow: 0 12px 28px rgba(2, 6, 23, 0.55);
+}
+
 body.dark-mode .profile-avatar {
     border-color: #1e3a8a;
 }
@@ -311,6 +463,11 @@ body.dark-mode .stats-grid strong {
 }
 
 @media (max-width: 900px) {
+    .report-card-container.profile-report-card-container {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
     .profile-header-card {
         flex-wrap: wrap;
     }

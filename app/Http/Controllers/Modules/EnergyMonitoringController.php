@@ -7,18 +7,23 @@ use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
+use App\Models\Setting;
+use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class EnergyMonitoringController extends Controller
 {
+    private ?array $alertThresholdsBySize = null;
+    private ?array $trendPercentThresholdsBySize = null;
+
     /**
      * Display the Energy Monitoring Dashboard with dynamic total facilities card and facility table.
      */
     public function index()
     {
         $user = auth()->user();
-        $role = strtolower((string) ($user?->role ?? ''));
+        $role = RoleAccess::normalize($user);
 
         if ($role === 'staff') {
             $facilities = $user->facilities()->get();
@@ -54,7 +59,7 @@ class EnergyMonitoringController extends Controller
             $facility->trend_percent = $trendPercent;
             $facility->trend_analysis = $trendDisplay;
             $facility->alert_level = $alertLevel;
-            $facility->trend_recommendation = $this->resolveTrendRecommendation($alertLevel);
+            $facility->trend_recommendation = $this->resolveTrendRecommendation($alertLevel, $trendPercent);
 
             if ($currentMonthRecord) {
                 $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
@@ -63,7 +68,7 @@ class EnergyMonitoringController extends Controller
                 $currentMonthRecord->next_maintenance = $nextMaintenance?->scheduled_date;
             }
 
-            if ($currentMonthRecord && in_array($alertLevel, ['High', 'Critical'], true)) {
+            if ($currentMonthRecord && in_array($alertLevel, ['High', 'Very High', 'Critical'], true)) {
                 $highAlertCount++;
             }
         }
@@ -141,24 +146,34 @@ class EnergyMonitoringController extends Controller
             ->map(fn (Collection $group) => (float) $group->sum('actual_kwh'));
 
         $anchor = Carbon::create($currentYear, $currentMonth, 1);
-        $currentKwh = 0.0;
-        $previousKwh = 0.0;
+        $currentKey = $anchor->format('Y-m');
+        $currentKwh = (float) ($monthTotals->get($currentKey) ?? 0);
 
-        for ($i = 2; $i >= 0; $i--) {
+        $previousMonths = [];
+        for ($i = 1; $i <= 3; $i++) {
             $key = $anchor->copy()->subMonths($i)->format('Y-m');
-            $currentKwh += (float) ($monthTotals->get($key) ?? 0);
+            if ($monthTotals->has($key)) {
+                $value = (float) $monthTotals->get($key);
+                if ($value > 0) {
+                    $previousMonths[] = $value;
+                }
+            }
         }
 
-        for ($i = 5; $i >= 3; $i--) {
-            $key = $anchor->copy()->subMonths($i)->format('Y-m');
-            $previousKwh += (float) ($monthTotals->get($key) ?? 0);
-        }
-
-        if ($previousKwh <= 0) {
+        if (count($previousMonths) >= 3) {
+            $referenceKwh = array_sum($previousMonths) / 3;
+        } elseif (count($previousMonths) >= 1) {
+            // Fallback while history is still building up.
+            $referenceKwh = (float) $previousMonths[0];
+        } else {
             return [null, '-'];
         }
 
-        $trendPercent = (($currentKwh - $previousKwh) / $previousKwh) * 100;
+        if ($referenceKwh <= 0) {
+            return [null, '-'];
+        }
+
+        $trendPercent = (($currentKwh - $referenceKwh) / $referenceKwh) * 100;
         $trendDisplay = ($trendPercent >= 0 ? '+' : '') . number_format($trendPercent, 2) . '%';
 
         return [$trendPercent, $trendDisplay];
@@ -166,40 +181,18 @@ class EnergyMonitoringController extends Controller
 
     private function resolveAlertLevel(Facility $facility, $record, ?float $trendPercent): string
     {
-        if ($trendPercent === null) {
-            return 'Normal';
+        if (! $record || $trendPercent === null) {
+            return 'No Data';
         }
 
         $size = strtolower((string) ($facility->size_label ?? $this->inferFacilitySize($facility, $record)));
+        $thresholds = $this->resolveThresholdsForSize($size);
+        $trendTrigger = $this->resolveTrendPercentTriggerForSize($size);
 
-        if ($size === 'small') {
-            if ($trendPercent > 40) return 'Critical';
-            if ($trendPercent > 30) return 'High';
-            if ($trendPercent > 20) return 'Moderate';
-            if ($trendPercent > 10) return 'Low';
-            return 'Normal';
-        }
-
-        if ($size === 'medium') {
-            if ($trendPercent > 30) return 'Critical';
-            if ($trendPercent > 20) return 'High';
-            if ($trendPercent > 15) return 'Moderate';
-            if ($trendPercent > 7) return 'Low';
-            return 'Normal';
-        }
-
-        if (in_array($size, ['extra large', 'extra_large'], true)) {
-            if ($trendPercent > 15) return 'Critical';
-            if ($trendPercent > 10) return 'High';
-            if ($trendPercent > 6) return 'Moderate';
-            if ($trendPercent > 2) return 'Low';
-            return 'Normal';
-        }
-
-        if ($trendPercent > 20) return 'Critical';
-        if ($trendPercent > 12) return 'High';
-        if ($trendPercent > 8) return 'Moderate';
-        if ($trendPercent > 4) return 'Low';
+        if ($trendPercent > $thresholds['level5']) return 'Critical';
+        if ($trendPercent > $thresholds['level4']) return 'Very High';
+        if ($trendPercent > $thresholds['level3']) return 'High';
+        if ($trendPercent > $trendTrigger) return 'Warning';
 
         return 'Normal';
     }
@@ -207,24 +200,105 @@ class EnergyMonitoringController extends Controller
     private function inferFacilitySize(Facility $facility, $record): string
     {
         $baseline = (float) ($record->baseline_kwh ?? $facility->baseline_kwh ?? 0);
-
-        if ($baseline <= 1000) return 'Small';
-        if ($baseline <= 3000) return 'Medium';
-        if ($baseline <= 10000) return 'Large';
-
-        return 'Extra Large';
+        return Facility::resolveSizeLabelFromBaseline($baseline) ?? 'Small';
     }
 
-    private function resolveTrendRecommendation(string $alertLevel): string
+    private function resolveTrendRecommendation(string $alertLevel, ?float $trendPercent = null): string
     {
+        if ($trendPercent === null) {
+            return 'Insufficient historical data to compute a trend. Add more monthly records to generate a 3-month comparison.';
+        }
+
         $recommendations = [
             'Critical' => 'Immediate action required! Trend shows a significant increase in energy use. Investigate and resolve excessive consumption.',
             'High' => 'High upward trend detected. Review operations and address high energy consumption.',
             'Moderate' => 'Moderate increase in trend. Monitor closely and plan for efficiency improvements.',
             'Low' => 'Slight upward trend. Consider energy efficiency improvements.',
             'Normal' => 'Stable trend. No immediate action required.',
+            'No Data' => 'Insufficient historical data to compute a trend. Add more monthly records to generate a 3-month comparison.',
         ];
 
         return $recommendations[$alertLevel] ?? 'No recommendation';
+    }
+
+    private function resolveThresholdsForSize(string $sizeLabel): array
+    {
+        $sizeKey = match (strtolower(str_replace('_', '-', trim($sizeLabel)))) {
+            'small' => 'small',
+            'small-medium', 'small medium' => 'small', // legacy label fallback
+            'medium' => 'medium',
+            'large' => 'large',
+            'extra-large', 'extra large', 'xlarge' => 'xlarge',
+            default => 'small',
+        };
+
+        $all = $this->getAlertThresholdsBySize();
+
+        return $all[$sizeKey] ?? $all['small'];
+    }
+
+    private function resolveTrendPercentTriggerForSize(string $sizeLabel): float
+    {
+        $sizeKey = match (strtolower(str_replace('_', '-', trim($sizeLabel)))) {
+            'small' => 'small',
+            'small-medium', 'small medium' => 'small', // legacy label fallback
+            'medium' => 'medium',
+            'large' => 'large',
+            'extra-large', 'extra large', 'xlarge' => 'xlarge',
+            default => 'small',
+        };
+
+        $all = $this->getTrendPercentThresholdsBySize();
+
+        return (float) ($all[$sizeKey] ?? $all['small'] ?? 0);
+    }
+
+    private function getAlertThresholdsBySize(): array
+    {
+        if ($this->alertThresholdsBySize !== null) {
+            return $this->alertThresholdsBySize;
+        }
+
+        $defaults = [
+            'small' => ['level1' => 3, 'level2' => 5, 'level3' => 10, 'level4' => 20, 'level5' => 30],
+            'medium' => ['level1' => 5, 'level2' => 7, 'level3' => 13, 'level4' => 23, 'level5' => 35],
+            'large' => ['level1' => 7, 'level2' => 10, 'level3' => 16, 'level4' => 26, 'level5' => 40],
+            'xlarge' => ['level1' => 10, 'level2' => 12, 'level3' => 18, 'level4' => 28, 'level5' => 45],
+        ];
+
+        $keys = [];
+        foreach (array_keys($defaults) as $sizeKey) {
+            for ($lvl = 1; $lvl <= 5; $lvl++) {
+                $keys[] = "alert_level{$lvl}_{$sizeKey}";
+            }
+        }
+
+        $settings = Setting::whereIn('key', $keys)->pluck('value', 'key');
+        $resolved = [];
+
+        foreach ($defaults as $sizeKey => $levels) {
+            $resolved[$sizeKey] = [];
+            foreach ($levels as $levelKey => $defaultValue) {
+                $settingKey = "alert_{$levelKey}_{$sizeKey}";
+                $raw = $settings[$settingKey] ?? $defaultValue;
+                $resolved[$sizeKey][$levelKey] = is_numeric($raw) ? (float) $raw : (float) $defaultValue;
+            }
+        }
+
+        return $this->alertThresholdsBySize = $resolved;
+    }
+
+    private function getTrendPercentThresholdsBySize(): array
+    {
+        if ($this->trendPercentThresholdsBySize !== null) {
+            return $this->trendPercentThresholdsBySize;
+        }
+
+        return $this->trendPercentThresholdsBySize = [
+            'small' => 10,
+            'medium' => 7,
+            'large' => 4,
+            'xlarge' => 2,
+        ];
     }
 }

@@ -36,6 +36,7 @@ class OtpVerificationController extends Controller
         $otp->used = true;
         $otp->save();
         Auth::login($user);
+        $user->forceFill(['last_login' => now()])->save();
         $request->session()->forget('otp_user_id');
         return redirect('/modules/dashboard/index');
     }

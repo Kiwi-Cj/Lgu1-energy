@@ -7,10 +7,45 @@ use Illuminate\Http\Request;
 use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\BaselineResetLog;
+use App\Support\RoleAccess;
 
 
 class FacilityController extends Controller
 {
+    private function resolveWebPublicRoot(): string
+    {
+        // Optional override for shared hosting / cPanel setups.
+        $configured = (string) env('PUBLIC_UPLOAD_ROOT', '');
+        if ($configured !== '' && is_dir($configured)) {
+            return rtrim($configured, DIRECTORY_SEPARATOR);
+        }
+
+        // Common cPanel layout: project in ".../lgu1_energy", live web root in sibling ".../public_html".
+        $cpanelPublicHtml = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
+        if (is_dir($cpanelPublicHtml)) {
+            return rtrim($cpanelPublicHtml, DIRECTORY_SEPARATOR);
+        }
+
+        return public_path();
+    }
+
+    private function storeFacilityImageToPublic(Request $request): ?string
+    {
+        if (! $request->hasFile('image')) {
+            return null;
+        }
+
+        $image = $request->file('image');
+        $directory = $this->resolveWebPublicRoot() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'facility_images';
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $filename = uniqid('facility_', true) . '.' . $image->getClientOriginalExtension();
+        $image->move($directory, $filename);
+
+        return 'uploads/facility_images/' . $filename;
+    }
 
     /**
      * Update the specified facility in storage.
@@ -33,9 +68,7 @@ class FacilityController extends Controller
         ]);
 
         // Handle image upload if present
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $path = $image->store('facility_images', 'public');
+        if ($path = $this->storeFacilityImageToPublic($request)) {
             $validated['image_path'] = $path;
         }
 
@@ -66,9 +99,7 @@ class FacilityController extends Controller
         ]);
 
         // Handle image upload if present
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $path = $image->store('facility_images', 'public');
+        if ($path = $this->storeFacilityImageToPublic($request)) {
             $validated['image_path'] = $path;
         }
 
@@ -104,17 +135,17 @@ class FacilityController extends Controller
     }
     private function isSuperAdmin()
     {
-        return auth()->check() && strtolower(auth()->user()->role) === 'super admin';
+        return RoleAccess::is(auth()->user(), 'super_admin');
     }
 
     private function isStaff()
     {
-        return auth()->check() && strtolower(auth()->user()->role) === 'staff';
+        return RoleAccess::is(auth()->user(), 'staff');
     }
 
     private function isEngineer()
     {
-        return auth()->check() && strtolower(auth()->user()->role) === 'engineer';
+        return RoleAccess::is(auth()->user(), 'engineer');
     }
 
     /* =========================
@@ -131,31 +162,29 @@ class FacilityController extends Controller
             $facilities = Facility::all();
         }
 
-        // Compute 3-month average kWh for each facility using last 3 energyRecords only
+        // Compute dynamic facility size based on baseline kWh (Energy Profile baseline first, fallback to facility baseline).
         $facilitiesWithAvg = $facilities->map(function($facility) {
-            $records = $facility->energyRecords()
-                ->orderByDesc('year')
-                ->orderByDesc('month')
-                ->take(3)
-                ->get();
-            $has3MoData = $records->count() === 3;
-            $avg3MoKwh = $has3MoData ? $records->avg('kwh_consumed') : null;
-            $facility->avg3MoKwh = $avg3MoKwh;
-            $facility->has3MoData = $has3MoData;
-            // Compute dynamic size based on average
-            if ($has3MoData && $avg3MoKwh) {
-                if ($avg3MoKwh < 1500) {
-                    $facility->dynamicSize = 'Small';
-                } elseif ($avg3MoKwh < 3000) {
-                    $facility->dynamicSize = 'Medium';
-                } elseif ($avg3MoKwh < 6000) {
-                    $facility->dynamicSize = 'Large';
-                } else {
-                    $facility->dynamicSize = 'Extra Large';
-                }
+            $latestProfile = $facility->energyProfiles()->latest()->first();
+            $baselineKwh = null;
+
+            if ($latestProfile && is_numeric($latestProfile->baseline_kwh) && (float) $latestProfile->baseline_kwh > 0) {
+                $baselineKwh = (float) $latestProfile->baseline_kwh;
+                $facility->facilitySizeSource = 'energy_profile';
+            } elseif (is_numeric($facility->baseline_kwh) && (float) $facility->baseline_kwh > 0) {
+                $baselineKwh = (float) $facility->baseline_kwh;
+                $facility->facilitySizeSource = 'facility';
+            } else {
+                $facility->facilitySizeSource = 'manual';
+            }
+
+            $facility->resolvedBaselineKwh = $baselineKwh;
+
+            if ($baselineKwh !== null) {
+                $facility->dynamicSize = Facility::resolveSizeLabelFromBaseline($baselineKwh) ?? ($facility->size ?? 'N/A');
             } else {
                 $facility->dynamicSize = $facility->size ?? 'N/A';
             }
+
             return $facility;
         });
 
@@ -302,7 +331,7 @@ class FacilityController extends Controller
                 'next_maintenance' => $nextMaint ? $nextMaint->scheduled_date : null,
                 'recommendations' => $recommendations,
                 'disclaimer' => 'System-generated analysis. Subject to validation by assigned LGU personnel.',
-                'image_url' => $facility->image ? (strpos($facility->image, 'img/') === 0 ? asset($facility->image) : asset('storage/'.$facility->image)) : null,
+                'image_url' => $facility->resolved_image_url,
             ]);
     }
 

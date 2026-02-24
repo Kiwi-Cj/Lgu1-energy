@@ -135,7 +135,7 @@
                 <li class="nav-item"><a class="nav-link" href="#testimonials">Testimonials</a></li>
                 <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
     
-                   <a class="btn btn-primary ms-lg-3" href="{{ url('/index.php/login') }}">Loawdin</a>
+                   <a class="btn btn-primary ms-lg-3" href="{{ url('/login') }}">Login</a>
                 
             </ul>
         </div>
@@ -231,3 +231,5 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+

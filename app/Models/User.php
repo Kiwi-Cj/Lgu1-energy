@@ -52,6 +52,15 @@ namespace App\Models;
         {
             if ($this->profile_photo_path) {
                 $path = ltrim((string) $this->profile_photo_path, '/');
+
+                if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                    return $path;
+                }
+
+                if (str_starts_with($path, 'uploads/') || str_starts_with($path, 'img/')) {
+                    return asset($path);
+                }
+
                 if (str_starts_with($path, 'storage/')) {
                     $path = substr($path, strlen('storage/'));
                 }

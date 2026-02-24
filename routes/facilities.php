@@ -6,6 +6,20 @@ use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+$resolvePublicUploadRoot = function (): string {
+    $configured = (string) env('PUBLIC_UPLOAD_ROOT', '');
+    if ($configured !== '' && is_dir($configured)) {
+        return rtrim($configured, DIRECTORY_SEPARATOR);
+    }
+
+    $cpanelPublicHtml = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
+    if (is_dir($cpanelPublicHtml)) {
+        return rtrim($cpanelPublicHtml, DIRECTORY_SEPARATOR);
+    }
+
+    return public_path();
+};
+
 // Delete a monthly energy record for a facility
 Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function ($facilityId, $recordId) {
     $record = EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
@@ -15,10 +29,10 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}', functio
     }
     // Redirect to the monthly records list for the facility
     return redirect('/modules/facilities/' . $facilityId . '/monthly-records')->with('success', 'Monthly record deleted!');
-})->name('energy-records.delete');
+})->middleware(['auth', 'verified'])->name('energy-records.delete');
 
 // Store new monthly energy record for a facility (for modal form)
-Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) {
+Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
     $validated = $request->validate([
         'date' => 'required|date',
         'actual_kwh' => 'required|numeric',
@@ -41,7 +55,15 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
         return redirect()->back()->withInput()->withErrors(['duplicate' => 'An energy record for this facility and month/year already exists.']);
     }
     if ($request->hasFile('bill_image')) {
-        $path = $request->file('bill_image')->store('meralco_bills', 'public');
+        $directory = $resolvePublicUploadRoot() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'meralco_bills';
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $file = $request->file('bill_image');
+        $filename = uniqid('bill_', true) . '.' . $file->getClientOriginalExtension();
+        $file->move($directory, $filename);
+        $path = 'uploads/meralco_bills/' . $filename;
         $validated['bill_image'] = $path;
     }
     // Make sure baseline_kwh is set (from input or fallback)
@@ -53,7 +75,7 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     }
     EnergyRecord::create($validated);
     return redirect()->back()->with('success', 'Monthly record added!');
-})->name('energy-records.store');
+})->middleware(['auth', 'verified'])->name('energy-records.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Engineer Approval Toggle (AJAX)
@@ -62,3 +84,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Facility modal detail for AJAX
     Route::get('/modules/facilities/{facility}/modal-detail', [FacilityController::class, 'modalDetail'])->name('modules.facilities.modal-detail');
 });
+

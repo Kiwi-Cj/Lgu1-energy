@@ -268,17 +268,17 @@
             </thead>
             <tbody>
                 @php
-                    $currentUserRole = strtolower((string) (auth()->user()->role ?? ''));
+                    $currentUserRole = (string) (auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? ''))));
                 @endphp
                 @forelse(($roles ?? []) as $roleItem)
                 @php
-                    $targetRoleKey = strtolower((string) ($roleItem['key'] ?? ''));
+                    $targetRoleKey = str_replace([' ', '-'], '_', strtolower((string) ($roleItem['key'] ?? '')));
                     $assignedCount = (int) ($roleItem['assigned_users'] ?? 0);
-                    $canViewUsers = $currentUserRole === 'super admin';
-                    $canManageRole = $currentUserRole === 'super admin'
-                        && $targetRoleKey !== 'super admin';
-                    $canDeleteRole = $currentUserRole === 'super admin'
-                        && !in_array($targetRoleKey, ['super admin', 'admin'], true)
+                    $canViewUsers = $currentUserRole === 'super_admin';
+                    $canManageRole = $currentUserRole === 'super_admin'
+                        && $targetRoleKey !== 'super_admin';
+                    $canDeleteRole = $currentUserRole === 'super_admin'
+                        && !in_array($targetRoleKey, ['super_admin', 'admin'], true)
                         && $assignedCount === 0;
                     $roleUsersUrl = route('users.index', ['role' => $targetRoleKey]);
                 @endphp
