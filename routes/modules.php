@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\FacilityController;
+use App\Http\Controllers\Modules\FacilityMeterController;
 use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Facilities
     Route::get('/modules/facilities/index', [FacilityController::class, 'index'])->name('modules.facilities.index');
     Route::get('/modules/facilities/create', fn() => view('modules.facilities.create'))->name('modules.facilities.create');
+    Route::get('/modules/facilities/archive', [FacilityController::class, 'archive'])->name('modules.facilities.archive');
+    Route::post('/modules/facilities/{id}/restore', [FacilityController::class, 'restore'])->name('modules.facilities.restore');
+    Route::delete('/modules/facilities/{id}/force-delete', [FacilityController::class, 'forceDelete'])->name('modules.facilities.force-delete');
     Route::get('/modules/facilities/{id}/show', function ($id) {
         $facility = \App\Models\Facility::findOrFail($id);
         // first3months_data table removed; fallback to baseline_kwh
@@ -35,15 +39,76 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('modules.facilities.show');
     Route::get('/modules/facilities/{id}/edit', fn($id) => view('modules.facilities.edit', ['id' => $id]))->name('modules.facilities.edit');
 
+    // Facility Meters (Main/Sub-meter master data)
+    Route::get('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'index'])->name('modules.facilities.meters.index');
+    Route::post('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'store'])->name('modules.facilities.meters.store');
+    Route::put('/modules/facilities/{facility}/meters/{meter}', [FacilityMeterController::class, 'update'])->name('modules.facilities.meters.update');
+    Route::delete('/modules/facilities/{facility}/meters/{meter}', [FacilityMeterController::class, 'destroy'])->name('modules.facilities.meters.destroy');
+    Route::get('/modules/facilities/{facility}/meters/archive', [FacilityMeterController::class, 'archive'])->name('modules.facilities.meters.archive');
+    Route::post('/modules/facilities/{facility}/meters/{meter}/restore', [FacilityMeterController::class, 'restore'])->name('modules.facilities.meters.restore');
+    Route::delete('/modules/facilities/{facility}/meters/{meter}/force-delete', [FacilityMeterController::class, 'forceDelete'])->name('modules.facilities.meters.force-delete');
+
     // Monthly Records per Facility
-    Route::get('/modules/facilities/{facility}/monthly-records', function ($facilityId) {
+    Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
         $facility = \App\Models\Facility::findOrFail($facilityId);
-        $records = \App\Models\EnergyRecord::where('facility_id', $facilityId)->orderByDesc('year')->orderByDesc('month')->get();
+        $meterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityId)
+            ->orderByRaw("CASE WHEN meter_type = 'main' THEN 0 ELSE 1 END")
+            ->orderBy('meter_name')
+            ->get();
+
+        $selectedRecordScope = trim((string) $request->query('record_scope', 'facility'));
+        $recordsQuery = \App\Models\EnergyRecord::with('meter')
+            ->where('facility_id', $facilityId);
+
+        if ($selectedRecordScope === 'all') {
+            // include facility aggregate + all meter-specific records
+        } elseif ($selectedRecordScope === 'main') {
+            $recordsQuery->whereHas('meter', function ($q) {
+                $q->where('meter_type', 'main');
+            });
+        } elseif ($selectedRecordScope === 'submeters') {
+            $recordsQuery->whereHas('meter', function ($q) {
+                $q->where('meter_type', 'sub');
+            });
+        } elseif (str_starts_with($selectedRecordScope, 'meter:')) {
+            $meterId = (int) substr($selectedRecordScope, strlen('meter:'));
+            $meterExists = $meterOptions->contains(fn ($meter) => (int) $meter->id === $meterId);
+            if ($meterExists && $meterId > 0) {
+                $recordsQuery->where('meter_id', $meterId);
+            } else {
+                $selectedRecordScope = 'facility';
+                $recordsQuery->whereNull('meter_id');
+            }
+        } else {
+            $selectedRecordScope = 'facility';
+            $recordsQuery->whereNull('meter_id');
+        }
+
+        $records = $recordsQuery->orderByDesc('year')->orderByDesc('month')->get();
+        $reconciliationRecords = \App\Models\EnergyRecord::with('meter')
+            ->where('facility_id', $facilityId)
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->get();
+        $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
         $user = auth()->user();
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.facilities.monthly-record.records', compact('facility', 'records', 'notifications', 'unreadNotifCount'));
+        return view('modules.facilities.monthly-record.records', compact('facility', 'records', 'reconciliationRecords', 'meterOptions', 'selectedRecordScope', 'archivedCount', 'notifications', 'unreadNotifCount'));
     })->name('facilities.monthly-records');
+
+    Route::get('/modules/facilities/{facility}/monthly-records/archive', function ($facilityId) {
+        $facility = \App\Models\Facility::findOrFail($facilityId);
+        $archivedRecords = \App\Models\EnergyRecord::onlyTrashed()
+            ->with('meter')
+            ->where('facility_id', $facilityId)
+            ->orderByDesc('deleted_at')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->get();
+
+        return view('modules.facilities.monthly-record.archive', compact('facility', 'archivedRecords'));
+    })->name('facilities.monthly-records.archive');
 
     // Maintenance
     Route::get('/modules/maintenance/index', [MaintenanceController::class, 'index'])->name('modules.maintenance.index');
@@ -193,12 +258,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Energy Profile per Facility
     Route::get('/modules/facilities/{facility}/energy-profile', function ($facility) {
         $facilityModel = \App\Models\Facility::findOrFail($facility);
-        $energyProfiles = $facilityModel->energyProfiles;
+        $energyProfiles = $facilityModel->energyProfiles()->with('primaryMeter')->get();
+        $mainMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+            ->where('meter_type', 'main')
+            ->orderBy('meter_name')
+            ->get(['id', 'meter_name', 'meter_number']);
+        $activeMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)->count();
+        $subMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)->where('meter_type', 'sub')->count();
         $user = auth()->user();
         $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
         $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         // 3-Month average update logic removed
-        return view('modules.facilities.energy-profile.index', compact('facilityModel', 'energyProfiles', 'notifications', 'unreadNotifCount'));
+        return view('modules.facilities.energy-profile.index', compact('facilityModel', 'energyProfiles', 'mainMeterOptions', 'activeMeterCount', 'subMeterCount', 'notifications', 'unreadNotifCount'));
     })->name('modules.facilities.energy-profile.index');
 
     // Store new energy profile (controller-based)

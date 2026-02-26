@@ -32,25 +32,48 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+            padding: 110px 0 80px;
+        }
+        .hero-section::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(3, 12, 28, 0.28) 0%, rgba(3, 12, 28, 0.58) 45%, rgba(3, 12, 28, 0.68) 100%),
+                radial-gradient(circle at center, rgba(8, 32, 64, 0.10) 0%, rgba(2, 8, 18, 0.30) 70%);
+        }
+        .hero-section .container {
+            position: relative;
+            z-index: 1;
+            max-width: 980px;
+            padding: 0 28px;
         }
         .hero-section h1 {
-            font-size: 2.8rem;
+            font-size: clamp(2rem, 4.2vw, 3.5rem);
             font-weight: 700;
-            margin-bottom: 18px;
+            line-height: 1.08;
+            letter-spacing: 0.01em;
+            margin-bottom: 14px;
+            text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
             animation: fadeInDown 1s;
+            text-wrap: balance;
         }
         .hero-section p {
-            font-size: 1.25rem;
-            margin-bottom: 32px;
-            color: #e0e7ef;
+            font-size: clamp(1rem, 1.55vw, 1.35rem);
+            line-height: 1.5;
+            margin: 0 auto 30px;
+            max-width: 980px;
+            color: rgba(255, 255, 255, 0.97);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.72);
             animation: fadeInUp 1.2s;
+            text-wrap: pretty;
         }
         .hero-section .btn-primary {
             padding: 14px 38px;
             font-size: 1.1rem;
             border-radius: 30px;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(55,98,200,0.12);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
             animation: fadeInUp 1.4s;
         }
         .hero-illustration {
@@ -116,6 +139,23 @@
             margin-top: 48px;
         }
         .footer a { color: #a5b4fc; text-decoration: underline; }
+        @media (max-width: 768px) {
+            .hero-section {
+                min-height: 72vh;
+                padding: 90px 0 60px;
+            }
+            .hero-section .container {
+                padding: 0 18px;
+            }
+            .hero-section p {
+                font-size: 1rem;
+                margin-bottom: 24px;
+            }
+            .hero-section .btn-primary {
+                padding: 12px 26px;
+                font-size: 1rem;
+            }
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>

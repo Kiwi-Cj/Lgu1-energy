@@ -8,6 +8,9 @@
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
     $userRole = strtolower($user->role ?? '');
+    $mainMeterOptions = $mainMeterOptions ?? collect();
+    $activeMeterCount = $activeMeterCount ?? 0;
+    $subMeterCount = $subMeterCount ?? 0;
 @endphp
 
 <style>
@@ -162,6 +165,14 @@
             <div>
                 <h2 style="font-size:1.8rem; font-weight:700; color:#3762c8; margin:0;">📋 Energy Profile</h2>
                 <p style="color:var(--report-subtext); margin-top:4px;">{{ $facilityModel->name ?? 'Facility Details' }}</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                    <span style="background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800;">Main Meters: {{ $mainMeterOptions->count() }}</span>
+                    <span style="background:#f3e8ff;color:#7c3aed;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800;">Sub-meters: {{ $subMeterCount }}</span>
+                    <span style="background:#ecfeff;color:#0f766e;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800;">Total Active Meters: {{ $activeMeterCount }}</span>
+                </div>
+                @if($mainMeterOptions->isEmpty())
+                    <div style="margin-top:8px;color:#9a3412;font-weight:700;font-size:.88rem;">No Main Meter found yet. Add one in the `Meters` module before linking.</div>
+                @endif
             </div>
             @if($userRole !== 'staff')
                 <button type="button" class="btn-action-main btn-add-energy-profile" 
@@ -176,6 +187,7 @@
                 <thead>
                     <tr>
                         <th>Meter No.</th>
+                        <th>Linked Main Meter</th>
                         <th>Utility Provider</th>
                         <th>Contract Account</th>
                         <th>Avg kWh</th>
@@ -191,6 +203,16 @@
                     @forelse($energyProfiles as $profile)
                     <tr class="{{ $loop->even ? 'row-even' : '' }}">
                         <td>{{ $profile->electric_meter_no }}</td>
+                        <td>
+                            @if($profile->primaryMeter)
+                                <div style="display:flex;flex-direction:column;gap:2px;">
+                                    <span style="font-weight:700;">{{ $profile->primaryMeter->meter_name }}</span>
+                                    <span style="font-size:.82rem;color:var(--report-subtext);">{{ $profile->primaryMeter->meter_number ?: 'No meter no.' }}</span>
+                                </div>
+                            @else
+                                <span style="color:var(--report-subtext);">Not linked</span>
+                            @endif
+                        </td>
                         <td>{{ $profile->utility_provider }}</td>
                         <td>{{ $profile->contract_account_no }}</td>
                         <td>{{ number_format($profile->baseline_kwh, 2) }}</td>
@@ -219,6 +241,7 @@
                                     onclick="openEditEnergyProfileModal({{ \Illuminate\Support\Js::from([
                                         'id' => $profile->id,
                                         'facility_id' => $facilityModel->id,
+                                        'primary_meter_id' => $profile->primary_meter_id,
                                         'electric_meter_no' => $profile->electric_meter_no,
                                         'utility_provider' => $profile->utility_provider,
                                         'contract_account_no' => $profile->contract_account_no,
@@ -246,7 +269,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" style="padding:40px; text-align:center; color:var(--report-subtext);">No energy profile data found.</td>
+                        <td colspan="11" style="padding:40px; text-align:center; color:var(--report-subtext);">No energy profile data found.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -2,13 +2,16 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
 use App\Observers\EnergyIncidentObserver;
 use App\Observers\EnergyRecordObserver;
 use App\Models\Setting;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +39,35 @@ class AppServiceProvider extends ServiceProvider
                 ->mixedCase()
                 ->numbers()
                 ->symbols();
+        });
+
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $broker = (string) config('auth.defaults.passwords', 'users');
+            $expireMinutes = (int) config("auth.passwords.{$broker}.expire", 60);
+
+            $displayName = trim((string) (
+                $notifiable->username
+                ?? $notifiable->name
+                ?? $notifiable->full_name
+                ?? ''
+            ));
+
+            $greeting = $displayName !== ''
+                ? 'Hello ' . $displayName . '!'
+                : 'Hello!';
+
+            $resetUrl = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject(Lang::get('Reset Password Notification'))
+                ->greeting($greeting)
+                ->line(Lang::get('You are receiving this email because we received a password reset request for your account.'))
+                ->action(Lang::get('Reset Password'), $resetUrl)
+                ->line(Lang::get('This password reset link will expire in :count minutes.', ['count' => $expireMinutes]))
+                ->line(Lang::get('If you did not request a password reset, no further action is required.'));
         });
 
         // Sync Laravel session lifetime with dynamic settings value (minutes).

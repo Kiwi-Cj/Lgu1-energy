@@ -328,13 +328,26 @@ function closeEditFacilityModal() {
 <div id="deleteFacilityModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
         <div class="modal-content">
                 <button class="modal-close" type="button" onclick="document.getElementById('deleteFacilityModal').style.display='none'">&times;</button>
-                <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>
-                <div style="font-size:1.02rem;color:#b91c1c;margin-bottom:18px;">Are you sure you want to delete this facility? This action cannot be undone.</div>
+                <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Archive Facility</h2>
+                <div style="font-size:1.02rem;color:#b91c1c;margin-bottom:18px;">Move this facility to archive? Related records will be preserved and can be restored later.</div>
                 <form id="deleteFacilityForm" method="POST" style="display:flex;flex-direction:column;gap:16px;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Yes, Delete</button>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label for="archive_reason" style="font-weight:700;color:#334155;">Reason for Archive <span style="color:#e11d48;">*</span></label>
+                            <textarea
+                                id="archive_reason"
+                                name="archive_reason"
+                                rows="3"
+                                maxlength="500"
+                                required
+                                placeholder="State why this facility is being archived (e.g. duplicate, decommissioned, transferred, closed)."
+                                style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;"
+                            >{{ old('archive_reason') }}</textarea>
+                            <div style="font-size:0.86rem;color:#64748b;">Required. This will appear in the Facility Archive record.</div>
+                        </div>
                         <button type="button" class="delete-modal-btn cancel" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;">Cancel</button>
+                        <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Move to Archive</button>
                 </form>
         </div>
 </div>
@@ -347,12 +360,16 @@ function closeEditFacilityModal() {
  */
 function openDeleteFacilityModal(facilityId, route) {
     var form = document.getElementById('deleteFacilityForm');
+    var reasonInput = document.getElementById('archive_reason');
     if (form) {
         if (route) {
             form.action = route;
         } else {
             form.action = '/modules/facilities/' + facilityId;
         }
+    }
+    if (reasonInput) {
+        reasonInput.value = '';
     }
     document.getElementById('deleteFacilityModal').style.display = 'flex';
 }

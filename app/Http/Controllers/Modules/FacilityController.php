@@ -3,11 +3,22 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
+use App\Exports\FacilitiesArchiveExport;
+use App\Models\BaselineResetLog;
+use App\Models\EnergyIncident;
+use App\Models\EnergyIncidentHistory;
+use App\Models\EnergyProfile;
+use App\Models\EnergyReading;
+use App\Models\EnergyRecord;
 use Illuminate\Http\Request;
 use App\Models\Facility;
+use App\Models\FacilityAuditLog;
 use App\Models\Maintenance;
-use App\Models\BaselineResetLog;
+use App\Models\MaintenanceHistory;
 use App\Support\RoleAccess;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Excel as ExcelWriter;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class FacilityController extends Controller
@@ -148,6 +159,26 @@ class FacilityController extends Controller
         return RoleAccess::is(auth()->user(), 'engineer');
     }
 
+    private function isArchiveAdmin(): bool
+    {
+        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+    }
+
+    private function logFacilityAudit(Facility $facility, string $action, ?string $reason = null): void
+    {
+        try {
+            FacilityAuditLog::create([
+                'facility_id' => $facility->id,
+                'facility_name' => $facility->name,
+                'action' => $action,
+                'reason' => $reason ? trim($reason) : null,
+                'performed_by' => auth()->id(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
     /* =========================
         FACILITY LIST
     ========================== */
@@ -194,6 +225,7 @@ class FacilityController extends Controller
             'activeFacilities' => $facilities->where('status', 'active')->count(),
             'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
             'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
+            'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
         ]);
     }
 
@@ -451,13 +483,207 @@ class FacilityController extends Controller
     /* =========================
         DELETE FACILITY
     ========================== */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $archiveReason = trim((string) $request->input('archive_reason', ''));
+        if ($archiveReason === '') {
+            return redirect()->back()->with('error', 'Archive reason is required.');
+        }
+        if (mb_strlen($archiveReason) > 500) {
+            return redirect()->back()->with('error', 'Archive reason must be 500 characters or fewer.');
+        }
+
         $facility = Facility::findOrFail($id);
+        $facility->deleted_by = auth()->id();
+        $facility->archive_reason = $archiveReason;
+        $facility->saveQuietly();
+        $this->logFacilityAudit($facility, 'archived', $archiveReason);
         $facility->delete();
         if (request()->ajax()) {
-            return response()->json(['success' => true, 'message' => 'Facility deleted successfully.']);
+            return response()->json(['success' => true, 'message' => 'Facility moved to archive successfully.']);
         }
-        return redirect()->route('facilities.index')->with('success', 'Facility deleted successfully.');
+        return redirect()->route('facilities.index')->with('success', 'Facility moved to archive.');
+    }
+
+    public function archive(Request $request)
+    {
+        $exportColumnOptions = [
+            'facility' => 'Facility',
+            'type' => 'Type',
+            'status' => 'Status',
+            'barangay' => 'Barangay',
+            'archive_reason' => 'Archive Reason',
+            'deleted_by' => 'Deleted By',
+            'archived_at' => 'Archived At',
+        ];
+
+        $filters = [
+            'q' => trim((string) $request->query('q', '')),
+            'type' => trim((string) $request->query('type', '')),
+            'status' => trim((string) $request->query('status', '')),
+            'archived_from' => trim((string) $request->query('archived_from', '')),
+            'archived_to' => trim((string) $request->query('archived_to', '')),
+        ];
+
+        $requestedExportColumns = $request->query('export_columns', []);
+        $requestedExportColumns = is_array($requestedExportColumns) ? $requestedExportColumns : [];
+        $selectedExportColumns = array_values(array_intersect(array_keys($exportColumnOptions), $requestedExportColumns));
+        if (empty($selectedExportColumns)) {
+            $selectedExportColumns = array_keys($exportColumnOptions);
+        }
+
+        if ($filters['archived_from'] !== '' && $filters['archived_to'] !== '' && $filters['archived_from'] > $filters['archived_to']) {
+            [$filters['archived_from'], $filters['archived_to']] = [$filters['archived_to'], $filters['archived_from']];
+        }
+
+        $query = Facility::onlyTrashed()->with('deletedByUser');
+
+        if ($filters['q'] !== '') {
+            $q = $filters['q'];
+            $query->where(function ($builder) use ($q) {
+                $builder->where('name', 'like', "%{$q}%")
+                    ->orWhere('address', 'like', "%{$q}%")
+                    ->orWhere('barangay', 'like', "%{$q}%")
+                    ->orWhere('type', 'like', "%{$q}%");
+            });
+        }
+
+        if ($filters['type'] !== '') {
+            $query->where('type', $filters['type']);
+        }
+
+        if ($filters['status'] !== '') {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($filters['archived_from'] !== '') {
+            $query->whereDate('deleted_at', '>=', $filters['archived_from']);
+        }
+
+        if ($filters['archived_to'] !== '') {
+            $query->whereDate('deleted_at', '<=', $filters['archived_to']);
+        }
+
+        $exportFormat = strtolower(trim((string) $request->query('export', '')));
+        if (in_array($exportFormat, ['csv', 'xlsx'], true)) {
+            $exportRows = (clone $query)
+                ->orderByDesc('deleted_at')
+                ->get();
+
+            $dateStamp = now()->format('Ymd_His');
+            $extension = $exportFormat === 'xlsx' ? 'xlsx' : 'csv';
+            $filename = "facilities_archive_{$dateStamp}.{$extension}";
+            $writerType = $exportFormat === 'xlsx' ? ExcelWriter::XLSX : ExcelWriter::CSV;
+
+            return Excel::download(new FacilitiesArchiveExport($exportRows, $selectedExportColumns), $filename, $writerType);
+        }
+
+        $archivedFacilities = $query
+            ->orderByDesc('deleted_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        $typeOptions = Facility::onlyTrashed()
+            ->whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('type')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+
+        $statusOptions = Facility::onlyTrashed()
+            ->whereNotNull('status')
+            ->where('status', '!=', '')
+            ->select('status')
+            ->distinct()
+            ->orderBy('status')
+            ->pluck('status');
+
+        return view('modules.facilities.archive', [
+            'archivedFacilities' => $archivedFacilities,
+            'filters' => $filters,
+            'typeOptions' => $typeOptions,
+            'statusOptions' => $statusOptions,
+            'exportColumnOptions' => $exportColumnOptions,
+            'selectedExportColumns' => $selectedExportColumns,
+            'canForceDelete' => $this->isArchiveAdmin(),
+        ]);
+    }
+
+    public function restore($id)
+    {
+        $facility = Facility::onlyTrashed()->findOrFail($id);
+        $restoreLogReason = $facility->archive_reason
+            ? 'Restored from archive. Original archive reason: ' . $facility->archive_reason
+            : 'Restored from archive.';
+        $this->logFacilityAudit($facility, 'restored', $restoreLogReason);
+        $facility->restore();
+
+        return redirect()->route('modules.facilities.archive')
+            ->with('success', 'Facility restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        if (! $this->isArchiveAdmin()) {
+            return redirect()->route('modules.facilities.archive')
+                ->with('error', 'Only admins can permanently delete archived facilities.');
+        }
+
+        $facility = Facility::onlyTrashed()->findOrFail($id);
+
+        try {
+            DB::transaction(function () use ($facility) {
+                $facilityId = $facility->id;
+                $facilityName = $facility->name;
+                $archiveReason = $facility->archive_reason;
+
+                $this->logFacilityAudit(
+                    $facility,
+                    'permanently_deleted',
+                    $archiveReason
+                        ? 'Permanent delete from archive. Original archive reason: ' . $archiveReason
+                        : 'Permanent delete from archive.'
+                );
+
+                $energyRecordIds = EnergyRecord::withTrashed()
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($energyRecordIds->isNotEmpty()) {
+                    EnergyIncidentHistory::whereIn('energy_record_id', $energyRecordIds)->delete();
+                }
+
+                // Force delete monthly records to avoid orphan rows and trigger cleanup observer logic.
+                EnergyRecord::withTrashed()
+                    ->where('facility_id', $facilityId)
+                    ->get()
+                    ->each(function (EnergyRecord $record) {
+                        $record->forceDelete();
+                    });
+
+                EnergyIncident::where('facility_id', $facilityId)->delete();
+                Maintenance::where('facility_id', $facilityId)->delete();
+                MaintenanceHistory::where('facility_id', $facilityId)->delete();
+                EnergyProfile::where('facility_id', $facilityId)->delete();
+                EnergyReading::where('facility_id', $facilityId)->delete();
+                BaselineResetLog::where('facility_id', $facilityId)->delete();
+
+                $facility->users()->detach();
+                $facility->forceDelete();
+
+                // Keep facility audit logs viewable historically even after force delete.
+                FacilityAuditLog::where('facility_id', $facilityId)
+                    ->update(['facility_name' => $facilityName]);
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('modules.facilities.archive')
+                ->with('error', 'Permanent delete failed. Please check related records or try again.');
+        }
+
+        return redirect()->route('modules.facilities.archive')
+            ->with('success', 'Facility permanently deleted.');
     }
 }

@@ -1,3 +1,7 @@
+@php
+    $requiresPrimaryMainMeter = ($mainMeterOptions ?? collect())->isNotEmpty();
+@endphp
+
 <style>
 .show-modal { display: flex !important; }
 .energy-modal-btn { transition: background 0.2s, color 0.2s; }
@@ -48,6 +52,26 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 			@csrf
 			<input type="hidden" name="_method" id="energy_profile_form_method" value="PUT" disabled>
 			<input type="hidden" name="facility_id" id="add_energy_facility_id">
+
+            <div>
+                <label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">
+                    Primary Main Meter {{ $requiresPrimaryMainMeter ? '(Required)' : '(Optional)' }}
+                </label>
+                <select id="energy_primary_meter_id" name="primary_meter_id" {{ $requiresPrimaryMainMeter ? 'required' : '' }} style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+                    <option value="">{{ $requiresPrimaryMainMeter ? 'Select Main Meter' : 'Not linked' }}</option>
+                    @foreach(($mainMeterOptions ?? collect()) as $meter)
+                        <option value="{{ $meter->id }}" data-meter-number="{{ $meter->meter_number ?? '' }}">
+                            {{ $meter->meter_name }}@if($meter->meter_number) ({{ $meter->meter_number }}) @endif
+                        </option>
+                    @endforeach
+                </select>
+                <div style="font-size:.82rem;color:#64748b;margin-top:4px;">
+                    Link the Energy Profile to a Main Meter. Selecting a meter can auto-fill `Electric Meter No.` and meter count.
+                    @if($requiresPrimaryMainMeter)
+                        This is required because the facility already has a Main Meter.
+                    @endif
+                </div>
+            </div>
 
 			<div style="display:flex;gap:14px;">
 				<div style="flex:1;">
@@ -138,6 +162,35 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 
 
 <script>
+const energyProfileMeterSyncMeta = {
+    activeMeterCount: {{ (int) ($activeMeterCount ?? 0) }},
+};
+
+function syncEnergyProfileFieldsFromPrimaryMeter(options = {}) {
+    const form = document.getElementById('energyProfileForm');
+    const meterSelect = document.getElementById('energy_primary_meter_id');
+    if (!form || !meterSelect) return;
+
+    const selectedOption = meterSelect.options[meterSelect.selectedIndex];
+    const electricField = form.querySelector('[name="electric_meter_no"]');
+    const countField = form.querySelector('[name="number_of_meters"]');
+    const force = !!options.force;
+
+    if (selectedOption && selectedOption.value) {
+        const meterNumber = selectedOption.getAttribute('data-meter-number') || '';
+        if (electricField && meterNumber && (force || !String(electricField.value || '').trim())) {
+            electricField.value = meterNumber;
+        }
+        if (countField && energyProfileMeterSyncMeta.activeMeterCount > 0 && (force || !String(countField.value || '').trim())) {
+            countField.value = String(energyProfileMeterSyncMeta.activeMeterCount);
+        }
+    } else {
+        if (countField && energyProfileMeterSyncMeta.activeMeterCount > 0 && (force || !String(countField.value || '').trim())) {
+            countField.value = String(energyProfileMeterSyncMeta.activeMeterCount);
+        }
+    }
+}
+
 function resetEnergyProfileFormForAdd(facilityId) {
     const modal = document.getElementById('addEnergyProfileModal');
     const form = document.getElementById('energyProfileForm');
@@ -155,6 +208,9 @@ function resetEnergyProfileFormForAdd(facilityId) {
     if (title) title.textContent = 'Add Energy Profile';
     if (submitBtn) submitBtn.textContent = 'Add Energy Profile';
     document.getElementById('add_energy_facility_id').value = facilityId;
+    const primaryMeterField = document.getElementById('energy_primary_meter_id');
+    if (primaryMeterField) primaryMeterField.value = '';
+    syncEnergyProfileFieldsFromPrimaryMeter({ force: true });
 }
 
 function openAddEnergyProfileModal(facilityId) {
@@ -188,6 +244,7 @@ function openEditEnergyProfileModal(profile) {
     };
 
     setValue('electric_meter_no', profile.electric_meter_no);
+    setValue('primary_meter_id', profile.primary_meter_id);
     setValue('utility_provider', profile.utility_provider);
     setValue('contract_account_no', profile.contract_account_no);
     setValue('baseline_kwh', profile.baseline_kwh);
@@ -199,6 +256,7 @@ function openEditEnergyProfileModal(profile) {
 
     if (title) title.textContent = 'Edit Energy Profile';
     if (submitBtn) submitBtn.textContent = 'Save Changes';
+    syncEnergyProfileFieldsFromPrimaryMeter({ force: false });
 
     modal.style.display = 'flex';
     modal.classList.add('show-modal');
@@ -213,6 +271,9 @@ function closeAddEnergyProfileModal() {
 // Robust fallback: always close modal on X or Cancel click
 document.addEventListener('DOMContentLoaded', function() {
 	var modal = document.getElementById('addEnergyProfileModal');
+    document.getElementById('energy_primary_meter_id')?.addEventListener('change', function() {
+        syncEnergyProfileFieldsFromPrimaryMeter({ force: true });
+    });
 	if (modal) {
 		// X button
 		var xBtn = modal.querySelector('.modal-close');
@@ -225,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			cancelBtn.addEventListener('click', closeAddEnergyProfileModal);
 		}
 	}
+    syncEnergyProfileFieldsFromPrimaryMeter({ force: false });
 });
 
 function openAddMaintenanceModal(facilityId) {

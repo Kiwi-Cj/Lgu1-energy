@@ -311,7 +311,7 @@
             </div>
 
             <button type="submit" class="login-btn d-flex align-items-center justify-content-center gap-2" id="loginBtn" style="position:relative;overflow:hidden;">
-                <span id="loginBtnText" style="display:inline-block;">Sign In to Dashboard</span>
+                <span id="loginBtnText" style="display:inline-block;">Sign In</span>
                 <span id="loginBtnLoading" style="display:none;align-items:center;gap:8px;">
                     <svg class="modern-spinner" width="22" height="22" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;"><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" opacity="0.2"/><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 60" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 22 22" to="360 22 22" dur="0.9s" repeatCount="indefinite"/></circle></svg>
                     Authenticating...

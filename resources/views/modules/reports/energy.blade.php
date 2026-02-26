@@ -227,6 +227,7 @@
 .energy-table th {
     padding: 12px 14px;
     text-align: left;
+    vertical-align: middle;
     color: #475569;
     border-bottom: 1px solid #e2e8f0;
     font-size: 0.75rem;
@@ -238,6 +239,7 @@
 
 .energy-table td {
     padding: 12px 14px;
+    vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
     font-size: 0.9rem;
@@ -262,21 +264,35 @@
     background: linear-gradient(135deg, #2563eb, #0ea5e9);
 }
 
-.num {
+.energy-table th.num,
+.energy-table td.num {
     text-align: right;
     font-variant-numeric: tabular-nums;
+}
+
+.energy-table th.trend-col,
+.energy-table td.trend-col {
+    text-align: center;
+    white-space: nowrap;
 }
 
 .trend-pill {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     border-radius: 999px;
     border: 1px solid transparent;
     padding: 4px 10px;
+    min-width: 140px;
     font-size: 0.75rem;
     font-weight: 800;
+    line-height: 1.15;
     text-transform: uppercase;
+}
+
+.trend-pill i {
+    font-size: 0.74rem;
 }
 
 .trend-up { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
@@ -326,6 +342,9 @@ body.dark-mode .energy-table td { color: #e2e8f0; border-bottom-color: #1f2937; 
 body.dark-mode .energy-table tr:hover { background: #1f2937; }
 body.dark-mode .facility-cell { color: #f8fafc; }
 body.dark-mode .empty-row { color: #94a3b8; }
+body.dark-mode .trend-up { background: rgba(239, 68, 68, 0.14); color: #fca5a5; border-color: rgba(248, 113, 113, 0.32); }
+body.dark-mode .trend-down { background: rgba(34, 197, 94, 0.14); color: #86efac; border-color: rgba(74, 222, 128, 0.32); }
+body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.26); }
 
 @media (max-width: 1100px) {
     .energy-kpis {
@@ -464,7 +483,7 @@ body.dark-mode .empty-row { color: #94a3b8; }
                         <th class="num">Actual</th>
                         <th class="num">Baseline</th>
                         <th class="num">Variance</th>
-                        <th>Trend</th>
+                        <th class="trend-col">Trend</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -486,7 +505,7 @@ body.dark-mode .empty-row { color: #94a3b8; }
                             <td class="num">{{ $row['actual_kwh'] }}</td>
                             <td class="num">{{ $row['baseline_kwh'] }}</td>
                             <td class="num">{{ $row['variance'] }}</td>
-                            <td>
+                            <td class="trend-col">
                                 <span class="trend-pill {{ $trendClass }}">
                                     <i class="fa {{ $trendIcon }}"></i> {{ $trendLabel }}
                                 </span>

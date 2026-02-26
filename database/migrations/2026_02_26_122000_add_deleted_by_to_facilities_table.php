@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
+        Schema::table('facilities', function (Blueprint $table) {
+            if (!Schema::hasColumn('facilities', 'deleted_by')) {
+                $table->unsignedBigInteger('deleted_by')->nullable()->after('deleted_at');
+                $table->index('deleted_by');
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        if (!Schema::hasTable('facilities')) {
+            return;
+        }
+
+        Schema::table('facilities', function (Blueprint $table) {
+            if (Schema::hasColumn('facilities', 'deleted_by')) {
+                $table->dropColumn('deleted_by');
+            }
+        });
+    }
+};

@@ -70,6 +70,13 @@
 		}
 		.users-table-wrap {
 			border: 1px solid #dbe6f5;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
+		.users-table {
+			min-width: 860px;
+			border-collapse: separate;
+			border-spacing: 0;
 		}
 		.users-table thead tr {
 			background: linear-gradient(135deg, #edf3ff 0%, #e5ecff 100%) !important;
@@ -85,6 +92,13 @@
 			color: #0f172a;
 			border-top: 1px solid #edf2fb;
 			vertical-align: middle;
+		}
+		.users-table th,
+		.users-table td {
+			padding: 12px 10px;
+		}
+		.users-actions-cell {
+			white-space: nowrap;
 		}
 		.users-table tbody tr:hover {
 			background: #f8fbff;
@@ -255,9 +269,144 @@
 			}
 			.users-title {
 				font-size: 1.5rem !important;
+				line-height: 1.15;
+				margin-bottom: 14px !important;
+			}
+			.users-stat-grid {
+				grid-template-columns: 1fr !important;
+				gap: 12px !important;
+				margin-bottom: 18px !important;
+			}
+			.users-stat-card {
+				min-width: 0 !important;
+				padding: 16px 14px !important;
+				border-radius: 14px !important;
+			}
+			.users-stat-card > div:first-child {
+				font-size: 0.95rem !important;
+			}
+			.users-stat-total > div:last-child,
+			.users-stat-active > div:last-child,
+			.users-stat-inactive > div:last-child {
+				font-size: 2rem !important;
 			}
 			.users-actions {
 				gap: 10px !important;
+				flex-direction: column;
+				align-items: stretch !important;
+				margin-bottom: 16px !important;
+			}
+			.users-btn-primary,
+			.users-btn-secondary {
+				width: 100%;
+				justify-content: center;
+				padding: 11px 14px !important;
+				font-size: 0.96rem !important;
+			}
+			.users-table-wrap {
+				padding: 10px !important;
+				overflow-x: auto !important;
+				overflow-y: hidden !important;
+				-webkit-overflow-scrolling: touch;
+			}
+			.users-table {
+				min-width: 720px !important;
+				width: max-content !important;
+			}
+			.users-table th,
+			.users-table td {
+				padding: 10px 8px !important;
+				font-size: 0.82rem !important;
+				line-height: 1.2;
+				white-space: nowrap;
+			}
+			.users-table th {
+				position: sticky;
+				top: 0;
+				z-index: 1;
+			}
+			.users-table td:nth-child(3) {
+				max-width: 180px;
+				white-space: normal;
+				word-break: break-word;
+			}
+			.users-table td.users-actions-cell {
+				gap: 8px !important;
+			}
+			.users-table td.users-actions-cell .action-label-view,
+			.users-table td.users-actions-cell .action-label-edit,
+			.users-table td.users-actions-cell .action-label-delete {
+				display: none !important;
+			}
+			.users-table td.users-actions-cell a {
+				font-size: 1rem !important;
+			}
+			.users-role-overview {
+				margin-top: 1rem !important;
+				padding: 14px !important;
+			}
+			.facility-checkbox-grid {
+				grid-template-columns: 1fr !important;
+				gap: 8px !important;
+			}
+			.uv-form-grid-2 {
+				grid-template-columns: 1fr !important;
+			}
+			.modal-sheet,
+			.modal-content {
+				padding: 10px !important;
+			}
+			.modal-card,
+			.user-edit-modal-pro,
+			.user-view-modal-pro {
+				width: 100% !important;
+				margin: 8px auto !important;
+				border-radius: 14px !important;
+			}
+			.modal-close-pro {
+				top: 10px !important;
+				right: 10px !important;
+			}
+			.uv-modal-header {
+				padding: 22px 16px 0 16px !important;
+			}
+			.uv-modal-title {
+				font-size: 1.2rem !important;
+				padding-right: 28px;
+			}
+			.uv-modal-subtitle {
+				font-size: 0.92rem !important;
+				margin-bottom: 12px !important;
+			}
+			.uv-modal-form {
+				padding: 14px 16px 0 16px !important;
+			}
+			.uv-modal-content {
+				padding: 0 16px !important;
+				gap: 8px !important;
+			}
+			.uv-modal-row {
+				flex-direction: column;
+				gap: 4px;
+				padding: 10px 0;
+			}
+			.uv-label {
+				min-width: 0;
+			}
+			.uv-value {
+				text-align: left;
+				width: 100%;
+			}
+			.uv-modal-actions {
+				padding: 0 16px !important;
+				flex-direction: column-reverse;
+				align-items: stretch;
+				gap: 10px !important;
+			}
+			.uv-btn-cancel,
+			.uv-btn-submit,
+			.uv-btn-close {
+				width: 100%;
 			}
 		}
 	</style>
@@ -331,15 +480,15 @@
 			<tbody>
 				@forelse($users as $user)
 				<tr>
-					<td>{{ $user->id }}</td>
-					<td>{{ $user->full_name ?? $user->name ?? '-' }}</td>
-					<td>{{ $user->email }}</td>
-					<td>{{ $user->role }}</td>
-					<td>
+					<td data-label="User ID">{{ $user->id }}</td>
+					<td data-label="Full Name">{{ $user->full_name ?? $user->name ?? '-' }}</td>
+					<td data-label="Email / Username">{{ $user->email }}</td>
+					<td data-label="Role">{{ $user->role }}</td>
+					<td data-label="Assigned Facilities (#)">
 						@php $facilityCount = $user->facilities ? $user->facilities->count() : 0; @endphp
 						<span style="font-weight:700;color:#6366f1;font-size:1.1em;">{{ $facilityCount }}</span>
 					</td>
-					<td>
+					<td data-label="Status">
 						@if(strtolower($user->status ?? '') == 'active')
 							<span style="display:inline-block;padding:4px 12px;border-radius:999px;background:#dcfce7;color:#16a34a;font-weight:600;font-size:0.85rem;">
 								{{ ucfirst($user->status) }}
@@ -350,7 +499,7 @@
 							</span>
 						@endif
 					</td>
-					<td style="display:flex;gap:10px;align-items:center;justify-content:center;vertical-align:middle;">
+					<td data-label="Actions" class="users-actions-cell" style="display:flex;gap:10px;align-items:center;justify-content:center;vertical-align:middle;">
 						<a href="javascript:void(0)"
 						   onclick="openUserModalView(this)"
 						   data-user="{{ json_encode([

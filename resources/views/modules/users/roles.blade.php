@@ -77,7 +77,9 @@
         border-radius: 14px;
         border: 1px solid #e2e8f0;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
     }
     .roles-table {
         width: 100%;
@@ -223,6 +225,113 @@
         color: #fca5a5;
         border-color: #7f1d1d;
         background: #2b1014;
+    }
+
+    @media (max-width: 680px) {
+        .roles-header {
+            margin-bottom: 16px;
+        }
+        .roles-title {
+            font-size: 1.45rem;
+            line-height: 1.15;
+        }
+        .roles-subtitle {
+            font-size: 0.9rem;
+        }
+        .roles-meta {
+            margin-top: 8px;
+            font-size: 0.84rem;
+            line-height: 1.35;
+        }
+        .roles-summary {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .roles-card {
+            padding: 14px 14px;
+            border-radius: 12px;
+        }
+        .roles-card-label {
+            font-size: 0.82rem;
+        }
+        .roles-card-value {
+            margin-top: 4px;
+            font-size: 1.45rem;
+        }
+        .roles-actions {
+            margin-bottom: 12px;
+        }
+        .roles-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 10px 12px;
+            font-size: 0.88rem;
+        }
+        .roles-table-wrap {
+            border-radius: 12px;
+        }
+        .roles-table {
+            width: max-content;
+            min-width: 860px;
+        }
+        .roles-table th,
+        .roles-table td {
+            padding: 10px 8px;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        .roles-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .roles-table td:nth-child(1) {
+            min-width: 42px;
+        }
+        .roles-table td:nth-child(2) {
+            min-width: 120px;
+        }
+        .roles-table td:nth-child(3) {
+            min-width: 300px;
+            max-width: 300px;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+        .roles-table td:nth-child(4) {
+            min-width: 180px;
+        }
+        .roles-table td:nth-child(5) {
+            min-width: 120px;
+            white-space: nowrap;
+        }
+        .role-name-badge {
+            padding: 4px 10px;
+            font-size: 0.76rem;
+        }
+        .role-perm-badge {
+            padding: 4px 10px;
+            font-size: 0.74rem;
+            line-height: 1.2;
+        }
+        .role-desc small {
+            margin-top: 4px;
+            font-size: 0.75rem;
+            line-height: 1.35;
+        }
+        .role-action {
+            width: 30px;
+            height: 30px;
+            margin: 0 2px;
+            font-size: 0.86rem;
+        }
+        .roles-note {
+            margin-top: 12px;
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
     }
 </style>
 

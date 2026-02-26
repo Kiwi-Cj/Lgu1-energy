@@ -3,19 +3,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class Facility extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     // Many-to-many: Facility can have many users
     public function users()
     {
         return $this->belongsToMany(User::class, 'facility_user', 'facility_id', 'user_id');
     }
-    use HasFactory;
+
+    public function deletedByUser()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
 
     protected $table = 'facilities';
 
@@ -36,6 +42,8 @@ class Facility extends Model
         'baseline_kwh',
         'baseline_start_date',
         'engineer_approved', // <-- Added for engineer approval
+        'deleted_by',
+        'archive_reason',
     ];
 
     /* =======================
@@ -60,6 +68,16 @@ class Facility extends Model
     public function energyRecords()
     {
         return $this->hasMany(\App\Models\EnergyRecord::class);
+    }
+
+    public function meters()
+    {
+        return $this->hasMany(FacilityMeter::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(FacilityAuditLog::class);
     }
 
     /* =======================

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\BelongsToFacility;
 
 class EnergyRecord extends Model
@@ -55,12 +56,14 @@ class EnergyRecord extends Model
         return null;
     }
     use HasFactory;
+    use SoftDeletes;
 
     // Removed auto-update of baseline_kwh in EnergyRecord booted event.
 
     protected $table = 'energy_records';
     protected $fillable = [
         'facility_id',
+        'meter_id',
         'year',
         'month',
         'day',
@@ -80,6 +83,11 @@ class EnergyRecord extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function meter()
+    {
+        return $this->belongsTo(FacilityMeter::class, 'meter_id');
     }
 
     // Calculate alert flag based on 10% above average
@@ -115,6 +123,7 @@ class EnergyRecord extends Model
         $prev = self::where('facility_id', $this->facility_id)
             ->where('month', $prevMonth)
             ->where('year', $prevYear)
+            ->when($this->meter_id, fn ($q) => $q->where('meter_id', $this->meter_id), fn ($q) => $q->whereNull('meter_id'))
             ->first();
         return $prev ? $prev->actual_kwh : null;
     }

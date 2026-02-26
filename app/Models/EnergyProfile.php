@@ -12,6 +12,7 @@ class EnergyProfile extends Model
 
     protected $fillable = [
         'facility_id',
+        'primary_meter_id',
         'electric_meter_no',
         'utility_provider',
         'contract_account_no',
@@ -26,4 +27,9 @@ class EnergyProfile extends Model
 
 
     use BelongsToFacility;
+
+    public function primaryMeter()
+    {
+        return $this->belongsTo(FacilityMeter::class, 'primary_meter_id');
+    }
 }

@@ -306,11 +306,166 @@ $profile = $facility->energyProfiles()->latest()->first();
 </div>
 @endif
 
+@php
+	$auditFilters = [
+		'action' => trim((string) request('audit_action', '')),
+		'date_from' => trim((string) request('audit_date_from', '')),
+		'date_to' => trim((string) request('audit_date_to', '')),
+		'user_id' => trim((string) request('audit_user_id', '')),
+	];
+
+	if ($auditFilters['date_from'] !== '' && $auditFilters['date_to'] !== '' && $auditFilters['date_from'] > $auditFilters['date_to']) {
+		[$auditFilters['date_from'], $auditFilters['date_to']] = [$auditFilters['date_to'], $auditFilters['date_from']];
+	}
+
+	$auditActorOptions = \App\Models\FacilityAuditLog::with('actor')
+		->where('facility_id', $facility->id)
+		->whereNotNull('performed_by')
+		->get()
+		->map(function ($log) {
+			return [
+				'id' => (string) $log->performed_by,
+				'label' => $log->actor?->full_name ?? $log->actor?->name ?? $log->actor?->username ?? ('User #' . $log->performed_by),
+			];
+		})
+		->unique('id')
+		->sortBy('label')
+		->values();
+
+	$facilityAuditLogsQuery = \App\Models\FacilityAuditLog::with('actor')
+		->where('facility_id', $facility->id);
+
+	if ($auditFilters['action'] !== '') {
+		$facilityAuditLogsQuery->where('action', $auditFilters['action']);
+	}
+	if ($auditFilters['date_from'] !== '') {
+		$facilityAuditLogsQuery->whereDate('created_at', '>=', $auditFilters['date_from']);
+	}
+	if ($auditFilters['date_to'] !== '') {
+		$facilityAuditLogsQuery->whereDate('created_at', '<=', $auditFilters['date_to']);
+	}
+	if ($auditFilters['user_id'] !== '') {
+		$facilityAuditLogsQuery->where('performed_by', $auditFilters['user_id']);
+	}
+
+	$facilityAuditLogs = $facilityAuditLogsQuery
+		->latest()
+		->paginate(8, ['*'], 'audit_page')
+		->withQueryString();
+@endphp
+<div style="margin-top:32px;padding:26px;border-radius:22px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.08);">
+	<h3 style="margin:0 0 14px;font-weight:900;color:#2563eb;">
+		<i class="fa fa-clock-rotate-left" style="margin-right:6px;"></i> Facility Activity / Audit Trail
+	</h3>
+	<form method="GET" action="{{ url()->current() }}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px;padding:12px;border:1px solid #e5e7eb;border-radius:14px;background:#fcfdff;">
+		<div style="display:flex;flex-direction:column;gap:5px;min-width:180px;">
+			<label for="audit_action" style="font-size:.82rem;font-weight:700;color:#475569;">Action</label>
+			<select id="audit_action" name="audit_action" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;">
+				<option value="">All Actions</option>
+				<option value="archived" @selected($auditFilters['action'] === 'archived')>Archived</option>
+				<option value="restored" @selected($auditFilters['action'] === 'restored')>Restored</option>
+				<option value="permanently_deleted" @selected($auditFilters['action'] === 'permanently_deleted')>Permanently Deleted</option>
+			</select>
+		</div>
+		<div style="display:flex;flex-direction:column;gap:5px;min-width:165px;">
+			<label for="audit_date_from" style="font-size:.82rem;font-weight:700;color:#475569;">Date From</label>
+			<input id="audit_date_from" type="date" name="audit_date_from" value="{{ $auditFilters['date_from'] }}" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;">
+		</div>
+		<div style="display:flex;flex-direction:column;gap:5px;min-width:165px;">
+			<label for="audit_date_to" style="font-size:.82rem;font-weight:700;color:#475569;">Date To</label>
+			<input id="audit_date_to" type="date" name="audit_date_to" value="{{ $auditFilters['date_to'] }}" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;">
+		</div>
+		<div style="display:flex;flex-direction:column;gap:5px;min-width:220px;flex:1 1 220px;">
+			<label for="audit_user_id" style="font-size:.82rem;font-weight:700;color:#475569;">User</label>
+			<select id="audit_user_id" name="audit_user_id" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;">
+				<option value="">All Users</option>
+				@foreach($auditActorOptions as $actorOpt)
+					<option value="{{ $actorOpt['id'] }}" @selected($auditFilters['user_id'] === $actorOpt['id'])>{{ $actorOpt['label'] }}</option>
+				@endforeach
+			</select>
+		</div>
+		<div style="display:flex;gap:8px;align-items:center;">
+			<button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:9px 14px;font-weight:700;">Filter</button>
+			<a href="{{ url()->current() }}" style="background:#f1f5f9;color:#334155;border-radius:10px;padding:9px 14px;font-weight:700;text-decoration:none;">Reset</a>
+		</div>
+	</form>
+	@if($facilityAuditLogs->isEmpty())
+		<div style="color:#64748b;font-weight:600;">
+			{{ array_filter($auditFilters) ? 'No audit trail entries match the selected filters.' : 'No audit trail entries yet for this facility.' }}
+		</div>
+	@else
+		<div style="display:flex;flex-direction:column;gap:10px;">
+			@foreach($facilityAuditLogs as $log)
+				@php
+					$actorName = $log->actor?->full_name ?? $log->actor?->name ?? $log->actor?->username ?? 'System/Unknown';
+					$actionLabel = match((string) $log->action) {
+						'archived' => 'Archived Facility',
+						'restored' => 'Restored Facility',
+						'permanently_deleted' => 'Permanently Deleted Facility',
+						default => ucwords(str_replace('_', ' ', (string) $log->action)),
+					};
+					$chipBg = match((string) $log->action) {
+						'archived' => '#fff1f2',
+						'restored' => '#ecfdf5',
+						'permanently_deleted' => '#fee2e2',
+						default => '#eff6ff',
+					};
+					$chipColor = match((string) $log->action) {
+						'archived' => '#be123c',
+						'restored' => '#166534',
+						'permanently_deleted' => '#991b1b',
+						default => '#1d4ed8',
+					};
+				@endphp
+				<div style="border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;background:#fcfdff;">
+					<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+						<span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:800;background:{{ $chipBg }};color:{{ $chipColor }};">
+							{{ $actionLabel }}
+						</span>
+						<span style="font-weight:700;color:#1e293b;">{{ $actorName }}</span>
+						<span style="color:#64748b;">{{ $log->created_at?->format('M d, Y h:i A') }}</span>
+					</div>
+					@if(!empty($log->reason))
+						<div style="margin-top:8px;color:#334155;line-height:1.5;">
+							<span style="font-weight:700;">Reason:</span> {{ $log->reason }}
+						</div>
+					@endif
+				</div>
+			@endforeach
+		</div>
+		@if($facilityAuditLogs->hasPages())
+			<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;">
+				<div style="color:#64748b;font-size:0.92rem;">
+					Showing {{ $facilityAuditLogs->firstItem() }} to {{ $facilityAuditLogs->lastItem() }} of {{ $facilityAuditLogs->total() }} logs
+				</div>
+				<div style="display:flex;gap:8px;align-items:center;">
+					@if($facilityAuditLogs->onFirstPage())
+						<span style="padding:8px 12px;border-radius:8px;background:#f1f5f9;color:#94a3b8;">Previous</span>
+					@else
+						<a href="{{ $facilityAuditLogs->previousPageUrl() }}" style="padding:8px 12px;border-radius:8px;background:#e2e8f0;color:#1e293b;text-decoration:none;font-weight:700;">Previous</a>
+					@endif
+					<span style="padding:8px 12px;border-radius:8px;background:#2563eb;color:#fff;font-weight:700;">
+						Page {{ $facilityAuditLogs->currentPage() }} / {{ $facilityAuditLogs->lastPage() }}
+					</span>
+					@if($facilityAuditLogs->hasMorePages())
+						<a href="{{ $facilityAuditLogs->nextPageUrl() }}" style="padding:8px 12px;border-radius:8px;background:#e2e8f0;color:#1e293b;text-decoration:none;font-weight:700;">Next</a>
+					@else
+						<span style="padding:8px 12px;border-radius:8px;background:#f1f5f9;color:#94a3b8;">Next</span>
+					@endif
+				</div>
+			</div>
+		@endif
+	@endif
+</div>
+
 <!-- ACTIONS -->
 <div style="display:flex;gap:14px;justify-content:flex-end;margin-top:30px;">
 	<!-- Edit Facility button removed -->
+	<a href="{{ route('modules.facilities.meters.index', $facility->id) }}" style="background:#2563eb;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;">
+		<i class="fa fa-gauge-high" style="margin-right:6px;"></i> Meters
+	</a>
 	@if(!in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
-	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" style="background:#e11d48;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;"><i class="fa fa-trash" style="margin-right:6px;"></i> Delete</button>
+	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" style="background:#e11d48;color:#fff;padding:12px 26px;border:none;border-radius:999px;font-weight:800;cursor:pointer;"><i class="fa fa-box-archive" style="margin-right:6px;"></i> Archive</button>
 	@endif
 </div>
 

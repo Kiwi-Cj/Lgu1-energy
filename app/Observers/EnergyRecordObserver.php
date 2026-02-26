@@ -9,6 +9,15 @@ class EnergyRecordObserver
 {
     public function deleted(EnergyRecord $record)
     {
+        // For soft deletes, keep related records intact so the monthly record can be restored from archive.
+        if (method_exists($record, 'isForceDeleting') && ! $record->isForceDeleting()) {
+            return;
+        }
+
+        if ($record->meter && strtolower((string) $record->meter->meter_type) === 'sub') {
+            return;
+        }
+
         $facility = $record->facility;
         $month = $record->month ? date('M', mktime(0,0,0,(int)$record->month,1)) : '-';
         $year = $record->year;
@@ -26,6 +35,10 @@ class EnergyRecordObserver
     }
     public function saved(EnergyRecord $record)
     {
+        if ($record->meter && strtolower((string) $record->meter->meter_type) === 'sub') {
+            return;
+        }
+
         $facility = $record->facility;
         // first3months_data table removed; fallback to baseline_kwh
         $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;

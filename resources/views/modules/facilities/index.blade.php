@@ -8,6 +8,7 @@
     $user = auth()->user();
     $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
     $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
+    $archivedFacilitiesCount = $archivedFacilitiesCount ?? 0;
 @endphp
 
 @if(session('success'))
@@ -244,7 +245,15 @@ window.addEventListener('DOMContentLoaded', function() {
                 <h2 style="font-size:1.8rem; font-weight:800; color:#3762c8; margin:0; letter-spacing:-0.5px;">📘 Facilities Management</h2>
                 <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
             </div>
-            <div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+                <a href="{{ route('modules.facilities.archive') }}"
+                   style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-weight:700;text-decoration:none;">
+                    <i class="fa fa-box-archive"></i>
+                    <span>Archive</span>
+                    @if($archivedFacilitiesCount > 0)
+                        <span style="background:#e11d48;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.78rem;">{{ $archivedFacilitiesCount }}</span>
+                    @endif
+                </a>
                 @if(!in_array(strtolower(Auth::user()->role ?? ''), ['energy_officer', 'staff'], true))
                     <button type="button" id="btnAddFacilityTop" class="btn-gradient">
                         <i class="fa fa-plus-circle"></i> Add New Facility
