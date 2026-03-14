@@ -24,11 +24,14 @@ class FacilityMeter extends Model
         'notes',
         'deleted_by',
         'archive_reason',
+        'approved_by_user_id',
+        'approved_at',
     ];
 
     protected $casts = [
         'multiplier' => 'decimal:4',
         'baseline_kwh' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     public function facility()
@@ -49,5 +52,10 @@ class FacilityMeter extends Model
     public function deletedByUser()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    public function approvedByUser()
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
     }
 }

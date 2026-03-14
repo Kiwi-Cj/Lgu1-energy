@@ -10,7 +10,7 @@
         <ul class="sidebar-submenu">
             <li><a href="/modules/facilities/facilities-list"><i class="fas fa-list menu-icon"></i> Facilities List</a></li>
             <li><a href="/modules/facilities/energy-usage"><i class="fas fa-bolt menu-icon"></i> Energy Usage</a></li>
-            <li><a href="/modules/facilities/equipment-inventory"><i class="fas fa-tools menu-icon"></i> Equipment Inventory</a></li>
+            <li><a href="{{ route('modules.load-tracking.index') }}"><i class="fas fa-tools menu-icon"></i> Equipment Inventory</a></li>
             <li><a href="/modules/facilities/consumption-history"><i class="fas fa-history menu-icon"></i> Consumption History</a></li>
         </ul>
     </li>

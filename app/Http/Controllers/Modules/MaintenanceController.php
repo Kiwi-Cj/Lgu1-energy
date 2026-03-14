@@ -24,7 +24,9 @@ class MaintenanceController extends Controller
     }
     public function history()
     {
-        $query = \App\Models\MaintenanceHistory::with('facility');
+        $query = \App\Models\MaintenanceHistory::with([
+            'facility' => fn ($builder) => $builder->withTrashed()->select('id', 'name'),
+        ]);
         if (request()->filled('facility_id')) {
             $query->where('facility_id', request('facility_id'));
         }
@@ -48,7 +50,7 @@ class MaintenanceController extends Controller
             );
             $historyRows[] = [
                 'id' => $row->id,
-                'facility' => $row->facility ? $row->facility->name : '-',
+                'facility' => $this->resolveFacilityName((int) $row->facility_id, $row->facility?->name),
                 'issue_type' => $row->issue_type,
                 'trigger_month' => $row->trigger_month,
                 'trend' => $row->trend,
@@ -225,7 +227,7 @@ class MaintenanceController extends Controller
             }
             // Return the archived record for table update
             return response()->json(['success' => true, 'archived' => true, 'maintenance' => [
-                'facility' => $archived->facility ? $archived->facility->name : '-',
+                'facility' => $this->resolveFacilityName((int) $archived->facility_id, $archived->facility?->name),
                 'trigger_month' => $archived->trigger_month,
                 'maintenance_status' => $archived->maintenance_status,
                 'scheduled_date' => $archived->scheduled_date,
@@ -234,7 +236,7 @@ class MaintenanceController extends Controller
         }
 
         return response()->json(['success' => true, 'maintenance' => [
-            'facility' => $maintenance->facility ? $maintenance->facility->name : '-',
+            'facility' => $this->resolveFacilityName((int) $maintenance->facility_id, $maintenance->facility?->name),
             'issue_type' => $maintenance->issue_type,
             'trigger_month' => $maintenance->trigger_month,
             'maintenance_status' => $maintenance->maintenance_status,
@@ -248,7 +250,8 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
-    $query = \App\Models\Maintenance::with('facility');
+    $query = \App\Models\Maintenance::with('facility:id,name')
+        ->whereHas('facility');
     if ($facilityIds) {
         $query->whereIn('facility_id', $facilityIds);
     }
@@ -288,7 +291,7 @@ public function index()
 
         $maintenanceRows[] = [
             'id' => $row->id,
-            'facility' => $row->facility ? $row->facility->name : '-',
+            'facility' => $row->facility?->name ?? '-',
             'issue_type' => $row->issue_type,
             'trigger_month' => $row->trigger_month,
             'maintenance_type' => $row->maintenance_type,
@@ -360,6 +363,23 @@ private function parseTriggerMonth(?string $triggerMonth): array
     }
 
     return [null, null];
+}
+
+private function resolveFacilityName(int $facilityId, ?string $facilityName): string
+{
+    $name = trim((string) ($facilityName ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+
+    if ($facilityId > 0) {
+        $archivedName = trim((string) (Facility::withTrashed()->where('id', $facilityId)->value('name') ?? ''));
+        if ($archivedName !== '') {
+            return $archivedName . ' (Archived)';
+        }
+    }
+
+    return '-';
 }
 
 private function resolveMaintenanceRemarks(?string $remarks, ?string $issueType, ?string $trend, ?string $status): string

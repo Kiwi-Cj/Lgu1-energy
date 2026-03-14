@@ -39,6 +39,12 @@ Route::post('/modules/facilities/{facility}/monthly-records/{record}/restore', f
         ->where('id', $recordId)
         ->firstOrFail();
 
+    if ($record->meter_id === null) {
+        return redirect()
+            ->back()
+            ->with('error', 'Legacy facility aggregate records are no longer supported and cannot be restored.');
+    }
+
     $duplicateActiveRecord = EnergyRecord::where('facility_id', $facilityId)
         ->where('month', $record->month)
         ->where('year', $record->year)
@@ -65,44 +71,52 @@ Route::post('/modules/facilities/{facility}/monthly-records/{record}/restore', f
 Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
     $validated = $request->validate([
         'date' => 'required|date',
-        'meter_id' => 'nullable',
-        'actual_kwh' => 'required|numeric',
-        'energy_cost' => 'nullable|numeric',
+        'meter_id' => 'required|integer',
+        'actual_kwh' => 'required|numeric|min:0',
+        'rate_per_kwh' => 'nullable|numeric|min:0',
         'bill_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
-        'baseline_kwh' => 'nullable|numeric',
     ]);
+
     $date = date_create($validated['date']);
     $validated['year'] = $date->format('Y');
     $validated['month'] = $date->format('n');
     $validated['day'] = $date->format('j');
     $validated['facility_id'] = $facilityId;
     $validated['recorded_by'] = auth()->id();
-    $validated['meter_id'] = null;
+    $validated['meter_id'] = (int) $validated['meter_id'];
 
-    $meterIdRaw = $request->input('meter_id');
-    if ($meterIdRaw !== null && $meterIdRaw !== '') {
-        $meterId = (int) $meterIdRaw;
-        $meter = FacilityMeter::where('facility_id', $facilityId)->whereKey($meterId)->first();
-        if (! $meter) {
-            return redirect()->back()->withInput()->withErrors(['meter_id' => 'Selected meter does not belong to this facility.']);
-        }
-        $validated['meter_id'] = $meter->id;
+    $facility = Facility::find($facilityId);
+    $latestProfile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+
+    $selectedMeter = FacilityMeter::where('facility_id', $facilityId)
+        ->whereKey($validated['meter_id'])
+        ->first();
+    if (! $selectedMeter) {
+        return redirect()->back()->withInput()->withErrors(['meter_id' => 'Selected meter does not belong to this facility.']);
     }
+    if (! $selectedMeter->approved_at) {
+        return redirect()->back()->withInput()->withErrors([
+            'meter_id' => 'Selected meter is not approved. Approve the meter first.',
+        ]);
+    }
+    if (strtolower((string) ($selectedMeter->meter_type ?? '')) !== 'main') {
+        return redirect()->back()->withInput()->withErrors([
+            'meter_id' => 'Monthly Energy Records in this module accept Main Meter only.',
+        ]);
+    }
+    $validated['meter_id'] = $selectedMeter->id;
 
-    // Prevent duplicate entry for the same facility, month, and year
+    // Prevent duplicate entry for the same facility, month/year, and main meter.
     $existsQuery = EnergyRecord::where('facility_id', $facilityId)
         ->where('month', $validated['month'])
-        ->where('year', $validated['year']);
-    if (!empty($validated['meter_id'])) {
-        $existsQuery->where('meter_id', $validated['meter_id']);
-    } else {
-        $existsQuery->whereNull('meter_id');
-    }
+        ->where('year', $validated['year'])
+        ->where('meter_id', $validated['meter_id']);
     $exists = $existsQuery->exists();
     if ($exists) {
-        $targetLabel = !empty($validated['meter_id']) ? ('the selected meter') : 'the facility aggregate';
+        $targetLabel = 'the selected main meter';
         return redirect()->back()->withInput()->withErrors(['duplicate' => "An energy record for {$targetLabel} and month/year already exists."]);
     }
+
     if ($request->hasFile('bill_image')) {
         $directory = $resolvePublicUploadRoot() . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'meralco_bills';
         if (!is_dir($directory)) {
@@ -115,22 +129,63 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
         $path = 'uploads/meralco_bills/' . $filename;
         $validated['bill_image'] = $path;
     }
-    // Make sure baseline_kwh is set (from input or fallback)
-    if (!isset($validated['baseline_kwh']) || $validated['baseline_kwh'] === null || $validated['baseline_kwh'] === '') {
-        // Prefer selected meter baseline (for main/sub-meter records), then fallback to energy profile/facility baseline.
-        if (! empty($validated['meter_id'])) {
-            $selectedMeter = FacilityMeter::where('facility_id', $facilityId)->whereKey($validated['meter_id'])->first();
-            if ($selectedMeter && $selectedMeter->baseline_kwh !== null && $selectedMeter->baseline_kwh !== '') {
-                $validated['baseline_kwh'] = $selectedMeter->baseline_kwh;
+
+    // Server-side computation: do not trust client-provided cost.
+    $ratePerKwh = isset($validated['rate_per_kwh']) && $validated['rate_per_kwh'] !== null && $validated['rate_per_kwh'] !== ''
+        ? (float) $validated['rate_per_kwh']
+        : 12.0;
+    $actualKwh = (float) $validated['actual_kwh'];
+    $validated['rate_per_kwh'] = $ratePerKwh;
+    $validated['energy_cost'] = round($actualKwh * $ratePerKwh, 2);
+
+    // Keep compatibility with existing reports/incidents by deriving baseline from meter/facility setup.
+    // Rule priority:
+    // 1) Selected meter baseline (if record is meter-specific)
+    // 2) Main meter baseline (primary linked main meter, then any main meter baseline)
+    // 3) Energy profile baseline
+    // 4) Facility baseline
+    $validated['baseline_kwh'] = null;
+    if ($selectedMeter && is_numeric($selectedMeter->baseline_kwh)) {
+        $validated['baseline_kwh'] = (float) $selectedMeter->baseline_kwh;
+    }
+
+    if ($validated['baseline_kwh'] === null) {
+        $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+
+        $mainMeterBaseline = null;
+        if ($profile && ! empty($profile->primary_meter_id)) {
+            $primaryMain = FacilityMeter::where('facility_id', $facilityId)
+                ->where('meter_type', 'main')
+                ->whereNotNull('approved_at')
+                ->whereKey($profile->primary_meter_id)
+                ->first();
+            if ($primaryMain && is_numeric($primaryMain->baseline_kwh)) {
+                $mainMeterBaseline = (float) $primaryMain->baseline_kwh;
             }
         }
 
-        if (! array_key_exists('baseline_kwh', $validated) || $validated['baseline_kwh'] === null || $validated['baseline_kwh'] === '') {
-            $facility = Facility::find($facilityId);
-            $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
-            $validated['baseline_kwh'] = $profile && $profile->baseline_kwh !== null ? $profile->baseline_kwh : ($facility ? $facility->baseline_kwh : null);
+        if ($mainMeterBaseline === null) {
+            $fallbackMain = FacilityMeter::where('facility_id', $facilityId)
+                ->where('meter_type', 'main')
+                ->whereNotNull('approved_at')
+                ->whereNotNull('baseline_kwh')
+                ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+                ->orderBy('id')
+                ->first();
+            if ($fallbackMain && is_numeric($fallbackMain->baseline_kwh)) {
+                $mainMeterBaseline = (float) $fallbackMain->baseline_kwh;
+            }
+        }
+
+        if ($mainMeterBaseline !== null) {
+            $validated['baseline_kwh'] = $mainMeterBaseline;
+        } elseif ($profile && is_numeric($profile->baseline_kwh)) {
+            $validated['baseline_kwh'] = (float) $profile->baseline_kwh;
+        } elseif ($facility && is_numeric($facility->baseline_kwh)) {
+            $validated['baseline_kwh'] = (float) $facility->baseline_kwh;
         }
     }
+
     EnergyRecord::create($validated);
     return redirect()->back()->with('success', 'Monthly record added!');
 })->middleware(['auth', 'verified'])->name('energy-records.store');

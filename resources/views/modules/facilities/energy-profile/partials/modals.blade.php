@@ -60,13 +60,15 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
                 <select id="energy_primary_meter_id" name="primary_meter_id" {{ $requiresPrimaryMainMeter ? 'required' : '' }} style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
                     <option value="">{{ $requiresPrimaryMainMeter ? 'Select Main Meter' : 'Not linked' }}</option>
                     @foreach(($mainMeterOptions ?? collect()) as $meter)
-                        <option value="{{ $meter->id }}" data-meter-number="{{ $meter->meter_number ?? '' }}">
+                        <option value="{{ $meter->id }}"
+                                data-meter-number="{{ $meter->meter_number ?? '' }}"
+                                data-meter-baseline="{{ is_numeric($meter->baseline_kwh ?? null) ? number_format((float) $meter->baseline_kwh, 2, '.', '') : '' }}">
                             {{ $meter->meter_name }}@if($meter->meter_number) ({{ $meter->meter_number }}) @endif
                         </option>
                     @endforeach
                 </select>
                 <div style="font-size:.82rem;color:#64748b;margin-top:4px;">
-                    Link the Energy Profile to a Main Meter. Selecting a meter can auto-fill `Electric Meter No.` and meter count.
+                    Link the Energy Profile to a Main Meter. Selecting a meter can auto-fill `Electric Meter No.` and active main meter count.
                     @if($requiresPrimaryMainMeter)
                         This is required because the facility already has a Main Meter.
                     @endif
@@ -163,7 +165,7 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 
 <script>
 const energyProfileMeterSyncMeta = {
-    activeMeterCount: {{ (int) ($activeMeterCount ?? 0) }},
+    activeMainMeterCount: {{ (int) ($activeMainMeterCount ?? 0) }},
 };
 
 function syncEnergyProfileFieldsFromPrimaryMeter(options = {}) {
@@ -174,19 +176,24 @@ function syncEnergyProfileFieldsFromPrimaryMeter(options = {}) {
     const selectedOption = meterSelect.options[meterSelect.selectedIndex];
     const electricField = form.querySelector('[name="electric_meter_no"]');
     const countField = form.querySelector('[name="number_of_meters"]');
+    const baselineField = form.querySelector('[name="baseline_kwh"]');
     const force = !!options.force;
 
     if (selectedOption && selectedOption.value) {
         const meterNumber = selectedOption.getAttribute('data-meter-number') || '';
+        const meterBaseline = selectedOption.getAttribute('data-meter-baseline') || '';
         if (electricField && meterNumber && (force || !String(electricField.value || '').trim())) {
             electricField.value = meterNumber;
         }
-        if (countField && energyProfileMeterSyncMeta.activeMeterCount > 0 && (force || !String(countField.value || '').trim())) {
-            countField.value = String(energyProfileMeterSyncMeta.activeMeterCount);
+        if (baselineField && meterBaseline && (force || !String(baselineField.value || '').trim())) {
+            baselineField.value = meterBaseline;
+        }
+        if (countField && energyProfileMeterSyncMeta.activeMainMeterCount > 0 && (force || !String(countField.value || '').trim())) {
+            countField.value = String(energyProfileMeterSyncMeta.activeMainMeterCount);
         }
     } else {
-        if (countField && energyProfileMeterSyncMeta.activeMeterCount > 0 && (force || !String(countField.value || '').trim())) {
-            countField.value = String(energyProfileMeterSyncMeta.activeMeterCount);
+        if (countField && energyProfileMeterSyncMeta.activeMainMeterCount > 0 && (force || !String(countField.value || '').trim())) {
+            countField.value = String(energyProfileMeterSyncMeta.activeMainMeterCount);
         }
     }
 }

@@ -1,16 +1,17 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Facility;
 use App\Models\EnergyRecord;
-// use App\Models\Bill; // removed
+use App\Models\Facility;
 use App\Models\Maintenance;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $normalizeAlertLabel = function ($label) {
             return match ($label) {
@@ -22,6 +23,7 @@ class DashboardController extends Controller
                 default => $label ?: 'Unknown',
             };
         };
+
         $computeConsumptionStatus = function (float $deviation, float $baselineKwh): string {
             if ($baselineKwh <= 1000) {
                 $size = 'Small';
@@ -53,6 +55,7 @@ class DashboardController extends Controller
             if ($deviation > $t['level2']) {
                 return 'Warning';
             }
+
             return 'Normal';
         };
 
@@ -67,6 +70,7 @@ class DashboardController extends Controller
         ];
         $normalizeSeverity = function (?string $label) {
             $label = trim((string) $label);
+
             return match ($label) {
                 'Critical', 'Very High', 'High', 'Warning', 'Normal' => $label,
                 'Medium' => 'Warning',
@@ -77,6 +81,7 @@ class DashboardController extends Controller
         $pushAlert = function (string $message, string $level = 'Warning', string $type = 'system', $detectedAt = null) use (&$alerts, $severityRank, $normalizeSeverity) {
             $normalizedLevel = $normalizeSeverity($level);
             $timestamp = now()->timestamp;
+
             if ($detectedAt instanceof \DateTimeInterface) {
                 $timestamp = $detectedAt->getTimestamp();
             } elseif (!empty($detectedAt)) {
@@ -97,30 +102,74 @@ class DashboardController extends Controller
         $userRole = strtolower($user->role ?? '');
         $facilityIds = ($userRole === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
 
-        // 4. Add alert for any unresolved energy incidents
+        // Date range (month-based): defaults to latest 6 months.
+        $defaultStartMonth = now()->subMonths(5)->startOfMonth();
+        $defaultEndMonth = now()->startOfMonth();
+        $parseMonthInput = function (?string $value, Carbon $fallback): Carbon {
+            $value = trim((string) $value);
+            if (!preg_match('/^\d{4}-\d{2}$/', $value)) {
+                return $fallback->copy();
+            }
+
+            try {
+                return Carbon::createFromFormat('Y-m', $value)->startOfMonth();
+            } catch (\Throwable $e) {
+                return $fallback->copy();
+            }
+        };
+
+        $selectedStartMonth = $parseMonthInput($request->query('start_month'), $defaultStartMonth);
+        $selectedEndMonth = $parseMonthInput($request->query('end_month'), $defaultEndMonth);
+        if ($selectedStartMonth->gt($selectedEndMonth)) {
+            [$selectedStartMonth, $selectedEndMonth] = [$selectedEndMonth, $selectedStartMonth];
+        }
+
+        $periodStartDate = $selectedStartMonth->copy()->startOfMonth();
+        $periodEndDate = $selectedEndMonth->copy()->endOfMonth();
+        $periodMonthCount = (int) $selectedStartMonth->diffInMonths($selectedEndMonth) + 1;
+        $periodStartYm = (int) $selectedStartMonth->format('Ym');
+        $periodEndYm = (int) $selectedEndMonth->format('Ym');
+        $periodStartInput = $selectedStartMonth->format('Y-m');
+        $periodEndInput = $selectedEndMonth->format('Y-m');
+        $periodStartLabel = $selectedStartMonth->year === $selectedEndMonth->year
+            ? $selectedStartMonth->format('F')
+            : $selectedStartMonth->format('F Y');
+        $periodEndLabel = $selectedEndMonth->format('F Y');
+        $isDefaultRange = $periodStartInput === $defaultStartMonth->format('Y-m')
+            && $periodEndInput === $defaultEndMonth->format('Y-m');
+
+        $applyEnergyRecordRange = function ($query) use ($periodStartYm, $periodEndYm) {
+            return $query->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm]);
+        };
+
+        // 4. Add alert for unresolved energy incidents in selected period.
         $unresolvedIncidents = \App\Models\EnergyIncident::with([
-                'facility:id,name,baseline_kwh',
-                'energyRecord:id,facility_id,baseline_kwh',
-            ])
+            'facility:id,name,baseline_kwh',
+            'energyRecord:id,facility_id,baseline_kwh',
+        ])
             ->where(function ($q) {
                 $q->whereNull('resolved_at')
                     ->orWhere('status', '!=', 'Resolved');
             })
-            ->where(function ($q) {
-                $q->where(function ($sub) {
-                    $sub->where('month', now()->month)
-                        ->where('year', now()->year);
-                })->orWhere(function ($sub) {
-                    $sub->whereNull('month')
-                        ->whereNull('year')
-                        ->whereMonth('date_detected', now()->month)
-                        ->whereYear('date_detected', now()->year);
+            ->where(function ($q) use ($periodStartYm, $periodEndYm, $periodStartDate, $periodEndDate) {
+                $q->where(function ($sub) use ($periodStartYm, $periodEndYm) {
+                    $sub->whereNotNull('month')
+                        ->whereNotNull('year')
+                        ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm]);
+                })->orWhere(function ($sub) use ($periodStartDate, $periodEndDate) {
+                    $sub->where(function ($fallbackMonthYear) {
+                        $fallbackMonthYear->whereNull('month')
+                            ->orWhereNull('year');
+                    })
+                        ->whereDate('date_detected', '>=', $periodStartDate->toDateString())
+                        ->whereDate('date_detected', '<=', $periodEndDate->toDateString());
                 });
             })
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('facility_id', $facilityIds);
             })
             ->get();
+
         foreach ($unresolvedIncidents as $incident) {
             $facilityName = $incident->facility->name ?? 'Unknown Facility';
             $desc = $incident->description ?? 'No description';
@@ -149,30 +198,37 @@ class DashboardController extends Controller
             );
         }
 
-        // 1. Add alert for any facility with status 'High' in High Consumption Hubs
-        $sixMonthsAgo = now()->subMonths(6);
-        $criticalFacilities = Facility::with(['energyRecords' => function($q) use ($sixMonthsAgo) {
-            $q->whereDate('created_at', '>=', $sixMonthsAgo);
+        // 1. Add alert for any facility with high consumption in selected period.
+        $criticalFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
+            $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
+                ->whereDate('created_at', '<=', $periodEndDate->toDateString());
         }])
-        ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('id', $facilityIds); })
-        ->get()
-        ->map(function($facility) use ($computeConsumptionStatus) {
-            $records = $facility->energyRecords;
-            $totalKwh = $records->sum('actual_kwh');
-            $totalBaseline = $records->sum('baseline_kwh');
-            $deviation = ($totalBaseline > 0 && $totalKwh > 0) ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100 : 0;
-            $status = 'Normal';
-            if ($totalBaseline > 0) {
-                $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
-                $status = $computeConsumptionStatus($deviation, $baselineForSize);
-            }
-            return [
-                'name' => $facility->name,
-                'status' => $status,
-                'deviation' => round($deviation, 2),
-            ];
-        })
-        ->filter(function($f) { return in_array($f['status'], ['Critical', 'Very High', 'High'], true); });
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('id', $facilityIds);
+            })
+            ->get()
+            ->map(function ($facility) use ($computeConsumptionStatus) {
+                $records = $facility->energyRecords;
+                $totalKwh = $records->sum('actual_kwh');
+                $totalBaseline = $records->sum('baseline_kwh');
+                $deviation = ($totalBaseline > 0 && $totalKwh > 0)
+                    ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100
+                    : 0;
+                $status = 'Normal';
+                if ($totalBaseline > 0) {
+                    $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
+                    $status = $computeConsumptionStatus($deviation, $baselineForSize);
+                }
+
+                return [
+                    'name' => $facility->name,
+                    'status' => $status,
+                    'deviation' => round($deviation, 2),
+                ];
+            })
+            ->filter(function ($f) {
+                return in_array($f['status'], ['Critical', 'Very High', 'High'], true);
+            });
         foreach ($criticalFacilities as $f) {
             $pushAlert(
                 "{$f['status']}: {$f['name']} is above baseline by {$f['deviation']}%.",
@@ -181,27 +237,33 @@ class DashboardController extends Controller
             );
         }
 
-        // 2. Add alert for any active EnergyRecord alerts (Warning and above)
+        // 2. Add alert for active EnergyRecord alerts in selected period.
         $activeAlertLevels = ['Critical', 'Very High', 'High', 'Warning', 'Extreme / level 5', 'Extreme / level 4', 'High / level 3', 'Warning / level 2', 'Medium'];
-        $activeAlertRecords = \App\Models\EnergyRecord::whereIn('alert', $activeAlertLevels)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
+        $activeAlertRecords = EnergyRecord::whereIn('alert', $activeAlertLevels)
+            ->whereDate('created_at', '>=', $periodStartDate->toDateString())
+            ->whereDate('created_at', '<=', $periodEndDate->toDateString())
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('facility_id', $facilityIds);
+            })
             ->get();
         foreach ($activeAlertRecords as $rec) {
             $facilityName = $rec->facility->name ?? 'Unknown Facility';
             $alertLabel = $normalizeAlertLabel($rec->alert);
             $pushAlert(
-                "Alert: {$facilityName} has a {$alertLabel} alert this month.",
+                "Alert: {$facilityName} has a {$alertLabel} alert in the selected period.",
                 $alertLabel,
                 'record',
                 $rec->created_at
             );
         }
 
-        // 3. Add alert for any ongoing maintenance
-        $ongoingMaint = \App\Models\Maintenance::where('maintenance_status', 'Ongoing')
-            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
+        // 3. Add alert for ongoing maintenance in selected period.
+        $ongoingMaint = Maintenance::where('maintenance_status', 'Ongoing')
+            ->whereDate('created_at', '>=', $periodStartDate->toDateString())
+            ->whereDate('created_at', '<=', $periodEndDate->toDateString())
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('facility_id', $facilityIds);
+            })
             ->get();
         foreach ($ongoingMaint as $m) {
             $facilityName = $m->facility->name ?? 'Unknown Facility';
@@ -212,6 +274,7 @@ class DashboardController extends Controller
                 $m->created_at
             );
         }
+
         $alerts = collect($alerts)
             ->sort(function ($a, $b) {
                 return ($b['priority'] <=> $a['priority']) ?: ($b['timestamp'] <=> $a['timestamp']);
@@ -229,40 +292,26 @@ class DashboardController extends Controller
         } else {
             $totalFacilities = Facility::count();
         }
-        $monthsRange = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $monthsRange[] = [
-                'year' => $date->year,
-                'month' => $date->month
-            ];
-        }
+
         $totalKwhQuery = EnergyRecord::query();
         $totalCostQuery = EnergyRecord::query();
-        $totalKwhQuery->where(function($q) use ($monthsRange) {
-            foreach ($monthsRange as $m) {
-                $q->orWhere(function($sub) use ($m) {
-                    $sub->where('year', $m['year'])->where('month', $m['month']);
-                });
-            }
-        });
-        $totalCostQuery->where(function($q) use ($monthsRange) {
-            foreach ($monthsRange as $m) {
-                $q->orWhere(function($sub) use ($m) {
-                    $sub->where('year', $m['year'])->where('month', $m['month']);
-                });
-            }
-        });
+        $applyEnergyRecordRange($totalKwhQuery);
+        $applyEnergyRecordRange($totalCostQuery);
+
         $activeAlertsQuery = EnergyRecord::whereIn('alert', $activeAlertLevels)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year);
-        $ongoingMaintenanceQuery = Maintenance::where('maintenance_status', 'Ongoing');
+            ->whereDate('created_at', '>=', $periodStartDate->toDateString())
+            ->whereDate('created_at', '<=', $periodEndDate->toDateString());
+        $ongoingMaintenanceQuery = Maintenance::where('maintenance_status', 'Ongoing')
+            ->whereDate('created_at', '>=', $periodStartDate->toDateString())
+            ->whereDate('created_at', '<=', $periodEndDate->toDateString());
+
         if ($facilityIds) {
             $totalKwhQuery->whereIn('facility_id', $facilityIds);
             $totalCostQuery->whereIn('facility_id', $facilityIds);
             $activeAlertsQuery->whereIn('facility_id', $facilityIds);
             $ongoingMaintenanceQuery->whereIn('facility_id', $facilityIds);
         }
+
         $totalKwh = $totalKwhQuery->sum('actual_kwh');
         $totalCost = $totalCostQuery->sum('energy_cost');
         $activeAlerts = $activeAlertsQuery->count();
@@ -270,12 +319,13 @@ class DashboardController extends Controller
         $complianceStatus = 'N/A';
         $unresolvedIncidentCount = $unresolvedIncidents->count();
         $facilityStatusCounts = Facility::query()
-            ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('id', $facilityIds); })
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('id', $facilityIds);
+            })
             ->selectRaw("SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_count")
             ->selectRaw("SUM(CASE WHEN status = 'maintenance' THEN 1 ELSE 0 END) as maintenance_count")
             ->selectRaw("SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive_count")
             ->first();
-
 
         // 2. Charts
         $energyChartLabels = [];
@@ -286,99 +336,108 @@ class DashboardController extends Controller
         $fallbackFacilityBaseline = $facilityIds
             ? Facility::whereIn('id', $facilityIds)->sum('baseline_kwh')
             : Facility::sum('baseline_kwh');
+
         $months = [];
-        for ($i = 1; $i <= 6; $i++) {
-            $monthObj = now()->subMonths(6 - $i);
+        $monthCursor = $selectedStartMonth->copy();
+        while ($monthCursor->lte($selectedEndMonth)) {
             $months[] = [
-                'label' => $monthObj->format('M'),
-                'year' => $monthObj->year,
-                'month' => $monthObj->month
+                'label' => $monthCursor->format('M Y'),
+                'year' => $monthCursor->year,
+                'month' => $monthCursor->month,
             ];
+            $monthCursor->addMonth();
         }
+
         foreach ($months as $m) {
             $energyChartLabels[] = $m['label'];
-            $actualKwh = EnergyRecord::where('year', $m['year'])->where('month', $m['month'])
-                ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
+            $actualKwh = EnergyRecord::where('year', $m['year'])
+                ->where('month', $m['month'])
+                ->when($facilityIds, function ($q) use ($facilityIds) {
+                    return $q->whereIn('facility_id', $facilityIds);
+                })
                 ->sum('actual_kwh');
             $energyChartData[] = $actualKwh ?: 0;
-            $monthlyBaseline = EnergyRecord::where('year', $m['year'])->where('month', $m['month'])
-                ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
+
+            $monthlyBaseline = EnergyRecord::where('year', $m['year'])
+                ->where('month', $m['month'])
+                ->when($facilityIds, function ($q) use ($facilityIds) {
+                    return $q->whereIn('facility_id', $facilityIds);
+                })
                 ->sum('baseline_kwh');
             $baselineChartData[] = $monthlyBaseline > 0 ? $monthlyBaseline : ($fallbackFacilityBaseline ?: 0);
+
             $costChartLabels[] = $m['label'];
-            $cost = EnergyRecord::where('year', $m['year'])->where('month', $m['month'])
-                ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
+            $cost = EnergyRecord::where('year', $m['year'])
+                ->where('month', $m['month'])
+                ->when($facilityIds, function ($q) use ($facilityIds) {
+                    return $q->whereIn('facility_id', $facilityIds);
+                })
                 ->sum('energy_cost');
             $costChartData[] = $cost ?: 0;
         }
 
-        // 2b. High Consumption Hubs (last 6 months, average vs. baseline)
-        $sixMonthsAgo = now()->subMonths(6);
-        $topFacilities = Facility::with(['energyRecords' => function($q) use ($sixMonthsAgo) {
-            $q->whereDate('created_at', '>=', $sixMonthsAgo);
+        // 2b. High Consumption Hubs (selected period, average vs. baseline)
+        $topFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
+            $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
+                ->whereDate('created_at', '<=', $periodEndDate->toDateString());
         }])
-        ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('id', $facilityIds); })
-        ->get()
-        ->map(function($facility) use ($computeConsumptionStatus) {
-            $records = $facility->energyRecords;
-            $totalKwh = $records->sum('actual_kwh');
-            // Sum baseline_kwh from each monthly record (last 6 months)
-            $totalBaseline = $records->sum('baseline_kwh');
-            $deviation = ($totalBaseline > 0 && $totalKwh > 0) ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100 : 0;
-            $status = 'Normal';
-            if ($totalBaseline > 0) {
-                $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
-                $status = $computeConsumptionStatus($deviation, $baselineForSize);
-            }
-            return (object) [
-                'name' => $facility->name,
-                'total_kwh' => round($totalKwh, 2),
-                'baseline_kwh' => round($totalBaseline, 2),
-                'deviation' => round($deviation, 2),
-                'status' => $status,
-            ];
-        })
-        // Show all facilities with data, no filter
-        ->sortByDesc('deviation')
-        ->values();
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('id', $facilityIds);
+            })
+            ->get()
+            ->map(function ($facility) use ($computeConsumptionStatus) {
+                $records = $facility->energyRecords;
+                $totalKwh = $records->sum('actual_kwh');
+                $totalBaseline = $records->sum('baseline_kwh');
+                $deviation = ($totalBaseline > 0 && $totalKwh > 0)
+                    ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100
+                    : 0;
+                $status = 'Normal';
+                if ($totalBaseline > 0) {
+                    $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
+                    $status = $computeConsumptionStatus($deviation, $baselineForSize);
+                }
+
+                return (object) [
+                    'name' => $facility->name,
+                    'total_kwh' => round($totalKwh, 2),
+                    'baseline_kwh' => round($totalBaseline, 2),
+                    'deviation' => round($deviation, 2),
+                    'status' => $status,
+                ];
+            })
+            ->sortByDesc('deviation')
+            ->values();
 
         // 3. Recent Activity (last 8 actions) - Filter by facility for Staff
         $recentLogs = [];
-        
-        // Facility logs (Staff only see their facility, Admin/Energy Officer see all)
         $facilityQuery = Facility::orderByDesc('created_at');
         if ($facilityIds) {
             $facilityQuery->whereIn('id', $facilityIds);
         }
-        $facilityLogs = $facilityQuery->take(2)->get()->map(function($f) {
-            return 'Added new facility – ' . ($f->name ?? 'Unknown');
+        $facilityLogs = $facilityQuery->take(2)->get()->map(function ($f) {
+            return 'Added new facility - ' . ($f->name ?? 'Unknown');
         });
         $recentLogs = $facilityLogs->toArray();
 
-        // --- Dynamic kWh Trend Calculation (6 months) ---
-        $monthsToCompare = 6;
-        $currentMonths = collect();
-        $previousMonths = collect();
-        for ($i = 1; $i <= $monthsToCompare; $i++) {
-            $currentMonths->push([
-                'year' => now()->subMonths($monthsToCompare - $i)->year,
-                'month' => now()->subMonths($monthsToCompare - $i)->month
-            ]);
-            $previousMonths->push([
-                'year' => now()->subMonths($monthsToCompare * 2 - $i)->year,
-                'month' => now()->subMonths($monthsToCompare * 2 - $i)->month
-            ]);
-        }
-        $currentKwh = $currentMonths->sum(function($m) use ($facilityIds) {
-            return EnergyRecord::where('year', $m['year'])->where('month', $m['month'])
-                ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
-                ->sum('actual_kwh');
-        });
-        $previousKwh = $previousMonths->sum(function($m) use ($facilityIds) {
-            return EnergyRecord::where('year', $m['year'])->where('month', $m['month'])
-                ->when($facilityIds, function($q) use ($facilityIds) { return $q->whereIn('facility_id', $facilityIds); })
-                ->sum('actual_kwh');
-        });
+        // --- Dynamic kWh Trend Calculation (selected window vs previous window) ---
+        $previousStartYm = (int) $selectedStartMonth->copy()->subMonths($periodMonthCount)->format('Ym');
+        $previousEndYm = (int) $selectedStartMonth->copy()->subMonth()->format('Ym');
+
+        $currentKwh = EnergyRecord::query()
+            ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm])
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('facility_id', $facilityIds);
+            })
+            ->sum('actual_kwh');
+
+        $previousKwh = EnergyRecord::query()
+            ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$previousStartYm, $previousEndYm])
+            ->when($facilityIds, function ($q) use ($facilityIds) {
+                return $q->whereIn('facility_id', $facilityIds);
+            })
+            ->sum('actual_kwh');
+
         if ($previousKwh > 0) {
             $kwhTrend = (($currentKwh - $previousKwh) / $previousKwh) * 100;
             $kwhTrend = ($kwhTrend >= 0 ? '+' : '') . number_format($kwhTrend, 1) . '%';
@@ -386,47 +445,51 @@ class DashboardController extends Controller
             $kwhTrend = '';
         }
 
-        // Insert alerts as notifications (if not already present)
-        foreach ($alerts as $alertItem) {
-            $alertMsg = $alertItem['message'] ?? null;
-            if (!$alertMsg) {
-                continue;
-            }
-            $alertType = (string) ($alertItem['type'] ?? 'alert');
-            $alertTitle = match ($alertType) {
-                'incident' => 'Incident Alert',
-                'maintenance' => 'Maintenance Alert',
-                'consumption' => 'Consumption Alert',
-                'record' => 'Energy Alert',
-                default => 'System Alert',
-            };
-            // Avoid duplicates for the same month even if previously marked as read.
-            // This keeps "Mark all read" stable and prevents the badge from reappearing on reload.
-            $existingNotification = $user->notifications()
-                ->where('message', $alertMsg)
-                ->whereYear('created_at', now()->year)
-                ->whereMonth('created_at', now()->month)
-                ->first();
-            if ($existingNotification) {
-                $currentTitle = strtolower(trim((string) ($existingNotification->title ?? '')));
-                $currentType = strtolower(trim((string) ($existingNotification->type ?? '')));
-                if ($currentTitle === '' || $currentTitle === 'system alert' || $currentType === '' || $currentType === 'alert') {
-                    $existingNotification->update([
+        // Insert alerts as notifications only for default (latest 6 months) view.
+        if ($isDefaultRange) {
+            foreach ($alerts as $alertItem) {
+                $alertMsg = $alertItem['message'] ?? null;
+                if (!$alertMsg) {
+                    continue;
+                }
+                $alertType = (string) ($alertItem['type'] ?? 'alert');
+                $alertTitle = match ($alertType) {
+                    'incident' => 'Incident Alert',
+                    'maintenance' => 'Maintenance Alert',
+                    'consumption' => 'Consumption Alert',
+                    'record' => 'Energy Alert',
+                    default => 'System Alert',
+                };
+                // Avoid duplicates for the same month even if previously marked as read.
+                // This keeps "Mark all read" stable and prevents the badge from reappearing on reload.
+                $existingNotification = $user->notifications()
+                    ->where('message', $alertMsg)
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->first();
+                if ($existingNotification) {
+                    $currentTitle = strtolower(trim((string) ($existingNotification->title ?? '')));
+                    $currentType = strtolower(trim((string) ($existingNotification->type ?? '')));
+                    if ($currentTitle === '' || $currentTitle === 'system alert' || $currentType === '' || $currentType === 'alert') {
+                        $existingNotification->update([
+                            'title' => $alertTitle,
+                            'type' => $alertType,
+                        ]);
+                    }
+                } else {
+                    $user->notifications()->create([
                         'title' => $alertTitle,
+                        'message' => $alertMsg,
                         'type' => $alertType,
                     ]);
                 }
-            } else {
-                $user->notifications()->create([
-                    'title' => $alertTitle,
-                    'message' => $alertMsg,
-                    'type' => $alertType,
-                ]);
             }
         }
+
         $notifications = $user->notifications()->orderByDesc('created_at')->take(10)->get();
         $unreadCount = $user->notifications()->whereNull('read_at')->count();
         $role = $userRole;
+
         return view('modules.dashboard.index', [
             'totalFacilities' => $totalFacilities,
             'totalKwh' => $totalKwh,
@@ -450,6 +513,11 @@ class DashboardController extends Controller
             'unreadNotifCount' => $unreadCount,
             'role' => $role,
             'user' => $user,
+            'periodStartLabel' => $periodStartLabel,
+            'periodEndLabel' => $periodEndLabel,
+            'periodStartInput' => $periodStartInput,
+            'periodEndInput' => $periodEndInput,
+            'periodMonthCount' => $periodMonthCount,
         ]);
     }
 }

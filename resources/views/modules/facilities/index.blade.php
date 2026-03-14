@@ -166,7 +166,104 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     .action-icon.energy { background: #fff7ed; color: #f59e0b; }
     .action-icon.records { background: #eff6ff; color: #3b82f6; }
+    .action-icon.inventory { background: #ecfdf3; color: #16a34a; }
     .action-icon:hover { transform: scale(1.1); }
+
+    .facility-search-wrap {
+        margin-bottom: 1.25rem;
+    }
+
+    .facility-search-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: #475569;
+    }
+
+    .facility-search-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 12px;
+    }
+
+    .facility-search-input-wrap i {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+
+    .facility-search-input {
+        border: none;
+        outline: none;
+        width: 100%;
+        font-size: 0.95rem;
+        color: #1e293b;
+        background: transparent;
+    }
+
+    .facility-search-clear {
+        border: none;
+        background: #e2e8f0;
+        color: #334155;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .facility-search-clear[hidden] {
+        display: none;
+    }
+
+    .facility-search-meta {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .facility-search-empty {
+        display: none;
+        margin-top: 14px;
+        text-align: center;
+        padding: 26px 18px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .facility-search-reset {
+        margin-top: 10px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .facility-match {
+        background: #fef08a;
+        color: #1e293b;
+        border-radius: 3px;
+        padding: 0 2px;
+    }
 
     body.dark-mode .facilities-page .report-card-container {
         background: #0f172a !important;
@@ -206,6 +303,41 @@ window.addEventListener('DOMContentLoaded', function() {
         color: #fda4af !important;
     }
 
+    body.dark-mode .facilities-page .action-icon.inventory {
+        background: #153827 !important;
+        color: #86efac !important;
+    }
+
+    body.dark-mode .facilities-page .facility-search-input-wrap {
+        background: #111827;
+        border-color: #334155;
+    }
+
+    body.dark-mode .facilities-page .facility-search-input {
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .facilities-page .facility-search-clear {
+        background: #334155;
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .facilities-page .facility-search-empty {
+        background: #0b1220;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .facilities-page .facility-search-reset {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    body.dark-mode .facilities-page .facility-match {
+        background: #fde047;
+        color: #0f172a;
+    }
+
     body.dark-mode .facilities-page [style*="background:#fff"],
     body.dark-mode .facilities-page [style*="background: #fff"],
     body.dark-mode .facilities-page [style*="background:#ffffff"],
@@ -234,6 +366,15 @@ window.addEventListener('DOMContentLoaded', function() {
     @media (max-width: 768px) {
         .dashboard-header { flex-direction: column; align-items: stretch; text-align: center; }
         .btn-gradient { justify-content: center; }
+        .facilities-page .dashboard-actions { justify-content: center !important; }
+        .facilities-page .archive-link {
+            padding: 10px 12px !important;
+            gap: 6px !important;
+            min-width: 42px;
+            min-height: 42px;
+            justify-content: center;
+        }
+        .facilities-page .archive-link .archive-label { display: none; }
     }
 </style>
 
@@ -245,11 +386,14 @@ window.addEventListener('DOMContentLoaded', function() {
                 <h2 style="font-size:1.8rem; font-weight:800; color:#3762c8; margin:0; letter-spacing:-0.5px;">📘 Facilities Management</h2>
                 <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+            <div class="dashboard-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
                 <a href="{{ route('modules.facilities.archive') }}"
+                   class="archive-link"
+                   aria-label="Archive"
+                   title="Archive"
                    style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-weight:700;text-decoration:none;">
-                    <i class="fa fa-box-archive"></i>
-                    <span>Archive</span>
+                    <i class="fa fa-archive" aria-hidden="true"></i>
+                    <span class="archive-label">Archive</span>
                     @if($archivedFacilitiesCount > 0)
                         <span style="background:#e11d48;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.78rem;">{{ $archivedFacilitiesCount }}</span>
                     @endif
@@ -280,9 +424,38 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
 
+        <div class="facility-search-wrap">
+            <label for="facilityLiveSearch" class="facility-search-label">Live Search</label>
+            <div class="facility-search-input-wrap">
+                <i class="fa fa-search" aria-hidden="true"></i>
+                <input
+                    id="facilityLiveSearch"
+                    type="text"
+                    class="facility-search-input"
+                    placeholder="Search facility name, type, address, or barangay..."
+                    autocomplete="off"
+                >
+                <button type="button" id="facilitySearchClear" class="facility-search-clear" aria-label="Clear search" title="Clear search" hidden>&times;</button>
+            </div>
+            <div class="facility-search-meta">
+                Showing <span id="facilitySearchVisibleCount">{{ $facilities->count() }}</span> of <span id="facilitySearchTotalCount">{{ $facilities->count() }}</span> facilities
+            </div>
+            <div class="facility-search-meta">
+                Matches facility, type, and address/barangay.
+            </div>
+        </div>
+
         <div class="facility-grid">
             @forelse($facilities as $facility)
-                <div class="facility-card">
+                @php
+                    $searchIndex = Str::lower(trim(implode(' ', [
+                        (string) ($facility->name ?? ''),
+                        (string) ($facility->type ?? ''),
+                        (string) ($facility->address ?? ''),
+                        (string) ($facility->barangay ?? ''),
+                    ])));
+                @endphp
+                <div class="facility-card" data-facility-card data-search="{{ $searchIndex }}">
                     <div class="image-wrapper">
                         @php
                             $imageUrl = $facility->resolved_image_url;
@@ -298,10 +471,11 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="content-padding">
-                        <span class="type-badge">{{ $facility->type ?? 'General' }}</span>
-                        <h3 style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0 0 8px 0; line-height:1.2;">{{ $facility->name }}</h3>
+                        <span class="type-badge" data-search-text>{{ $facility->type ?? 'General' }}</span>
+                        <h3 data-search-text style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0 0 8px 0; line-height:1.2;">{{ $facility->name }}</h3>
                         <p style="font-size:0.88rem; color:#64748b; display:flex; align-items:flex-start; gap:6px; margin-bottom:12px;">
-                            <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i> {{ Str::limit($facility->address ?? 'No address provided', 50) }}
+                            <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i>
+                            <span data-search-text>{{ Str::limit($facility->address ?? 'No address provided', 50) }}</span>
                         </p>
                         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
                             <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:.04em;">Facility Size</span>
@@ -311,6 +485,9 @@ window.addEventListener('DOMContentLoaded', function() {
                             @if(isset($facility->resolvedBaselineKwh) && $facility->resolvedBaselineKwh !== null)
                                 <span style="font-size:0.78rem; color:#64748b; font-weight:600;">
                                     Baseline: {{ number_format((float) $facility->resolvedBaselineKwh, 2) }} kWh
+                                    <i class="fa fa-info-circle"
+                                       title="Source: {{ $facility->resolvedBaselineSourceLabel ?? 'Unknown' }}"
+                                       style="margin-left:4px;color:#94a3b8;"></i>
                                 </span>
                             @endif
                         </div>
@@ -323,6 +500,9 @@ window.addEventListener('DOMContentLoaded', function() {
                             @endif
                             <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="action-icon records" title="Monthly Records" style="background:#fef2f2; color:#e11d48;">
                                 <i class="fas fa-file-lines"></i>
+                            </a>
+                            <a href="{{ route('modules.facilities.equipment-inventory', $facility->id) }}" class="action-icon inventory" title="Equipment Inventory">
+                                <i class="fas fa-cubes"></i>
                             </a>
                             <div style="margin-left:auto; display:flex; align-items:center;">
                                 <a href="{{ route('modules.facilities.show', $facility->id) }}" style="font-size:0.95rem; font-weight:700; color:#2563eb; text-transform:none; text-decoration:none; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px; transition:color 0.18s;" onmouseover="this.style.color='#1d4ed8'" onmouseout="this.style.color='#2563eb'">
@@ -339,6 +519,10 @@ window.addEventListener('DOMContentLoaded', function() {
                     <p style="color:#94a3b8;">Start by adding a new facility to the system.</p>
                 </div>
             @endforelse
+        </div>
+        <div id="facilitySearchEmpty" class="facility-search-empty">
+            <div>No matching facilities found for your search.</div>
+            <button type="button" id="facilitySearchReset" class="facility-search-reset">Reset search</button>
         </div>
     </div>
 </div>
@@ -363,7 +547,7 @@ window.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('addFacilityModal');
         const openModal = () => { if(modal) modal.style.display = 'flex'; };
-        
+
         document.getElementById('btnAddFacilityTop')?.addEventListener('click', openModal);
         document.getElementById('fabAddFacility')?.addEventListener('click', openModal);
 
@@ -375,7 +559,112 @@ window.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-    });
+
+        const searchInput = document.getElementById('facilityLiveSearch');
+        const clearButton = document.getElementById('facilitySearchClear');
+        const resetButton = document.getElementById('facilitySearchReset');
+        const cards = Array.from(document.querySelectorAll('[data-facility-card]'));
+        const emptyState = document.getElementById('facilitySearchEmpty');
+        const visibleCountEl = document.getElementById('facilitySearchVisibleCount');
+        const totalCountEl = document.getElementById('facilitySearchTotalCount');
+        const searchableTexts = Array.from(document.querySelectorAll('[data-search-text]'));
+
+        if (totalCountEl) {
+            totalCountEl.textContent = String(cards.length);
+        }
+
+        searchableTexts.forEach((element) => {
+            if (!element.hasAttribute('data-original-text')) {
+                element.setAttribute('data-original-text', element.textContent || '');
+            }
+        });
+
+        const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapeHtml = (value) => value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const highlightElement = (element, tokens) => {
+            const originalText = element.getAttribute('data-original-text') || '';
+            const validTokens = Array.from(new Set(tokens.filter((token) => token.length >= 2)));
+
+            if (validTokens.length === 0) {
+                element.innerHTML = escapeHtml(originalText);
+                return;
+            }
+
+            const regex = new RegExp(validTokens.map(escapeRegExp).join('|'), 'ig');
+            const matches = Array.from(originalText.matchAll(regex));
+
+            if (!matches.length) {
+                element.innerHTML = escapeHtml(originalText);
+                return;
+            }
+
+            let html = '';
+            let lastIndex = 0;
+
+            matches.forEach((match) => {
+                const matchText = match[0] || '';
+                const start = match.index ?? 0;
+                const end = start + matchText.length;
+                html += escapeHtml(originalText.slice(lastIndex, start));
+                html += '<mark class="facility-match">' + escapeHtml(matchText) + '</mark>';
+                lastIndex = end;
+            });
+
+            html += escapeHtml(originalText.slice(lastIndex));
+            element.innerHTML = html;
+        };
+
+        const clearSearch = () => {
+            if (!searchInput) return;
+            searchInput.value = '';
+            applyFacilitySearch();
+            searchInput.focus();
+        };
+
+        const applyFacilitySearch = () => {
+            if (!cards.length) {
+                if (emptyState) emptyState.style.display = 'none';
+                if (visibleCountEl) visibleCountEl.textContent = '0';
+                if (clearButton) clearButton.hidden = true;
+                return;
+            }
+
+            const query = ((searchInput?.value) || '').toLowerCase().trim();
+            const tokens = query === '' ? [] : query.split(/\s+/).filter(Boolean);
+            let visibleCount = 0;
+
+            if (clearButton) {
+                clearButton.hidden = query === '';
+            }
+
+            cards.forEach((card) => {
+                const haystack = ((card.getAttribute('data-search')) || '').toLowerCase();
+                const isMatch = tokens.every((token) => haystack.includes(token));
+                card.style.display = isMatch ? '' : 'none';
+                const cardSearchTexts = Array.from(card.querySelectorAll('[data-search-text]'));
+                cardSearchTexts.forEach((element) => highlightElement(element, isMatch ? tokens : []));
+                if (isMatch) visibleCount += 1;
+            });
+
+            if (visibleCountEl) {
+                visibleCountEl.textContent = String(visibleCount);
+            }
+
+            if (emptyState) {
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        };
+
+        clearButton?.addEventListener('click', clearSearch);
+        resetButton?.addEventListener('click', clearSearch);
+        searchInput?.addEventListener('input', applyFacilitySearch);
+        applyFacilityS    });
 </script>
 @endsection
 

@@ -17,7 +17,7 @@ class EnergyIncidentController extends Controller
 
         // ...existing code...
         return view('modules.energy-incidents.index', [
-            'highAlerts' => collect(), // No high alerts, first3months_data removed
+            'highAlerts' => collect(),
         ]);
     }
 }

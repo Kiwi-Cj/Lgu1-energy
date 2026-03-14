@@ -137,20 +137,20 @@
     }
 
     .insight-card-header {
-        padding: 22px 24px;
+        padding: 16px 18px;
         border-bottom: 1px solid #eef2f7;
         background: #fff;
     }
 
     .insight-card-title {
         margin: 0;
-        font-size: 1.8rem;
+        font-size: 1.15rem;
         font-weight: 800;
-        line-height: 1;
+        line-height: 1.2;
         letter-spacing: -0.2px;
         display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .insight-card-title.consumption {
@@ -162,39 +162,39 @@
     }
 
     .insight-card-title i {
-        font-size: 0.95rem;
+        font-size: 0.82rem;
     }
 
     .consumption-table th {
-        font-size: 1rem;
-        font-weight: 800;
+        font-size: 0.9rem;
+        font-weight: 700;
         color: #355dc2;
         background: #f2f5fb;
     }
 
     .consumption-table td {
-        font-size: 0.92rem;
+        font-size: 0.86rem;
     }
 
     .consumption-table td.facility-name {
-        font-size: 1.3rem;
-        font-weight: 800;
-        line-height: 1.3;
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1.25;
         color: #1e293b;
     }
 
     .consumption-table .value-kwh {
         color: #0f172a;
-        font-weight: 800;
+        font-weight: 700;
     }
 
     .consumption-table .value-baseline {
         color: #64748b;
-        font-weight: 800;
+        font-weight: 700;
     }
 
     .consumption-table .value-deviation {
-        font-weight: 800;
+        font-weight: 700;
     }
 
     .status-pill {
@@ -202,11 +202,11 @@
         align-items: center;
         justify-content: center;
         min-width: 72px;
-        padding: 6px 14px;
+        padding: 4px 10px;
         border-radius: 999px;
-        font-size: 0.74rem;
+        font-size: 0.7rem;
         font-weight: 900;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.3px;
         text-transform: uppercase;
         border: 1px solid transparent;
     }
@@ -227,7 +227,7 @@
         border-radius: 12px;
         padding: 16px 16px 16px 14px;
         color: #334155;
-        font-size: 0.95rem;
+        font-size: 0.86rem;
         font-weight: 700;
         line-height: 1.45;
     }
@@ -257,7 +257,7 @@
     }
 
     .alert-icon {
-        font-size: 0.95rem;
+        font-size: 0.86rem;
         line-height: 1.5;
         margin-top: 1px;
     }
@@ -489,8 +489,19 @@
                 <p style="font-size:1rem; color:#64748b; margin-top:4px;">Real-time monitoring and analytics for LGU facilities.</p>
                 <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px; display:flex; align-items:center; gap:10px;">
                     <i class="fa fa-calendar"></i>
-                    <span>Period: <strong>{{ now()->subMonths(5)->format('F') }}</strong> – <strong>{{ now()->format('F Y') }}</strong></span>
+                    <span>
+                        Period: <strong>{{ $periodStartLabel ?? now()->subMonths(5)->format('F') }}</strong> - <strong>{{ $periodEndLabel ?? now()->format('F Y') }}</strong>
+                        <span style="opacity:0.75;">({{ $periodMonthCount ?? 6 }}mo)</span>
+                    </span>
                 </div>
+                <form id="dashboard-period-form" method="GET" action="{{ route('dashboard.index') }}" style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <label for="start_month" style="font-size:0.78rem; color:#64748b; font-weight:700;">From</label>
+                    <input id="start_month" type="month" name="start_month" value="{{ $periodStartInput ?? now()->subMonths(5)->format('Y-m') }}" style="border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; font-size:0.82rem; color:#334155; background:#fff;">
+                    <label for="end_month" style="font-size:0.78rem; color:#64748b; font-weight:700;">To</label>
+                    <input id="end_month" type="month" name="end_month" value="{{ $periodEndInput ?? now()->format('Y-m') }}" style="border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; font-size:0.82rem; color:#334155; background:#fff;">
+                    <button type="submit" style="border:1px solid #1d4ed8; background:#2563eb; color:#fff; border-radius:8px; padding:7px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">Apply</button>
+                    <a href="{{ route('dashboard.index') }}" style="border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:8px; padding:7px 12px; font-size:0.78rem; font-weight:700; text-decoration:none;">Reset</a>
+                </form>
             </div>
             <div style="text-align:right;">
                 <span style="background:#eef2ff; color:#4f46e5; padding:10px 18px; border-radius:12px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; border: 1px solid #e0e7ff;">
@@ -593,8 +604,8 @@
                         <thead>
                             <tr>
                                 <th>Facility Name</th>
-                                <th style="text-align:center;">Total kWh (6mo)</th>
-                                <th style="text-align:center;">Total Baseline (6mo)</th>
+                                <th style="text-align:center;">Total kWh ({{ $periodMonthCount ?? 6 }}mo)</th>
+                                <th style="text-align:center;">Total Baseline ({{ $periodMonthCount ?? 6 }}mo)</th>
                                 <th style="text-align:center;">Deviation %</th>
                                 <th style="text-align:center;">Status</th>
                             </tr>
@@ -679,6 +690,43 @@ document.addEventListener('DOMContentLoaded', function () {
     const numberFmt = new Intl.NumberFormat('en-US');
     let energyChartInstance = null;
     let costChartInstance = null;
+    const dashboardPeriodForm = document.getElementById('dashboard-period-form');
+    const startMonthInput = document.getElementById('start_month');
+    const endMonthInput = document.getElementById('end_month');
+    let autoSubmitTimer = null;
+
+    const autoSubmitPeriodFilter = function () {
+        const startMonth = startMonthInput ? startMonthInput.value : '';
+        const endMonth = endMonthInput ? endMonthInput.value : '';
+
+        if (!dashboardPeriodForm || !startMonth || !endMonth || startMonth > endMonth) {
+            return;
+        }
+
+        if (dashboardPeriodForm.dataset.autoSubmitting === '1') {
+            return;
+        }
+
+        window.clearTimeout(autoSubmitTimer);
+        autoSubmitTimer = window.setTimeout(function () {
+            dashboardPeriodForm.dataset.autoSubmitting = '1';
+
+            if (typeof dashboardPeriodForm.requestSubmit === 'function') {
+                dashboardPeriodForm.requestSubmit();
+                return;
+            }
+
+            dashboardPeriodForm.submit();
+        }, 300);
+    };
+
+    [startMonthInput, endMonthInput].forEach(function (field) {
+        if (!field) {
+            return;
+        }
+
+        field.addEventListener('change', autoSubmitPeriodFilter);
+    });
 
     const getChartTheme = function() {
         const isDark = document.body.classList.contains('dark-mode');

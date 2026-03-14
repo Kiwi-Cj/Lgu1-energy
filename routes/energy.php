@@ -27,6 +27,9 @@ Route::get('/modules/energy/trend', function (Request $request) {
     $scopeFacilityIds = $facilities->pluck('id')->toArray();
 
     $years = EnergyRecord::query()
+        ->whereHas('meter', function ($meterQuery) {
+            $meterQuery->where('meter_type', 'main');
+        })
         ->when(!empty($scopeFacilityIds), fn($q) => $q->whereIn('facility_id', $scopeFacilityIds))
         ->select('year')
         ->distinct()
@@ -51,7 +54,11 @@ Route::get('/modules/energy/trend', function (Request $request) {
     $selectedMonth = $request->get('month');
 
     if ($selectedFacilityId > 0 && $selectedYear > 0) {
-        $query = EnergyRecord::query()->where('facility_id', $selectedFacilityId);
+        $query = EnergyRecord::query()
+            ->where('facility_id', $selectedFacilityId)
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            });
 
         if (!empty($selectedMonth)) {
             [$monthYear, $monthNumber] = array_map('intval', explode('-', $selectedMonth));
@@ -135,6 +142,9 @@ Route::get('/modules/energy/export-pdf', [EnergyReportController::class, 'export
 // AJAX route to check for duplicate energy record
 Route::get('/modules/energy/check-duplicate', function (HttpRequest $request) {
     $exists = EnergyRecord::where('facility_id', $request->facility_id)
+        ->whereHas('meter', function ($meterQuery) {
+            $meterQuery->where('meter_type', 'main');
+        })
         ->where('month', $request->month)
         ->where('year', $request->year)
         ->exists();
@@ -150,6 +160,9 @@ Route::get('/modules/energy/get-kwh-consumed', function (HttpRequest $request) {
     }
     [$year, $month] = explode('-', $monthYear);
     $record = EnergyRecord::where('facility_id', $facilityId)
+        ->whereHas('meter', function ($meterQuery) {
+            $meterQuery->where('meter_type', 'main');
+        })
         ->where('year', $year)
         ->where('month', str_pad($month, 2, '0', STR_PAD_LEFT))
         ->first();
@@ -164,7 +177,10 @@ Route::get('/modules/energy/export-excel', function (Request $request) {
             ->with('error', 'Excel/CSV export is not available for staff accounts.');
     }
 
-    $query = EnergyRecord::with('facility');
+    $query = EnergyRecord::with('facility')
+        ->whereHas('meter', function ($meterQuery) {
+            $meterQuery->where('meter_type', 'main');
+        });
     if ($request->filled('facility_id')) {
         $query->where('facility_id', $request->facility_id);
     }
@@ -216,7 +232,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $facilities = Facility::all();
         $selectedFacility = $request->query('facility_id', '');
 
-        $query = EnergyRecord::with('facility');
+        $query = EnergyRecord::with('facility')
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);
         }
@@ -340,7 +359,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
         }
 
-        $query = EnergyRecord::with('facility');
+        $query = EnergyRecord::with('facility')
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);
         }

@@ -1153,12 +1153,17 @@ if (document.documentElement.classList.contains('dark-mode')) {
         @php
             $user = auth()->user();
             $role = strtolower($user?->role ?? '');
+            $roleKey = \App\Support\RoleAccess::normalize($user);
             if (!isset($p) || !is_callable($p)) {
                 $p = fn ($path = '') => url($path);
             }
-            $isEnergyMonitoringMenuActive = request()->routeIs('energy.dashboard')
-                || request()->routeIs('energy.trend')
-                || request()->routeIs('modules.energy.annual*');
+            $isEnergyMonitoringMenuActive = request()->routeIs('modules.load-tracking.*')
+                || request()->routeIs('modules.energy-monitoring.*')
+                || request()->routeIs('energy.dashboard')
+                || request()->routeIs('modules.main-meter.*')
+                || request()->routeIs('modules.submeters.*')
+                || request()->routeIs('modules.ai-alerts.*')
+                || request()->routeIs('modules.alerts.*');
             $isReportsMenuActive = request()->is('modules/reports*')
                 || request()->routeIs('modules.reports.*')
                 || request()->routeIs('reports.*')
@@ -1168,7 +1173,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <ul class="nav-list">
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            @if($role=='energy_officer')
+            @if($roleKey==='energy_officer')
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
                 <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
                 <li class="nav-item-has-submenu">
@@ -1177,9 +1182,11 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
-                        <li><a href="{{ route('energy.dashboard') }}" class="nav-link{{ request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
-                        <li><a href="{{ route('energy.trend') }}" class="nav-link{{ request()->routeIs('energy.trend') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
-                        <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
+                        <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                        <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
+                        <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
+                        <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
+                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> AI Alerts</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -1200,18 +1207,20 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @else
                 <!-- ...existing code for other roles... -->
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
-                @if($role=='super admin'||$role=='admin'||$role=='staff')
+                @if(in_array($roleKey, ['super_admin', 'admin', 'staff'], true))
                     <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
-                    @if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff')
+                    @if(in_array($roleKey, ['super_admin', 'admin', 'energy_officer', 'staff'], true))
                         <li class="nav-item-has-submenu">
                             <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
                                 <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
                                 <i class="fa fa-caret-down"></i>
                             </a>
                             <ul class="nav-submenu">
-                                <li><a href="{{ route('energy.dashboard') }}" class="nav-link{{ request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
-                                <li><a href="{{ route('energy.trend') }}" class="nav-link{{ request()->routeIs('energy.trend') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Trend</a></li>
-                                <li><a href="{{ route('modules.energy.annual') }}" class="nav-link{{ request()->routeIs('modules.energy.annual') ? ' active' : '' }}"><i class="fa-solid fa-calendar-days"></i> Annual Energy Monitoring</a></li>
+                                <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                                <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
+                                <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
+                                <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
+                                <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> AI Alerts</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>
@@ -1220,7 +1229,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     <li><a href="{{ $p('modules/maintenance/index') }}" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
                 @endif
 
-                @if($role=='super admin'||$role=='admin'||$role=='energy_officer'||$role=='staff')
+                @if(in_array($roleKey, ['super_admin', 'admin', 'energy_officer', 'staff'], true))
                     <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
                     <li class="nav-item-has-submenu">
                         <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
@@ -1236,11 +1245,12 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 @endif
             @endif
 
-            @if($role=='super admin'||$role=='admin')
+            @if(in_array($roleKey, ['super_admin', 'admin'], true))
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
+                <li><a href="{{ route('modules.audit.index') }}" class="nav-link{{ request()->routeIs('modules.audit.*') ? ' active' : '' }}"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a></li>
                 <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
-                @if($role=='super admin')
+                @if($roleKey==='super_admin')
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
@@ -1620,5 +1630,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
-

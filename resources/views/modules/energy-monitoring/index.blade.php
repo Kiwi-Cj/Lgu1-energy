@@ -718,7 +718,7 @@
         </div>
         <div class="metric-card metric-cost">
             <div class="metric-label">Total Cost (Month)</div>
-            <div class="metric-value">₱{{ number_format($totalEnergyCost ?? 0, 2) }}</div>
+            <div class="metric-value">PHP {{ number_format($totalEnergyCost ?? 0, 2) }}</div>
         </div>
     </div>
     <div class="monitor-table-wrap">
@@ -733,7 +733,7 @@
                     <th>Trend</th>
                     <th>EUI</th>
                     <th>Alerts</th>
-                    <th>Recommendation</th>
+                    <th>AI Recommendation</th>
                 </tr>
             </thead>
             <tbody>
@@ -751,8 +751,9 @@
                         $floorArea = $facility->floor_area;
                         $eui = ($floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
                         $trendRecommendation = $facility->trend_recommendation ?? 'No recommendation';
+                        $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', $facility->id);
                     @endphp
-                    <tr class="monitor-row">
+                    <tr class="monitor-row" data-facility-row data-facility-id="{{ (int) $facility->id }}">
                         <td class="cell-facility">{{ $facility->name }}</td>
                         <td class="cell-type">{{ $facility->type }}</td>
                         <td>
@@ -772,38 +773,22 @@
                         </td>
                         <td>{{ $eui ?? '-' }}</td>
                         <td>
-                            <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}">
+                            <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" data-alert-pill>
                                 {{ $alertLevel }}
                             </span>
                         </td>
                         <td>
                             @php
-                                $alertIcons = [
-                                    'Critical' => ['icon' => '⚠️', 'color' => '#e11d48'],
-                                    'High' => ['icon' => '⚡', 'color' => '#f59e42'],
-                                    'Moderate' => ['icon' => '🔆', 'color' => '#fbbf24'],
-                                    'Low' => ['icon' => '💡', 'color' => '#16a34a'],
-                                    'Normal' => ['icon' => '✅', 'color' => '#2563eb'],
-                                    'Critical' => ['icon' => '🚨', 'color' => '#7c1d1d'],
-                                    'Very High' => ['icon' => '🚩', 'color' => '#e11d48'],
-                                    'High' => ['icon' => '⚡', 'color' => '#f59e42'],
-                                    'Warning' => ['icon' => '🔔', 'color' => '#f59e42'],
-                                    'Normal' => ['icon' => '💡', 'color' => '#16a34a'],
-                                ];
-                                $iconData = $alertIcons[$alertLevel] ?? ['icon' => 'ℹ️', 'color' => '#64748b'];
-                                $trendRecommendation = $facility->trend_recommendation ?? 'No recommendation';
                                 $iconData = [
-                                    'Critical' => ['icon' => '!', 'color' => '#7c1d1d'],
-                                    'Very High' => ['icon' => '!', 'color' => '#e11d48'],
-                                    'High' => ['icon' => '!', 'color' => '#e11d48'],
-                                    'Moderate' => ['icon' => 'i', 'color' => '#f59e42'],
-                                    'Warning' => ['icon' => 'i', 'color' => '#f59e42'],
-                                    'Low' => ['icon' => 'i', 'color' => '#16a34a'],
-                                    'Normal' => ['icon' => 'i', 'color' => '#2563eb'],
-                                    'No Data' => ['icon' => 'i', 'color' => '#64748b'],
-                                ][$alertLevel] ?? ['icon' => 'i', 'color' => '#64748b'];
+                                    'Critical' => ['icon' => '!'],
+                                    'Very High' => ['icon' => '!'],
+                                    'High' => ['icon' => '!'],
+                                    'Warning' => ['icon' => 'i'],
+                                    'Normal' => ['icon' => 'i'],
+                                    'No Data' => ['icon' => 'i'],
+                                ][$alertLevel] ?? ['icon' => 'i'];
                             @endphp
-                            <button type="button" title="View Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation))'>
+                            <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl))'>
                                 <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
                             </button>
                         </td>
@@ -842,27 +827,38 @@
     </div>
 </div>
 
-@include('modules.facilities.partials.modals')
-
 <script>
-// Logic scripts (Reset & Approval)
-function openResetBaselineModal(facilityId) {
-    document.getElementById('reset_facility_id').value = facilityId;
-    document.getElementById('resetBaselineModal').style.display = 'flex';
+const recommendationCache = {};
+
+function normalizeAlertLevel(level) {
+    const raw = String(level || '').trim().toLowerCase();
+    if (raw === 'critical') return 'Critical';
+    if (raw === 'very high' || raw === 'very_high') return 'Very High';
+    if (raw === 'high') return 'High';
+    if (raw === 'warning' || raw === 'moderate') return 'Warning';
+    if (raw === 'normal' || raw === 'low') return 'Normal';
+    return 'No Data';
 }
 
-function toggleEngineerApproval(facilityId) {
-    if(!confirm('Toggle engineer approval for this facility?')) return;
-    fetch(`/modules/facilities/${facilityId}/toggle-engineer`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    }).then(() => location.reload());
+function alertSlug(alertLevel) {
+    return normalizeAlertLevel(alertLevel).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-function openRecommendationModal(facilityId, facilityName, alertLevel, trendRecommendation) {
+function updateTableAlertPill(facilityId, alertLevel) {
+    const row = document.querySelector(`[data-facility-row][data-facility-id="${facilityId}"]`);
+    if (!row) return;
+    const pill = row.querySelector('[data-alert-pill]');
+    if (!pill) return;
+
+    const normalized = normalizeAlertLevel(alertLevel);
+    Array.from(pill.classList)
+        .filter((name) => name.startsWith('alert-pill-level-'))
+        .forEach((name) => pill.classList.remove(name));
+    pill.classList.add(`alert-pill-level-${alertSlug(normalized)}`);
+    pill.textContent = normalized;
+}
+
+async function openRecommendationModal(facilityId, facilityName, alertLevel, fallbackRecommendation, recommendationUrl) {
     const modal = document.getElementById('recommendationModal');
     const title = document.getElementById('recommendationModalTitle');
     const meta  = document.getElementById('recommendationModalMeta');
@@ -880,21 +876,94 @@ function openRecommendationModal(facilityId, facilityName, alertLevel, trendReco
         'Normal': { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', badgeBg: '#ffffff', badgeColor: '#1d4ed8', darkBg: 'rgba(37,99,235,0.14)', darkBorder: 'rgba(147,197,253,0.22)', darkBadgeBg: '#0f172a', darkBadgeColor: '#93c5fd', icon: 'i' },
         'No Data': { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', badgeBg: '#ffffff', badgeColor: '#475569', darkBg: 'rgba(51,65,85,0.22)', darkBorder: 'rgba(148,163,184,0.20)', darkBadgeBg: '#0f172a', darkBadgeColor: '#cbd5e1', icon: 'i' },
     };
-    const style = alertStyles[alertLevel] || { color: '#475569', bg: '#f1f5f9', border: '#e2e8f0', badgeBg: '#64748b', badgeColor: '#ffffff', darkBg: 'rgba(51,65,85,0.25)', darkBorder: 'rgba(148,163,184,0.22)', darkBadgeBg: '#475569', darkBadgeColor: '#e2e8f0', icon: 'i' };
+    const applyAlertStyle = (level) => {
+        const normalized = normalizeAlertLevel(level);
+        const style = alertStyles[normalized] || alertStyles['No Data'];
+        text.style.color = isDark ? '#e2e8f0' : style.color;
+        text.style.background = isDark ? style.darkBg : style.bg;
+        text.style.borderColor = isDark ? style.darkBorder : style.border;
+        if (badge) {
+            badge.textContent = style.icon;
+            badge.style.background = isDark ? style.darkBadgeBg : style.badgeBg;
+            badge.style.color = isDark ? style.darkBadgeColor : style.badgeColor;
+            badge.style.border = isDark ? `1.5px solid ${style.darkBorder}` : `1.5px solid ${style.border}`;
+        }
+    };
+
+    const initialAlert = normalizeAlertLevel(alertLevel);
     title.textContent = `Recommendation for ${facilityName}`;
-    if (meta) meta.textContent = '';
-    text.textContent = trendRecommendation || 'No recommendation';
-    text.style.color = isDark ? '#e2e8f0' : style.color;
-    text.style.background = isDark ? style.darkBg : style.bg;
-    text.style.borderColor = isDark ? style.darkBorder : style.border;
-    if (badge) {
-        badge.textContent = style.icon;
-        badge.style.background = isDark ? style.darkBadgeBg : style.badgeBg;
-        badge.style.color = isDark ? style.darkBadgeColor : style.badgeColor;
-        badge.style.border = isDark ? `1.5px solid ${style.darkBorder}` : `1.5px solid ${style.border}`;
+    modal.dataset.facilityId = String(facilityId);
+    if (meta) {
+        meta.style.display = 'block';
+        meta.textContent = 'Rule-based recommendation';
     }
+    text.textContent = fallbackRecommendation || 'No recommendation';
+    applyAlertStyle(initialAlert);
     box.style.background = isDark ? '#111827' : '#fff';
     modal.style.display = 'flex';
+
+    if (recommendationCache[facilityId]) {
+        const cached = recommendationCache[facilityId];
+        text.textContent = cached.recommendation;
+        applyAlertStyle(cached.alertLevel);
+        updateTableAlertPill(facilityId, cached.alertLevel);
+        if (meta) {
+            meta.textContent = cached.source === 'ai'
+                ? 'AI recommendation + AI alert'
+                : 'Rule-based recommendation';
+        }
+        return;
+    }
+
+    if (!recommendationUrl) {
+        return;
+    }
+
+    if (meta) {
+        meta.textContent = 'Loading AI recommendation...';
+    }
+
+    try {
+        const response = await fetch(recommendationUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+
+        const data = await response.json();
+        const recommendation = (data && data.recommendation) ? String(data.recommendation).trim() : '';
+        if (recommendation === '') {
+            throw new Error('Empty recommendation');
+        }
+        const resolvedAlertLevel = normalizeAlertLevel(data && data.alert_level ? data.alert_level : initialAlert);
+        const resolvedSource = String(data && data.recommendation_source ? data.recommendation_source : 'rules').toLowerCase();
+
+        recommendationCache[facilityId] = {
+            recommendation,
+            alertLevel: resolvedAlertLevel,
+            source: resolvedSource,
+        };
+        updateTableAlertPill(facilityId, resolvedAlertLevel);
+        if (modal.dataset.facilityId === String(facilityId)) {
+            text.textContent = recommendation;
+            applyAlertStyle(resolvedAlertLevel);
+            if (meta) {
+                meta.textContent = resolvedSource === 'ai'
+                    ? 'AI recommendation + AI alert'
+                    : 'Rule-based recommendation';
+            }
+        }
+    } catch (error) {
+        if (meta) {
+            meta.textContent = 'Using default recommendation';
+        }
+    }
 }
 function closeRecommendationModal() {
     document.getElementById('recommendationModal').style.display = 'none';
@@ -908,3 +977,4 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 
 @endsection
+

@@ -5,6 +5,206 @@
 @php
     $filters = $filters ?? ['q' => '', 'meter_type' => '', 'status' => ''];
 @endphp
+<style>
+    .meter-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10040;
+        background: rgba(15,23,42,.55);
+        backdrop-filter: blur(3px);
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .meter-modal-card {
+        width: min(520px, 95vw);
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 24px 50px rgba(15,23,42,.28);
+        padding: 22px 22px 16px;
+        position: relative;
+    }
+
+    .meter-modal-card.compact {
+        width: min(520px, 95vw);
+    }
+
+    .meter-modal-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        width: 34px;
+        height: 34px;
+        border: none;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: pointer;
+        font-size: 1.35rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .meter-modal-title {
+        margin: 0;
+        color: #2563eb;
+        font-weight: 900;
+        font-size: 1.75rem;
+        line-height: 1.1;
+    }
+
+    .meter-modal-title.danger {
+        color: #e11d48;
+        font-size: 1.45rem;
+    }
+
+    .meter-modal-subtitle {
+        margin: 6px 0 14px;
+        color: #64748b;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .meter-manage-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+    }
+
+    .meter-form-field {
+        min-width: 0;
+    }
+
+    .meter-form-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .meter-form-label {
+        display: block;
+        font-weight: 800;
+        font-size: .96rem;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+    .meter-required {
+        color: #e11d48;
+    }
+
+    .meter-form-control {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: #1e293b;
+        background: #fff;
+        font-size: 1rem;
+        transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .meter-form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.16);
+    }
+
+    .meter-form-textarea {
+        min-height: 94px;
+        resize: vertical;
+    }
+
+    .meter-form-hint {
+        margin-top: 6px;
+        font-size: .82rem;
+        color: #64748b;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .meter-form-hint-warning {
+        color: #9a3412;
+    }
+
+    .meter-form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 6px;
+    }
+
+    .meter-form-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 11px 18px;
+        font-weight: 800;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .meter-form-btn.cancel {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .meter-form-btn.save {
+        background: #2563eb;
+        color: #fff;
+        min-width: 148px;
+    }
+
+    .meter-form-btn.danger {
+        background: #e11d48;
+        color: #fff;
+        min-width: 168px;
+    }
+
+    .meter-form-btn.danger:hover {
+        background: #be123c;
+    }
+
+    .meter-archive-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .meter-archive-label {
+        color: #334155;
+        font-weight: 700;
+        line-height: 1.4;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+    @media (max-width: 900px) {
+        .meter-manage-form {
+            grid-template-columns: 1fr;
+            gap: 11px;
+        }
+
+        .meter-form-field.full {
+            grid-column: auto;
+        }
+
+        .meter-form-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .meter-form-btn {
+            width: 100%;
+        }
+    }
+</style>
 <div style="padding:12px;">
     @if(session('success'))
         <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:10px;font-weight:700;">{{ session('success') }}</div>
@@ -203,52 +403,55 @@
 </div>
 
 @if($canManageMeters)
-<div id="addMeterModal" style="display:none;position:fixed;inset:0;z-index:10040;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:min(760px,100%);background:#fff;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:20px;position:relative;">
-        <button type="button" onclick="closeAddMeterModal()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.35rem;color:#64748b;cursor:pointer;">&times;</button>
-        <h3 style="margin:0 0 12px;color:#2563eb;font-weight:800;">Add Meter</h3>
-        <form method="POST" action="{{ route('modules.facilities.meters.store', $facility->id) }}" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+<div id="addMeterModal" class="meter-modal-overlay">
+    <div class="meter-modal-card">
+        <button type="button" onclick="closeAddMeterModal()" class="meter-modal-close">&times;</button>
+        <h3 class="meter-modal-title">Add Meter</h3>
+        <p class="meter-modal-subtitle">Create a main meter or link a sub-meter to an approved main meter.</p>
+        <form method="POST" action="{{ route('modules.facilities.meters.store', $facility->id) }}" class="meter-manage-form">
             @csrf
             @include('modules.facilities.meters.partials.form-fields', ['mode' => 'add', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null])
-            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;">
-                <button type="button" onclick="closeAddMeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Cancel</button>
-                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Save Meter</button>
+            <div class="meter-form-actions">
+                <button type="button" onclick="closeAddMeterModal()" class="meter-form-btn cancel">Cancel</button>
+                <button type="submit" class="meter-form-btn save">Save Meter</button>
             </div>
         </form>
     </div>
 </div>
 
-<div id="editMeterModal" style="display:none;position:fixed;inset:0;z-index:10041;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:min(760px,100%);background:#fff;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:20px;position:relative;">
-        <button type="button" onclick="closeEditMeterModal()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.35rem;color:#64748b;cursor:pointer;">&times;</button>
-        <h3 style="margin:0 0 12px;color:#2563eb;font-weight:800;">Edit Meter</h3>
-        <form id="editMeterForm" method="POST" action="#" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+<div id="editMeterModal" class="meter-modal-overlay" style="z-index:10041;">
+    <div class="meter-modal-card">
+        <button type="button" onclick="closeEditMeterModal()" class="meter-modal-close">&times;</button>
+        <h3 class="meter-modal-title">Edit Meter</h3>
+        <p class="meter-modal-subtitle">Update meter information and linkage details.</p>
+        <form id="editMeterForm" method="POST" action="#" class="meter-manage-form">
             @csrf
             @method('PUT')
             @include('modules.facilities.meters.partials.form-fields', ['mode' => 'edit', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null])
-            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;">
-                <button type="button" onclick="closeEditMeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Cancel</button>
-                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Update Meter</button>
+            <div class="meter-form-actions">
+                <button type="button" onclick="closeEditMeterModal()" class="meter-form-btn cancel">Cancel</button>
+                <button type="submit" class="meter-form-btn save">Update Meter</button>
             </div>
         </form>
     </div>
 </div>
 
-<div id="archiveMeterModal" style="display:none;position:fixed;inset:0;z-index:10042;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:min(520px,100%);background:#fff;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:20px;position:relative;">
-        <button type="button" onclick="closeArchiveMeterModal()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.35rem;color:#64748b;cursor:pointer;">&times;</button>
-        <h3 style="margin:0 0 10px;color:#e11d48;font-weight:800;">Archive Meter</h3>
-        <div id="archiveMeterLabel" style="color:#334155;margin-bottom:12px;"></div>
-        <form id="archiveMeterForm" method="POST" action="#" style="display:flex;flex-direction:column;gap:12px;">
+<div id="archiveMeterModal" class="meter-modal-overlay" style="z-index:10042;">
+    <div class="meter-modal-card compact">
+        <button type="button" onclick="closeArchiveMeterModal()" class="meter-modal-close">&times;</button>
+        <h3 class="meter-modal-title danger">Delete Meter</h3>
+        <p class="meter-modal-subtitle">This meter will be moved to archive and can be restored later.</p>
+        <form id="archiveMeterForm" method="POST" action="#" class="meter-archive-body">
             @csrf
             @method('DELETE')
+            <div id="archiveMeterLabel" class="meter-archive-label"></div>
             <div>
-                <label for="archive_meter_reason" style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Reason for Archive <span style="color:#e11d48;">*</span></label>
-                <textarea id="archive_meter_reason" name="archive_reason" required maxlength="500" rows="4" style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;" placeholder="Example: duplicate meter entry, removed panel, decommissioned"></textarea>
+                <label class="meter-form-label" for="archive_meter_reason">Reason for Delete <span class="meter-required">*</span></label>
+                <textarea class="meter-form-control meter-form-textarea" id="archive_meter_reason" name="archive_reason" required maxlength="500" rows="4" placeholder="Example: duplicate meter entry, removed panel, decommissioned"></textarea>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:8px;">
-                <button type="button" onclick="closeArchiveMeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Cancel</button>
-                <button type="submit" style="background:#e11d48;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Move to Archive</button>
+            <div class="meter-form-actions">
+                <button type="button" onclick="closeArchiveMeterModal()" class="meter-form-btn cancel">Cancel</button>
+                <button type="submit" class="meter-form-btn danger">Delete</button>
             </div>
         </form>
     </div>

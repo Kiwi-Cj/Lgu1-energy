@@ -8,14 +8,21 @@ use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
 use App\Models\Setting;
+use App\Services\EnergyRecommendationService;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 
 class EnergyMonitoringController extends Controller
 {
     private ?array $alertThresholdsBySize = null;
     private ?array $trendPercentThresholdsBySize = null;
+
+    public function __construct(
+        private readonly EnergyRecommendationService $energyRecommendationService
+    ) {
+    }
 
     /**
      * Display the Energy Monitoring Dashboard with dynamic total facilities card and facility table.
@@ -24,13 +31,24 @@ class EnergyMonitoringController extends Controller
     {
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
+        $search = trim((string) request('search', ''));
 
         if ($role === 'staff') {
-            $facilities = $user->facilities()->get();
+            $facilityQuery = $user->facilities();
         } else {
-            $facilities = Facility::query()->get();
+            $facilityQuery = Facility::query();
         }
 
+        if ($search !== '') {
+            $facilityQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('barangay', 'like', "%{$search}%");
+            });
+        }
+
+        $facilities = $facilityQuery->get();
         $totalFacilities = $facilities->count();
         $currentMonth = (int) date('n');
         $currentYear = (int) date('Y');
@@ -38,6 +56,9 @@ class EnergyMonitoringController extends Controller
 
         $totalEnergyCost = EnergyRecord::where('month', $currentMonth)
             ->where('year', $currentYear)
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })
             ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
             ->sum('energy_cost');
 
@@ -55,15 +76,28 @@ class EnergyMonitoringController extends Controller
             $facility->currentMonthRecord = $currentMonthRecord;
             [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
             $alertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+            $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
+            $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
 
             $facility->trend_percent = $trendPercent;
             $facility->trend_analysis = $trendDisplay;
             $facility->alert_level = $alertLevel;
-            $facility->trend_recommendation = $this->resolveTrendRecommendation($alertLevel, $trendPercent);
+            $recommendationContext = [
+                'facility_name' => (string) ($facility->name ?? ''),
+                'facility_type' => (string) ($facility->type ?? ''),
+                'alert_level' => $alertLevel,
+                'trend_percent' => $trendPercent,
+                'actual_kwh' => $currentMonthRecord?->actual_kwh,
+                'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
+                'floor_area' => $facility->floor_area,
+                'last_maintenance' => $lastMaintenance?->completed_date,
+                'next_maintenance' => $nextMaintenance?->scheduled_date,
+            ];
+            // Keep first render fast: use rules-based text on table load.
+            $facility->trend_recommendation = $this->energyRecommendationService
+                ->generateFacilityRecommendation($recommendationContext, false);
 
             if ($currentMonthRecord) {
-                $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
-                $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
                 $currentMonthRecord->last_maintenance = $lastMaintenance?->completed_date;
                 $currentMonthRecord->next_maintenance = $nextMaintenance?->scheduled_date;
             }
@@ -86,6 +120,66 @@ class EnergyMonitoringController extends Controller
         ) + ['role' => $role, 'user' => $user]);
     }
 
+    public function aiRecommendation(Facility $facility): JsonResponse
+    {
+        $user = auth()->user();
+        $role = RoleAccess::normalize($user);
+
+        if ($role === 'staff') {
+            $hasAccess = $user
+                && $user->facilities()
+                    ->where('facilities.id', $facility->id)
+                    ->exists();
+
+            if (! $hasAccess) {
+                return response()->json([
+                    'message' => 'You do not have access to this facility.',
+                ], 403);
+            }
+        }
+
+        $currentMonth = (int) date('n');
+        $currentYear = (int) date('Y');
+        $facilityIds = [(int) $facility->id];
+
+        $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
+        $lastMaintenanceByFacility = $this->loadLastMaintenanceByFacility($facilityIds);
+        $nextMaintenanceByFacility = $this->loadNextMaintenanceByFacility($facilityIds);
+
+        $facilityRecords = $recordsByFacility->get($facility->id, collect());
+        $currentMonthRecord = $facilityRecords->first(function ($record) use ($currentYear, $currentMonth) {
+            return (int) $record->year === $currentYear && (int) $record->month === $currentMonth;
+        });
+
+        [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
+        $alertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+        $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
+        $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
+
+        $insight = $this->energyRecommendationService->generateFacilityInsight([
+            'facility_name' => (string) ($facility->name ?? ''),
+            'facility_type' => (string) ($facility->type ?? ''),
+            'alert_level' => $alertLevel,
+            'trend_percent' => $trendPercent,
+            'actual_kwh' => $currentMonthRecord?->actual_kwh,
+            'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
+            'floor_area' => $facility->floor_area,
+            'last_maintenance' => $lastMaintenance?->completed_date,
+            'next_maintenance' => $nextMaintenance?->scheduled_date,
+        ], true);
+        $resolvedAlertLevel = (string) ($insight['alert_level'] ?? $alertLevel);
+        $resolvedRecommendation = (string) ($insight['recommendation'] ?? '');
+
+        return response()->json([
+            'facility_id' => (int) $facility->id,
+            'facility_name' => (string) ($facility->name ?? ''),
+            'alert_level' => $resolvedAlertLevel,
+            'trend_analysis' => $trendDisplay,
+            'recommendation' => $resolvedRecommendation,
+            'recommendation_source' => (string) ($insight['source'] ?? 'rules'),
+        ]);
+    }
+
     private function loadRecentRecordsByFacility(array $facilityIds, int $currentYear, int $currentMonth): Collection
     {
         if (empty($facilityIds)) {
@@ -97,6 +191,9 @@ class EnergyMonitoringController extends Controller
 
         return EnergyRecord::query()
             ->whereIn('facility_id', $facilityIds)
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })
             ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$startYm, $currentYm])
             ->orderBy('year')
             ->orderBy('month')
@@ -203,24 +300,6 @@ class EnergyMonitoringController extends Controller
         return Facility::resolveSizeLabelFromBaseline($baseline) ?? 'Small';
     }
 
-    private function resolveTrendRecommendation(string $alertLevel, ?float $trendPercent = null): string
-    {
-        if ($trendPercent === null) {
-            return 'Insufficient historical data to compute a trend. Add more monthly records to generate a 3-month comparison.';
-        }
-
-        $recommendations = [
-            'Critical' => 'Immediate action required! Trend shows a significant increase in energy use. Investigate and resolve excessive consumption.',
-            'High' => 'High upward trend detected. Review operations and address high energy consumption.',
-            'Moderate' => 'Moderate increase in trend. Monitor closely and plan for efficiency improvements.',
-            'Low' => 'Slight upward trend. Consider energy efficiency improvements.',
-            'Normal' => 'Stable trend. No immediate action required.',
-            'No Data' => 'Insufficient historical data to compute a trend. Add more monthly records to generate a 3-month comparison.',
-        ];
-
-        return $recommendations[$alertLevel] ?? 'No recommendation';
-    }
-
     private function resolveThresholdsForSize(string $sizeLabel): array
     {
         $sizeKey = match (strtolower(str_replace('_', '-', trim($sizeLabel)))) {
@@ -260,10 +339,10 @@ class EnergyMonitoringController extends Controller
         }
 
         $defaults = [
-            'small' => ['level1' => 3, 'level2' => 5, 'level3' => 10, 'level4' => 20, 'level5' => 30],
-            'medium' => ['level1' => 5, 'level2' => 7, 'level3' => 13, 'level4' => 23, 'level5' => 35],
-            'large' => ['level1' => 7, 'level2' => 10, 'level3' => 16, 'level4' => 26, 'level5' => 40],
-            'xlarge' => ['level1' => 10, 'level2' => 12, 'level3' => 18, 'level4' => 28, 'level5' => 45],
+            'small' => ['level1' => 5, 'level2' => 10, 'level3' => 15, 'level4' => 25, 'level5' => 35],
+            'medium' => ['level1' => 4, 'level2' => 8, 'level3' => 12, 'level4' => 20, 'level5' => 30],
+            'large' => ['level1' => 3, 'level2' => 6, 'level3' => 10, 'level4' => 16, 'level5' => 24],
+            'xlarge' => ['level1' => 2, 'level2' => 4, 'level3' => 7, 'level4' => 12, 'level5' => 18],
         ];
 
         $keys = [];

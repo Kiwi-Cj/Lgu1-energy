@@ -72,6 +72,9 @@ Route::get('/dashboard', function () {
 
 // Energy Monitoring Dashboard (Controller-based, for dynamic cards)
 Route::get('/modules/energy-monitoring', [EnergyMonitoringController::class, 'index'])->name('modules.energy-monitoring.index');
+Route::get('/modules/energy-monitoring/{facility}/ai-recommendation', [EnergyMonitoringController::class, 'aiRecommendation'])
+    ->middleware(['auth', 'verified'])
+    ->name('modules.energy-monitoring.ai-recommendation');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // System Settings route for dashboard shortcut - Super Admin only

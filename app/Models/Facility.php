@@ -33,6 +33,7 @@ class Facility extends Model
         'address',
         'barangay',
         'floor_area',
+        'floor_area_sqm',
         'floors',
         'year_built',
         'operating_hours',
@@ -55,11 +56,6 @@ class Facility extends Model
         return $this->hasMany(\App\Models\Maintenance::class, 'facility_id');
     }
 
-    public function energyReadings()
-    {
-        return $this->hasMany(\App\Models\EnergyReading::class);
-    }
-
     public function energyProfiles()
     {
         return $this->hasMany(\App\Models\EnergyProfile::class);
@@ -73,6 +69,26 @@ class Facility extends Model
     public function meters()
     {
         return $this->hasMany(FacilityMeter::class);
+    }
+
+    public function submeters()
+    {
+        return $this->hasMany(Submeter::class);
+    }
+
+    public function mainMeterReadings()
+    {
+        return $this->hasMany(MainMeterReading::class);
+    }
+
+    public function mainMeterBaselines()
+    {
+        return $this->hasMany(MainMeterBaseline::class);
+    }
+
+    public function mainMeterAlerts()
+    {
+        return $this->hasMany(MainMeterAlert::class);
     }
 
     public function auditLogs()
@@ -95,16 +111,21 @@ class Facility extends Model
 
         $now = now();
 
-        $reading = $this->energyReadings()
+        $reading = $this->energyRecords()
             ->where('month', $now->month)
             ->where('year', $now->year)
+            ->whereHas('meter', function ($query) {
+                $query->where('meter_type', 'main');
+            })
+            ->orderByDesc('day')
+            ->orderByDesc('id')
             ->first();
 
-        if (!$reading || $reading->kwh <= 0) {
+        if (! $reading || ! is_numeric($reading->actual_kwh) || (float) $reading->actual_kwh <= 0) {
             return null;
         }
 
-        return round(($this->baseline_kwh / $reading->kwh) * 100, 2);
+        return round(($this->baseline_kwh / (float) $reading->actual_kwh) * 100, 2);
     }
 
     /**
@@ -187,22 +208,26 @@ class Facility extends Model
 
         $now = Carbon::now();
 
-        $reading = $this->energyReadings()
+        $reading = $this->energyRecords()
             ->where('month', $now->month)
             ->where('year', $now->year)
+            ->whereHas('meter', function ($query) {
+                $query->where('meter_type', 'main');
+            })
+            ->orderByDesc('day')
+            ->orderByDesc('id')
             ->first();
 
-        if (!$reading) return false;
+        if (! $reading || ! is_numeric($reading->actual_kwh)) return false;
 
-        return $reading->kwh > ($this->baseline_kwh * 1.2);
+        return (float) $reading->actual_kwh > ($this->baseline_kwh * 1.2);
     }
 
     /**
-     * Always get baseline_kwh from first 3 months data if available, else fallback to DB column
+     * Return persisted baseline kWh value.
      */
     public function getBaselineKwhAttribute($value)
     {
-        // first3months_data table removed; fallback to baseline_kwh
         return $value;
     }
 

@@ -10,6 +10,7 @@ use App\Observers\EnergyIncidentObserver;
 use App\Observers\EnergyRecordObserver;
 use App\Models\Setting;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Validation\Rules\Password;
@@ -29,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::useBootstrapFive();
+
         EnergyRecord::observe(EnergyRecordObserver::class);
         EnergyIncident::observe(EnergyIncidentObserver::class);
 

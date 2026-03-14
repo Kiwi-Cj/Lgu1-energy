@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'ai_recommendations' => [
+        'enabled' => env('AI_RECOMMENDATIONS_ENABLED', false),
+        'provider' => env('AI_RECOMMENDATIONS_PROVIDER', 'rules'),
+        'openai' => [
+            'key' => env('OPENAI_API_KEY'),
+            'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+            'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+            'timeout' => env('OPENAI_TIMEOUT', 10),
+            'temperature' => env('OPENAI_TEMPERATURE', 0.2),
+            'max_tokens' => env('OPENAI_MAX_TOKENS', 180),
+        ],
+    ],
+
 ];

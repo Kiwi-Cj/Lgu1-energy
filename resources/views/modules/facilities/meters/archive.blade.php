@@ -4,6 +4,8 @@
 @section('content')
 @php
     $filters = $filters ?? ['q' => '', 'meter_type' => ''];
+    $subOnlyMode = (bool) ($subOnlyMode ?? false);
+    $mainMeterId = (int) ($mainMeterId ?? 0);
 @endphp
 <div style="padding:12px;">
     @if(session('success'))
@@ -15,33 +17,30 @@
 
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
-            <h2 style="margin:0;color:#2563eb;font-weight:800;">Meter Archive</h2>
+            <h2 style="margin:0;color:#2563eb;font-weight:800;">{{ $subOnlyMode ? 'Sub-meter Archive' : 'Meter Archive' }}</h2>
             <div style="color:#64748b;margin-top:4px;">Facility: <strong style="color:#1e293b;">{{ $facility->name }}</strong></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="{{ route('modules.facilities.meters.index', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#1e293b;padding:10px 14px;border-radius:10px;font-weight:700;">
-                <i class="fa fa-arrow-left"></i> Back to Meters
+            <a href="{{ $subOnlyMode && $mainMeterId > 0 ? route('modules.facilities.meters.main-submeters', [$facility->id, $mainMeterId]) : route('modules.facilities.energy-profile.index', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#1e293b;padding:10px 14px;border-radius:10px;font-weight:700;">
+                <i class="fa fa-arrow-left"></i> Back to Energy Profile
             </a>
         </div>
     </div>
 
     <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(15,23,42,0.06);overflow:hidden;">
         <form method="GET" action="{{ route('modules.facilities.meters.archive', $facility->id) }}" style="padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;gap:10px;flex-wrap:wrap;align-items:end;background:#fcfdff;">
+            @if($subOnlyMode)
+                <input type="hidden" name="sub_only" value="1">
+                <input type="hidden" name="main_meter_id" value="{{ $mainMeterId }}">
+                <input type="hidden" name="meter_type" value="sub">
+            @endif
             <div style="display:flex;flex-direction:column;gap:5px;min-width:240px;flex:1;">
                 <label style="font-size:.84rem;font-weight:700;color:#475569;">Search</label>
                 <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Meter name/number/location/reason" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
             </div>
-            <div style="display:flex;flex-direction:column;gap:5px;min-width:160px;">
-                <label style="font-size:.84rem;font-weight:700;color:#475569;">Type</label>
-                <select name="meter_type" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
-                    <option value="">All</option>
-                    <option value="main" @selected(($filters['meter_type'] ?? '') === 'main')>Main</option>
-                    <option value="sub" @selected(($filters['meter_type'] ?? '') === 'sub')>Sub</option>
-                </select>
-            </div>
             <div style="display:flex;gap:8px;">
                 <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Filter</button>
-                <a href="{{ route('modules.facilities.meters.archive', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#334155;border-radius:10px;padding:10px 14px;font-weight:700;">Reset</a>
+                <a href="{{ $subOnlyMode ? route('modules.facilities.meters.archive', ['facility' => $facility->id, 'meter_type' => 'sub', 'sub_only' => '1', 'main_meter_id' => $mainMeterId]) : route('modules.facilities.meters.archive', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#334155;border-radius:10px;padding:10px 14px;font-weight:700;">Reset</a>
             </div>
         </form>
 
@@ -54,7 +53,6 @@
                         <tr style="background:#f8fafc;color:#334155;">
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Meter</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Number</th>
-                            <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Type</th>
                             <th style="text-align:right;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Baseline kWh</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Reason</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Deleted By</th>
@@ -67,7 +65,6 @@
                             <tr>
                                 <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#1e293b;font-weight:700;">{{ $meter->meter_name }}</td>
                                 <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#475569;">{{ $meter->meter_number ?: '-' }}</td>
-                                <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#475569;">{{ strtoupper((string) $meter->meter_type) }}</td>
                                 <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#475569;text-align:right;">
                                     {{ $meter->baseline_kwh !== null ? number_format((float) $meter->baseline_kwh, 2) : '-' }}
                                 </td>

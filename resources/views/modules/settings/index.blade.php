@@ -402,12 +402,12 @@ body.dark-mode .settings-file-chip {
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
                     <span><i class="fa fa-bolt"></i> Energy Monitoring</span>
-                    <span><small>Alert thresholds + incident rules</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span><small>Baseline Threshold</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
                         <div class="settings-subblock">
-                            <h3>{{ $sizeLabel }} Facility Thresholds (%)</h3>
+                            <h3>{{ $sizeLabel }} Baseline Threshold (%)</h3>
                             <div class="settings-grid">
                                 @for($lvl = 1; $lvl <= 5; $lvl++)
                                     @php $field = "alert_level{$lvl}_{$sizeKey}"; @endphp

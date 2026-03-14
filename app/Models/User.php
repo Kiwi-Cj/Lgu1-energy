@@ -47,6 +47,26 @@ namespace App\Models;
             return $this->belongsToMany(Facility::class, 'facility_user', 'user_id', 'facility_id');
         }
 
+        public function encodedSubmeterReadings()
+        {
+            return $this->hasMany(SubmeterReading::class, 'encoded_by_user_id');
+        }
+
+        public function approvedSubmeterReadings()
+        {
+            return $this->hasMany(SubmeterReading::class, 'approved_by_engineer_id');
+        }
+
+        public function encodedMainMeterReadings()
+        {
+            return $this->hasMany(MainMeterReading::class, 'encoded_by');
+        }
+
+        public function approvedMainMeterReadings()
+        {
+            return $this->hasMany(MainMeterReading::class, 'approved_by');
+        }
+
         // Accessor for profile photo URL
         public function getProfilePhotoUrlAttribute()
         {

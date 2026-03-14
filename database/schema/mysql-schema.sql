@@ -1,64 +1,80 @@
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-DROP TABLE IF EXISTS `bills`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `bills` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `month` varchar(7) NOT NULL,
-  `kwh_consumed` decimal(10,2) NOT NULL,
-  `unit_cost` decimal(10,2) NOT NULL,
-  `total_bill` decimal(12,2) DEFAULT NULL,
-  `status` enum('Paid','Unpaid','Pending') NOT NULL DEFAULT 'Pending',
-  `meralco_bill_picture` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `bills_facility_id_foreign` (`facility_id`),
-  CONSTRAINT `bills_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- LGU Energy schema dump (generated from live DB connection)
+-- Database: ener_lgu
+-- Generated at: 2026-02-27 15:35:31
+
+SET FOREIGN_KEY_CHECKS=0;
+
 DROP TABLE IF EXISTS `cache`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cache` (
-  `key` varchar(255) NOT NULL,
-  `value` mediumtext NOT NULL,
-  `expiration` int(11) NOT NULL,
+  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expiration` int NOT NULL,
   PRIMARY KEY (`key`),
   KEY `cache_expiration_index` (`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `cache_locks`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cache_locks` (
-  `key` varchar(255) NOT NULL,
-  `owner` varchar(255) NOT NULL,
-  `expiration` int(11) NOT NULL,
+  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owner` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expiration` int NOT NULL,
   PRIMARY KEY (`key`),
   KEY `cache_locks_expiration_index` (`expiration`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `contact_message_replies`;
+CREATE TABLE `contact_message_replies` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `contact_message_id` bigint unsigned NOT NULL,
+  `sent_by_user_id` bigint unsigned DEFAULT NULL,
+  `recipient_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `subject` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachments` json DEFAULT NULL,
+  `send_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent',
+  `sent_at` timestamp NULL DEFAULT NULL,
+  `error_message` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `contact_message_replies_contact_message_id_created_at_index` (`contact_message_id`,`created_at`),
+  KEY `contact_message_replies_sent_by_user_id_index` (`sent_by_user_id`),
+  KEY `contact_message_replies_send_status_index` (`send_status`),
+  CONSTRAINT `contact_message_replies_contact_message_id_foreign` FOREIGN KEY (`contact_message_id`) REFERENCES `contact_messages` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `contact_messages`;
+CREATE TABLE `contact_messages` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `subject` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `mailed_to` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `emailed_at` timestamp NULL DEFAULT NULL,
+  `email_error` text COLLATE utf8mb4_unicode_ci,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `read_by_user_id` bigint unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `contact_messages_read_by_user_id_index` (`read_by_user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `energy_actions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `energy_actions` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `action_type` varchar(255) NOT NULL,
-  `description` text NOT NULL,
-  `priority` varchar(255) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `action_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `priority` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `target_date` date NOT NULL,
-  `status` varchar(255) NOT NULL DEFAULT 'Active',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Active',
   `risk_score` decimal(6,2) DEFAULT NULL,
-  `alert_level` varchar(255) DEFAULT NULL,
-  `trigger_reason` varchar(255) DEFAULT NULL,
+  `alert_level` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `trigger_reason` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `current_kwh` decimal(12,2) DEFAULT NULL,
   `baseline_kwh` decimal(12,2) DEFAULT NULL,
   `deviation` decimal(6,2) DEFAULT NULL,
@@ -68,302 +84,499 @@ CREATE TABLE `energy_actions` (
   KEY `energy_actions_facility_id_foreign` (`facility_id`),
   CONSTRAINT `energy_actions_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `energy_efficiency`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `energy_efficiency` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned DEFAULT NULL,
-  `month` varchar(255) NOT NULL,
-  `year` int(11) NOT NULL,
-  `actual_kwh` decimal(12,2) DEFAULT NULL,
-  `avg_kwh` int(11) NOT NULL,
-  `variance` int(11) NOT NULL,
-  `eui` float NOT NULL,
-  `rating` varchar(255) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `energy_incident_histories`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `energy_incident_histories` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `energy_record_id` bigint(20) unsigned NOT NULL,
-  `alert_level` varchar(255) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `energy_record_id` bigint unsigned NOT NULL,
+  `alert_level` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `deviation` decimal(6,2) NOT NULL,
   `date_detected` date NOT NULL,
-  `status` varchar(255) NOT NULL DEFAULT 'Open',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Open',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `energy_incident_histories_energy_record_id_foreign` (`energy_record_id`),
   CONSTRAINT `energy_incident_histories_energy_record_id_foreign` FOREIGN KEY (`energy_record_id`) REFERENCES `energy_records` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `energy_incidents`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `energy_incidents` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned DEFAULT NULL,
-  `description` varchar(255) NOT NULL,
-  `status` varchar(255) NOT NULL DEFAULT 'Open',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `energy_record_id` bigint unsigned DEFAULT NULL,
+  `facility_id` bigint unsigned DEFAULT NULL,
+  `month` int DEFAULT NULL,
+  `year` int DEFAULT NULL,
+  `deviation_percent` decimal(8,2) DEFAULT NULL,
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Open',
   `date_detected` date NOT NULL,
-  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `created_by` bigint unsigned DEFAULT NULL,
   `resolved_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  PRIMARY KEY (`id`),
+  KEY `energy_incidents_energy_record_id_foreign` (`energy_record_id`),
+  CONSTRAINT `energy_incidents_energy_record_id_foreign` FOREIGN KEY (`energy_record_id`) REFERENCES `energy_records` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `energy_profiles`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `energy_profiles` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `electric_meter_no` varchar(255) NOT NULL,
-  `utility_provider` varchar(255) NOT NULL,
-  `contract_account_no` varchar(255) NOT NULL,
-  `average_monthly_kwh` decimal(10,2) NOT NULL,
-  `main_energy_source` varchar(255) NOT NULL,
-  `backup_power` varchar(255) NOT NULL,
-  `transformer_capacity` varchar(255) DEFAULT NULL,
-  `number_of_meters` int(11) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `primary_meter_id` bigint unsigned DEFAULT NULL,
+  `electric_meter_no` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `utility_provider` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contract_account_no` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `baseline_kwh` decimal(10,2) NOT NULL,
+  `engineer_approved` tinyint(1) NOT NULL DEFAULT '0',
+  `baseline_locked` tinyint(1) NOT NULL DEFAULT '0',
+  `baseline_source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `main_energy_source` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `backup_power` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `transformer_capacity` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `number_of_meters` int NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `energy_profiles_facility_id_foreign` (`facility_id`),
+  KEY `energy_profiles_primary_meter_id_index` (`primary_meter_id`),
   CONSTRAINT `energy_profiles_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `energy_readings`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `energy_readings` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `month` int(11) NOT NULL,
-  `year` int(11) NOT NULL,
-  `kwh` decimal(10,2) NOT NULL,
-  `is_baseline_data` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `energy_readings_facility_id_foreign` (`facility_id`),
-  CONSTRAINT `energy_readings_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `energy_records`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `energy_records` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `year` int(11) NOT NULL,
-  `month` int(11) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `meter_id` bigint unsigned DEFAULT NULL,
+  `year` int NOT NULL,
+  `month` int NOT NULL,
+  `day` int DEFAULT NULL,
   `actual_kwh` decimal(12,2) NOT NULL,
+  `baseline_kwh` double DEFAULT NULL,
   `energy_cost` decimal(12,2) NOT NULL,
-  `alert` tinyint(1) NOT NULL DEFAULT 0,
-  `bill_image` varchar(255) DEFAULT NULL,
-  `recorded_by` bigint(20) unsigned NOT NULL,
+  `rate_per_kwh` decimal(10,2) DEFAULT NULL,
+  `alert` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bill_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `recorded_by` bigint unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deviation` decimal(8,2) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `energy_records_facility_id_foreign` (`facility_id`),
   KEY `energy_records_recorded_by_foreign` (`recorded_by`),
+  KEY `energy_records_meter_id_index` (`meter_id`),
   CONSTRAINT `energy_records_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
   CONSTRAINT `energy_records_recorded_by_foreign` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `facilities`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `facilities` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `type` varchar(255) NOT NULL,
-  `size` enum('small','medium','large','extralarge') NOT NULL DEFAULT 'small',
-  `status` varchar(255) NOT NULL DEFAULT 'active',
-  `department` varchar(255) DEFAULT NULL,
-  `address` varchar(255) NOT NULL,
-  `barangay` varchar(255) NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `size` enum('small','medium','large','extralarge') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'small',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `department` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `barangay` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `floor_area` double DEFAULT NULL,
-  `floors` int(11) DEFAULT NULL,
-  `year_built` int(11) DEFAULT NULL,
-  `operating_hours` varchar(255) DEFAULT NULL,
-  `image` varchar(255) DEFAULT NULL,
+  `floor_area_sqm` decimal(12,2) DEFAULT NULL,
+  `floors` int DEFAULT NULL,
+  `year_built` int DEFAULT NULL,
+  `operating_hours` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `baseline_status` varchar(255) NOT NULL DEFAULT 'collecting',
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `deleted_by` bigint unsigned DEFAULT NULL,
+  `archive_reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `baseline_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'collecting',
   `baseline_start_date` date DEFAULT NULL,
   `baseline_kwh` decimal(10,2) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  `engineer_approved` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `facilities_deleted_by_index` (`deleted_by`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `facility_audit_logs`;
+CREATE TABLE `facility_audit_logs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned DEFAULT NULL,
+  `facility_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `action` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `performed_by` bigint unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `facility_audit_logs_facility_id_index` (`facility_id`),
+  KEY `facility_audit_logs_action_index` (`action`),
+  KEY `facility_audit_logs_performed_by_index` (`performed_by`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `facility_meters`;
+CREATE TABLE `facility_meters` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `meter_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `meter_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `meter_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sub',
+  `parent_meter_id` bigint unsigned DEFAULT NULL,
+  `location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `multiplier` decimal(12,4) NOT NULL DEFAULT '1.0000',
+  `baseline_kwh` decimal(14,2) DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `deleted_by` bigint unsigned DEFAULT NULL,
+  `archive_reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `approved_by_user_id` bigint unsigned DEFAULT NULL,
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `facility_meters_facility_id_index` (`facility_id`),
+  KEY `facility_meters_meter_number_index` (`meter_number`),
+  KEY `facility_meters_meter_type_index` (`meter_type`),
+  KEY `facility_meters_parent_meter_id_index` (`parent_meter_id`),
+  KEY `facility_meters_status_index` (`status`),
+  KEY `facility_meters_deleted_by_index` (`deleted_by`),
+  KEY `facility_meters_approved_by_user_id_index` (`approved_by_user_id`),
+  KEY `facility_meters_approved_at_index` (`approved_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `facility_user`;
+CREATE TABLE `facility_user` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `facility_id` bigint unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `facility_user_user_id_facility_id_unique` (`user_id`,`facility_id`),
+  KEY `facility_user_facility_id_foreign` (`facility_id`),
+  CONSTRAINT `facility_user_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `facility_user_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `failed_jobs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `failed_jobs` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(255) NOT NULL,
-  `connection` text NOT NULL,
-  `queue` text NOT NULL,
-  `payload` longtext NOT NULL,
-  `exception` longtext NOT NULL,
-  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `connection` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `queue` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `exception` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `first3months_data`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `first3months_data` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `month1` decimal(12,2) NOT NULL,
-  `month2` decimal(12,2) NOT NULL,
-  `month3` decimal(12,2) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `first3months_data_facility_id_unique` (`facility_id`),
-  CONSTRAINT `first3months_data_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `jobs`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `jobs` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `queue` varchar(255) NOT NULL,
-  `payload` longtext NOT NULL,
-  `attempts` tinyint(3) unsigned NOT NULL,
-  `reserved_at` int(10) unsigned DEFAULT NULL,
-  `available_at` int(10) unsigned NOT NULL,
-  `created_at` int(10) unsigned NOT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `queue` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attempts` tinyint unsigned NOT NULL,
+  `reserved_at` int unsigned DEFAULT NULL,
+  `available_at` int unsigned NOT NULL,
+  `created_at` int unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `jobs_queue_index` (`queue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `main_meter_alerts`;
+CREATE TABLE `main_meter_alerts` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `main_meter_reading_id` bigint unsigned NOT NULL,
+  `facility_id` bigint unsigned NOT NULL,
+  `baseline_kwh` decimal(14,2) NOT NULL,
+  `current_kwh` decimal(14,2) NOT NULL,
+  `increase_percent` decimal(8,2) NOT NULL,
+  `alert_level` enum('none','warning','critical') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `reason` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `main_meter_alert_per_reading_unique` (`main_meter_reading_id`),
+  KEY `main_meter_alert_facility_level_idx` (`facility_id`,`alert_level`,`created_at`),
+  CONSTRAINT `main_meter_alerts_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `main_meter_alerts_main_meter_reading_id_foreign` FOREIGN KEY (`main_meter_reading_id`) REFERENCES `main_meter_readings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `main_meter_baselines`;
+CREATE TABLE `main_meter_baselines` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `baseline_type` enum('moving_avg_3','moving_avg_6','seasonal','normalized_per_day') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `baseline_kwh` decimal(14,2) NOT NULL,
+  `baseline_kwh_per_day` decimal(14,4) NOT NULL,
+  `baseline_peak_kw` decimal(12,2) DEFAULT NULL,
+  `computed_for_period` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `computed_at` timestamp NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `main_meter_baseline_unique` (`facility_id`,`baseline_type`,`computed_for_period`),
+  KEY `main_meter_baseline_period_idx` (`facility_id`,`computed_for_period`),
+  CONSTRAINT `main_meter_baselines_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `main_meter_readings`;
+CREATE TABLE `main_meter_readings` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `period_type` enum('monthly') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'monthly',
+  `period_start_date` date NOT NULL,
+  `period_end_date` date NOT NULL,
+  `reading_start_kwh` decimal(14,2) NOT NULL,
+  `reading_end_kwh` decimal(14,2) NOT NULL,
+  `kwh_used` decimal(14,2) GENERATED ALWAYS AS ((`reading_end_kwh` - `reading_start_kwh`)) STORED,
+  `operating_days` int unsigned DEFAULT NULL,
+  `peak_demand_kw` decimal(12,2) DEFAULT NULL,
+  `power_factor` decimal(5,4) DEFAULT NULL,
+  `encoded_by` bigint unsigned DEFAULT NULL,
+  `approved_by` bigint unsigned DEFAULT NULL,
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `main_meter_period_unique` (`facility_id`,`period_type`,`period_start_date`,`period_end_date`),
+  KEY `main_meter_readings_encoded_by_foreign` (`encoded_by`),
+  KEY `main_meter_readings_approved_by_foreign` (`approved_by`),
+  KEY `main_meter_facility_period_idx` (`facility_id`,`period_end_date`),
+  KEY `main_meter_approval_period_idx` (`approved_at`,`period_end_date`),
+  CONSTRAINT `main_meter_readings_approved_by_foreign` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `main_meter_readings_encoded_by_foreign` FOREIGN KEY (`encoded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `main_meter_readings_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `maintenance`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `maintenance` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `issue_type` varchar(255) NOT NULL,
-  `trigger_month` varchar(255) NOT NULL,
-  `efficiency_rating` varchar(255) NOT NULL,
-  `trend` varchar(255) NOT NULL,
-  `maintenance_type` varchar(255) NOT NULL DEFAULT 'Preventive',
-  `maintenance_status` varchar(255) NOT NULL DEFAULT 'Pending',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `energy_record_id` bigint unsigned DEFAULT NULL,
+  `issue_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `trigger_month` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `trend` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `maintenance_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Preventive',
+  `maintenance_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Pending',
   `scheduled_date` date DEFAULT NULL,
-  `assigned_to` varchar(255) DEFAULT NULL,
+  `assigned_to` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `completed_date` date DEFAULT NULL,
-  `remarks` text DEFAULT NULL,
+  `remarks` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `maintenance_facility_id_foreign` (`facility_id`),
+  KEY `maintenance_energy_record_id_foreign` (`energy_record_id`),
+  CONSTRAINT `maintenance_energy_record_id_foreign` FOREIGN KEY (`energy_record_id`) REFERENCES `energy_records` (`id`) ON DELETE SET NULL,
   CONSTRAINT `maintenance_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `maintenance_history`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `maintenance_history` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned NOT NULL,
-  `issue_type` varchar(255) NOT NULL,
-  `trigger_month` varchar(255) NOT NULL,
-  `efficiency_rating` varchar(255) NOT NULL,
-  `trend` varchar(255) NOT NULL,
-  `maintenance_type` varchar(255) NOT NULL DEFAULT 'Preventive',
-  `maintenance_status` varchar(255) NOT NULL DEFAULT 'Completed',
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `issue_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `trigger_month` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `efficiency_rating` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `trend` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `maintenance_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Preventive',
+  `maintenance_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Completed',
   `scheduled_date` date DEFAULT NULL,
-  `assigned_to` varchar(255) DEFAULT NULL,
+  `assigned_to` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `completed_date` date DEFAULT NULL,
-  `remarks` text DEFAULT NULL,
+  `remarks` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `maintenance_history_facility_id_foreign` (`facility_id`),
   CONSTRAINT `maintenance_history_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `migrations`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `migrations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `migration` varchar(255) NOT NULL,
-  `batch` int(11) NOT NULL,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `notifications`;
+CREATE TABLE `notifications` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `read_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `notifications_user_id_foreign` (`user_id`),
+  CONSTRAINT `notifications_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=76 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `otps`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `otps` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) unsigned NOT NULL,
-  `code` varchar(10) NOT NULL,
-  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `used` tinyint(1) NOT NULL DEFAULT 0,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `code` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expires_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `used` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `otps_user_id_foreign` (`user_id`),
   CONSTRAINT `otps_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `password_reset_tokens`;
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `sessions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sessions` (
-  `id` varchar(255) NOT NULL,
-  `user_id` bigint(20) unsigned DEFAULT NULL,
-  `ip_address` varchar(45) DEFAULT NULL,
-  `user_agent` text DEFAULT NULL,
-  `payload` longtext NOT NULL,
-  `last_activity` int(11) NOT NULL,
+  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_activity` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `sessions_user_id_index` (`user_id`),
   KEY `sessions_last_activity_index` (`last_activity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `settings`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `settings` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `key` varchar(255) NOT NULL,
-  `value` text DEFAULT NULL,
-  `group` varchar(255) DEFAULT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` text COLLATE utf8mb4_unicode_ci,
+  `group` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `settings_key_unique` (`key`)
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `submeter_alerts`;
+CREATE TABLE `submeter_alerts` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `submeter_reading_id` bigint unsigned NOT NULL,
+  `submeter_id` bigint unsigned NOT NULL,
+  `baseline_value_kwh` decimal(14,2) NOT NULL,
+  `current_value_kwh` decimal(14,2) NOT NULL,
+  `increase_percent` decimal(8,2) NOT NULL,
+  `alert_level` enum('none','warning','critical') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none',
+  `reason` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `submeter_alert_per_reading_unique` (`submeter_reading_id`),
+  KEY `submeter_alert_level_idx` (`alert_level`,`created_at`),
+  KEY `submeter_alert_submeter_idx` (`submeter_id`,`created_at`),
+  CONSTRAINT `submeter_alerts_submeter_id_foreign` FOREIGN KEY (`submeter_id`) REFERENCES `submeters` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `submeter_alerts_submeter_reading_id_foreign` FOREIGN KEY (`submeter_reading_id`) REFERENCES `submeter_readings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `submeter_baselines`;
+CREATE TABLE `submeter_baselines` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `submeter_id` bigint unsigned NOT NULL,
+  `baseline_type` enum('moving_avg_3','moving_avg_6','seasonal_month','normalized_per_sqm') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `months_window` tinyint unsigned DEFAULT NULL,
+  `baseline_value_kwh` decimal(14,2) NOT NULL,
+  `baseline_value_normalized` decimal(14,4) DEFAULT NULL,
+  `computed_for_period` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `computed_at` timestamp NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `submeter_baseline_unique` (`submeter_id`,`baseline_type`,`computed_for_period`),
+  KEY `submeter_baseline_lookup_idx` (`submeter_id`,`baseline_type`,`computed_for_period`),
+  CONSTRAINT `submeter_baselines_submeter_id_foreign` FOREIGN KEY (`submeter_id`) REFERENCES `submeters` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `submeter_equipments`;
+CREATE TABLE `submeter_equipments` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `submeter_id` bigint unsigned NOT NULL,
+  `equipment_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `quantity` int unsigned NOT NULL DEFAULT '1',
+  `rated_watts` decimal(12,2) NOT NULL,
+  `operating_hours_per_day` decimal(6,2) NOT NULL,
+  `operating_days_per_month` smallint unsigned NOT NULL,
+  `estimated_kwh` decimal(14,2) GENERATED ALWAYS AS (((((`rated_watts` * `quantity`) * `operating_hours_per_day`) * `operating_days_per_month`) / 1000)) STORED,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `submeter_equipment_unique_name` (`submeter_id`,`equipment_name`),
+  KEY `submeter_equipment_lookup_idx` (`submeter_id`,`equipment_name`),
+  CONSTRAINT `submeter_equipments_submeter_id_foreign` FOREIGN KEY (`submeter_id`) REFERENCES `submeters` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `submeter_readings`;
+CREATE TABLE `submeter_readings` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `submeter_id` bigint unsigned NOT NULL,
+  `period_type` enum('daily','weekly','monthly') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'monthly',
+  `period_start_date` date NOT NULL,
+  `period_end_date` date NOT NULL,
+  `reading_start_kwh` decimal(14,2) NOT NULL,
+  `reading_end_kwh` decimal(14,2) NOT NULL,
+  `kwh_used` decimal(14,2) GENERATED ALWAYS AS ((`reading_end_kwh` - `reading_start_kwh`)) STORED,
+  `operating_days` int unsigned DEFAULT NULL,
+  `encoded_by_user_id` bigint unsigned DEFAULT NULL,
+  `approved_by_engineer_id` bigint unsigned DEFAULT NULL,
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `submeter_period_unique` (`submeter_id`,`period_type`,`period_start_date`,`period_end_date`),
+  KEY `submeter_readings_encoded_by_user_id_foreign` (`encoded_by_user_id`),
+  KEY `submeter_readings_approved_by_engineer_id_foreign` (`approved_by_engineer_id`),
+  KEY `submeter_reading_period_idx` (`submeter_id`,`period_type`,`period_end_date`),
+  KEY `submeter_reading_approval_idx` (`approved_at`,`period_end_date`),
+  CONSTRAINT `submeter_readings_approved_by_engineer_id_foreign` FOREIGN KEY (`approved_by_engineer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `submeter_readings_encoded_by_user_id_foreign` FOREIGN KEY (`encoded_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `submeter_readings_submeter_id_foreign` FOREIGN KEY (`submeter_id`) REFERENCES `submeters` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `submeters`;
+CREATE TABLE `submeters` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned NOT NULL,
+  `submeter_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `meter_type` enum('single_phase','three_phase') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'single_phase',
+  `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `submeters_facility_id_submeter_name_unique` (`facility_id`,`submeter_name`),
+  KEY `submeters_facility_id_status_index` (`facility_id`,`status`),
+  CONSTRAINT `submeters_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `facility_id` bigint(20) unsigned DEFAULT NULL,
-  `full_name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` varchar(255) NOT NULL DEFAULT 'user',
-  `status` varchar(255) NOT NULL DEFAULT 'active',
-  `contact_number` varchar(255) DEFAULT NULL,
-  `department` varchar(255) DEFAULT NULL,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `facility_id` bigint unsigned DEFAULT NULL,
+  `full_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `profile_photo_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `username` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
+  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `contact_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `department` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `last_login` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -372,58 +585,6 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_username_unique` (`username`),
   KEY `users_facility_id_foreign` (`facility_id`),
   CONSTRAINT `users_facility_id_foreign` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (1,'2026_01_10_000001_create_facilities_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (2,'2026_01_10_015322_create_sessions_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (3,'2026_01_10_015603_create_cache_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (4,'2026_01_10_020000_create_users_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (5,'2026_01_10_021000_add_status_to_facilities_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (6,'2026_01_10_100100_create_energy_profiles_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (7,'2026_01_10_100200_create_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2026_01_10_100400_add_bill_image_to_energy_profiles_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2026_01_10_110000_add_created_by_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2026_01_10_120000_add_comparison_fields_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2026_01_11_000000_create_bills_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2026_01_11_120000_add_meralco_bill_picture_to_bills_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2026_01_11_160000_add_status_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2026_01_11_200000_create_energy_efficiency_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'2026_01_11_230000_create_maintenance_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (16,'2026_01_11_235000_create_maintenance_history_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (17,'2026_01_13_000001_add_facility_id_to_energy_efficiency_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2026_01_13_000002_drop_facility_string_from_energy_efficiency_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2026_01_14_000001_add_alert_flag_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2026_01_14_000002_add_facility_id_to_users_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2026_01_23_000001_add_otp_fields_to_users_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (22,'2026_01_23_053301_create_jobs_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (23,'2026_01_24_000001_add_size_to_facilities_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (24,'2026_01_24_000001_create_first3months_data_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (25,'2026_01_24_000001_drop_bill_image_from_energy_profiles_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (26,'2026_01_24_000001_update_energy_records_schema',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (27,'2026_01_24_100000_add_meralco_bill_picture_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (28,'2026_01_24_120000_rename_baseline_kwh_to_average_monthly_kwh_in_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (29,'2026_01_24_140000_add_baseline_fields_to_facilities',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (30,'2026_01_24_141000_create_energy_readings_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (31,'2026_01_24_150000_add_actual_kwh_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (32,'2026_01_24_151000_add_rate_per_kwh_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (33,'2026_01_24_152000_add_energy_cost_and_deviation_percent_to_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (34,'2026_01_24_153000_make_kwh_consumed_nullable_in_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (35,'2026_01_24_154000_make_actual_kwh_nullable_in_energy_efficiency_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (36,'2026_01_26_000001_rename_kwh_consumed_to_actual_kwh_in_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (37,'2026_01_26_120000_recreate_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (38,'2026_01_27_000000_create_energy_actions_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (39,'2026_01_27_000001_rename_alert_flag_to_alert_in_energy_records_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (40,'2026_01_27_095748_create_otps_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (41,'2026_01_27_otp_remove_fields_from_users_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (42,'2026_01_28_000001_create_energy_incident_histories_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (43,'2026_01_28_051057_create_failed_jobs_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (44,'2026_01_28_143757_create_energy_incidents_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (45,'2026_01_29_000001_create_settings_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (46,'2026_01_29_200000_update_energy_incidents_table',1);
+SET FOREIGN_KEY_CHECKS=1;

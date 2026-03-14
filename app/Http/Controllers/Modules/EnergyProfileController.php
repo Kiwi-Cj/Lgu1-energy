@@ -24,12 +24,13 @@ class EnergyProfileController extends Controller
         }
 
         $meter = FacilityMeter::where('facility_id', $facilityId)
+            ->whereNotNull('approved_at')
             ->whereKey($meterId)
             ->first();
 
         if (! $meter) {
             throw ValidationException::withMessages([
-                'primary_meter_id' => 'Selected primary main meter does not belong to this facility.',
+                'primary_meter_id' => 'Selected primary main meter is not approved or does not belong to this facility.',
             ]);
         }
 
@@ -46,6 +47,7 @@ class EnergyProfileController extends Controller
     {
         return FacilityMeter::where('facility_id', $facilityId)
             ->where('meter_type', 'main')
+            ->whereNotNull('approved_at')
             ->exists();
     }
 
@@ -72,7 +74,10 @@ class EnergyProfileController extends Controller
             return $validated;
         }
 
-        $meter = FacilityMeter::where('facility_id', $facilityId)->whereKey($primaryMeterId)->first();
+        $meter = FacilityMeter::where('facility_id', $facilityId)
+            ->whereNotNull('approved_at')
+            ->whereKey($primaryMeterId)
+            ->first();
         if (! $meter) {
             return $validated;
         }
@@ -81,9 +86,13 @@ class EnergyProfileController extends Controller
             $validated['electric_meter_no'] = (string) $meter->meter_number;
         }
 
-        $activeMeterCount = FacilityMeter::where('facility_id', $facilityId)->count();
-        if ($activeMeterCount > 0) {
-            $validated['number_of_meters'] = $activeMeterCount;
+        $activeMainMeterCount = FacilityMeter::where('facility_id', $facilityId)
+            ->where('meter_type', 'main')
+            ->where('status', 'active')
+            ->whereNotNull('approved_at')
+            ->count();
+        if ($activeMainMeterCount > 0) {
+            $validated['number_of_meters'] = $activeMainMeterCount;
         }
 
         return $validated;
@@ -103,6 +112,13 @@ class EnergyProfileController extends Controller
         }
     }
 
+    private function ensureEnergyProfileApprovalAccess()
+    {
+        if (! RoleAccess::can(auth()->user(), 'approve_energy_profile')) {
+            abort(403, 'Only super admin, admin, or engineer can approve Energy Profiles.');
+        }
+    }
+
     public function update(Request $request, $facilityId, $profileId)
     {
         $this->ensureEnergyProfileWriteAccess();
@@ -116,10 +132,6 @@ class EnergyProfileController extends Controller
 
         $profile = \App\Models\EnergyProfile::findOrFail($profileId);
         $profile->update($validated);
-        if (RoleAccess::is(auth()->user(), 'energy_officer') && ! $profile->engineer_approved) {
-            $profile->engineer_approved = true;
-            $profile->save();
-        }
 
         return redirect()->route('modules.facilities.energy-profile.index', $facilityId)
             ->with('success', 'Energy Profile updated!');
@@ -151,10 +163,6 @@ class EnergyProfileController extends Controller
         }
 
         $profile = EnergyProfile::create($validated);
-        if (RoleAccess::is(auth()->user(), 'energy_officer')) {
-            EnergyProfile::whereKey($profile->id)->update(['engineer_approved' => true]);
-            $profile->refresh();
-        }
         \Log::info('EnergyProfileController@store created', ['profile' => $profile]);
 
         return redirect()->back()->with('success', 'Energy Profile added!');
@@ -173,7 +181,7 @@ class EnergyProfileController extends Controller
      */
     public function toggleEngineerApproval($facilityId, $profileId)
     {
-        $this->ensureEnergyProfileWriteAccess();
+        $this->ensureEnergyProfileApprovalAccess();
 
         $profile = EnergyProfile::findOrFail($profileId);
         $profile->engineer_approved = !$profile->engineer_approved;
