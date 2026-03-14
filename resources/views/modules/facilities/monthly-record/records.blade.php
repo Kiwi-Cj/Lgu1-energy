@@ -794,6 +794,12 @@
         background: #2563eb;
         color: #fff;
     }
+    .monthly-modal-btn.primary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+        filter: grayscale(0.25);
+    }
 
     .monthly-modal-btn.neutral {
         background: #e2e8f0;
@@ -1517,7 +1523,7 @@
             </div>
 
             <div class="monthly-modal-actions">
-                <button type="submit" class="monthly-modal-btn primary" @disabled($meterOptions->isEmpty())>Save</button>
+                <button id="addMonthlyRecordSaveBtn" type="submit" class="monthly-modal-btn primary" @disabled($meterOptions->isEmpty())>Save</button>
                 <button type="button" onclick="closeAddModal()" class="monthly-modal-btn neutral">Cancel</button>
             </div>
         </form>
@@ -1544,6 +1550,7 @@ function openAddModal() {
     if (!modal) return;
     modal.style.display = 'flex';
     computeEnergyCost();
+    syncAddSaveButtonState();
 }
 
 function closeAddModal() {
@@ -1562,6 +1569,30 @@ function computeEnergyCost() {
     const rate = parseFloat(rateInput.value) || 0;
     const cost = kwh * rate;
     costInput.value = cost > 0 ? cost.toFixed(2) : '';
+}
+
+function syncAddSaveButtonState() {
+    const saveBtn = document.getElementById('addMonthlyRecordSaveBtn');
+    const meterSelect = document.getElementById('add_meter_id');
+    const dateInput = document.getElementById('add_date');
+    const kwhInput = document.getElementById('add_actual_kwh');
+    const rateInput = document.getElementById('add_rate_per_kwh');
+    if (!saveBtn || !meterSelect || !dateInput || !kwhInput || !rateInput) return;
+
+    const hasMainMeterOption = Array.from(meterSelect.options).some(function (option) {
+        return option.value !== '' && !option.disabled;
+    });
+
+    const hasSelectedMainMeter = String(meterSelect.value || '').trim() !== '';
+    const hasDate = String(dateInput.value || '').trim() !== '';
+
+    const kwhValue = Number(kwhInput.value);
+    const rateValue = Number(rateInput.value);
+    const hasValidKwh = String(kwhInput.value || '').trim() !== '' && Number.isFinite(kwhValue) && kwhValue >= 0;
+    const hasValidRate = String(rateInput.value || '').trim() !== '' && Number.isFinite(rateValue) && rateValue >= 0;
+
+    // Bill image is optional and should not block save.
+    saveBtn.disabled = !(hasMainMeterOption && hasSelectedMainMeter && hasDate && hasValidKwh && hasValidRate);
 }
 
 function openDeleteMonthlyRecordModal(recordId, monthName, year) {
@@ -1587,12 +1618,14 @@ document.getElementById('confirmDeleteMonthlyRecordBtn')?.addEventListener('clic
 document.getElementById('add_actual_kwh')?.addEventListener('input', computeEnergyCost);
 document.getElementById('add_rate_per_kwh')?.addEventListener('input', computeEnergyCost);
 computeEnergyCost();
+syncAddSaveButtonState();
 
 window.addEventListener('DOMContentLoaded', function () {
     const addModal = document.getElementById('addModal');
     const deleteModal = document.getElementById('deleteMonthlyRecordModal');
     const summaryModeSelect = document.getElementById('summary_mode');
     const summaryMonthSelect = document.getElementById('summary_month');
+    const addMonthlyRecordForm = document.getElementById('addMonthlyRecordForm');
 
     if (addModal) {
         addModal.addEventListener('click', function (event) {
@@ -1616,6 +1649,18 @@ window.addEventListener('DOMContentLoaded', function () {
             closeDeleteMonthlyRecordModal();
         }
     });
+
+    if (addMonthlyRecordForm) {
+        addMonthlyRecordForm.addEventListener('input', syncAddSaveButtonState);
+        addMonthlyRecordForm.addEventListener('change', syncAddSaveButtonState);
+        addMonthlyRecordForm.addEventListener('submit', function (event) {
+            syncAddSaveButtonState();
+            const saveBtn = document.getElementById('addMonthlyRecordSaveBtn');
+            if (saveBtn && saveBtn.disabled) {
+                event.preventDefault();
+            }
+        });
+    }
 
     document.querySelectorAll('[data-main-sub-toggle]').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -1641,6 +1686,7 @@ window.addEventListener('DOMContentLoaded', function () {
 
     summaryModeSelect?.addEventListener('change', syncSummaryMonthState);
     syncSummaryMonthState();
+    syncAddSaveButtonState();
 });
 
 @if($errors->has('duplicate'))
