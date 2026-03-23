@@ -8,11 +8,7 @@ namespace App\Http\Controllers;
         {
             public function indexHighAlerts()
             {
-                $incidents = EnergyIncidentHistory::with('energyRecord')
-                    ->where('alert_level', 'High')
-                    ->orderByDesc('date_detected')
-                    ->get();
-                return view('modules.energy-incidents.high-alerts', compact('incidents'));
+                return redirect()->route('modules.energy-incident.history');
             }
 
             public function log(Request $request)

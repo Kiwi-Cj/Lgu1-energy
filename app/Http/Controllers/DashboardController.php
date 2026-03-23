@@ -486,8 +486,6 @@ class DashboardController extends Controller
             }
         }
 
-        $notifications = $user->notifications()->orderByDesc('created_at')->take(10)->get();
-        $unreadCount = $user->notifications()->whereNull('read_at')->count();
         $role = $userRole;
 
         return view('modules.dashboard.index', [
@@ -509,8 +507,6 @@ class DashboardController extends Controller
             'criticalAlerts' => $criticalAlerts,
             'topFacilities' => $topFacilities,
             'kwhTrend' => $kwhTrend,
-            'notifications' => $notifications,
-            'unreadNotifCount' => $unreadCount,
             'role' => $role,
             'user' => $user,
             'periodStartLabel' => $periodStartLabel,

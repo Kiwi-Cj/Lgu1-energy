@@ -129,7 +129,7 @@ class FacilityController extends Controller
     public function edit($id)
     {
         $facility = Facility::findOrFail($id);
-        return view('modules.facilities.edit', compact('facility'));
+        return redirect()->route('modules.facilities.show', ['id' => $facility->id]);
     }
     public function show($id)
     {
@@ -420,7 +420,7 @@ class FacilityController extends Controller
         if ($profile && $profile->baseline_kwh && $profile->baseline_locked) {
             $avgKwh = $profile->baseline_kwh;
         } elseif ($energyRecords->count() >= 3) {
-            $avgKwh = round($energyRecords->take(3)->avg('kwh_consumed'), 2);
+            $avgKwh = round($energyRecords->take(3)->avg('actual_kwh'), 2);
             if ($profile) {
                 $profile->update([
                     'baseline_kwh' => $avgKwh,
@@ -450,7 +450,7 @@ class FacilityController extends Controller
 
         // TREND
         $trendRecords = $energyRecords->take(3)->reverse();
-        $trendData = $trendRecords->pluck('kwh_consumed');
+        $trendData = $trendRecords->pluck('actual_kwh');
         $trendLabels = $trendRecords->map(function ($r) {
             return $r->month ? date('M', mktime(0, 0, 0, $r->month, 1)) . ' ' . $r->year : '- ' . $r->year;
         });
@@ -473,8 +473,8 @@ class FacilityController extends Controller
         // USAGE ROWS
         $usageRows = [];
         foreach ($trendRecords as $rec) {
-            $variance = ($avgKwh !== null) ? $rec->kwh_consumed - $avgKwh : null;
-            $percent = ($avgKwh && $avgKwh > 0) ? ($rec->kwh_consumed / $avgKwh) * 100 : null;
+            $variance = ($avgKwh !== null) ? $rec->actual_kwh - $avgKwh : null;
+            $percent = ($avgKwh && $avgKwh > 0) ? ($rec->actual_kwh / $avgKwh) * 100 : null;
 
             if ($percent !== null && $percent > 120) $alert = 'High';
             elseif ($percent !== null && $percent >= 90) $alert = 'Medium';
@@ -482,7 +482,7 @@ class FacilityController extends Controller
 
             $usageRows[] = [
                 'month' => $rec->month ? date('M', mktime(0, 0, 0, $rec->month, 1)) . ' ' . $rec->year : '- ' . $rec->year,
-                'actual_kwh' => $rec->kwh_consumed,
+                'actual_kwh' => $rec->actual_kwh,
                 'baseline_kwh' => $avgKwh,
                 'variance' => $variance,
                 'alert_level' => $alert,
@@ -500,7 +500,7 @@ class FacilityController extends Controller
         // EUI
         $monthlyEui = $annualEui = null;
         if ($facility->floor_area && $energyRecords->count()) {
-            $latestKwh = $energyRecords->first()->kwh_consumed;
+            $latestKwh = $energyRecords->first()->actual_kwh;
             $monthlyEui = round($latestKwh / $facility->floor_area, 2);
             $annualEui = round(($latestKwh * 12) / $facility->floor_area, 2);
         }
@@ -630,9 +630,9 @@ class FacilityController extends Controller
             return [
                 'facility' => $f->name,
                 'barangay' => $f->barangay,
-                'actual_kwh' => $record?->kwh_consumed ?? 0,
+                'actual_kwh' => $record?->actual_kwh ?? 0,
                 'baseline_kwh' => $avg ?? 0,
-                'variance' => ($record?->kwh_consumed ?? 0) - ($avg ?? 0),
+                'variance' => ($record?->actual_kwh ?? 0) - ($avg ?? 0),
             ];
         });
 

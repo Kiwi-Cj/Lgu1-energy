@@ -6,8 +6,11 @@ use App\Models\EnergyRecord;
 use App\Models\MainMeterAlert;
 use App\Models\MainMeterBaseline;
 use App\Models\MainMeterReading;
+use App\Models\User;
+use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class MainMeterBaselineAlertService
 {
@@ -314,7 +317,7 @@ class MainMeterBaselineAlertService
             $lastThreeApproved
         );
 
-        return MainMeterAlert::updateOrCreate(
+        $alert = MainMeterAlert::updateOrCreate(
             ['main_meter_reading_id' => $reading->id],
             [
                 'facility_id' => $reading->facility_id,
@@ -325,6 +328,10 @@ class MainMeterBaselineAlertService
                 'reason' => $reason,
             ]
         );
+
+        $this->notifyRecipientsOfAlert($reading, $alert);
+
+        return $alert;
     }
 
     private function buildReason(
@@ -443,5 +450,63 @@ class MainMeterBaselineAlertService
         }
 
         return $baselineKwh !== null ? round($baselineKwh, 2) : null;
+    }
+
+    private function notifyRecipientsOfAlert(MainMeterReading $reading, MainMeterAlert $alert): void
+    {
+        try {
+            if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $reading->loadMissing('facility:id,name');
+
+            $facilityName = trim((string) ($reading->facility?->name ?? 'Unknown Facility'));
+            $periodLabel = $reading->periodLabel();
+            $level = strtoupper((string) ($alert->alert_level ?? 'warning'));
+            $increasePercent = is_numeric($alert->increase_percent) ? round((float) $alert->increase_percent, 2) : null;
+
+            $title = 'Main Meter Alert';
+            $message = $increasePercent !== null
+                ? "Main meter kWh increased at {$facilityName} ({$periodLabel}) by {$increasePercent}% [{$level}]"
+                : "Main meter kWh increased at {$facilityName} ({$periodLabel}) [{$level}]";
+
+            $recipients = User::query()
+                ->with('facilities:id')
+                ->get()
+                ->filter(function (User $user) use ($reading) {
+                    $role = RoleAccess::normalize($user);
+
+                    if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
+                        return true;
+                    }
+
+                    if ($role === 'staff' && $reading->facility_id) {
+                        return $user->facilities->contains('id', (int) $reading->facility_id);
+                    }
+
+                    return false;
+                });
+
+            foreach ($recipients as $recipient) {
+                $exists = $recipient->notifications()
+                    ->where('type', 'main_meter_alert')
+                    ->where('message', $message)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                $recipient->notifications()->create([
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => 'main_meter_alert',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Notification failure must not block alert persistence.
+        }
     }
 }

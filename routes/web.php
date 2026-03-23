@@ -13,7 +13,7 @@ Route::post('/notifications/{notification}/mark-read', [NotificationController::
 // Backward compatibility: allow GET /modules/settings/index to show settings page
 Route::get('/modules/settings/index', function () {
     if (! auth()->check() || ! RoleAccess::can(auth()->user(), 'access_settings')) {
-        return redirect()->route('modules.energy.index')
+        return redirect()->route('modules.energy-monitoring.index')
             ->with('error', 'You do not have permission to access System Settings.');
     }
     return app(\App\Http\Controllers\Modules\SettingsController::class)->index();
@@ -83,4 +83,3 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__ . '/modules.php';
-

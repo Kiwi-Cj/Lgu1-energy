@@ -119,15 +119,10 @@ class EnergyIncidentController extends Controller
             'severity' => $severity,
         ];
 
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-
         return view('modules.energy-incident.incidents', compact(
             'incidents',
             'role',
             'user',
-            'notifications',
-            'unreadNotifCount',
             'filters'
         ));
     }
@@ -199,10 +194,8 @@ class EnergyIncidentController extends Controller
 
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
-        return view('modules.energy-incident.history', compact('histories', 'role', 'user', 'notifications', 'unreadNotifCount'));
+        return view('modules.energy-incident.history', compact('histories', 'role', 'user'));
     }
 
     private function severityCaseExpression(string $deviationExpr, string $baselineExpr): string

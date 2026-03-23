@@ -8,11 +8,8 @@
 <div class="report card users-shell" style="padding:32px 24px 32px 24px; background:#f8fafc; border-radius:18px; box-shadow:0 8px 32px rgba(37,99,235,0.09); margin-bottom:32px;">
 
 @php
-	// Ensure notifications and unreadNotifCount are available for the notification bell
 	$user = auth()->user();
 	$role = \App\Support\RoleAccess::normalize($user?->role ?? '');
-	$notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-	$unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 	$isSuperAdmin = $role === 'super_admin';
 	$canAccessUsersPage = in_array($role, ['super_admin', 'admin'], true);
 @endphp

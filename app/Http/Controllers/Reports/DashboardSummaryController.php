@@ -22,15 +22,13 @@ class DashboardSummaryController extends Controller
         if ($request->filled('date_end')) {
             $energyQuery->whereRaw("CONCAT(year, '-', LPAD(month,2,'0')) <= ?", [$request->date_end]);
         }
-        $totalKwh = $energyQuery->sum('kwh_consumed');
+        $totalKwh = $energyQuery->sum('actual_kwh');
 
             // Bill query removed
             $totalCost = 0;
 
-        $lowEfficiencyCount = EnergyEfficiency::where('rating', 'Low')
-            ->whereIn('facility_id', Facility::where('status', 'Active')->pluck('id'))
-            ->distinct('facility_id')
-            ->count('facility_id');
+        // The legacy EnergyEfficiency model/table no longer exists in the current schema.
+        $lowEfficiencyCount = 0;
 
         return response()->json([
             'totalFacilities' => $totalFacilities,

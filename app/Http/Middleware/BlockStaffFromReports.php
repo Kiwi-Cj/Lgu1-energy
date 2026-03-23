@@ -12,7 +12,7 @@ class BlockStaffFromReports
         $role = strtolower((string) (auth()->user()->role ?? ''));
 
         if ($role === 'staff') {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access Reports.');
         }
 

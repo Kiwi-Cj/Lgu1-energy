@@ -255,13 +255,17 @@
         <div class="audit-header">
             <div>
                 <h2><i class="fa-solid fa-clipboard-list"></i> Audit Logs</h2>
-                <p class="audit-sub">Track authenticated user actions across the system modules.</p>
+                <p class="audit-sub">
+                    {{ ($filters['scope'] ?? 'essential') === 'essential'
+                        ? 'Showing essential audit events only: real logins/logouts and state-changing actions.'
+                        : 'Showing all stored audit events across the system modules.' }}
+                </p>
             </div>
         </div>
 
         <div class="audit-metrics">
             <div class="metric">
-                <div class="label">Total Logs</div>
+                <div class="label">{{ ($filters['scope'] ?? 'essential') === 'essential' ? 'Essential Logs' : 'Total Logs' }}</div>
                 <div class="value">{{ number_format($totalLogs ?? 0) }}</div>
             </div>
             <div class="metric">
@@ -302,6 +306,14 @@
                     @foreach($moduleOptions ?? [] as $module)
                         <option value="{{ $module }}" @selected(($filters['module'] ?? '') === $module)>{{ $module }}</option>
                     @endforeach
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="scope">Scope</label>
+                <select id="scope" name="scope">
+                    <option value="essential" @selected(($filters['scope'] ?? 'essential') === 'essential')>Essential Only</option>
+                    <option value="all" @selected(($filters['scope'] ?? '') === 'all')>All Logs</option>
                 </select>
             </div>
 

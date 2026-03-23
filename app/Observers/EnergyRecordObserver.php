@@ -6,6 +6,7 @@ use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\Maintenance;
+use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
 {
@@ -157,6 +158,21 @@ class EnergyRecordObserver
         EnergyRecord $record,
         string $severityKey
     ): void {
+        if (! Schema::hasTable('maintenance')) {
+            return;
+        }
+
+        $hasTriggerMonth = Schema::hasColumn('maintenance', 'trigger_month');
+        $hasIssueType = Schema::hasColumn('maintenance', 'issue_type');
+        $hasTrend = Schema::hasColumn('maintenance', 'trend');
+        $hasMaintenanceType = Schema::hasColumn('maintenance', 'maintenance_type');
+        $hasMaintenanceStatus = Schema::hasColumn('maintenance', 'maintenance_status');
+        $hasScheduledDate = Schema::hasColumn('maintenance', 'scheduled_date');
+        $hasAssignedTo = Schema::hasColumn('maintenance', 'assigned_to');
+        $hasCompletedDate = Schema::hasColumn('maintenance', 'completed_date');
+        $hasRemarks = Schema::hasColumn('maintenance', 'remarks');
+        $hasDescription = Schema::hasColumn('maintenance', 'description');
+
         $triggerMonth = date('M Y', mktime(0, 0, 0, (int) $record->month, 1, (int) $record->year));
 
         $recentUsage = $facility->energyRecords()
@@ -187,30 +203,63 @@ class EnergyRecordObserver
                 : 'Very high consumption deviation detected. Schedule corrective maintenance and review operating schedules.',
         };
 
-        $maintenance = Maintenance::query()
-            ->where('facility_id', $facility->id)
-            ->where('trigger_month', $triggerMonth)
-            ->where(function ($query) {
+        $maintenanceQuery = Maintenance::query()
+            ->where('facility_id', $facility->id);
+
+        if ($hasTriggerMonth) {
+            $maintenanceQuery->where('trigger_month', $triggerMonth);
+        }
+
+        if ($hasIssueType) {
+            $maintenanceQuery->where(function ($query) {
                 $query->where('issue_type', 'Auto-flagged: High Consumption')
                     ->orWhere('issue_type', 'Auto-flagged: Critical Consumption')
                     ->orWhere('issue_type', 'Auto-flagged: Very High Consumption');
-            })
-            ->whereIn('maintenance_status', ['Pending', 'Ongoing'])
-            ->first();
+            });
+        }
+
+        if ($hasMaintenanceStatus) {
+            $maintenanceQuery->whereIn('maintenance_status', ['Pending', 'Ongoing']);
+        }
+
+        $maintenance = $maintenanceQuery->first();
 
         if (! $maintenance) {
-            Maintenance::create([
+            $payload = [
                 'facility_id' => $facility->id,
-                'issue_type' => $issueType,
-                'trigger_month' => $triggerMonth,
-                'trend' => $trendIncreasing ? 'Increasing' : 'Stable',
-                'maintenance_type' => 'Corrective',
-                'maintenance_status' => 'Pending',
-                'scheduled_date' => null,
-                'assigned_to' => null,
-                'completed_date' => null,
-                'remarks' => $remarks,
-            ]);
+            ];
+
+            if ($hasIssueType) {
+                $payload['issue_type'] = $issueType;
+            }
+            if ($hasTriggerMonth) {
+                $payload['trigger_month'] = $triggerMonth;
+            }
+            if ($hasTrend) {
+                $payload['trend'] = $trendIncreasing ? 'Increasing' : 'Stable';
+            }
+            if ($hasMaintenanceType) {
+                $payload['maintenance_type'] = 'Corrective';
+            }
+            if ($hasMaintenanceStatus) {
+                $payload['maintenance_status'] = 'Pending';
+            }
+            if ($hasScheduledDate) {
+                $payload['scheduled_date'] = null;
+            }
+            if ($hasAssignedTo) {
+                $payload['assigned_to'] = null;
+            }
+            if ($hasCompletedDate) {
+                $payload['completed_date'] = null;
+            }
+            if ($hasRemarks) {
+                $payload['remarks'] = $remarks;
+            } elseif ($hasDescription) {
+                $payload['description'] = $remarks;
+            }
+
+            Maintenance::create($payload);
 
             return;
         }
@@ -220,11 +269,19 @@ class EnergyRecordObserver
             'Auto-flagged due to system-detected high energy consumption (incident auto-created).',
         ];
 
-        $existingRemarks = trim((string) ($maintenance->remarks ?? ''));
-        $maintenance->issue_type = $issueType;
-        $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
+        $existingRemarks = trim((string) (($hasRemarks ? $maintenance->remarks : ($hasDescription ? $maintenance->description : '')) ?? ''));
+        if ($hasIssueType) {
+            $maintenance->issue_type = $issueType;
+        }
+        if ($hasTrend) {
+            $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
+        }
         if (in_array($existingRemarks, $legacyRemarks, true)) {
-            $maintenance->remarks = $remarks;
+            if ($hasRemarks) {
+                $maintenance->remarks = $remarks;
+            } elseif ($hasDescription) {
+                $maintenance->description = $remarks;
+            }
         }
         $maintenance->save();
     }

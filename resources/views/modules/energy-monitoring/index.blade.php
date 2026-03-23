@@ -211,6 +211,65 @@
         font-weight: 600;
     }
 
+    .energy-monitor-page .cell-meter-name {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .energy-monitor-page .cell-meter-meta {
+        margin-top: 4px;
+        font-size: 0.76rem;
+        color: #64748b;
+    }
+
+    .energy-monitor-page .cell-meter-alert-summary {
+        margin-top: 4px;
+    }
+
+    .energy-monitor-page .cell-meter-hint {
+        margin-top: 4px;
+        font-size: 0.72rem;
+        color: #2563eb;
+        font-weight: 700;
+    }
+
+    .energy-monitor-page .main-meter-trigger {
+        margin-top: 6px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: #2563eb;
+        font-weight: 700;
+        font-size: 0.78rem;
+        cursor: pointer;
+    }
+
+    .energy-monitor-page .main-meter-trigger:hover {
+        color: #1d4ed8;
+    }
+
+    .energy-monitor-page .monitor-row-seeded {
+        background: linear-gradient(90deg, #eff6ff 0%, #f8fafc 100%);
+    }
+
+    .energy-monitor-page .monitor-row-seeded:hover {
+        background: linear-gradient(90deg, #dbeafe 0%, #f8fafc 100%);
+    }
+
+    .energy-monitor-page .seeded-facility-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        background: rgba(37, 99, 235, 0.08);
+        color: #1d4ed8;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
     .energy-monitor-page .trend-value {
         font-weight: 700;
     }
@@ -424,6 +483,99 @@
         justify-content: flex-end;
     }
 
+    .energy-monitor-page .meter-breakdown-total {
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid #dbeafe;
+        background: linear-gradient(145deg, #eff6ff, #f8fafc);
+    }
+
+    .energy-monitor-page .meter-breakdown-total-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #2563eb;
+    }
+
+    .energy-monitor-page .meter-breakdown-total-value {
+        margin-top: 6px;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .energy-monitor-page .meter-breakdown-list {
+        display: grid;
+        gap: 12px;
+        max-height: 340px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+
+    .energy-monitor-page .meter-breakdown-card {
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .energy-monitor-page .meter-breakdown-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+    }
+
+    .energy-monitor-page .meter-breakdown-card-title {
+        font-size: 0.96rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .energy-monitor-page .meter-breakdown-card-subtitle {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .energy-monitor-page .meter-breakdown-card-kwh {
+        text-align: right;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1d4ed8;
+        white-space: nowrap;
+    }
+
+    .energy-monitor-page .meter-breakdown-card-kwh small {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+    }
+
+    .energy-monitor-page .meter-breakdown-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .energy-monitor-page .meter-breakdown-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
     .energy-monitor-page .monitor-alert-pill {
         display: inline-flex;
         align-items: center;
@@ -433,6 +585,108 @@
         font-size: 0.8rem;
         font-weight: 700;
         border: 1px solid transparent;
+    }
+
+    .energy-monitor-page .meter-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+
+    .energy-monitor-page .meter-status-pill.status-active {
+        color: #166534;
+        background: #f0fdf4;
+        border-color: rgba(22, 101, 52, 0.2);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-all-active {
+        color: #166534;
+        background: #dcfce7;
+        border-color: rgba(22, 101, 52, 0.22);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-inactive {
+        color: #991b1b;
+        background: #fef2f2;
+        border-color: rgba(153, 27, 27, 0.2);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-all-inactive {
+        color: #991b1b;
+        background: #fee2e2;
+        border-color: rgba(153, 27, 27, 0.22);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-maintenance,
+    .energy-monitor-page .meter-status-pill.status-pending-approval {
+        color: #9a3412;
+        background: #fff7ed;
+        border-color: rgba(154, 52, 18, 0.2);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-all-maintenance,
+    .energy-monitor-page .meter-status-pill.status-mixed-status {
+        color: #1d4ed8;
+        background: #eff6ff;
+        border-color: rgba(29, 78, 216, 0.2);
+    }
+
+    .energy-monitor-page .meter-status-pill.status-no-main-meter,
+    .energy-monitor-page .meter-status-pill.status-unknown {
+        color: #475569;
+        background: #f1f5f9;
+        border-color: rgba(100, 116, 139, 0.22);
+    }
+
+    .energy-monitor-page .facility-status-cluster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .energy-monitor-page .facility-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .energy-monitor-page .facility-status-pill.status-facility-active,
+    .energy-monitor-page .facility-status-pill.status-maintenance-logged {
+        color: #166534;
+        background: #f0fdf4;
+        border-color: rgba(22, 101, 52, 0.2);
+    }
+
+    .energy-monitor-page .facility-status-pill.status-facility-inactive {
+        color: #991b1b;
+        background: #fef2f2;
+        border-color: rgba(153, 27, 27, 0.2);
+    }
+
+    .energy-monitor-page .facility-status-pill.status-facility-maintenance,
+    .energy-monitor-page .facility-status-pill.status-maintenance-ongoing {
+        color: #9a3412;
+        background: #fff7ed;
+        border-color: rgba(154, 52, 18, 0.2);
+    }
+
+    .energy-monitor-page .facility-status-pill.status-no-maintenance-log,
+    .energy-monitor-page .facility-status-pill.status-facility-unknown {
+        color: #475569;
+        background: #f1f5f9;
+        border-color: rgba(100, 116, 139, 0.22);
     }
 
     .energy-monitor-page .recommendation-btn {
@@ -515,6 +769,40 @@
         color: #93c5fd;
     }
 
+    body.dark-mode .energy-monitor-page .cell-meter-name {
+        color: #f8fafc;
+    }
+
+    body.dark-mode .energy-monitor-page .cell-meter-meta {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .energy-monitor-page .cell-meter-hint {
+        color: #93c5fd;
+    }
+
+    body.dark-mode .energy-monitor-page .main-meter-trigger {
+        color: #93c5fd;
+    }
+
+    body.dark-mode .energy-monitor-page .main-meter-trigger:hover {
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-row-seeded {
+        background: linear-gradient(90deg, rgba(30, 64, 175, 0.18) 0%, rgba(15, 23, 42, 0.92) 100%);
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-row-seeded:hover {
+        background: linear-gradient(90deg, rgba(37, 99, 235, 0.22) 0%, rgba(31, 41, 55, 0.96) 100%) !important;
+    }
+
+    body.dark-mode .energy-monitor-page .seeded-facility-badge {
+        background: rgba(37, 99, 235, 0.18);
+        color: #bfdbfe;
+        border-color: rgba(147, 197, 253, 0.25);
+    }
+
     body.dark-mode .energy-monitor-page .trend-positive {
         color: #fb7185;
     }
@@ -571,6 +859,78 @@
         border-color: rgba(148, 163, 184, 0.25);
     }
 
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-active {
+        color: #86efac;
+        background: rgba(22, 101, 52, 0.25);
+        border-color: rgba(74, 222, 128, 0.28);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-all-active {
+        color: #86efac;
+        background: rgba(22, 101, 52, 0.32);
+        border-color: rgba(74, 222, 128, 0.32);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-inactive {
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.35);
+        border-color: rgba(248, 113, 113, 0.35);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-all-inactive {
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.42);
+        border-color: rgba(248, 113, 113, 0.38);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-maintenance,
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-pending-approval {
+        color: #fde68a;
+        background: rgba(146, 64, 14, 0.3);
+        border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-all-maintenance,
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-mixed-status {
+        color: #93c5fd;
+        background: rgba(37, 99, 235, 0.2);
+        border-color: rgba(147, 197, 253, 0.28);
+    }
+
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-no-main-meter,
+    body.dark-mode .energy-monitor-page .meter-status-pill.status-unknown {
+        color: #cbd5e1;
+        background: rgba(51, 65, 85, 0.35);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-facility-active,
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-maintenance-logged {
+        color: #86efac;
+        background: rgba(22, 101, 52, 0.25);
+        border-color: rgba(74, 222, 128, 0.28);
+    }
+
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-facility-inactive {
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.35);
+        border-color: rgba(248, 113, 113, 0.35);
+    }
+
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-facility-maintenance,
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-maintenance-ongoing {
+        color: #fde68a;
+        background: rgba(146, 64, 14, 0.3);
+        border-color: rgba(251, 191, 36, 0.35);
+    }
+
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-no-maintenance-log,
+    body.dark-mode .energy-monitor-page .facility-status-pill.status-facility-unknown {
+        color: #cbd5e1;
+        background: rgba(51, 65, 85, 0.35);
+        border-color: rgba(148, 163, 184, 0.25);
+    }
+
     body.dark-mode .energy-monitor-page .recommendation-modal-panel {
         background: #111827 !important;
         color: #e2e8f0 !important;
@@ -599,6 +959,40 @@
 
     body.dark-mode .energy-monitor-page .recommendation-close-btn {
         background: #1d4ed8;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-total {
+        background: linear-gradient(145deg, #102138, #111827);
+        border-color: #2f4c72;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-total-label {
+        color: #93c5fd;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-total-value,
+    body.dark-mode .energy-monitor-page .meter-breakdown-card-title {
+        color: #f8fafc;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-card-subtitle,
+    body.dark-mode .energy-monitor-page .meter-breakdown-card-kwh small {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-card-kwh {
+        color: #93c5fd;
+    }
+
+    body.dark-mode .energy-monitor-page .meter-breakdown-pill {
+        background: #111827;
+        border-color: #334155;
+        color: #cbd5e1;
     }
 
     /* Dark mode fallback for remaining inline-styled blocks */
@@ -669,8 +1063,6 @@
 
 @php
     $user = auth()->user();
-    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
     $userRole = strtolower($user->role ?? '');
 @endphp
 
@@ -691,9 +1083,9 @@
     <div class="monitor-header">
         <div>
             <h1 class="monitor-title">
-                Energy Trend Monitoring <span class="monitor-title-accent">Dashboard</span>
+                Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
-            <p class="monitor-subtitle">Overview of all facility energy performance</p>
+            <p class="monitor-subtitle">Main meter status and trend overview for all facilities</p>
         </div>
         
         <form class="search-form" method="GET" action="">
@@ -727,12 +1119,15 @@
                 <tr>
                     <th>Facility</th>
                     <th>Type</th>
+                    <th>Main Meter</th>
+                    <th>Main Meter Status</th>
                     <th>Month</th>
+                    <th>Main Meter kWh</th>
                     <th>Floor Area</th>
                     <th>Baseline kWh</th>
                     <th>Trend</th>
                     <th>EUI</th>
-                    <th>Alerts</th>
+                    <th>Facility Status</th>
                     <th>AI Recommendation</th>
                 </tr>
             </thead>
@@ -742,61 +1137,130 @@
                     $record = $facility->currentMonthRecord;
                     $trendAnalysis = $facility->trend_analysis ?? '-';
                     $alertLevel = $facility->alert_level ?? 'No Data';
+                    $mainMeterLabel = $facility->main_meter_name ?? 'No Main Meter';
+                    $mainMeterStatus = $facility->main_meter_status_label ?? 'No Main Meter';
+                    $mainMeterMeta = trim((string) ($facility->main_meter_meta_label ?? ''));
+                    $mainMeterAlertSummary = trim((string) ($facility->main_meter_alert_summary_label ?? ''));
+                    $mainMeterAlertSummarySlug = \Illuminate\Support\Str::slug($alertLevel, '-');
+                    $mainMeterCount = collect($facility->main_meters ?? [])->count();
+                    $mainMeterTooltip = collect($facility->main_meters ?? [])
+                        ->map(function ($meter) {
+                            $name = trim((string) ($meter->meter_name ?? 'Main Meter'));
+                            $number = trim((string) ($meter->meter_number ?? ''));
+                            $status = ucfirst(strtolower(trim((string) ($meter->status ?? 'Unknown'))));
+                            $approval = $meter->approved_at ? 'Approved' : 'Pending Approval';
+                            $alert = trim((string) ($meter->current_month_alert_level ?? 'No Data'));
+
+                            return trim($name . ($number !== '' ? ' [' . $number . ']' : '') . ' - ' . $status . ' - ' . $approval . ' - Alert: ' . $alert);
+                        })
+                        ->filter()
+                        ->implode(' | ');
+                    $mainMeterBreakdown = collect($facility->main_meters ?? [])
+                        ->map(function ($meter) {
+                            return [
+                                'meter_name' => trim((string) ($meter->meter_name ?? 'Main Meter')),
+                                'meter_number' => trim((string) ($meter->meter_number ?? '')),
+                                'status_label' => ucfirst(strtolower(trim((string) ($meter->status ?? 'Unknown')))),
+                                'approval_label' => $meter->approved_at ? 'Approved' : 'Pending Approval',
+                                'alert_label' => trim((string) ($meter->current_month_alert_level ?? 'No Data')),
+                                'actual_kwh' => is_numeric($meter->current_month_kwh ?? null) ? (float) $meter->current_month_kwh : null,
+                                'baseline_kwh' => is_numeric($meter->current_month_baseline_kwh ?? null) ? (float) $meter->current_month_baseline_kwh : null,
+                            ];
+                        })
+                        ->values();
+                    $statusSlug = \Illuminate\Support\Str::slug($mainMeterStatus, '-');
+                    $facilityStatusLabel = $facility->facility_status_label ?? 'Facility Unknown';
+                    $maintenanceStatusLabel = $facility->maintenance_status_label ?? 'No Maintenance Log';
+                    $facilityNameRaw = (string) ($facility->name ?? '');
+                    $isSeededDualMain = \Illuminate\Support\Str::startsWith($facilityNameRaw, '[Seeder 2M]');
+                    $facilityNameDisplay = $isSeededDualMain ? trim((string) preg_replace('/^\[Seeder 2M\]\s*/', '', $facilityNameRaw)) : $facilityNameRaw;
                     $eui = null;
-                    $hasCurrentMonth = $record !== null;
                 @endphp
-                @if($hasCurrentMonth)
-                    @php
-                        $actualKwh = $record->actual_kwh ?? 0;
-                        $floorArea = $facility->floor_area;
-                        $eui = ($floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
-                        $trendRecommendation = $facility->trend_recommendation ?? 'No recommendation';
-                        $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', $facility->id);
-                    @endphp
-                    <tr class="monitor-row" data-facility-row data-facility-id="{{ (int) $facility->id }}">
-                        <td class="cell-facility">{{ $facility->name }}</td>
-                        <td class="cell-type">{{ $facility->type }}</td>
-                        <td>
-                            @php $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; @endphp
-                            {{ $monthsArr[$record->month-1] ?? '-' }}
-                        </td>
-                        <td>{{ $facility->floor_area ?? '-' }} <small class="unit-label">m2</small></td>
-                        <td class="cell-baseline">
-                            @php
-                                // Get baseline_kwh from the current month's energy record
-                                $baselineKwh = $record->baseline_kwh ?? null;
-                            @endphp
-                            {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
-                        </td>
-                        <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
-                            {{ $trendAnalysis }}
-                        </td>
-                        <td>{{ $eui ?? '-' }}</td>
-                        <td>
+                @php
+                    $actualKwh = $record->actual_kwh ?? 0;
+                    $floorArea = $facility->floor_area;
+                    $eui = ($record && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
+                    $trendRecommendation = $facility->trend_recommendation ?? 'Not enough data yet to generate a trend recommendation.';
+                    $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', $facility->id);
+                    $baselineKwh = $record->baseline_kwh ?? null;
+                @endphp
+                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
+                    <td class="cell-facility">
+                        <div>{{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }}</div>
+                        @if($isSeededDualMain)
+                            <div class="seeded-facility-badge">Sample: 2 Main Meters</div>
+                        @endif
+                    </td>
+                    <td class="cell-type">{{ $facility->type }}</td>
+                    <td title="{{ $mainMeterTooltip !== '' ? $mainMeterTooltip : 'No main meter configured' }}">
+                        <div class="cell-meter-name">{{ $mainMeterLabel }}</div>
+                        @if($mainMeterMeta !== '')
+                            <div class="cell-meter-meta">{{ $mainMeterMeta }}</div>
+                        @endif
+                        @if($mainMeterAlertSummary !== '')
+                            <div class="cell-meter-alert-summary">
+                                <span class="monitor-alert-pill alert-pill-level-{{ $mainMeterAlertSummarySlug }}">{{ $mainMeterAlertSummary }}</span>
+                            </div>
+                        @endif
+                        @if($mainMeterCount > 1)
+                            <button
+                                type="button"
+                                class="main-meter-trigger"
+                                onclick='openMeterBreakdownModal(@json($facilityNameDisplay !== "" ? $facilityNameDisplay : $facilityNameRaw), @json($mainMeterLabel), @json($mainMeterStatus), @json($record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : null), @json($mainMeterBreakdown))'
+                            >
+                                <span class="cell-meter-hint">View main meter breakdown</span>
+                            </button>
+                        @endif
+                    </td>
+                    <td>
+                        <span class="meter-status-pill status-{{ $statusSlug }}">{{ $mainMeterStatus }}</span>
+                    </td>
+                    <td>
+                        @php $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; @endphp
+                        {{ $record ? ($monthsArr[$record->month - 1] ?? '-') : '-' }}
+                    </td>
+                    <td class="cell-baseline">
+                        {{ $record && is_numeric($record->actual_kwh ?? null) ? number_format((float) $record->actual_kwh, 2) : '-' }}
+                    </td>
+                    <td>{{ $facility->floor_area ?? '-' }} <small class="unit-label">m2</small></td>
+                    <td class="cell-baseline">
+                        {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
+                    </td>
+                    <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
+                        {{ $trendAnalysis }}
+                    </td>
+                    <td>{{ $eui ?? '-' }}</td>
+                    <td>
+                        <div class="facility-status-cluster">
                             <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" data-alert-pill>
                                 {{ $alertLevel }}
                             </span>
-                        </td>
-                        <td>
-                            @php
-                                $iconData = [
-                                    'Critical' => ['icon' => '!'],
-                                    'Very High' => ['icon' => '!'],
-                                    'High' => ['icon' => '!'],
-                                    'Warning' => ['icon' => 'i'],
-                                    'Normal' => ['icon' => 'i'],
-                                    'No Data' => ['icon' => 'i'],
-                                ][$alertLevel] ?? ['icon' => 'i'];
-                            @endphp
-                            <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl))'>
-                                <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
-                            </button>
-                        </td>
-                       
-                    </tr>
-                @endif
+                            <span class="facility-status-pill status-{{ \Illuminate\Support\Str::slug($facilityStatusLabel, '-') }}">
+                                {{ $facilityStatusLabel }}
+                            </span>
+                            <span class="facility-status-pill status-{{ \Illuminate\Support\Str::slug($maintenanceStatusLabel, '-') }}">
+                                {{ $maintenanceStatusLabel }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        @php
+                            $iconData = [
+                                'Critical' => ['icon' => '!'],
+                                'Very High' => ['icon' => '!'],
+                                'High' => ['icon' => '!'],
+                                'Warning' => ['icon' => 'i'],
+                                'Normal' => ['icon' => 'i'],
+                                'No Data' => ['icon' => 'i'],
+                            ][$alertLevel] ?? ['icon' => 'i'];
+                        @endphp
+                        <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl))'>
+                            <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
+                        </button>
+                    </td>
+                </tr>
             @empty
-                <tr><td colspan="9" class="monitor-empty">No facilities found.</td></tr>
+                <tr><td colspan="12" class="monitor-empty">No facilities found.</td></tr>
             @endforelse
             </tbody>
         </table>
@@ -827,8 +1291,53 @@
     </div>
 </div>
 
+<div id="meterBreakdownModal" class="recommendation-modal">
+    <div class="recommendation-modal-inner">
+        <div class="recommendation-modal-panel">
+            <button type="button" onclick="closeMeterBreakdownModal()" class="recommendation-close-icon">&times;</button>
+            <div class="recommendation-modal-header">
+                <div class="recommendation-alert-badge">M</div>
+                <div class="recommendation-title-wrap">
+                    <h2 id="meterBreakdownModalTitle" class="recommendation-title"></h2>
+                    <div id="meterBreakdownModalMeta" class="recommendation-meta" style="display: block;"></div>
+                </div>
+            </div>
+            <div class="meter-breakdown-total">
+                <div class="meter-breakdown-total-label">Combined Main Meter kWh</div>
+                <div id="meterBreakdownTotalKwh" class="meter-breakdown-total-value">-</div>
+            </div>
+            <div id="meterBreakdownList" class="meter-breakdown-list"></div>
+            <div class="recommendation-footer">
+                <button type="button" onclick="closeMeterBreakdownModal()" class="recommendation-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const recommendationCache = {};
+const metricNumberFormatter = new Intl.NumberFormat('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatMetricValue(value, suffix = '') {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+        return 'No reading';
+    }
+
+    return `${metricNumberFormatter.format(numeric)}${suffix}`;
+}
 
 function normalizeAlertLevel(level) {
     const raw = String(level || '').trim().toLowerCase();
@@ -842,6 +1351,10 @@ function normalizeAlertLevel(level) {
 
 function alertSlug(alertLevel) {
     return normalizeAlertLevel(alertLevel).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function alertPillClass(alertLevel) {
+    return `alert-pill-level-${alertSlug(alertLevel)}`;
 }
 
 function updateTableAlertPill(facilityId, alertLevel) {
@@ -969,12 +1482,88 @@ function closeRecommendationModal() {
     document.getElementById('recommendationModal').style.display = 'none';
 }
 
+function openMeterBreakdownModal(facilityName, meterLabel, meterStatus, totalKwh, meters) {
+    const modal = document.getElementById('meterBreakdownModal');
+    const title = document.getElementById('meterBreakdownModalTitle');
+    const meta = document.getElementById('meterBreakdownModalMeta');
+    const total = document.getElementById('meterBreakdownTotalKwh');
+    const list = document.getElementById('meterBreakdownList');
+    const rows = Array.isArray(meters) ? meters : [];
+
+    title.textContent = `${facilityName} Main Meter Breakdown`;
+    meta.textContent = `${meterLabel} - ${meterStatus}`;
+    total.textContent = formatMetricValue(totalKwh, ' kWh');
+
+    if (rows.length === 0) {
+        list.innerHTML = '<div class="meter-breakdown-card"><div class="meter-breakdown-card-title">No main meter data available.</div></div>';
+        modal.style.display = 'flex';
+        return;
+    }
+
+    list.innerHTML = rows.map((meter, index) => {
+        const number = String(meter && meter.meter_number ? meter.meter_number : '').trim();
+        const subtitle = number !== '' ? `Meter No. ${escapeHtml(number)}` : 'Meter number not set';
+        const status = escapeHtml(meter && meter.status_label ? meter.status_label : 'Unknown');
+        const approval = escapeHtml(meter && meter.approval_label ? meter.approval_label : 'Pending Approval');
+        const alertLabelRaw = meter && meter.alert_label ? meter.alert_label : 'No Data';
+        const alertLabel = escapeHtml(alertLabelRaw);
+        const baseline = Number.isFinite(Number(meter && meter.baseline_kwh))
+            ? `Baseline ${formatMetricValue(meter.baseline_kwh, ' kWh')}`
+            : 'No baseline';
+
+        return `
+            <div class="meter-breakdown-card">
+                <div class="meter-breakdown-card-head">
+                    <div>
+                        <div class="meter-breakdown-card-title">${escapeHtml(meter && meter.meter_name ? meter.meter_name : `Main Meter ${index + 1}`)}</div>
+                        <div class="meter-breakdown-card-subtitle">${subtitle}</div>
+                    </div>
+                    <div class="meter-breakdown-card-kwh">
+                        ${formatMetricValue(meter && meter.actual_kwh, ' kWh')}
+                        <small>Current month</small>
+                    </div>
+                </div>
+                <div class="meter-breakdown-meta">
+                    <span class="meter-breakdown-pill">${status}</span>
+                    <span class="meter-breakdown-pill">${approval}</span>
+                    <span class="meter-breakdown-pill ${alertPillClass(alertLabelRaw)}">Alert: ${alertLabel}</span>
+                    <span class="meter-breakdown-pill">${escapeHtml(baseline)}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    modal.style.display = 'flex';
+}
+
+function closeMeterBreakdownModal() {
+    document.getElementById('meterBreakdownModal').style.display = 'none';
+}
+
 // Auto-hide alert
 window.addEventListener('DOMContentLoaded', () => {
     const success = document.getElementById('successAlert');
     if(success) setTimeout(() => success.style.opacity = '0', 3000);
+
+    const recommendationModal = document.getElementById('recommendationModal');
+    const meterBreakdownModal = document.getElementById('meterBreakdownModal');
+
+    if (recommendationModal) {
+        recommendationModal.addEventListener('click', (event) => {
+            if (event.target === recommendationModal) {
+                closeRecommendationModal();
+            }
+        });
+    }
+
+    if (meterBreakdownModal) {
+        meterBreakdownModal.addEventListener('click', (event) => {
+            if (event.target === meterBreakdownModal) {
+                closeMeterBreakdownModal();
+            }
+        });
+    }
 });
 </script>
 
 @endsection
-

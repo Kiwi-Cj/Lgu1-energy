@@ -130,9 +130,6 @@ class ContactInboxController extends Controller
             ->paginate(15, ['*'], 'sent_page')
             ->withQueryString();
 
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-
         $stats = [
             'total' => ContactMessage::count(),
             'today' => ContactMessage::whereDate('created_at', today())->count(),
@@ -166,8 +163,6 @@ class ContactInboxController extends Controller
             'filterCounts' => $filterCounts,
             'tabCounts' => $tabCounts,
             'stats' => $stats,
-            'notifications' => $notifications,
-            'unreadNotifCount' => $unreadNotifCount,
             'role' => $role,
             'user' => $user,
         ]);

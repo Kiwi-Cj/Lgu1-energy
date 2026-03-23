@@ -12,6 +12,8 @@ namespace App\Models;
     {
         use HasFactory, Notifiable;
 
+        private ?array $notificationPanelCache = null;
+
         // OTP relationship
         public function otps()
         {
@@ -22,6 +24,23 @@ namespace App\Models;
         public function notifications()
         {
             return $this->hasMany(Notification::class);
+        }
+
+        public function notificationPanelData(): array
+        {
+            if ($this->notificationPanelCache !== null) {
+                return $this->notificationPanelCache;
+            }
+
+            return $this->notificationPanelCache = [
+                'notifications' => $this->notifications()
+                    ->orderByDesc('created_at')
+                    ->take(10)
+                    ->get(),
+                'unreadNotifCount' => $this->notifications()
+                    ->whereNull('read_at')
+                    ->count(),
+            ];
         }
 
         // Add your fillable, hidden, casts, etc. as needed

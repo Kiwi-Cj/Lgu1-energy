@@ -3,8 +3,6 @@
 
 @php
     $user = auth()->user();
-    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 
     $rows = collect($efficiencyRows ?? []);
     $highCount = $rows->where('rating', 'High')->count();

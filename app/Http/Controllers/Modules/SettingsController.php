@@ -23,11 +23,9 @@ class SettingsController extends Controller
     {
         $this->ensureSettingsAccess();
 
-        $settings = Setting::query()->pluck('value', 'key')->toArray();
+        $settings = Setting::allAsKeyValue();
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
         $defaults = [
             'system_name' => 'LGU Energy Monitoring System',
@@ -36,7 +34,7 @@ class SettingsController extends Controller
             'timezone' => 'Asia/Manila',
             'otp_expiration' => '5',
             'max_login_attempts' => '5',
-            'session_timeout' => '120',
+            'session_timeout' => '60',
             'enable_otp_login' => '1',
             'alert_level1_small' => '5',
             'alert_level2_small' => '10',
@@ -66,7 +64,7 @@ class SettingsController extends Controller
             'mail_port' => '587',
             'enable_email_notifications' => '1',
             'enable_audit_logs' => '1',
-            'retention_period' => '12',
+            'retention_period' => '3',
             'export_format' => 'pdf',
             'system_logo' => '',
             'favicon' => '',
@@ -76,9 +74,7 @@ class SettingsController extends Controller
             'settings',
             'defaults',
             'role',
-            'user',
-            'notifications',
-            'unreadNotifCount'
+            'user'
         ));
     }
 
@@ -95,7 +91,7 @@ class SettingsController extends Controller
             'favicon' => 'nullable|file|mimes:ico,png,jpg,jpeg,svg|max:1024',
             'otp_expiration' => 'required|integer|min:1|max:60',
             'max_login_attempts' => 'required|integer|min:1|max:15',
-            'session_timeout' => 'required|integer|min:5|max:720',
+            'session_timeout' => 'required|integer|min:1|max:60',
             'enable_otp_login' => 'required|in:0,1',
             'auto_log_incident' => 'required|in:0,1',
             'facility_image_size' => 'required|integer|min:1|max:20',
@@ -182,4 +178,3 @@ class SettingsController extends Controller
         return redirect()->route('settings.index')->with('success', 'Settings updated successfully.');
     }
 }
-

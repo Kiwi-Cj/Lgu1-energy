@@ -717,19 +717,22 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 .notif-head-copy {
     min-width: 0;
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .notif-title {
     color: #0f172a;
     font-size: 0.84rem;
     font-weight: 700;
-    display: block;
     line-height: 1.2;
 }
 
 .notif-level-badge {
-    display: inline-block;
-    margin-top: 3px;
+    display: inline-flex;
+    align-items: center;
     font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.4px;
@@ -755,6 +758,26 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     word-break: break-word;
 }
 
+.notif-facility {
+    margin: 5px 0 0 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100% - 32px);
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eef4ff;
+    border: 1px solid #cfe0ff;
+    color: #1e40af;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.notif-facility i {
+    font-size: 0.68rem;
+}
+
 .notif-time {
     margin: 5px 0 0 32px;
     font-size: 0.74rem;
@@ -773,6 +796,16 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 .notif-item.is-read .notif-level-badge {
     opacity: 0.82;
+}
+
+@media (max-width: 520px) {
+    .notif-head-copy {
+        gap: 6px;
+    }
+
+    .notif-title {
+        font-size: 0.82rem;
+    }
 }
 
 .notif-filter-empty {
@@ -920,6 +953,11 @@ body.dark-mode .notif-item.is-unread .notif-title {
 body.dark-mode .notif-time {
     color: #94a3b8;
 }
+body.dark-mode .notif-facility {
+    background: #13233d;
+    border-color: #27436c;
+    color: #bfdbfe;
+}
 body.dark-mode .notif-item.is-unread .notif-time {
     color: #93c5fd;
 }
@@ -985,6 +1023,12 @@ body.dark-mode .notif-sev-info .notif-message {
 </head>
 
 <body>
+@php
+    $currentUser = auth()->user();
+    $currentUserName = $currentUser?->username ?? $currentUser?->name ?? 'User';
+    $currentUserRole = ucwords(str_replace('_', ' ', (string) ($currentUser?->role_key ?? $currentUser?->role ?? 'User')));
+    $currentUserAvatar = $currentUser?->profile_photo_url ?? asset('img/default-avatar.png');
+@endphp
 <script>
 if (document.documentElement.classList.contains('dark-mode')) {
     document.body.classList.add('dark-mode');
@@ -1028,6 +1072,17 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         $notifMessage = (string) ($notif->message ?? '');
                         $notifLower = strtolower($notifMessage);
                         $notifType = strtolower((string) ($notif->type ?? 'alert'));
+                        $notifFacility = null;
+                        foreach ([
+                            '/\bfor\s+(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i',
+                            '/\bat\s+(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i',
+                            '/^(?:maintenance|incident)\s*:\s*(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i',
+                        ] as $facilityPattern) {
+                            if (preg_match($facilityPattern, $notifMessage, $matches)) {
+                                $notifFacility = trim((string) ($matches[1] ?? ''));
+                                break;
+                            }
+                        }
                         if ($notifType === 'alert') {
                             if (\Illuminate\Support\Str::contains($notifLower, 'incident:')) {
                                 $notifType = 'incident';
@@ -1106,6 +1161,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
                                 <span class="notif-unread-dot"></span>
                             @endif
                         </div>
+                        @if($notifFacility)
+                            <div class="notif-facility"><i class="fa-solid fa-building"></i> {{ $notifFacility }}</div>
+                        @endif
                         <div class="notif-message">{{ $notif->message }}</div>
                         <div class="notif-time">{{ $notif->created_at->diffForHumans() }}</div>
                     </a>
@@ -1122,14 +1180,14 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
         <div class="header-user user-menu-wrap">
             <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
-                <img src="{{ auth()->user()->profile_photo_url }}" alt="Profile Photo" class="user-avatar">
-                <span class="user-name">{{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}</span>
+                <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar">
+                <span class="user-name">{{ $currentUserName }}</span>
                 <i class="fa fa-caret-down user-menu-caret"></i>
             </button>
             <div id="userDropdown" class="user-dropdown">
                 <div class="user-dropdown-head">
-                    <div class="user-dropdown-name">{{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}</div>
-                    <div class="user-dropdown-role">{{ ucwords(str_replace('_', ' ', (string) (auth()->user()?->role_key ?? auth()->user()?->role ?? 'User'))) }}</div>
+                    <div class="user-dropdown-name">{{ $currentUserName }}</div>
+                    <div class="user-dropdown-role">{{ $currentUserRole }}</div>
                 </div>
                 <a href="{{ route('profile.show') }}" class="user-dropdown-link">
                     <i class="fa fa-user"></i> My Profile
@@ -1404,8 +1462,12 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const renderNotifItem = (title, message, timeLabel, severity, unread = true, targetUrl = '#') => {
+        const facility = extractNotifFacility(message);
         const unreadDot = unread ? '<span class=\"notif-unread-dot\"></span>' : '';
         const stateClass = unread ? 'is-unread' : 'is-read';
+        const facilityHtml = facility
+            ? `<div class=\"notif-facility\"><i class=\"fa-solid fa-building\"></i> ${escapeHtml(facility)}</div>`
+            : '';
         return `<a href=\"${escapeHtml(targetUrl)}\" class=\"notif-item notif-sev-${severity} ${stateClass}\" data-level=\"${severity}\" data-read=\"${unread ? 'unread' : 'read'}\">
                     <div class=\"notif-item-head\">
                         <span class=\"notif-icon\"><i class=\"fa-solid ${severityIcon(severity)}\"></i></span>
@@ -1415,9 +1477,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         ${unreadDot}
                     </div>
+                    ${facilityHtml}
                     <div class=\"notif-message\">${escapeHtml(message)}</div>
                     <div class=\"notif-time\">${escapeHtml(timeLabel)}</div>
                 </a>`;
+    };
+
+    const extractNotifFacility = (message) => {
+        const text = String(message || '');
+        const patterns = [
+            /\bfor\s+(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i,
+            /\bat\s+(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i,
+            /^(?:maintenance|incident)\s*:\s*(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i,
+        ];
+        for (const pattern of patterns) {
+            const match = text.match(pattern);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+        }
+        return '';
     };
 
     const isCriticalSeverity = (level) => ['critical', 'very-high', 'high'].includes(String(level || '').toLowerCase());

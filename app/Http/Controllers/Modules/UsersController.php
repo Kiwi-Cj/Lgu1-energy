@@ -15,7 +15,7 @@ class UsersController extends Controller
         // Block Staff from accessing User Management
         // Only restrict staff; super admin, admin, and energy_officer have access
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
         // Super admin has full access (no block)
@@ -41,29 +41,27 @@ class UsersController extends Controller
         $rolesList = $users->pluck('role')->unique()->implode(', ');
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'notifications', 'unreadNotifCount', 'selectedRole'));
+        return view('modules.users.index', compact('users', 'facilities', 'totalUsers', 'activeUsers', 'inactiveUsers', 'rolesList', 'role', 'user', 'selectedRole'));
     }
 
     public function edit($id)
     {
         // Block Staff from accessing User Management
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
         $user = User::with('facilities')->findOrFail($id);
-        $facilities = Facility::all();
-        return view('modules.users.edit', compact('user', 'facilities'));
+        return redirect()->route('users.index')
+            ->with('info', 'User editing is managed from the users list page.');
     }
 
     public function store(Request $request)
     {
         // Block Staff from accessing User Management
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
@@ -105,7 +103,7 @@ class UsersController extends Controller
     {
         // Block Staff from accessing User Management
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
@@ -154,7 +152,7 @@ class UsersController extends Controller
     {
         // Block Staff from accessing Roles page
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Roles.');
         }
 
@@ -260,7 +258,7 @@ class UsersController extends Controller
     {
         // Block Staff from accessing User Management actions
         if (RoleAccess::is(auth()->user(), 'staff')) {
-            return redirect()->route('modules.energy.index')
+            return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to manage users.');
         }
 
@@ -286,6 +284,3 @@ class UsersController extends Controller
             ->with('success', 'User disabled successfully.');
     }
 }
-
-
-

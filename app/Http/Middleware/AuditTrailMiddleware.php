@@ -8,6 +8,7 @@ use App\Support\RoleAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuditTrailMiddleware
@@ -27,7 +28,7 @@ class AuditTrailMiddleware
         if ($this->isSuccessful($response)) {
             $afterUser = auth()->user();
 
-            if (! $beforeUser && $afterUser) {
+            if (! $beforeUser && $afterUser && $this->isLoginRequest($request)) {
                 $this->record(
                     $afterUser->id,
                     RoleAccess::normalize($afterUser),
@@ -41,7 +42,7 @@ class AuditTrailMiddleware
                 );
             }
 
-            if ($beforeUser && ! $afterUser && $request->routeIs('logout')) {
+            if ($beforeUser && ! $afterUser && $this->isLogoutRequest($request)) {
                 $this->record(
                     $beforeUser->id,
                     RoleAccess::normalize($beforeUser),
@@ -60,7 +61,9 @@ class AuditTrailMiddleware
             return $response;
         }
 
-        if (! $this->isMutatingRequest($request) && ! $this->isAuditableReadRequest($request)) {
+        // Keep the audit trail focused on state-changing actions.
+        // Logging routine page views adds a write query to nearly every request.
+        if (! $this->isMutatingRequest($request)) {
             return $response;
         }
 
@@ -153,33 +156,9 @@ class AuditTrailMiddleware
         return in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true);
     }
 
-    private function isAuditableReadRequest(Request $request): bool
-    {
-        if (strtoupper($request->method()) !== 'GET') {
-            return false;
-        }
-
-        if ($request->expectsJson() || $request->ajax()) {
-            return false;
-        }
-
-        $routeName = (string) optional($request->route())->getName();
-        $path = trim($request->path(), '/');
-
-        if ($request->routeIs('dashboard.*', 'modules.*')) {
-            return true;
-        }
-
-        if (str_starts_with($path, 'modules/')) {
-            return true;
-        }
-
-        return $routeName === 'dashboard.index';
-    }
-
     private function skipGenericAudit(Request $request): bool
     {
-        if ($request->routeIs('login', 'logout', 'otp.*')) {
+        if ($this->isLoginRequest($request) || $this->isLogoutRequest($request) || $request->routeIs('otp.*')) {
             return true;
         }
 
@@ -188,6 +167,24 @@ class AuditTrailMiddleware
         }
 
         return false;
+    }
+
+    private function isLoginRequest(Request $request): bool
+    {
+        if (strtoupper($request->method()) !== 'POST') {
+            return false;
+        }
+
+        return $request->routeIs('login') || trim($request->path(), '/') === 'login';
+    }
+
+    private function isLogoutRequest(Request $request): bool
+    {
+        if (strtoupper($request->method()) !== 'POST') {
+            return false;
+        }
+
+        return $request->routeIs('logout') || trim($request->path(), '/') === 'logout';
     }
 
     private function buildDescription(string $method, string $routeName, string $path, string $module): string
@@ -261,8 +258,50 @@ class AuditTrailMiddleware
                     ]))),
                 ],
             ]);
+
+            $this->maybePruneOldAuditLogs();
         } catch (\Throwable $e) {
             // Never break the request lifecycle because of audit logging failures.
+        }
+    }
+
+    private function maybePruneOldAuditLogs(): void
+    {
+        if (! self::$hasSettingsTable) {
+            return;
+        }
+
+        try {
+            $settings = Setting::getMany([
+                'retention_period',
+                'audit_last_pruned_at',
+            ], [
+                'retention_period' => '3',
+                'audit_last_pruned_at' => null,
+            ]);
+
+            $retentionMonths = (int) ($settings['retention_period'] ?? 12);
+            if ($retentionMonths < 1) {
+                $retentionMonths = 1;
+            }
+
+            $lastPrunedAt = trim((string) ($settings['audit_last_pruned_at'] ?? ''));
+            if ($lastPrunedAt !== '') {
+                $lastPruned = Carbon::parse($lastPrunedAt);
+                if ($lastPruned->greaterThan(now()->subDay())) {
+                    return;
+                }
+            }
+
+            $cutoff = now()->subMonthsNoOverflow($retentionMonths)->startOfDay();
+
+            AuditLog::query()
+                ->where('created_at', '<', $cutoff)
+                ->delete();
+
+            Setting::setValue('audit_last_pruned_at', now()->toDateTimeString());
+        } catch (\Throwable $e) {
+            // Pruning failures must not block user requests.
         }
     }
 }

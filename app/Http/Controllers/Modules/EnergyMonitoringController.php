@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules;
 use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
 use App\Models\Setting;
@@ -13,6 +14,7 @@ use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class EnergyMonitoringController extends Controller
 {
@@ -63,25 +65,40 @@ class EnergyMonitoringController extends Controller
             ->sum('energy_cost');
 
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
+        $mainMetersByFacility = $this->loadMainMetersByFacility($facilityIds);
+        $mainMeterSnapshotsByFacility = $this->loadCurrentMonthMainMeterSnapshots($facilityIds, $currentYear, $currentMonth);
         $lastMaintenanceByFacility = $this->loadLastMaintenanceByFacility($facilityIds);
         $nextMaintenanceByFacility = $this->loadNextMaintenanceByFacility($facilityIds);
 
         $highAlertCount = 0;
         foreach ($facilities as $facility) {
             $facilityRecords = $recordsByFacility->get($facility->id, collect());
+            $mainMeters = $this->attachCurrentMonthSnapshotsToMainMeters(
+                $mainMetersByFacility->get($facility->id, collect()),
+                $mainMeterSnapshotsByFacility->get($facility->id, collect())
+            );
             $currentMonthRecord = $facilityRecords->first(function ($record) use ($currentYear, $currentMonth) {
                 return (int) $record->year === $currentYear && (int) $record->month === $currentMonth;
             });
 
+            $facility->main_meters = $mainMeters;
+            $facility->main_meter_name = $this->resolveMainMeterSummaryLabel($mainMeters);
+            $facility->main_meter_status_label = $this->resolveMainMeterStatusLabel($mainMeters);
+            $facility->main_meter_meta_label = $this->resolveMainMeterMetaLabel($mainMeters);
+            $facility->main_meter_alert_summary_label = $this->resolveMainMeterAlertSummaryLabel($mainMeters);
             $facility->currentMonthRecord = $currentMonthRecord;
             [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
-            $alertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+            $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+            $alertLevel = $this->resolveFacilityAlertLevel($mainMeters, $trendAlertLevel);
             $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
             $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
 
             $facility->trend_percent = $trendPercent;
             $facility->trend_analysis = $trendDisplay;
+            $facility->trend_alert_level = $trendAlertLevel;
             $facility->alert_level = $alertLevel;
+            $facility->facility_status_label = $this->resolveFacilityOperationalStatusLabel($facility);
+            $facility->maintenance_status_label = $this->resolveMaintenanceStatusLabel($nextMaintenance, $lastMaintenance);
             $recommendationContext = [
                 'facility_name' => (string) ($facility->name ?? ''),
                 'facility_type' => (string) ($facility->type ?? ''),
@@ -107,16 +124,11 @@ class EnergyMonitoringController extends Controller
             }
         }
 
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-
         return view('modules.energy-monitoring.index', compact(
             'totalFacilities',
             'facilities',
             'highAlertCount',
-            'totalEnergyCost',
-            'notifications',
-            'unreadNotifCount'
+            'totalEnergyCost'
         ) + ['role' => $role, 'user' => $user]);
     }
 
@@ -143,16 +155,23 @@ class EnergyMonitoringController extends Controller
         $facilityIds = [(int) $facility->id];
 
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
+        $mainMetersByFacility = $this->loadMainMetersByFacility($facilityIds);
+        $mainMeterSnapshotsByFacility = $this->loadCurrentMonthMainMeterSnapshots($facilityIds, $currentYear, $currentMonth);
         $lastMaintenanceByFacility = $this->loadLastMaintenanceByFacility($facilityIds);
         $nextMaintenanceByFacility = $this->loadNextMaintenanceByFacility($facilityIds);
 
         $facilityRecords = $recordsByFacility->get($facility->id, collect());
+        $mainMeters = $this->attachCurrentMonthSnapshotsToMainMeters(
+            $mainMetersByFacility->get($facility->id, collect()),
+            $mainMeterSnapshotsByFacility->get($facility->id, collect())
+        );
         $currentMonthRecord = $facilityRecords->first(function ($record) use ($currentYear, $currentMonth) {
             return (int) $record->year === $currentYear && (int) $record->month === $currentMonth;
         });
 
         [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
-        $alertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+        $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+        $alertLevel = $this->resolveFacilityAlertLevel($mainMeters, $trendAlertLevel);
         $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
         $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
 
@@ -180,6 +199,23 @@ class EnergyMonitoringController extends Controller
         ]);
     }
 
+    private function loadMainMetersByFacility(array $facilityIds): Collection
+    {
+        if (empty($facilityIds)) {
+            return collect();
+        }
+
+        return FacilityMeter::query()
+            ->whereIn('facility_id', $facilityIds)
+            ->where('meter_type', 'main')
+            ->orderByRaw("CASE WHEN approved_at IS NOT NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN LOWER(COALESCE(status, '')) = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('meter_name')
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'status', 'approved_at'])
+            ->groupBy('facility_id')
+            ->map(fn (Collection $rows) => $rows->values());
+    }
+
     private function loadRecentRecordsByFacility(array $facilityIds, int $currentYear, int $currentMonth): Collection
     {
         if (empty($facilityIds)) {
@@ -199,12 +235,145 @@ class EnergyMonitoringController extends Controller
             ->orderBy('month')
             ->get()
             ->groupBy('facility_id')
-            ->map(fn (Collection $rows) => $rows->values());
+            ->map(fn (Collection $rows) => $this->aggregateFacilityRecordsByMonth($rows));
+    }
+
+    private function loadCurrentMonthMainMeterSnapshots(array $facilityIds, int $currentYear, int $currentMonth): Collection
+    {
+        if (empty($facilityIds)) {
+            return collect();
+        }
+
+        return EnergyRecord::query()
+            ->whereIn('facility_id', $facilityIds)
+            ->where('year', $currentYear)
+            ->where('month', $currentMonth)
+            ->whereNotNull('meter_id')
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })
+            ->get(['facility_id', 'meter_id', 'actual_kwh', 'baseline_kwh', 'energy_cost'])
+            ->groupBy('facility_id')
+            ->map(function (Collection $rows) {
+                return $rows
+                    ->groupBy('meter_id')
+                    ->map(function (Collection $meterRows) {
+                        $baselineKwh = (float) $meterRows->sum(function ($row) {
+                            return is_numeric($row->baseline_kwh ?? null) ? (float) $row->baseline_kwh : 0.0;
+                        });
+                        $energyCost = (float) $meterRows->sum(function ($row) {
+                            return is_numeric($row->energy_cost ?? null) ? (float) $row->energy_cost : 0.0;
+                        });
+
+                        return collect([
+                            'actual_kwh' => (float) $meterRows->sum(function ($row) {
+                                return is_numeric($row->actual_kwh ?? null) ? (float) $row->actual_kwh : 0.0;
+                            }),
+                            'baseline_kwh' => $baselineKwh > 0 ? $baselineKwh : null,
+                            'energy_cost' => $energyCost > 0 ? $energyCost : null,
+                        ]);
+                    });
+            });
+    }
+
+    private function attachCurrentMonthSnapshotsToMainMeters(Collection $mainMeters, Collection $meterSnapshots): Collection
+    {
+        return $mainMeters
+            ->map(function (FacilityMeter $meter) use ($meterSnapshots) {
+                $snapshot = $meterSnapshots->get($meter->id, collect());
+                $meter->current_month_kwh = is_numeric($snapshot->get('actual_kwh')) ? (float) $snapshot->get('actual_kwh') : null;
+                $meter->current_month_baseline_kwh = is_numeric($snapshot->get('baseline_kwh')) ? (float) $snapshot->get('baseline_kwh') : null;
+                $meter->current_month_energy_cost = is_numeric($snapshot->get('energy_cost')) ? (float) $snapshot->get('energy_cost') : null;
+                $meter->current_month_alert_level = $this->resolveCurrentMonthMainMeterAlertLevel(
+                    $meter->current_month_kwh,
+                    $meter->current_month_baseline_kwh
+                );
+
+                return $meter;
+            })
+            ->values();
+    }
+
+    private function resolveCurrentMonthMainMeterAlertLevel(?float $actualKwh, ?float $baselineKwh): string
+    {
+        if (! is_numeric($actualKwh) || ! is_numeric($baselineKwh) || (float) $baselineKwh <= 0) {
+            return 'No Data';
+        }
+
+        $deviation = EnergyRecord::calculateDeviation((float) $actualKwh, (float) $baselineKwh);
+        if ($deviation === null) {
+            return 'No Data';
+        }
+
+        $resolved = EnergyRecord::resolveAlertLevel($deviation, (float) $baselineKwh);
+
+        return $resolved !== '' ? $resolved : 'No Data';
+    }
+
+    private function resolveFacilityAlertLevel(Collection $mainMeters, string $fallbackAlertLevel): string
+    {
+        $highestLabel = null;
+        $highestRank = -1;
+
+        foreach ($mainMeters as $meter) {
+            $label = (string) ($meter->current_month_alert_level ?? 'No Data');
+            $rank = $this->resolveAlertLevelRank($label);
+
+            if ($rank > $highestRank) {
+                $highestRank = $rank;
+                $highestLabel = $label;
+            }
+        }
+
+        if ($highestLabel !== null && $highestRank > 0) {
+            return $highestLabel;
+        }
+
+        return $fallbackAlertLevel;
+    }
+
+    private function resolveMainMeterAlertSummaryLabel(Collection $mainMeters): string
+    {
+        if ($mainMeters->count() <= 1) {
+            return '';
+        }
+
+        $counts = $mainMeters
+            ->map(function (FacilityMeter $meter) {
+                $label = trim((string) ($meter->current_month_alert_level ?? 'No Data'));
+
+                return $label !== '' ? $label : 'No Data';
+            })
+            ->countBy();
+
+        if ($counts->isEmpty()) {
+            return '';
+        }
+
+        $orderedLabels = collect(array_keys($this->alertLevelRanks()))
+            ->filter(fn (string $label) => $counts->has($label))
+            ->values();
+
+        if ($orderedLabels->count() === 1) {
+            $label = (string) $orderedLabels->first();
+
+            return 'Alert Summary: All ' . $label;
+        }
+
+        $parts = $orderedLabels
+            ->map(fn (string $label) => $counts->get($label) . ' ' . $label)
+            ->implode(', ');
+
+        return 'Mixed Alert: ' . $parts;
     }
 
     private function loadLastMaintenanceByFacility(array $facilityIds): Collection
     {
         if (empty($facilityIds)) {
+            return collect();
+        }
+
+        if (! Schema::hasTable('maintenance_history')) {
             return collect();
         }
 
@@ -223,10 +392,18 @@ class EnergyMonitoringController extends Controller
             return collect();
         }
 
+        if (! Schema::hasTable('maintenance')) {
+            return collect();
+        }
+
+        $orderColumn = Schema::hasColumn('maintenance', 'scheduled_date')
+            ? 'scheduled_date'
+            : (Schema::hasColumn('maintenance', 'created_at') ? 'created_at' : 'id');
+
         return Maintenance::query()
             ->whereIn('facility_id', $facilityIds)
             ->where('maintenance_status', 'Ongoing')
-            ->orderBy('scheduled_date')
+            ->orderBy($orderColumn)
             ->get()
             ->groupBy('facility_id')
             ->map(fn (Collection $rows) => $rows->first());
@@ -276,6 +453,135 @@ class EnergyMonitoringController extends Controller
         return [$trendPercent, $trendDisplay];
     }
 
+    private function aggregateFacilityRecordsByMonth(Collection $rows): Collection
+    {
+        return $rows
+            ->groupBy(fn ($row) => sprintf('%04d-%02d', (int) $row->year, (int) $row->month))
+            ->map(function (Collection $group) {
+                $first = $group->first();
+                $actualKwh = (float) $group->sum(fn ($row) => (float) ($row->actual_kwh ?? 0));
+                $baselineKwh = (float) $group->sum(function ($row) {
+                    return is_numeric($row->baseline_kwh ?? null) ? (float) $row->baseline_kwh : 0.0;
+                });
+                $energyCost = (float) $group->sum(function ($row) {
+                    return is_numeric($row->energy_cost ?? null) ? (float) $row->energy_cost : 0.0;
+                });
+
+                return (object) [
+                    'year' => (int) ($first->year ?? 0),
+                    'month' => (int) ($first->month ?? 0),
+                    'actual_kwh' => $actualKwh,
+                    'baseline_kwh' => $baselineKwh > 0 ? $baselineKwh : null,
+                    'energy_cost' => $energyCost > 0 ? $energyCost : null,
+                    'meter_count' => (int) $group->count(),
+                ];
+            })
+            ->sortBy(fn ($row) => ((int) $row->year * 100) + (int) $row->month)
+            ->values();
+    }
+
+    private function resolveMainMeterSummaryLabel(Collection $mainMeters): string
+    {
+        $count = $mainMeters->count();
+
+        if ($count === 0) {
+            return 'No Main Meter';
+        }
+
+        if ($count === 1) {
+            return (string) ($mainMeters->first()->meter_name ?? 'Main Meter');
+        }
+
+        return $count . ' Main Meters';
+    }
+
+    private function resolveMainMeterMetaLabel(Collection $mainMeters): string
+    {
+        $count = $mainMeters->count();
+
+        if ($count === 0) {
+            return '';
+        }
+
+        if ($count === 1) {
+            return trim((string) ($mainMeters->first()->meter_number ?? ''));
+        }
+
+        $activeCount = $mainMeters->filter(function (FacilityMeter $meter) {
+            return strtolower(trim((string) ($meter->status ?? ''))) === 'active';
+        })->count();
+        $approvedCount = $mainMeters->filter(fn (FacilityMeter $meter) => ! is_null($meter->approved_at))->count();
+
+        return sprintf('%d active, %d approved', $activeCount, $approvedCount);
+    }
+
+    private function resolveMainMeterStatusLabel(Collection $mainMeters): string
+    {
+        if ($mainMeters->isEmpty()) {
+            return 'No Main Meter';
+        }
+
+        $approvedCount = $mainMeters->filter(fn (FacilityMeter $meter) => ! is_null($meter->approved_at))->count();
+        if ($approvedCount === 0) {
+            return 'Pending Approval';
+        }
+
+        $statusCounts = $mainMeters
+            ->map(function (FacilityMeter $meter) {
+                return strtolower(trim((string) ($meter->status ?? 'unknown')));
+            })
+            ->countBy();
+
+        if ($mainMeters->count() === 1) {
+            $status = (string) $statusCounts->keys()->first();
+
+            return match ($status) {
+                'active' => 'Active',
+                'inactive' => 'Inactive',
+                'maintenance' => 'Maintenance',
+                default => $status !== '' ? ucfirst($status) : 'Unknown',
+            };
+        }
+
+        if ($statusCounts->count() > 1) {
+            return 'Mixed Status';
+        }
+
+        $status = (string) $statusCounts->keys()->first();
+
+        return match ($status) {
+            'active' => 'All Active',
+            'inactive' => 'All Inactive',
+            'maintenance' => 'All Maintenance',
+            default => 'Mixed Status',
+        };
+    }
+
+    private function resolveFacilityOperationalStatusLabel(Facility $facility): string
+    {
+        $status = strtolower(trim((string) ($facility->status ?? '')));
+
+        return match ($status) {
+            'active' => 'Facility Active',
+            'inactive' => 'Facility Inactive',
+            'maintenance' => 'Facility Maintenance',
+            default => $status !== '' ? 'Facility ' . ucfirst($status) : 'Facility Unknown',
+        };
+    }
+
+    private function resolveMaintenanceStatusLabel($nextMaintenance, $lastMaintenance): string
+    {
+        if ($nextMaintenance) {
+            return 'Maintenance Ongoing';
+        }
+
+        if ($lastMaintenance) {
+            return 'Maintenance Logged';
+        }
+
+        return 'No Maintenance Log';
+    }
+
     private function resolveAlertLevel(Facility $facility, $record, ?float $trendPercent): string
     {
         if (! $record || $trendPercent === null) {
@@ -292,6 +598,23 @@ class EnergyMonitoringController extends Controller
         if ($trendPercent > $trendTrigger) return 'Warning';
 
         return 'Normal';
+    }
+
+    private function alertLevelRanks(): array
+    {
+        return [
+            'Critical' => 5,
+            'Very High' => 4,
+            'High' => 3,
+            'Warning' => 2,
+            'Normal' => 1,
+            'No Data' => 0,
+        ];
+    }
+
+    private function resolveAlertLevelRank(string $label): int
+    {
+        return $this->alertLevelRanks()[$label] ?? 0;
     }
 
     private function inferFacilitySize(Facility $facility, $record): string
@@ -352,7 +675,7 @@ class EnergyMonitoringController extends Controller
             }
         }
 
-        $settings = Setting::whereIn('key', $keys)->pluck('value', 'key');
+        $settings = Setting::getMany($keys);
         $resolved = [];
 
         foreach ($defaults as $sizeKey => $levels) {

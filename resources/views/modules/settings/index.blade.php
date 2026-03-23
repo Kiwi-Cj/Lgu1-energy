@@ -10,69 +10,136 @@
 
 <style>
 .settings-page {
-    max-width: 1240px;
+    max-width: 1520px;
     margin: 0 auto;
 }
 .settings-shell {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
-    padding: 24px;
+    position: relative;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 22%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #dbe6f3;
+    border-radius: 26px;
+    box-shadow: 0 22px 55px rgba(15, 23, 42, 0.10);
+    padding: 26px;
+    overflow: hidden;
 }
 .settings-topbar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 18px;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+.settings-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+    gap: 18px;
+    margin-bottom: 20px;
 }
 .settings-title-wrap h1 {
     margin: 0;
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    line-height: 1;
+    font-weight: 900;
     color: #0f172a;
+    letter-spacing: -0.04em;
 }
 .settings-title-wrap p {
-    margin: 4px 0 0;
+    margin: 10px 0 0;
+    color: #526277;
+    font-size: 1rem;
+    max-width: 760px;
+}
+.settings-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.settings-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-self: stretch;
+}
+.settings-summary-card {
+    padding: 16px 16px 14px;
+    border-radius: 18px;
+    border: 1px solid #d9e5f5;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.settings-summary-card strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+.settings-summary-card span {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
     color: #64748b;
-    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.settings-summary-card i {
+    color: #2563eb;
+    font-size: 1rem;
 }
 .settings-actions {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-shrink: 0;
 }
 .settings-btn {
     border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 10px 14px;
+    border-radius: 14px;
+    padding: 11px 16px;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     text-decoration: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
 .settings-btn.back {
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.9);
     border-color: #cbd5e1;
     color: #1e293b;
 }
 .settings-btn.save {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-color: #1d4ed8;
     color: #ffffff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
 }
-.settings-btn.save:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.settings-btn:hover {
+    transform: translateY(-1px);
+}
+.settings-btn.save:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); border-color: #1d4ed8; }
 
 .settings-alert {
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-    font-size: 0.9rem;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 0.92rem;
     font-weight: 600;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
 }
 .settings-alert.success {
     background: #dcfce7;
@@ -92,27 +159,61 @@
 .settings-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 .settings-card {
-    border: 1px solid #dbe6f3;
-    border-radius: 14px;
+    border: 1px solid #d8e5f4;
+    border-radius: 20px;
     overflow: hidden;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 .settings-head {
     width: 100%;
     border: none;
-    background: linear-gradient(90deg, #f8fbff 0%, #f1f5ff 100%);
+    background: linear-gradient(90deg, #f8fbff 0%, #eef4ff 100%);
     color: #1e293b;
     text-align: left;
-    padding: 14px 16px;
-    font-size: 1rem;
-    font-weight: 800;
+    padding: 17px 18px;
+    font-size: 1.03rem;
+    font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
+}
+.settings-head-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.settings-head-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #d8e5f4;
+    color: #1d4ed8;
+    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.08);
+}
+.settings-head-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.settings-head-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.08);
+    color: #315cba;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
 }
 .settings-head small {
     font-size: 0.78rem;
@@ -129,8 +230,8 @@
 .settings-body {
     display: none;
     border-top: 1px solid #e2e8f0;
-    padding: 16px;
-    background: #ffffff;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%);
 }
 .settings-card.open .settings-body {
     display: block;
@@ -139,20 +240,25 @@
 .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px 16px;
+    gap: 16px 18px;
 }
 .settings-subblock {
-    margin-bottom: 14px;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fbfdff;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #dbe6f3;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f6faff 100%);
 }
 .settings-subblock h3 {
-    margin: 0 0 10px;
+    margin: 0 0 6px;
     color: #1d4ed8;
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: 1rem;
+    font-weight: 900;
+}
+.settings-subblock p {
+    margin: 0 0 14px;
+    color: #64748b;
+    font-size: 0.82rem;
 }
 .settings-field {
     display: flex;
@@ -167,18 +273,24 @@
 .settings-field input,
 .settings-field select {
     width: 100%;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: 10px 11px;
+    min-height: 44px;
+    border: 1px solid #c8d5e6;
+    border-radius: 12px;
+    padding: 11px 12px;
     font-size: 0.92rem;
     background: #ffffff;
     color: #0f172a;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 .settings-field input:focus,
 .settings-field select:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
     outline: none;
+}
+.settings-field input[type="file"] {
+    padding: 8px 10px;
+    background: #f8fbff;
 }
 .settings-help {
     font-size: 0.76rem;
@@ -202,6 +314,21 @@
     color: #dc2626;
     font-weight: 700;
 }
+.settings-threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+.settings-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px 18px;
+}
+.settings-section-note {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 0.8rem;
+}
 
 body.dark-mode .settings-shell {
     background: #0f172a;
@@ -219,6 +346,20 @@ body.dark-mode .settings-btn.back {
     border-color: #334155;
     color: #e2e8f0;
 }
+body.dark-mode .settings-summary-card {
+    background: rgba(15, 23, 42, 0.75);
+    border-color: #243143;
+    box-shadow: none;
+}
+body.dark-mode .settings-summary-card strong {
+    color: #e2e8f0;
+}
+body.dark-mode .settings-summary-card span {
+    color: #8ea0b8;
+}
+body.dark-mode .settings-summary-card i {
+    color: #7db6ff;
+}
 body.dark-mode .settings-alert.success {
     background: #14532d;
     color: #dcfce7;
@@ -234,15 +375,25 @@ body.dark-mode .settings-card {
     border-color: #253043;
 }
 body.dark-mode .settings-head {
-    background: #111827;
+    background: linear-gradient(90deg, #111827 0%, #0f1a2b 100%);
     color: #e2e8f0;
+}
+body.dark-mode .settings-head-icon {
+    background: #0f172a;
+    border-color: #334155;
+    color: #93c5fd;
+    box-shadow: none;
+}
+body.dark-mode .settings-head-badge {
+    background: rgba(59, 130, 246, 0.16);
+    color: #bfdbfe;
 }
 body.dark-mode .settings-head small,
 body.dark-mode .settings-chevron {
     color: #94a3b8;
 }
 body.dark-mode .settings-body {
-    background: #0f172a;
+    background: linear-gradient(180deg, #0f172a 0%, #0c1524 100%);
     border-top-color: #253043;
 }
 body.dark-mode .settings-subblock {
@@ -261,6 +412,9 @@ body.dark-mode .settings-field select {
     border-color: #334155;
     color: #e2e8f0;
 }
+body.dark-mode .settings-field input[type="file"] {
+    background: #0b1220;
+}
 body.dark-mode .settings-help {
     color: #94a3b8;
 }
@@ -278,6 +432,12 @@ body.dark-mode .settings-file-chip {
         flex-direction: column;
         align-items: flex-start;
     }
+    .settings-hero {
+        grid-template-columns: 1fr;
+    }
+    .settings-summary {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 
@@ -285,12 +445,42 @@ body.dark-mode .settings-file-chip {
     <div class="settings-shell">
         <div class="settings-topbar">
             <div class="settings-title-wrap">
+                <div class="settings-kicker"><i class="fa fa-gear"></i> Control Center</div>
                 <h1>System Settings</h1>
                 <p>Configure app behavior, security, notification, and threshold rules.</p>
             </div>
             <div class="settings-actions">
                 <a href="{{ route('dashboard.index') }}" class="settings-btn back"><i class="fa fa-arrow-left"></i> Back</a>
                 <button type="submit" form="settingsForm" class="settings-btn save"><i class="fa fa-floppy-disk"></i> Save Settings</button>
+            </div>
+        </div>
+
+        <div class="settings-hero">
+            <div class="settings-subblock" style="margin-bottom:0;">
+                <h3>Configuration Snapshot</h3>
+                <p>Use this page to manage branding, login rules, energy thresholds, uploads, and reporting defaults from one place.</p>
+                <div class="settings-section-note">
+                    Current app identity: <strong>{{ $getSetting('system_name') }}</strong>
+                    <span style="color:#94a3b8;">|</span>
+                    Timezone: <strong>{{ $getSetting('timezone', 'Asia/Manila') }}</strong>
+                </div>
+            </div>
+            <div class="settings-summary">
+                <div class="settings-summary-card">
+                    <i class="fa fa-bolt"></i>
+                    <strong>20</strong>
+                    <span>Threshold Inputs</span>
+                </div>
+                <div class="settings-summary-card">
+                    <i class="fa fa-shield-halved"></i>
+                    <strong>{{ (string) $getSetting('enable_otp_login', '1') === '1' ? 'OTP On' : 'OTP Off' }}</strong>
+                    <span>Access Guard</span>
+                </div>
+                <div class="settings-summary-card">
+                    <i class="fa fa-envelope"></i>
+                    <strong>{{ (string) $getSetting('enable_email_notifications', '1') === '1' ? 'Email On' : 'Email Off' }}</strong>
+                    <span>Notifications</span>
+                </div>
             </div>
         </div>
 
@@ -314,8 +504,8 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card open">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-sliders"></i> General / App Settings</span>
-                    <span><small>Branding + timezone</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-sliders"></i></span> General / App Settings</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Live identity</span><small>Branding + timezone</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     <div class="settings-grid">
@@ -367,8 +557,8 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-shield-halved"></i> User & Security</span>
-                    <span><small>Session + login controls</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-shield-halved"></i></span> User & Security</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Access rules</span><small>Session + login controls</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     <div class="settings-grid">
@@ -384,7 +574,7 @@ body.dark-mode .settings-file-chip {
                         </div>
                         <div class="settings-field">
                             <label for="session_timeout">Session Timeout (minutes)</label>
-                            <input type="number" id="session_timeout" name="session_timeout" min="5" max="720" value="{{ $getSetting('session_timeout', 120) }}">
+                            <input type="number" id="session_timeout" name="session_timeout" min="1" max="60" value="{{ $getSetting('session_timeout', 60) }}">
                             @error('session_timeout') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">
@@ -401,14 +591,15 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-bolt"></i> Energy Monitoring</span>
-                    <span><small>Baseline Threshold</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-bolt"></i></span> Energy Monitoring</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Alert engine</span><small>Baseline Threshold</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
                         <div class="settings-subblock">
                             <h3>{{ $sizeLabel }} Baseline Threshold (%)</h3>
-                            <div class="settings-grid">
+                            <p>Each level must increase strictly from Level 1 to Level 5.</p>
+                            <div class="settings-threshold-grid">
                                 @for($lvl = 1; $lvl <= 5; $lvl++)
                                     @php $field = "alert_level{$lvl}_{$sizeKey}"; @endphp
                                     <div class="settings-field">
@@ -421,7 +612,7 @@ body.dark-mode .settings-file-chip {
                         </div>
                     @endforeach
 
-                    <div class="settings-grid">
+                    <div class="settings-toggle-grid">
                         <div class="settings-field">
                             <label for="auto_log_incident">Auto Log Incident</label>
                             <select id="auto_log_incident" name="auto_log_incident">
@@ -436,8 +627,8 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-building"></i> Facility Settings</span>
-                    <span><small>Uploads + defaults</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-building"></i></span> Facility Settings</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Media rules</span><small>Uploads + defaults</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     <div class="settings-grid">
@@ -465,8 +656,8 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-envelope"></i> Email & Notifications</span>
-                    <span><small>SMTP + notification toggle</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-envelope"></i></span> Email & Notifications</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Delivery channel</span><small>SMTP + notification toggle</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     <div class="settings-grid">
@@ -494,8 +685,8 @@ body.dark-mode .settings-file-chip {
 
             <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
-                    <span><i class="fa fa-file-lines"></i> Reports & Audit Trail</span>
-                    <span><small>Retention + export rules</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
+                    <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-file-lines"></i></span> Reports & Audit Trail</span>
+                    <span class="settings-head-meta"><span class="settings-head-badge">Governance</span><small>Retention + export rules</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
                     <div class="settings-grid">
@@ -509,7 +700,8 @@ body.dark-mode .settings-file-chip {
                         </div>
                         <div class="settings-field">
                             <label for="retention_period">Retention Period (months)</label>
-                            <input type="number" id="retention_period" name="retention_period" min="1" max="120" value="{{ $getSetting('retention_period', 12) }}">
+                            <input type="number" id="retention_period" name="retention_period" min="1" max="120" value="{{ $getSetting('retention_period', 3) }}">
+                            <div class="settings-help" style="margin-top:6px;color:#64748b;font-size:0.82rem;">Older audit log rows beyond this window are automatically pruned.</div>
                             @error('retention_period') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">

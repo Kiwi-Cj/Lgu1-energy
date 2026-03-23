@@ -7,8 +7,11 @@ use App\Models\SubmeterAlert;
 use App\Models\SubmeterBaseline;
 use App\Models\SubmeterEquipment;
 use App\Models\SubmeterReading;
+use App\Models\User;
+use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class SubmeterBaselineAlertService
 {
@@ -327,7 +330,7 @@ class SubmeterBaselineAlertService
             $criticalPercent
         );
 
-        return SubmeterAlert::updateOrCreate(
+        $alert = SubmeterAlert::updateOrCreate(
             ['submeter_reading_id' => $reading->id],
             [
                 'submeter_id' => $reading->submeter_id,
@@ -338,6 +341,10 @@ class SubmeterBaselineAlertService
                 'reason' => $reason,
             ]
         );
+
+        $this->notifyRecipientsOfAlert($reading, $alert);
+
+        return $alert;
     }
 
     private function buildReason(
@@ -419,5 +426,64 @@ class SubmeterBaselineAlertService
             'warning_percent' => $warningPercent,
             'critical_percent' => $criticalPercent,
         ];
+    }
+
+    private function notifyRecipientsOfAlert(SubmeterReading $reading, SubmeterAlert $alert): void
+    {
+        try {
+            if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $reading->loadMissing('submeter.facility');
+
+            $facilityName = trim((string) ($reading->submeter?->facility?->name ?? 'Unknown Facility'));
+            $submeterName = trim((string) ($reading->submeter?->submeter_name ?? 'Submeter'));
+            $periodLabel = $reading->periodLabel();
+            $level = strtoupper((string) ($alert->alert_level ?? 'warning'));
+            $increasePercent = is_numeric($alert->increase_percent) ? round((float) $alert->increase_percent, 2) : null;
+
+            $title = 'Submeter Alert';
+            $message = $increasePercent !== null
+                ? "Submeter {$submeterName} kWh increased at {$facilityName} ({$periodLabel}) by {$increasePercent}% [{$level}]"
+                : "Submeter {$submeterName} kWh increased at {$facilityName} ({$periodLabel}) [{$level}]";
+
+            $recipients = User::query()
+                ->with('facilities:id')
+                ->get()
+                ->filter(function (User $user) use ($reading) {
+                    $role = RoleAccess::normalize($user);
+
+                    if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
+                        return true;
+                    }
+
+                    if ($role === 'staff' && $reading->submeter?->facility_id) {
+                        return $user->facilities->contains('id', (int) $reading->submeter->facility_id);
+                    }
+
+                    return false;
+                });
+
+            foreach ($recipients as $recipient) {
+                $exists = $recipient->notifications()
+                    ->where('type', 'submeter_alert')
+                    ->where('message', $message)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                $recipient->notifications()->create([
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => 'submeter_alert',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Notification failure must not block alert persistence.
+        }
     }
 }

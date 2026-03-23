@@ -17,7 +17,7 @@ class SettingsController extends Controller
             'otp_login',
             'system_name',
         ];
-        $settings = Setting::whereIn('key', $keys)->pluck('value', 'key');
+        $settings = Setting::getMany($keys);
         return response()->json($settings);
     }
 
