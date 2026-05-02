@@ -153,9 +153,7 @@ class EnergyRecord extends Model
                 }
             }
 
-            $settings = Setting::query()
-                ->whereIn('key', $keys)
-                ->pluck('value', 'key');
+            $settings = Setting::getMany($keys);
 
             $resolved = [];
             foreach ($defaults as $sizeKey => $levels) {

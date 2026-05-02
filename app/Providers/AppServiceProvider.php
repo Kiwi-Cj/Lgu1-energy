@@ -76,12 +76,12 @@ class AppServiceProvider extends ServiceProvider
         // Sync Laravel session lifetime with dynamic settings value (minutes).
         try {
             if (Schema::hasTable('settings')) {
-                $runtimeKeys = Setting::whereIn('key', [
+                $runtimeKeys = Setting::getMany([
                     'session_timeout',
                     'otp_expiration',
                     'enable_otp_login',
                     'max_login_attempts',
-                ])->pluck('value', 'key');
+                ]);
 
                 $minutes = (int) ($runtimeKeys['session_timeout'] ?? 0);
                 if ($minutes > 0) {

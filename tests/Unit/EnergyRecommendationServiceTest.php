@@ -39,7 +39,7 @@ class EnergyRecommendationServiceTest extends TestCase
         ]);
 
         $this->assertStringContainsString('above baseline', $message);
-        $this->assertStringContainsString('Trend change is +18.45%', $message);
+        $this->assertStringContainsString('Recent trend is +18.45%', $message);
     }
 
     public function test_it_can_force_rules_only_even_when_ai_is_enabled(): void
@@ -57,7 +57,7 @@ class EnergyRecommendationServiceTest extends TestCase
             'trend_percent' => 1.25,
         ], false);
 
-        $this->assertStringContainsString('Energy trend is stable', $message);
+        $this->assertStringContainsString('within the expected range', $message);
     }
 
     public function test_it_returns_alert_and_recommendation_for_rules_fallback(): void
@@ -76,5 +76,26 @@ class EnergyRecommendationServiceTest extends TestCase
         $this->assertSame('Warning', $insight['alert_level']);
         $this->assertSame('rules', $insight['source']);
         $this->assertStringContainsString('Energy use is rising', $insight['recommendation']);
+    }
+
+    public function test_it_generates_facility_specific_rule_based_recommendation(): void
+    {
+        config([
+            'services.ai_recommendations.enabled' => false,
+        ]);
+
+        $service = app(EnergyRecommendationService::class);
+
+        $message = $service->generateFacilityRecommendation([
+            'facility_type' => 'Police Station',
+            'alert_level' => 'Critical',
+            'trend_percent' => 37.10,
+            'actual_kwh' => 2500,
+            'baseline_kwh' => 1600,
+            'last_maintenance' => '2026-01-15',
+        ], false);
+
+        $this->assertStringContainsString('dispatch-room cooling', $message);
+        $this->assertStringContainsString('Last maintenance was logged on Jan 15, 2026', $message);
     }
 }

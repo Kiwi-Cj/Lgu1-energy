@@ -112,7 +112,7 @@ class StaffMiddleware
             || ($request->is('facilities/*') && ! $request->is('facilities/*/edit'));
     }
 
-    private function deny(Request $request, string $message, string $routeName = 'modules.energy.index')
+    private function deny(Request $request, string $message, string $routeName = 'modules.energy-monitoring.index')
     {
         if ($request->expectsJson() || $request->wantsJson() || $request->isJson()) {
             return response()->json(['message' => $message], 403);

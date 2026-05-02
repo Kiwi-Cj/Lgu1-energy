@@ -64,14 +64,10 @@ class MaintenanceController extends Controller
         }
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         return view('modules.maintenance.history', [
             'historyRows' => $historyRows,
             'role' => $role,
             'user' => $user,
-            'notifications' => $notifications,
-            'unreadNotifCount' => $unreadNotifCount,
         ]);
     }
 
@@ -320,15 +316,6 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilities = ($role === 'staff') ? $user->facilities : Facility::orderBy('name')->get();
-    // Filter notifications for staff: only those related to assigned facilities
-    if ($role === 'staff') {
-        // Only filter by user, not by facility_id (column does not exist in notifications)
-        $notifications = $user->notifications()->orderByDesc('created_at')->take(10)->get();
-        $unreadNotifCount = $user->notifications()->whereNull('read_at')->count();
-    } else {
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-    }
     return view('modules.maintenance.index', [
         'maintenanceRows' => $maintenanceRows,
         'needingCount' => $needingCount,
@@ -339,8 +326,6 @@ public function index()
         'role' => $role,
         'user' => $user,
         'facilities' => $facilities,
-        'notifications' => $notifications,
-        'unreadNotifCount' => $unreadNotifCount,
     ]);
 }
 

@@ -100,8 +100,6 @@ class EfficiencySummaryReportController extends Controller
         }
         $user = auth()->user();
         $role = strtolower($user->role ?? '');
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
-        return view('modules.reports.efficiency-summary', compact('efficiencyRows', 'facilities', 'selectedFacility', 'selectedRating', 'role', 'user', 'notifications', 'unreadNotifCount'));
+        return view('modules.reports.efficiency-summary', compact('efficiencyRows', 'facilities', 'selectedFacility', 'selectedRating', 'role', 'user'));
     }
 }

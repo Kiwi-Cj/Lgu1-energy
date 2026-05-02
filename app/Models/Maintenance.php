@@ -25,9 +25,4 @@ class Maintenance extends Model
 
 
     use BelongsToFacility;
-
-    public function energyEfficiency()
-    {
-        return $this->hasOne(EnergyEfficiency::class, 'facility_id', 'facility_id');
-    }
 }

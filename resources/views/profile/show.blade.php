@@ -3,8 +3,6 @@
 
 @php
     $user = auth()->user();
-    $notifications = $notifications ?? ($user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect());
-    $unreadNotifCount = $unreadNotifCount ?? ($user ? $user->notifications()->whereNull('read_at')->count() : 0);
 
     $roleValue = $user?->role;
     $formatRoleText = static function ($value): string {

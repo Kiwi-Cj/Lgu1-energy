@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 // =====================
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/facilities', [FacilityController::class, 'index'])->name('facilities.index');
-    Route::get('/facilities/create', [FacilityController::class, 'create'])->name('facilities.create');
+    Route::redirect('/facilities/create', '/facilities')->name('facilities.create');
     Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
     Route::get('/facilities/{id}', [FacilityController::class, 'show'])->name('facilities.show');
     Route::get('/facilities/{id}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
@@ -32,7 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Facilities
     Route::get('/modules/facilities/index', [FacilityController::class, 'index'])->name('modules.facilities.index');
-    Route::get('/modules/facilities/create', fn() => view('modules.facilities.create'))->name('modules.facilities.create');
+    Route::redirect('/modules/facilities/create', '/modules/facilities/index')->name('modules.facilities.create');
     Route::get('/modules/facilities/archive', [FacilityController::class, 'archive'])->name('modules.facilities.archive');
     Route::post('/modules/facilities/{id}/restore', [FacilityController::class, 'restore'])->name('modules.facilities.restore');
     Route::delete('/modules/facilities/{id}/force-delete', [FacilityController::class, 'forceDelete'])->name('modules.facilities.force-delete');
@@ -42,7 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $avgKwh = $facility->baseline_kwh ?? 0;
         return view('modules.facilities.show', compact('facility', 'showAvg', 'avgKwh'));
     })->name('modules.facilities.show');
-    Route::get('/modules/facilities/{id}/edit', fn($id) => view('modules.facilities.edit', ['id' => $id]))->name('modules.facilities.edit');
+    Route::get('/modules/facilities/{id}/edit', fn($id) => redirect()->route('modules.facilities.show', ['id' => $id]))->name('modules.facilities.edit');
     Route::get('/modules/facilities/{facility}/equipment-inventory', [FacilityController::class, 'equipmentInventory'])->name('modules.facilities.equipment-inventory');
 
     // Facility Meters (Main/Sub-meter master data)
@@ -417,9 +417,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $oldMeterId = (string) old('meter_id', $primaryBillingMeterId > 0 ? $primaryBillingMeterId : '');
 
         $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
-        $user = auth()->user();
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
         return view('modules.facilities.monthly-record.records', compact(
             'facility',
@@ -452,9 +449,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'billingSourceLabel',
             'primaryBillingMeter',
             'oldMeterId',
-            'archivedCount',
-            'notifications',
-            'unreadNotifCount'
+            'archivedCount'
         ));
     })->name('facilities.monthly-records');
 
@@ -645,12 +640,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Maintenance
     Route::get('/modules/maintenance/index', [MaintenanceController::class, 'index'])->name('modules.maintenance.index');
     Route::get('/modules/maintenance/create', [MaintenanceController::class, 'create'])->name('modules.maintenance.create');
-    Route::get('/modules/maintenance/schedule', fn() => view('modules.maintenance.schedule'))->name('modules.maintenance.schedule');
+    Route::get('/modules/maintenance/schedule', fn() => redirect()->route('modules.maintenance.index'))->name('modules.maintenance.schedule');
     Route::post('/modules/maintenance/schedule', [MaintenanceController::class, 'store'])->name('modules.maintenance.schedule');
 
     // Reports
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('modules.reports.energy');
-    Route::get('/modules/reports/facilities', fn() => view('modules.reports.facilities'))->name('modules.reports.facilities');
+    Route::get('/modules/reports/facilities', fn() => redirect()->route('modules.reports.energy'))->name('modules.reports.facilities');
 
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');
@@ -660,26 +655,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/contact-messages/{contactMessage}/mark-unread', [ContactInboxController::class, 'markUnread'])->name('modules.contact-messages.mark-unread');
     Route::post('/modules/contact-messages/{contactMessage}/reply', [ContactInboxController::class, 'reply'])->name('modules.contact-messages.reply');
 
-    // Energy
-    Route::get('/modules/energy/index', function (\Illuminate\Http\Request $request) {
-        $facilities = \App\Models\Facility::all();
-        $query = \App\Models\EnergyRecord::with('facility')
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
-            });
-        if ($request->has('facility_id') && $request->facility_id) {
-            $query->where('facility_id', $request->facility_id);
-        }
-        $monthlyRecords = $query->get();
-        return view('modules.energy-monitoring.records', compact('facilities', 'monthlyRecords'));
-    })->name('modules.energy.index');
-    Route::get('/modules/energy/create', [EnergyController::class, 'create'])->name('modules.energy.create');
-    Route::post('/modules/energy/store', [EnergyController::class, 'store'])->name('modules.energy.store');
-    Route::get('/modules/energy/{id}/show', [EnergyController::class, 'show'])->name('modules.energy.show');
-    Route::get('/modules/energy/{id}/edit', [EnergyController::class, 'edit'])->name('modules.energy.edit');
-    Route::put('/modules/energy/{id}', [EnergyController::class, 'update'])->name('modules.energy.update');
-    Route::delete('/modules/energy/{id}', [EnergyController::class, 'destroy'])->name('modules.energy.destroy');
-    Route::get('/modules/energy/trends', fn() => view('modules.energy.trends'))->name('modules.energy.trends');
     Route::get('/modules/energy/annual', function () {
         $years = range(date('Y'), date('Y') - 10);
         $selectedYear = request('year', date('Y'));
@@ -783,10 +758,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $annualStatus = $getHighestAlert(array_column($monthlyBreakdown, 'status'));
         $user = auth()->user();
         $role = strtolower($user->role ?? '');
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
-        return view('modules.energy-monitoring.annual', compact('years', 'selectedYear', 'facilities', 'selectedFacility', 'totalActualKwh', 'annualBaseline', 'annualDifference', 'annualStatus', 'monthlyBreakdown', 'role', 'user', 'notifications', 'unreadNotifCount'));
+        return view('modules.energy-monitoring.annual', compact('years', 'selectedYear', 'facilities', 'selectedFacility', 'totalActualKwh', 'annualBaseline', 'annualDifference', 'annualStatus', 'monthlyBreakdown', 'role', 'user'));
     })->name('modules.energy.annual');
 });
 
@@ -956,8 +929,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
         $canManageLoadTracking = \App\Support\RoleAccess::can($user, 'manage_load_tracking');
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
         // 3-Month average update logic removed
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
@@ -978,9 +949,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'archivedMeterCount',
             'canManageMeters',
             'canApproveMeters',
-            'canManageLoadTracking',
-            'notifications',
-            'unreadNotifCount'
+            'canManageLoadTracking'
         ));
     })->name('modules.facilities.energy-profile.index');
 
@@ -1003,5 +972,3 @@ Route::middleware(['auth', 'verified'])->group(function () {
         abort(405, 'Profile ID required for delete.');
     });
 });
-
-

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\RoleAccess;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -41,7 +42,12 @@ class AuditLogController extends Controller
             'method' => trim((string) $request->query('method', '')),
             'date_from' => trim((string) $request->query('date_from', '')),
             'date_to' => trim((string) $request->query('date_to', '')),
+            'scope' => trim((string) $request->query('scope', 'essential')),
         ];
+
+        if (! in_array($filters['scope'], ['essential', 'all'], true)) {
+            $filters['scope'] = 'essential';
+        }
 
         if ($filters['date_from'] !== '' && $filters['date_to'] !== '' && $filters['date_from'] > $filters['date_to']) {
             [$filters['date_from'], $filters['date_to']] = [$filters['date_to'], $filters['date_from']];
@@ -51,6 +57,10 @@ class AuditLogController extends Controller
             ->with(['user' => function ($userQuery) use ($userSelectColumns) {
                 $userQuery->select($userSelectColumns);
             }]);
+
+        if ($filters['scope'] === 'essential') {
+            $this->applyEssentialScope($query);
+        }
 
         if ($filters['q'] !== '') {
             $needle = '%' . $filters['q'] . '%';
@@ -96,6 +106,9 @@ class AuditLogController extends Controller
         $logs = $query->orderByDesc('created_at')->paginate(25)->withQueryString();
 
         $baseOptionsQuery = AuditLog::query();
+        if ($filters['scope'] === 'essential') {
+            $this->applyEssentialScope($baseOptionsQuery);
+        }
         $moduleOptions = (clone $baseOptionsQuery)->whereNotNull('module')->select('module')->distinct()->orderBy('module')->pluck('module');
         $actionOptions = (clone $baseOptionsQuery)->select('action')->distinct()->orderBy('action')->limit(150)->pluck('action');
         $userOptionColumns = ['id', 'username'];
@@ -107,19 +120,20 @@ class AuditLogController extends Controller
         }
         $userSortColumn = $hasFullNameColumn ? 'full_name' : ($hasNameColumn ? 'name' : 'username');
         $userOptions = User::query()
-            ->whereIn('id', AuditLog::query()->select('user_id')->whereNotNull('user_id')->distinct())
+            ->whereIn('id', (clone $baseOptionsQuery)->select('user_id')->whereNotNull('user_id')->distinct())
             ->orderBy($userSortColumn)
             ->get($userOptionColumns);
 
         $statsQuery = AuditLog::query();
+        if ($filters['scope'] === 'essential') {
+            $this->applyEssentialScope($statsQuery);
+        }
         $totalLogs = (clone $statsQuery)->count();
         $todayLogs = (clone $statsQuery)->whereDate('created_at', now()->toDateString())->count();
         $activeUsers = (clone $statsQuery)->whereDate('created_at', '>=', now()->subDays(30)->toDateString())->distinct('user_id')->count('user_id');
 
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        $notifications = $user ? $user->notifications()->orderByDesc('created_at')->take(10)->get() : collect();
-        $unreadNotifCount = $user ? $user->notifications()->whereNull('read_at')->count() : 0;
 
         return view('modules.audit.index', compact(
             'logs',
@@ -131,9 +145,35 @@ class AuditLogController extends Controller
             'todayLogs',
             'activeUsers',
             'role',
-            'user',
-            'notifications',
-            'unreadNotifCount'
+            'user'
         ));
+    }
+
+    private function applyEssentialScope(Builder $query): Builder
+    {
+        return $query->where(function (Builder $essentialQuery) {
+            $essentialQuery
+                ->where(function (Builder $mutatingQuery) {
+                    $mutatingQuery
+                        ->whereIn('method', ['POST', 'PUT', 'PATCH', 'DELETE'])
+                        ->whereNotIn('action', ['auth.login', 'auth.logout', 'notifications.markAllRead', 'notifications.markRead']);
+                })
+                ->orWhere(function (Builder $loginQuery) {
+                    $loginQuery
+                        ->where('action', 'auth.login')
+                        ->where('method', 'POST')
+                        ->where(function (Builder $pathQuery) {
+                            $pathQuery->where('route_name', 'login')->orWhere('path', '/login');
+                        });
+                })
+                ->orWhere(function (Builder $logoutQuery) {
+                    $logoutQuery
+                        ->where('action', 'auth.logout')
+                        ->where('method', 'POST')
+                        ->where(function (Builder $pathQuery) {
+                            $pathQuery->where('route_name', 'logout')->orWhere('path', '/logout');
+                        });
+                });
+        });
     }
 }

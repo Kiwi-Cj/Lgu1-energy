@@ -96,29 +96,7 @@ class EnergyReportController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
-        $role = strtolower($user->role ?? '');
-        $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
-        $query = \DB::table('energy_usages')
-            ->join('facilities', 'energy_usages.facility_id', '=', 'facilities.id')
-            ->select('facilities.name as facility', 'energy_usages.usage', 'energy_usages.date');
-        if ($facilityIds) {
-            $query->whereIn('energy_usages.facility_id', $facilityIds);
-        }
-        $energyData = $query
-            ->orderBy('energy_usages.date', 'desc')
-            ->get()
-            ->map(function($row) {
-                return [
-                    'facility' => $row->facility,
-                    'usage' => $row->usage,
-                    'date' => $row->date,
-                ];
-            })->toArray();
-
-        $totalUsage = collect($energyData)->sum('usage');
-
-        return view('admin.reports.energy', compact('energyData', 'totalUsage'));
+        return redirect()->route('reports.energy');
     }
 
     private function buildTrendLabelMap($records): array

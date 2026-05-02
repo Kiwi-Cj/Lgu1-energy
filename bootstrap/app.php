@@ -12,8 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\StaffMiddleware::class);
-        // Temporarily disable system audit trail logging.
-        // $middleware->append(\App\Http\Middleware\AuditTrailMiddleware::class);
+        $middleware->append(\App\Http\Middleware\AuditTrailMiddleware::class);
+        $middleware->append(\App\Http\Middleware\ShareLayoutData::class);
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
