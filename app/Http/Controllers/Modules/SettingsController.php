@@ -63,7 +63,7 @@ class SettingsController extends Controller
             'mail_host' => '',
             'mail_port' => '587',
             'enable_email_notifications' => '1',
-            'enable_audit_logs' => '1',
+            'enable_audit_logs' => '0',
             'retention_period' => '3',
             'export_format' => 'pdf',
             'system_logo' => '',

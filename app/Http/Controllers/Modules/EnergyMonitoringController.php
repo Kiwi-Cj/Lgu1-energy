@@ -34,6 +34,9 @@ class EnergyMonitoringController extends Controller
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
         $search = trim((string) request('search', ''));
+        [$currentYear, $currentMonth, $selectedMonthInput, $selectedPeriodLabel] = $this->resolveSelectedMonth(
+            (string) request('month', '')
+        );
 
         if ($role === 'staff') {
             $facilityQuery = $user->facilities();
@@ -52,8 +55,6 @@ class EnergyMonitoringController extends Controller
 
         $facilities = $facilityQuery->get();
         $totalFacilities = $facilities->count();
-        $currentMonth = (int) date('n');
-        $currentYear = (int) date('Y');
         $facilityIds = $facilities->pluck('id')->all();
 
         $totalEnergyCost = EnergyRecord::where('month', $currentMonth)
@@ -128,7 +129,9 @@ class EnergyMonitoringController extends Controller
             'totalFacilities',
             'facilities',
             'highAlertCount',
-            'totalEnergyCost'
+            'totalEnergyCost',
+            'selectedMonthInput',
+            'selectedPeriodLabel'
         ) + ['role' => $role, 'user' => $user]);
     }
 
@@ -150,8 +153,9 @@ class EnergyMonitoringController extends Controller
             }
         }
 
-        $currentMonth = (int) date('n');
-        $currentYear = (int) date('Y');
+        [$currentYear, $currentMonth] = $this->resolveSelectedMonth(
+            (string) request('month', '')
+        );
         $facilityIds = [(int) $facility->id];
 
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
@@ -197,6 +201,26 @@ class EnergyMonitoringController extends Controller
             'recommendation' => $resolvedRecommendation,
             'recommendation_source' => (string) ($insight['source'] ?? 'rules'),
         ]);
+    }
+
+    private function resolveSelectedMonth(string $monthInput): array
+    {
+        $monthInput = trim($monthInput);
+
+        try {
+            $anchor = $monthInput !== ''
+                ? Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth()
+                : now()->startOfMonth();
+        } catch (\Throwable $e) {
+            $anchor = now()->startOfMonth();
+        }
+
+        return [
+            (int) $anchor->year,
+            (int) $anchor->month,
+            $anchor->format('Y-m'),
+            $anchor->format('F Y'),
+        ];
     }
 
     private function loadMainMetersByFacility(array $facilityIds): Collection

@@ -1306,7 +1306,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @if(in_array($roleKey, ['super_admin', 'admin'], true))
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
-                <li><a href="{{ route('modules.audit.index') }}" class="nav-link{{ request()->routeIs('modules.audit.*') ? ' active' : '' }}"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a></li>
                 <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
                 @if($roleKey==='super_admin')
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>

@@ -56,10 +56,16 @@
         display: flex;
         gap: 10px;
         align-items: center;
+        flex-wrap: wrap;
     }
 
     .energy-monitor-page .search-field {
         position: relative;
+    }
+
+    .energy-monitor-page .period-field {
+        display: flex;
+        align-items: center;
     }
 
     .energy-monitor-page .search-input {
@@ -74,9 +80,51 @@
         color: #0f172a;
     }
 
+    .energy-monitor-page .period-input {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        width: 165px;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+        color: #0f172a;
+    }
+
     .energy-monitor-page .search-input:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+    }
+
+    .energy-monitor-page .period-input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+    }
+
+    .energy-monitor-page .monitor-period-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .energy-monitor-page .monitor-period-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        font-size: 0.84rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .energy-monitor-page .monitor-period-pill i {
+        font-size: 0.8rem;
     }
 
     .energy-monitor-page .search-btn {
@@ -1080,21 +1128,35 @@
 
 <div class="energy-monitor-page">
 <div class="report-card">
+    @php
+        $dashboardNow = now()->timezone(config('app.timezone', 'Asia/Manila'));
+        $selectedMonthInput = $selectedMonthInput ?? $dashboardNow->format('Y-m');
+        $selectedPeriodLabel = $selectedPeriodLabel ?? $dashboardNow->format('F Y');
+    @endphp
     <div class="monitor-header">
         <div>
             <h1 class="monitor-title">
                 Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
             <p class="monitor-subtitle">Main meter status and trend overview for all facilities</p>
+            <div class="monitor-period-meta">
+                <span class="monitor-period-pill">
+                    <i class="fa-regular fa-calendar"></i>
+                    Period: {{ $selectedPeriodLabel }}
+                </span>
+            </div>
         </div>
         
         <form class="search-form" method="GET" action="">
+            <div class="period-field">
+                <input class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}" aria-label="Filter period month">
+            </div>
             <div class="search-field">
                 <i class="fa fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
                 <input class="search-input" type="text" name="search" value="{{ request('search') }}" placeholder="Search facility...">
             </div>
-            <button class="search-btn" type="submit">Search</button>
-            @if(request('search'))
+            <button class="search-btn" type="submit">Apply</button>
+            @if(request()->filled('search') || request()->filled('month'))
                 <a class="clear-link" href="{{ url()->current() }}">Clear</a>
             @endif
         </form>
@@ -1109,7 +1171,7 @@
             <div class="metric-value">{{ $highAlertCount ?? 0 }}</div>
         </div>
         <div class="metric-card metric-cost">
-            <div class="metric-label">Total Cost (Month)</div>
+            <div class="metric-label">Total Cost (Period)</div>
             <div class="metric-value">PHP {{ number_format($totalEnergyCost ?? 0, 2) }}</div>
         </div>
     </div>
@@ -1181,7 +1243,7 @@
                     $floorArea = $facility->floor_area;
                     $eui = ($record && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
                     $trendRecommendation = $facility->trend_recommendation ?? 'Not enough data yet to generate a trend recommendation.';
-                    $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', $facility->id);
+                    $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', ['facility' => $facility->id, 'month' => $selectedMonthInput]);
                     $baselineKwh = $record->baseline_kwh ?? null;
                 @endphp
                 <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
@@ -1254,7 +1316,7 @@
                                 'No Data' => ['icon' => 'i'],
                             ][$alertLevel] ?? ['icon' => 'i'];
                         @endphp
-                        <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl))'>
+                        <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
                             <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
                         </button>
                     </td>
@@ -1371,7 +1433,7 @@ function updateTableAlertPill(facilityId, alertLevel) {
     pill.textContent = normalized;
 }
 
-async function openRecommendationModal(facilityId, facilityName, alertLevel, fallbackRecommendation, recommendationUrl) {
+async function openRecommendationModal(facilityId, facilityName, alertLevel, fallbackRecommendation, recommendationUrl, selectedMonth) {
     const modal = document.getElementById('recommendationModal');
     const title = document.getElementById('recommendationModalTitle');
     const meta  = document.getElementById('recommendationModalMeta');
@@ -1404,6 +1466,7 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     };
 
     const initialAlert = normalizeAlertLevel(alertLevel);
+    const cacheKey = `${facilityId}:${String(selectedMonth || '')}`;
     title.textContent = `Recommendation for ${facilityName}`;
     modal.dataset.facilityId = String(facilityId);
     if (meta) {
@@ -1415,8 +1478,8 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     box.style.background = isDark ? '#111827' : '#fff';
     modal.style.display = 'flex';
 
-    if (recommendationCache[facilityId]) {
-        const cached = recommendationCache[facilityId];
+    if (recommendationCache[cacheKey]) {
+        const cached = recommendationCache[cacheKey];
         text.textContent = cached.recommendation;
         applyAlertStyle(cached.alertLevel);
         updateTableAlertPill(facilityId, cached.alertLevel);
@@ -1457,7 +1520,7 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
         const resolvedAlertLevel = normalizeAlertLevel(data && data.alert_level ? data.alert_level : initialAlert);
         const resolvedSource = String(data && data.recommendation_source ? data.recommendation_source : 'rules').toLowerCase();
 
-        recommendationCache[facilityId] = {
+        recommendationCache[cacheKey] = {
             recommendation,
             alertLevel: resolvedAlertLevel,
             source: resolvedSource,
@@ -1520,7 +1583,7 @@ function openMeterBreakdownModal(facilityName, meterLabel, meterStatus, totalKwh
                     </div>
                     <div class="meter-breakdown-card-kwh">
                         ${formatMetricValue(meter && meter.actual_kwh, ' kWh')}
-                        <small>Current month</small>
+                        <small>Selected period</small>
                     </div>
                 </div>
                 <div class="meter-breakdown-meta">

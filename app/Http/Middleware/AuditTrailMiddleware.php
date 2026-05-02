@@ -140,7 +140,7 @@ class AuditTrailMiddleware
         }
 
         try {
-            return (string) Setting::getValue('enable_audit_logs', '1') === '1';
+            return (string) Setting::getValue('enable_audit_logs', '0') === '1';
         } catch (\Throwable $e) {
             return true;
         }

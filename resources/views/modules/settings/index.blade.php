@@ -693,8 +693,8 @@ body.dark-mode .settings-file-chip {
                         <div class="settings-field">
                             <label for="enable_audit_logs">Enable Audit Logs</label>
                             <select id="enable_audit_logs" name="enable_audit_logs">
-                                <option value="1" {{ (string) $getSetting('enable_audit_logs', '1') === '1' ? 'selected' : '' }}>Enabled</option>
-                                <option value="0" {{ (string) $getSetting('enable_audit_logs', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                                <option value="1" {{ (string) $getSetting('enable_audit_logs', '0') === '1' ? 'selected' : '' }}>Enabled</option>
+                                <option value="0" {{ (string) $getSetting('enable_audit_logs', '0') === '0' ? 'selected' : '' }}>Disabled</option>
                             </select>
                             @error('enable_audit_logs') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>

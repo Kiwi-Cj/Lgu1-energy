@@ -206,7 +206,10 @@
 }
 
 .energy-table-wrap {
-    overflow-x: auto;
+    overflow: auto;
+    max-height: calc(100vh - 320px);
+    min-height: 420px;
+    overscroll-behavior: contain;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     background: #fff;
@@ -223,6 +226,10 @@
 }
 
 .energy-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
     padding: 12px 14px;
     text-align: left;
     vertical-align: middle;
@@ -335,7 +342,7 @@ body.dark-mode .btn-reset {
     color: #e2e8f0;
 }
 body.dark-mode .energy-table thead { background: #0f172a; }
-body.dark-mode .energy-table th { color: #94a3b8; border-bottom-color: #1f2937; }
+body.dark-mode .energy-table th { color: #94a3b8; border-bottom-color: #1f2937; background: #0f172a; }
 body.dark-mode .energy-table td { color: #e2e8f0; border-bottom-color: #1f2937; }
 body.dark-mode .energy-table tr:hover { background: #1f2937; }
 body.dark-mode .facility-cell { color: #f8fafc; }
@@ -354,6 +361,10 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
     .btn-filter,
     .btn-reset {
         width: 100%;
+    }
+    .energy-table-wrap {
+        max-height: 58vh;
+        min-height: 340px;
     }
 }
 
@@ -377,6 +388,10 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
     }
     .energy-filters {
         grid-template-columns: 1fr;
+    }
+    .energy-table-wrap {
+        max-height: 60vh;
+        min-height: 300px;
     }
 }
 </style>
