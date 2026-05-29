@@ -34,12 +34,12 @@ class LoadTrackingController extends Controller
         $selectedSubmeter = $request->filled('submeter_id') ? (int) $request->query('submeter_id') : null;
         $selectedMainMeter = $request->filled('main_meter_id') ? (int) $request->query('main_meter_id') : null;
         $selectedMeterScope = strtolower(trim((string) $request->query('meter_scope', 'all')));
-        $selectedConsumptionFilter = strtolower(trim((string) $request->query('consumption_filter', 'warning_high')));
+        $selectedConsumptionFilter = strtolower(trim((string) $request->query('consumption_filter', 'all')));
         if (! in_array($selectedMeterScope, ['all', 'sub', 'main'], true)) {
             $selectedMeterScope = 'all';
         }
         if (! in_array($selectedConsumptionFilter, ['warning_high', 'all'], true)) {
-            $selectedConsumptionFilter = 'warning_high';
+            $selectedConsumptionFilter = 'all';
         }
 
         if ($selectedMeterScope === 'sub') {
@@ -315,7 +315,7 @@ class LoadTrackingController extends Controller
             'month' => $validated['month'] ?? now()->format('Y-m'),
             'facility_id' => $validated['facility_id'] ?? null,
             'meter_scope' => $validated['meter_scope_filter'] ?? 'all',
-            'consumption_filter' => $validated['consumption_filter'] ?? 'warning_high',
+            'consumption_filter' => $validated['consumption_filter'] ?? 'all',
             'submeter_id' => $validated['submeter_id_filter'] ?? null,
             'main_meter_id' => $validated['main_meter_id_filter'] ?? null,
         ])->with('success', 'Equipment added to load tracking inventory.');
@@ -387,7 +387,7 @@ class LoadTrackingController extends Controller
             'month' => $validated['month'] ?? now()->format('Y-m'),
             'facility_id' => $validated['facility_id'] ?? null,
             'meter_scope' => $validated['meter_scope_filter'] ?? 'all',
-            'consumption_filter' => $validated['consumption_filter'] ?? 'warning_high',
+            'consumption_filter' => $validated['consumption_filter'] ?? 'all',
             'submeter_id' => $validated['submeter_id_filter'] ?? null,
             'main_meter_id' => $validated['main_meter_id_filter'] ?? null,
         ])->with('success', 'Equipment inventory updated.');
@@ -421,7 +421,7 @@ class LoadTrackingController extends Controller
             'month' => $request->query('month', now()->format('Y-m')),
             'facility_id' => $request->query('facility_id'),
             'meter_scope' => $request->query('meter_scope', 'all'),
-            'consumption_filter' => $request->query('consumption_filter', 'warning_high'),
+            'consumption_filter' => $request->query('consumption_filter', 'all'),
             'submeter_id' => $request->query('submeter_id'),
             'main_meter_id' => $request->query('main_meter_id'),
         ])->with('success', 'Equipment removed from inventory.');
@@ -483,7 +483,7 @@ class LoadTrackingController extends Controller
             'month' => $request->input('month', now()->format('Y-m')),
             'facility_id' => $request->input('facility_id'),
             'meter_scope' => $request->input('meter_scope', 'all'),
-            'consumption_filter' => $request->input('consumption_filter', 'warning_high'),
+            'consumption_filter' => $request->input('consumption_filter', 'all'),
             'submeter_id' => $request->input('submeter_id'),
             'main_meter_id' => $request->input('main_meter_id'),
         ])->with('success', 'File uploaded for selected equipment.');
@@ -537,7 +537,7 @@ class LoadTrackingController extends Controller
             'month' => $request->input('month', now()->format('Y-m')),
             'facility_id' => $request->input('facility_id'),
             'meter_scope' => $request->input('meter_scope', 'all'),
-            'consumption_filter' => $request->input('consumption_filter', 'warning_high'),
+            'consumption_filter' => $request->input('consumption_filter', 'all'),
             'submeter_id' => $request->input('submeter_id'),
             'main_meter_id' => $request->input('main_meter_id'),
         ])->with('success', 'File removed from equipment.');

@@ -40,6 +40,20 @@
     .submeter-kpi.fac { background: linear-gradient(135deg,#f8fafc,#fff); }
     .submeter-kpi.fac .label { color: #334155; }
 
+    .submeter-sensor-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; }
+    .submeter-sensor-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
+    .submeter-sensor-title { margin: 0; color: #1e293b; font-size: 1rem; font-weight: 900; }
+    .submeter-sensor-subtitle { margin-top: 3px; color: #64748b; font-size: .84rem; font-weight: 600; }
+    .submeter-sensor-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .submeter-sensor-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #334155; padding: 7px 12px; font-weight: 900; text-decoration: none; font-size: .84rem; }
+    .submeter-sensor-tab.active { border-color: #22d3ee; background: #ecfeff; color: #0f766e; }
+    .submeter-sensor-body { padding: 14px; }
+    .submeter-sensor-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .submeter-sensor-stat { border: 1px solid #dbeafe; border-radius: 12px; background: #f8fbff; padding: 11px 12px; }
+    .submeter-sensor-stat-label { color: #475569; font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .submeter-sensor-stat-value { margin-top: 4px; color: #0f172a; font-size: 1.28rem; font-weight: 900; }
+    .submeter-sensor-chart { position: relative; height: 300px; max-height: 300px; width: 100%; }
+
     .submeter-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; }
     .submeter-filter { padding: 12px; display: grid; grid-template-columns: minmax(140px,170px) minmax(160px,200px) minmax(220px,1fr) minmax(220px,1fr) auto; gap: 10px; align-items: end; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
     .submeter-field { display: grid; gap: 6px; }
@@ -254,13 +268,8 @@
     .submeter-modal-text.tone-none { border-color: #cbd5e1; background: #f8fafc; color: #334155; }
     .submeter-modal-foot { margin-top: 14px; padding: 14px 24px 18px; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; background: #f8fafc; }
 
-    .submeter-encode { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; }
-    .submeter-encode h3 { margin: 0 0 10px; color: #1e293b; font-weight: 800; }
-    .submeter-encode-form { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; }
-    .submeter-encode-note { margin-top: 8px; color: #64748b; font-size: .85rem; }
-
     body.dark-mode .submeter-panel,
-    body.dark-mode .submeter-encode,
+    body.dark-mode .submeter-sensor-panel,
     body.dark-mode .submeter-modal-card {
         background: #111827;
         border-color: #334155;
@@ -273,17 +282,18 @@
     }
 
     body.dark-mode .submeter-title,
+    body.dark-mode .submeter-sensor-title,
+    body.dark-mode .submeter-sensor-stat-value,
     body.dark-mode .submeter-name,
     body.dark-mode .submeter-table td,
     body.dark-mode .submeter-table th,
-    body.dark-mode .submeter-encode h3,
     body.dark-mode .submeter-modal-title {
         color: #e2e8f0;
     }
 
     body.dark-mode .submeter-subtitle,
+    body.dark-mode .submeter-sensor-subtitle,
     body.dark-mode .submeter-meta,
-    body.dark-mode .submeter-encode-note,
     body.dark-mode .submeter-modal-meta {
         color: #94a3b8;
     }
@@ -321,9 +331,23 @@
     }
 
     body.dark-mode .submeter-filter,
+    body.dark-mode .submeter-sensor-head,
     body.dark-mode .submeter-table thead th {
         background: #0f172a;
         border-color: #334155;
+    }
+
+    body.dark-mode .submeter-sensor-tab,
+    body.dark-mode .submeter-sensor-stat {
+        background: #111827;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .submeter-sensor-tab.active {
+        background: #164e63;
+        border-color: #155e75;
+        color: #cffafe;
     }
 
     body.dark-mode .submeter-table-shell {
@@ -426,7 +450,8 @@
     $top5 = $widgets['top5HighestIncrease'] ?? collect();
     $criticalCount = $widgets['criticalAlertsThisMonth'] ?? 0;
     $facilitiesMostAlerts = $widgets['facilitiesWithMostAlerts'] ?? collect();
-    $submetersForEncode = $submetersForEncode ?? ($submeters ?? collect());
+    $sensorTrend = $sensorTrend ?? ['labels' => [], 'kwh' => [], 'total_kwh' => 0, 'reading_count' => 0];
+    $selectedSensorPeriod = $selectedSensorPeriod ?? 'daily';
 @endphp
 
 <div class="submeter-ui">
@@ -471,8 +496,49 @@
             </article>
         </div>
 
+        <section class="submeter-sensor-panel">
+            <div class="submeter-sensor-head">
+                <div>
+                    <h3 class="submeter-sensor-title">Submeter Sensor Graph</h3>
+                    <div class="submeter-sensor-subtitle">IoT source readings grouped by selected time range.</div>
+                </div>
+                <div class="submeter-sensor-tabs">
+                    @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $periodKey => $periodLabel)
+                        <a
+                            href="{{ route('modules.submeters.monitoring', array_filter([
+                                'period_type' => $periodType,
+                                'month' => $selectedMonth,
+                                'facility_id' => $selectedFacility,
+                                'department' => $selectedDepartment,
+                                'sensor_period' => $periodKey,
+                            ], fn ($value) => $value !== null && $value !== '')) }}"
+                            class="submeter-sensor-tab{{ $selectedSensorPeriod === $periodKey ? ' active' : '' }}"
+                        >
+                            {{ $periodLabel }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            <div class="submeter-sensor-body">
+                <div class="submeter-sensor-stats">
+                    <div class="submeter-sensor-stat">
+                        <div class="submeter-sensor-stat-label">Sensor kWh</div>
+                        <div class="submeter-sensor-stat-value">{{ number_format((float) ($sensorTrend['total_kwh'] ?? 0), 2) }}</div>
+                    </div>
+                    <div class="submeter-sensor-stat">
+                        <div class="submeter-sensor-stat-label">Sensor Readings</div>
+                        <div class="submeter-sensor-stat-value">{{ number_format((int) ($sensorTrend['reading_count'] ?? 0)) }}</div>
+                    </div>
+                </div>
+                <div class="submeter-sensor-chart">
+                    <canvas id="submeterSensorChart" style="display:block;width:100%;height:100%;"></canvas>
+                </div>
+            </div>
+        </section>
+
         <section class="submeter-panel">
             <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-filter">
+                <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
                 <div class="submeter-field">
                     <label for="period_type">Period Type</label>
                     <select id="period_type" name="period_type" class="submeter-input">
@@ -654,8 +720,65 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 const submeterAiCache = {};
+
+window.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+
+    const sensorCanvas = document.getElementById('submeterSensorChart');
+    if (!sensorCanvas) {
+        return;
+    }
+
+    const sensorLabels = @json($sensorTrend['labels'] ?? []);
+    const sensorKwhData = @json($sensorTrend['kwh'] ?? []);
+    const sensorPeriod = @json(ucfirst((string) ($selectedSensorPeriod ?? 'daily')));
+
+    if (window.submeterSensorChartInstance) {
+        window.submeterSensorChartInstance.destroy();
+    }
+
+    window.submeterSensorChartInstance = new Chart(sensorCanvas, {
+        type: 'bar',
+        data: {
+            labels: sensorLabels,
+            datasets: [
+                {
+                    label: sensorPeriod + ' Sensor kWh',
+                    data: sensorKwhData,
+                    borderColor: '#0891b2',
+                    backgroundColor: 'rgba(8, 145, 178, 0.72)',
+                    borderRadius: 6,
+                    maxBarThickness: 42
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            resizeDelay: 150,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return Number(value).toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
 
 function normalizeSubmeterAiAlert(level) {
     const raw = String(level || '').trim().toLowerCase();

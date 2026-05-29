@@ -16,7 +16,7 @@
     $mainMeters = $mainMeters ?? collect();
     $submeters = $submeters ?? collect();
     $selectedMeterScope = $selectedMeterScope ?? 'all';
-    $selectedConsumptionFilter = $selectedConsumptionFilter ?? 'warning_high';
+    $selectedConsumptionFilter = $selectedConsumptionFilter ?? 'all';
 @endphp
 
 <style>
@@ -81,7 +81,7 @@
 
     .lt-data-table {
         width: 100%;
-        min-width: 1020px;
+        min-width: 1140px;
         border-collapse: separate;
         border-spacing: 0;
         table-layout: fixed;
@@ -164,8 +164,8 @@
             <div class="lt-filter-field">
                 <label class="lt-filter-label">Consumption</label>
                 <select name="consumption_filter" class="lt-control">
-                    <option value="warning_high" @selected($selectedConsumptionFilter === 'warning_high')>Warning + High Only</option>
                     <option value="all" @selected($selectedConsumptionFilter === 'all')>All Levels</option>
+                    <option value="warning_high" @selected($selectedConsumptionFilter === 'warning_high')>Warning + High Only</option>
                 </select>
             </div>
             <div id="filter_sub_group" class="lt-filter-field">
@@ -207,7 +207,7 @@
 
     <div class="em-panel" style="padding:10px 12px;color:#475569;font-size:.84rem;">
         <strong style="color:#1e293b;">How to read this table:</strong>
-        Rows are highlighted by alert level. If estimated kWh is zero but actual kWh exists, row is treated as High Consumption.
+        Main Meter is the parent source. Sub Meter rows show the linked main meter when mapped. Compare Estimated kWh vs Actual kWh: Warning is over {{ number_format((float) $warningThreshold, 0) }}%, High is over {{ number_format((float) $varianceThreshold, 0) }}%, and No Estimate means actual usage exists but equipment inventory is incomplete.
     </div>
 
     <div class="em-panel em-table-wrap">
@@ -216,6 +216,7 @@
                 <tr style="background:#f8fafc;">
                     <th style="text-align:left;">Facility</th>
                     <th style="text-align:left;">Type</th>
+                    <th style="text-align:left;">Linked Main</th>
                     <th style="text-align:left;">Meter</th>
                     <th style="text-align:center;">Equipment</th>
                     <th style="text-align:right;">Total Watts</th>
@@ -248,6 +249,9 @@
                     <tr style="background:{{ $rowBg }};">
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">{{ $facilityLabel }}</td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">{{ $row['meter_scope_label'] }}</td>
+                        <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">
+                            {{ $row['parent_main_meter_name'] ?? ($row['meter_scope'] === 'main' ? 'Parent' : 'Unmapped') }}
+                        </td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;font-weight:700;">{{ $row['meter_name'] }}</td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;text-align:center;">{{ number_format((int) $row['equipment_count']) }}</td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;text-align:right;">{{ number_format((float) ($row['total_watts'] ?? 0), 2) }}</td>
@@ -261,7 +265,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" style="padding:16px;text-align:center;color:#64748b;">
+                    <tr><td colspan="10" style="padding:16px;text-align:center;color:#64748b;">
                         {{ $selectedConsumptionFilter === 'warning_high'
                             ? 'No warning/high consumption meter found for selected filters. Meters with "No Estimate" are excluded in this view.'
                             : 'No meter data available for selected filters.' }}

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\EnergyRecord;
+use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\MainMeterReading;
 use App\Models\Submeter;
@@ -478,3 +479,191 @@ Artisan::command('submeter:sync-and-backfill-from-energy-records
 
     $this->info("Submeter sync/backfill complete. Inserted {$insertCount} submeter_readings.");
 })->purpose('Sync submeters from facility_meters and backfill submeter_readings from old energy_records');
+
+Artisan::command('demo:seed-fake-sensors {--submeters=6 : Number of active submeters to seed}', function () {
+    $mainService = app(MainMeterBaselineAlertService::class);
+    $submeterService = app(SubmeterBaselineAlertService::class);
+
+    $mainMeters = FacilityMeter::query()
+        ->where('meter_type', 'main')
+        ->orderBy('facility_id')
+        ->limit(4)
+        ->get(['id', 'facility_id', 'meter_name', 'baseline_kwh']);
+
+    if ($mainMeters->isEmpty()) {
+        $facility = Facility::query()->orderBy('id')->first(['id', 'name']);
+        if ($facility) {
+            $meter = FacilityMeter::query()->create([
+                'facility_id' => (int) $facility->id,
+                'meter_name' => 'Fake Main Sensor Meter',
+                'meter_number' => 'FAKE-MAIN-001',
+                'meter_type' => 'main',
+                'status' => 'active',
+                'multiplier' => 1,
+                'baseline_kwh' => is_numeric($facility->baseline_kwh) ? (float) $facility->baseline_kwh : 1000,
+                'notes' => 'Demo fake sensor main meter',
+                'approved_at' => now(),
+            ]);
+
+            $mainMeters = collect([$meter]);
+        }
+    }
+
+    $mainCreated = 0;
+    foreach ($mainMeters as $index => $meter) {
+        $baseStart = 10000 + ($index * 1750);
+
+        for ($i = 0; $i < 12; $i++) {
+            $month = now()->copy()->subMonthsNoOverflow(11 - $i)->startOfMonth();
+            $start = $month->copy()->startOfMonth();
+            $end = $month->copy()->endOfMonth();
+            $usage = 720 + ($index * 85) + ($i * 18) + (($i % 3) * 45);
+            $readingStart = $baseStart + ($i * 920);
+            $readingEnd = $readingStart + $usage;
+
+            $reading = MainMeterReading::updateOrCreate(
+                [
+                    'facility_id' => (int) $meter->facility_id,
+                    'period_type' => 'monthly',
+                    'period_start_date' => $start->toDateString(),
+                    'period_end_date' => $end->toDateString(),
+                ],
+                [
+                    'reading_start_kwh' => round($readingStart, 2),
+                    'reading_end_kwh' => round($readingEnd, 2),
+                    'operating_days' => $start->daysInMonth,
+                    'peak_demand_kw' => round($usage / max(1, $start->daysInMonth * 24) / 0.60, 2),
+                    'power_factor' => 0.95,
+                    'input_source' => 'iot',
+                    'device_id' => 'FAKE-MAIN-' . str_pad((string) $meter->id, 4, '0', STR_PAD_LEFT),
+                    'received_at' => $end->copy()->setTime(8 + ($index % 6), 15, 0),
+                    'approved_at' => now(),
+                ]
+            );
+
+            $mainService->processReading($reading->fresh(['facility']));
+            $mainCreated++;
+        }
+    }
+
+    $limit = max(1, (int) $this->option('submeters'));
+    $submeters = Submeter::query()
+        ->whereHas('facility')
+        ->orderBy('facility_id')
+        ->orderBy('submeter_name')
+        ->limit($limit)
+        ->get(['id', 'facility_id', 'submeter_name']);
+
+    if ($submeters->isEmpty()) {
+        $facility = Facility::query()->orderBy('id')->first(['id', 'name']);
+        if ($facility) {
+            $created = collect();
+            foreach (['Lighting Sensor', 'Outlet Sensor', 'Aircon Sensor'] as $name) {
+                $created->push(Submeter::query()->updateOrCreate(
+                    [
+                        'facility_id' => (int) $facility->id,
+                        'submeter_name' => $name,
+                    ],
+                    [
+                        'meter_type' => 'single_phase',
+                        'status' => 'active',
+                    ]
+                ));
+            }
+
+            $submeters = $created->take($limit)->values();
+        }
+    }
+
+    $subCreated = 0;
+    foreach ($submeters as $index => $submeter) {
+        $deviceId = 'FAKE-SUB-' . str_pad((string) $submeter->id, 4, '0', STR_PAD_LEFT);
+
+        for ($i = 0; $i < 30; $i++) {
+            $day = now()->copy()->subDays(29 - $i)->startOfDay();
+            $usage = 18 + ($index * 3) + (($i % 7) * 1.7);
+            $readingStart = 1500 + ($index * 420) + ($i * 31);
+
+            $reading = SubmeterReading::updateOrCreate(
+                [
+                    'submeter_id' => (int) $submeter->id,
+                    'period_type' => 'daily',
+                    'period_start_date' => $day->toDateString(),
+                    'period_end_date' => $day->toDateString(),
+                ],
+                [
+                    'reading_start_kwh' => round($readingStart, 2),
+                    'reading_end_kwh' => round($readingStart + $usage, 2),
+                    'operating_days' => 1,
+                    'input_source' => 'iot',
+                    'device_id' => $deviceId,
+                    'received_at' => $day->copy()->setTime(7 + ($index % 5), 30, 0),
+                    'approved_at' => now(),
+                ]
+            );
+
+            $submeterService->processReading($reading->fresh(['submeter.facility']));
+            $subCreated++;
+        }
+
+        for ($i = 0; $i < 12; $i++) {
+            $week = now()->copy()->subWeeks(11 - $i)->startOfWeek();
+            $start = $week->copy()->startOfWeek();
+            $end = $week->copy()->endOfWeek();
+            $usage = 140 + ($index * 16) + (($i % 4) * 14);
+            $readingStart = 4200 + ($index * 900) + ($i * 165);
+
+            $reading = SubmeterReading::updateOrCreate(
+                [
+                    'submeter_id' => (int) $submeter->id,
+                    'period_type' => 'weekly',
+                    'period_start_date' => $start->toDateString(),
+                    'period_end_date' => $end->toDateString(),
+                ],
+                [
+                    'reading_start_kwh' => round($readingStart, 2),
+                    'reading_end_kwh' => round($readingStart + $usage, 2),
+                    'operating_days' => 7,
+                    'input_source' => 'iot',
+                    'device_id' => $deviceId,
+                    'received_at' => $end->copy()->setTime(8 + ($index % 5), 0, 0),
+                    'approved_at' => now(),
+                ]
+            );
+
+            $submeterService->processReading($reading->fresh(['submeter.facility']));
+            $subCreated++;
+        }
+
+        for ($i = 0; $i < 24; $i++) {
+            $month = now()->copy()->subMonthsNoOverflow(23 - $i)->startOfMonth();
+            $start = $month->copy()->startOfMonth();
+            $end = $month->copy()->endOfMonth();
+            $usage = 520 + ($index * 55) + (($i % 6) * 22);
+            $readingStart = 9000 + ($index * 1200) + ($i * 610);
+
+            $reading = SubmeterReading::updateOrCreate(
+                [
+                    'submeter_id' => (int) $submeter->id,
+                    'period_type' => 'monthly',
+                    'period_start_date' => $start->toDateString(),
+                    'period_end_date' => $end->toDateString(),
+                ],
+                [
+                    'reading_start_kwh' => round($readingStart, 2),
+                    'reading_end_kwh' => round($readingStart + $usage, 2),
+                    'operating_days' => $start->daysInMonth,
+                    'input_source' => 'iot',
+                    'device_id' => $deviceId,
+                    'received_at' => $end->copy()->setTime(9 + ($index % 5), 0, 0),
+                    'approved_at' => now(),
+                ]
+            );
+
+            $submeterService->processReading($reading->fresh(['submeter.facility']));
+            $subCreated++;
+        }
+    }
+
+    $this->info("Seeded fake sensor data. Main rows touched: {$mainCreated}. Submeter rows touched: {$subCreated}.");
+})->purpose('Seed fake IoT sensor readings for main meter and submeter graphs');

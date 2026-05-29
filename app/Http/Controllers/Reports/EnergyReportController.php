@@ -13,6 +13,10 @@ class EnergyReportController extends Controller
     public function exportPdf(Request $request)
     {
         $query = \App\Models\EnergyRecord::with('facility');
+        $query->where(function ($mainScope) {
+            $mainScope->whereNull('meter_id')
+                ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+        });
         if ($request->filled('facility_id')) {
             $query->where('facility_id', $request->facility_id);
         }

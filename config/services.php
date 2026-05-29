@@ -48,4 +48,12 @@ return [
         ],
     ],
 
+    'main_meter_sensor' => [
+        'token' => env('MAIN_METER_SENSOR_TOKEN'),
+    ],
+
+    'submeter_sensor' => [
+        'token' => env('SUBMETER_SENSOR_TOKEN', env('MAIN_METER_SENSOR_TOKEN')),
+    ],
+
 ];

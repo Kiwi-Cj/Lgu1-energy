@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Main Meter Monitoring and Alerts
     Route::get('/modules/main-meter/monitoring', [MainMeterMonitoringController::class, 'index'])->name('modules.main-meter.monitoring');
     Route::post('/modules/main-meter/readings', [MainMeterMonitoringController::class, 'store'])->name('modules.main-meter.readings.store');
+    Route::post('/modules/main-meter/readings/simulate-iot', [MainMeterMonitoringController::class, 'simulateIotReading'])->name('modules.main-meter.readings.simulate-iot');
     Route::post('/modules/main-meter/readings/{reading}/approve', [MainMeterMonitoringController::class, 'approve'])->name('modules.main-meter.readings.approve');
     Route::get('/modules/main-meter/alerts', [MainMeterMonitoringController::class, 'alerts'])->name('modules.main-meter.alerts');
     Route::get('/modules/main-meter/reports/monthly', [MainMeterMonitoringController::class, 'monthlyReport'])->name('modules.main-meter.reports.monthly');
@@ -89,7 +90,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
-        $facility = \App\Models\Facility::findOrFail($facilityId);
+        $facility = \App\Models\Facility::find($facilityId);
+        if (! $facility) {
+            $fallbackFacility = \App\Models\Facility::query()
+                ->whereIn('name', ['LGU City Hall Main Building', 'LGU Health Office'])
+                ->orderBy('id')
+                ->first();
+
+            if ($fallbackFacility) {
+                return redirect()
+                    ->route('facilities.monthly-records', ['facility' => $fallbackFacility->id])
+                    ->with('error', 'Facility ID not found after reseeding. Redirected to the current demo facility.');
+            }
+
+            return redirect()
+                ->route('modules.facilities.index')
+                ->with('error', 'Facility not found.');
+        }
+        $facilityId = $facility->id;
 
         $monthLabels = [
             1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
@@ -227,6 +245,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->groupBy(fn ($record) => (int) ($record->meter_id ?? 0))
             ->map(fn ($group) => round((float) $group->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2));
 
+        $mainMeterIdsForSensor = $meterOptions
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values();
+        $fallbackSensorMainMeterId = (int) ($mainMeterIdsForSensor->first() ?? 0);
+        $resolveSensorMainMeterId = static function ($reading) use ($mainMeterIdsForSensor, $fallbackSensorMainMeterId): int {
+            $deviceId = (string) ($reading->device_id ?? '');
+            if (preg_match('/FAKE-MAIN-(\d+)/', $deviceId, $matches)) {
+                $meterId = (int) ltrim($matches[1], '0');
+                if ($meterId > 0 && $mainMeterIdsForSensor->contains($meterId)) {
+                    return $meterId;
+                }
+            }
+
+            return $fallbackSensorMainMeterId;
+        };
+
+        $sensorMainRowsForSummary = \App\Models\MainMeterReading::query()
+            ->where('facility_id', $facilityId)
+            ->where('input_source', 'iot')
+            ->whereYear('period_end_date', $selectedYear)
+            ->when($effectiveSummaryMonth !== null, fn ($query) => $query->whereMonth('period_end_date', $effectiveSummaryMonth))
+            ->get(['id', 'facility_id', 'period_end_date', 'kwh_used', 'device_id']);
+
+        $sensorMainPeriodTotals = $sensorMainRowsForSummary
+            ->groupBy(fn ($reading) => $resolveSensorMainMeterId($reading))
+            ->map(fn ($group) => round((float) $group->sum(fn ($reading) => (float) ($reading->kwh_used ?? 0)), 2));
+
+        foreach ($sensorMainPeriodTotals as $meterId => $sensorKwh) {
+            $meterId = (int) $meterId;
+            if ($meterId > 0) {
+                $mainMeterPeriodTotals[$meterId] = round((float) ($mainMeterPeriodTotals->get($meterId, 0)) + (float) $sensorKwh, 2);
+            }
+        }
+
         $submeterPeriodTotalsQuery = \App\Models\EnergyRecord::query()
             ->where('facility_id', $facilityId)
             ->where('year', $selectedYear)
@@ -314,7 +368,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->values();
 
         $mainMeterOrganization = $meterOptions
-            ->map(function ($mainMeter) use ($submeterPeriodTotals, $mainMeterPeriodTotals) {
+            ->map(function ($mainMeter) use ($submeterPeriodTotals, $mainMeterPeriodTotals, $sensorMainPeriodTotals) {
                 $mainMeterId = (int) ($mainMeter->id ?? 0);
                 $submeters = collect($mainMeter->childMeters ?? [])
                     ->filter(fn ($sub) => (string) ($sub->meter_type ?? '') === 'sub')
@@ -332,6 +386,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     ->values();
 
                 $mainTotalKwh = round((float) ($mainMeterPeriodTotals->get($mainMeterId, 0)), 2);
+                $sensorTotalKwh = round((float) ($sensorMainPeriodTotals->get($mainMeterId, 0)), 2);
                 $linkedSubTotalKwh = round((float) $submeters->sum(fn ($item) => (float) ($item['total_kwh'] ?? 0)), 2);
 
                 return [
@@ -341,6 +396,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'submeters' => $submeters,
                     'submeter_count' => (int) $submeters->count(),
                     'main_total_kwh' => $mainTotalKwh,
+                    'sensor_total_kwh' => $sensorTotalKwh,
                     'linked_sub_total_kwh' => $linkedSubTotalKwh,
                     'main_minus_sub_kwh' => round($mainTotalKwh - $linkedSubTotalKwh, 2),
                 ];
@@ -367,6 +423,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $mainMonthlyTotals = $mainMonthlyTotalsSource
             ->groupBy(fn ($record) => (int) ($record->month ?? 0))
             ->map(fn ($group) => round((float) $group->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2));
+
+        $sensorMainMonthlyRows = \App\Models\MainMeterReading::query()
+            ->where('facility_id', $facilityId)
+            ->where('input_source', 'iot')
+            ->whereYear('period_end_date', $selectedYear)
+            ->get(['period_end_date', 'kwh_used', 'device_id']);
+
+        if ($selectedMainSubMeterId !== null) {
+            $sensorMainMonthlyRows = $sensorMainMonthlyRows
+                ->filter(fn ($reading) => $resolveSensorMainMeterId($reading) === (int) $selectedMainSubMeterId)
+                ->values();
+        }
+
+        $sensorMainMonthlyTotals = $sensorMainMonthlyRows
+            ->groupBy(fn ($reading) => (int) \Carbon\Carbon::parse($reading->period_end_date)->month)
+            ->map(fn ($group) => round((float) $group->sum(fn ($reading) => (float) ($reading->kwh_used ?? 0)), 2));
+
+        foreach ($sensorMainMonthlyTotals as $monthNum => $sensorKwh) {
+            $monthNum = (int) $monthNum;
+            $mainMonthlyTotals[$monthNum] = round((float) ($mainMonthlyTotals->get($monthNum, 0)) + (float) $sensorKwh, 2);
+        }
 
         $comparisonSubmeterMonthlyTotals = $submeterMonthlyTotals;
         if ($selectedMainSubMeterId !== null) {
@@ -454,7 +531,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('facilities.monthly-records');
 
     Route::get('/modules/facilities/{facility}/monthly-records/submeters', function (\Illuminate\Http\Request $request, $facilityId) {
-        $facility = \App\Models\Facility::findOrFail($facilityId);
+        $facility = \App\Models\Facility::find($facilityId);
+        if (! $facility) {
+            $fallbackFacility = \App\Models\Facility::query()
+                ->whereIn('name', ['LGU City Hall Main Building', 'LGU Health Office'])
+                ->orderBy('id')
+                ->first();
+
+            if ($fallbackFacility) {
+                return redirect()
+                    ->route('facilities.monthly-records.submeters', ['facility' => $fallbackFacility->id])
+                    ->with('error', 'Facility ID not found after reseeding. Redirected to the current demo facility.');
+            }
+
+            return redirect()
+                ->route('modules.facilities.index')
+                ->with('error', 'Facility not found.');
+        }
+        $facilityId = $facility->id;
         $monthLabels = [
             1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
             7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec',
@@ -625,7 +719,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('facilities.monthly-records.submeters');
 
     Route::get('/modules/facilities/{facility}/monthly-records/archive', function ($facilityId) {
-        $facility = \App\Models\Facility::findOrFail($facilityId);
+        $facility = \App\Models\Facility::find($facilityId);
+        if (! $facility) {
+            $fallbackFacility = \App\Models\Facility::query()
+                ->whereIn('name', ['LGU City Hall Main Building', 'LGU Health Office'])
+                ->orderBy('id')
+                ->first();
+
+            if ($fallbackFacility) {
+                return redirect()
+                    ->route('facilities.monthly-records.archive', ['facility' => $fallbackFacility->id])
+                    ->with('error', 'Facility ID not found after reseeding. Redirected to the current demo facility.');
+            }
+
+            return redirect()
+                ->route('modules.facilities.index')
+                ->with('error', 'Facility not found.');
+        }
+        $facilityId = $facility->id;
         $archivedRecords = \App\Models\EnergyRecord::onlyTrashed()
             ->with('meter')
             ->where('facility_id', $facilityId)
@@ -769,7 +880,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Energy Profile per Facility
     Route::get('/modules/facilities/{facility}/energy-profile', function ($facility) {
-        $facilityModel = \App\Models\Facility::findOrFail($facility);
+        $facilityModel = \App\Models\Facility::find($facility);
+        if (! $facilityModel) {
+            $fallbackFacility = \App\Models\Facility::query()
+                ->whereIn('name', ['LGU City Hall Main Building', 'LGU Health Office'])
+                ->orderBy('id')
+                ->first();
+
+            if ($fallbackFacility) {
+                return redirect()
+                    ->route('modules.facilities.energy-profile.index', ['facility' => $fallbackFacility->id])
+                    ->with('error', 'Facility ID not found after reseeding. Redirected to the current demo facility energy profile.');
+            }
+
+            return redirect()
+                ->route('modules.facilities.index')
+                ->with('error', 'Facility not found.');
+        }
         $user = auth()->user();
         $energyProfiles = $facilityModel->energyProfiles()->with('primaryMeter')->get();
         $mainMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)

@@ -24,6 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $year = $request->input('year');
         $month = $request->input('month');
         $query = \App\Models\EnergyRecord::with('facility');
+        $query->where(function ($mainScope) {
+            $mainScope->whereNull('meter_id')
+                ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+        });
         if ($facilityId) {
             $query->where('facility_id', $facilityId);
         }

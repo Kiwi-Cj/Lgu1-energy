@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Exports\FacilitiesArchiveExport;
-use App\Models\BaselineResetLog;
 use App\Models\EnergyIncident;
 use App\Models\EnergyIncidentHistory;
 use App\Models\EnergyProfile;
@@ -19,6 +18,7 @@ use App\Models\Submeter;
 use App\Models\SubmeterEquipment;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Excel as ExcelWriter;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -583,13 +583,15 @@ class FacilityController extends Controller
             ]);
         }
 
-        // LOGGING
-        BaselineResetLog::create([
-            'facility_id' => $facility->id,
-            'user_id' => auth()->id(),
-            'reason' => $request->reason,
-            'created_at' => now(),
-        ]);
+        if (Schema::hasTable('baseline_reset_logs')) {
+            DB::table('baseline_reset_logs')->insert([
+                'facility_id' => $facility->id,
+                'user_id' => auth()->id(),
+                'reason' => $request->reason,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         return redirect()->route('facilities.show', $id)
             ->with('success', 'Baseline reset successfully and logged.');
@@ -822,6 +824,65 @@ class FacilityController extends Controller
 
                 if ($energyRecordIds->isNotEmpty()) {
                     EnergyIncidentHistory::whereIn('energy_record_id', $energyRecordIds)->delete();
+                    EnergyIncident::whereIn('energy_record_id', $energyRecordIds)->delete();
+                    Maintenance::whereIn('energy_record_id', $energyRecordIds)->update(['energy_record_id' => null]);
+                }
+
+                $mainMeterReadingIds = DB::table('main_meter_readings')
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($mainMeterReadingIds->isNotEmpty()) {
+                    DB::table('main_meter_alerts')
+                        ->whereIn('main_meter_reading_id', $mainMeterReadingIds)
+                        ->delete();
+                }
+
+                DB::table('main_meter_alerts')->where('facility_id', $facilityId)->delete();
+                DB::table('main_meter_baselines')->where('facility_id', $facilityId)->delete();
+                DB::table('main_meter_readings')->where('facility_id', $facilityId)->delete();
+
+                $submeterIds = DB::table('submeters')
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($submeterIds->isNotEmpty()) {
+                    $submeterReadingIds = DB::table('submeter_readings')
+                        ->whereIn('submeter_id', $submeterIds)
+                        ->pluck('id');
+
+                    if ($submeterReadingIds->isNotEmpty()) {
+                        DB::table('submeter_alerts')
+                            ->whereIn('submeter_reading_id', $submeterReadingIds)
+                            ->delete();
+                    }
+
+                    DB::table('submeter_alerts')->whereIn('submeter_id', $submeterIds)->delete();
+                    DB::table('submeter_baselines')->whereIn('submeter_id', $submeterIds)->delete();
+
+                    if (Schema::hasTable('submeter_equipment_files')) {
+                        DB::table('submeter_equipment_files')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_equipments')) {
+                        DB::table('submeter_equipments')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+
+                    DB::table('submeter_readings')->whereIn('submeter_id', $submeterIds)->delete();
+                }
+
+                $facilityMeterIds = FacilityMeter::withTrashed()
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($facilityMeterIds->isNotEmpty()) {
+                    if (Schema::hasTable('submeter_equipment_files')) {
+                        DB::table('submeter_equipment_files')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_equipments')) {
+                        DB::table('submeter_equipments')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+                    }
                 }
 
                 // Force delete monthly records to avoid orphan rows and trigger cleanup observer logic.
@@ -836,7 +897,11 @@ class FacilityController extends Controller
                 Maintenance::where('facility_id', $facilityId)->delete();
                 MaintenanceHistory::where('facility_id', $facilityId)->delete();
                 EnergyProfile::where('facility_id', $facilityId)->delete();
-                BaselineResetLog::where('facility_id', $facilityId)->delete();
+                if (Schema::hasTable('baseline_reset_logs')) {
+                    DB::table('baseline_reset_logs')->where('facility_id', $facilityId)->delete();
+                }
+                Submeter::whereIn('id', $submeterIds)->delete();
+                FacilityMeter::withTrashed()->where('facility_id', $facilityId)->forceDelete();
 
                 $facility->users()->detach();
                 $facility->forceDelete();

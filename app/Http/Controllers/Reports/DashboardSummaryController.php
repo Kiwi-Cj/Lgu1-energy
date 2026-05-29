@@ -16,6 +16,10 @@ class DashboardSummaryController extends Controller
         $totalFacilities = Facility::where('status', 'Active')->count();
 
         $energyQuery = EnergyRecord::query();
+        $energyQuery->where(function ($mainScope) {
+            $mainScope->whereNull('meter_id')
+                ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+        });
         if ($request->filled('date_start')) {
             $energyQuery->whereRaw("CONCAT(year, '-', LPAD(month,2,'0')) >= ?", [$request->date_start]);
         }

@@ -141,6 +141,12 @@ class DashboardController extends Controller
         $applyEnergyRecordRange = function ($query) use ($periodStartYm, $periodEndYm) {
             return $query->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm]);
         };
+        $applyMainMeterRecordScope = function ($query) {
+            return $query->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            });
+        };
 
         // 4. Add alert for unresolved energy incidents in selected period.
         $unresolvedIncidents = \App\Models\EnergyIncident::with([
@@ -201,7 +207,11 @@ class DashboardController extends Controller
         // 1. Add alert for any facility with high consumption in selected period.
         $criticalFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
             $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
-                ->whereDate('created_at', '<=', $periodEndDate->toDateString());
+                ->whereDate('created_at', '<=', $periodEndDate->toDateString())
+                ->where(function ($mainScope) {
+                    $mainScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                });
         }])
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('id', $facilityIds);
@@ -242,6 +252,10 @@ class DashboardController extends Controller
         $activeAlertRecords = EnergyRecord::whereIn('alert', $activeAlertLevels)
             ->whereDate('created_at', '>=', $periodStartDate->toDateString())
             ->whereDate('created_at', '<=', $periodEndDate->toDateString())
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('facility_id', $facilityIds);
             })
@@ -297,10 +311,13 @@ class DashboardController extends Controller
         $totalCostQuery = EnergyRecord::query();
         $applyEnergyRecordRange($totalKwhQuery);
         $applyEnergyRecordRange($totalCostQuery);
+        $applyMainMeterRecordScope($totalKwhQuery);
+        $applyMainMeterRecordScope($totalCostQuery);
 
         $activeAlertsQuery = EnergyRecord::whereIn('alert', $activeAlertLevels)
             ->whereDate('created_at', '>=', $periodStartDate->toDateString())
             ->whereDate('created_at', '<=', $periodEndDate->toDateString());
+        $applyMainMeterRecordScope($activeAlertsQuery);
         $ongoingMaintenanceQuery = Maintenance::where('maintenance_status', 'Ongoing')
             ->whereDate('created_at', '>=', $periodStartDate->toDateString())
             ->whereDate('created_at', '<=', $periodEndDate->toDateString());
@@ -352,6 +369,10 @@ class DashboardController extends Controller
             $energyChartLabels[] = $m['label'];
             $actualKwh = EnergyRecord::where('year', $m['year'])
                 ->where('month', $m['month'])
+                ->where(function ($mainScope) {
+                    $mainScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                })
                 ->when($facilityIds, function ($q) use ($facilityIds) {
                     return $q->whereIn('facility_id', $facilityIds);
                 })
@@ -360,6 +381,10 @@ class DashboardController extends Controller
 
             $monthlyBaseline = EnergyRecord::where('year', $m['year'])
                 ->where('month', $m['month'])
+                ->where(function ($mainScope) {
+                    $mainScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                })
                 ->when($facilityIds, function ($q) use ($facilityIds) {
                     return $q->whereIn('facility_id', $facilityIds);
                 })
@@ -369,6 +394,10 @@ class DashboardController extends Controller
             $costChartLabels[] = $m['label'];
             $cost = EnergyRecord::where('year', $m['year'])
                 ->where('month', $m['month'])
+                ->where(function ($mainScope) {
+                    $mainScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                })
                 ->when($facilityIds, function ($q) use ($facilityIds) {
                     return $q->whereIn('facility_id', $facilityIds);
                 })
@@ -379,7 +408,11 @@ class DashboardController extends Controller
         // 2b. High Consumption Hubs (selected period, average vs. baseline)
         $topFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
             $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
-                ->whereDate('created_at', '<=', $periodEndDate->toDateString());
+                ->whereDate('created_at', '<=', $periodEndDate->toDateString())
+                ->where(function ($mainScope) {
+                    $mainScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                });
         }])
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('id', $facilityIds);
@@ -426,6 +459,10 @@ class DashboardController extends Controller
 
         $currentKwh = EnergyRecord::query()
             ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm])
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('facility_id', $facilityIds);
             })
@@ -433,6 +470,10 @@ class DashboardController extends Controller
 
         $previousKwh = EnergyRecord::query()
             ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$previousStartYm, $previousEndYm])
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
             ->when($facilityIds, function ($q) use ($facilityIds) {
                 return $q->whereIn('facility_id', $facilityIds);
             })

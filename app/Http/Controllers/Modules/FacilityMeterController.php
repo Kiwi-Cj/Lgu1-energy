@@ -305,7 +305,8 @@ class FacilityMeterController extends Controller
             $validated['approved_at'] = now();
         }
 
-        FacilityMeter::create($validated);
+        $meter = FacilityMeter::create($validated);
+        $this->syncLoadTrackingSubmeter($meter);
 
         return $this->redirectAfterMutation($request, $facility, 'Meter added successfully.');
     }
@@ -319,8 +320,11 @@ class FacilityMeterController extends Controller
         $facility = Facility::findOrFail($facilityId);
         $meter = FacilityMeter::where('facility_id', $facility->id)->findOrFail($meterId);
 
+        $previousName = (string) $meter->meter_name;
+        $previousType = (string) $meter->meter_type;
         $validated = $this->validateMeter($request, (int) $facility->id, (int) $meter->id);
         $meter->update($validated);
+        $this->syncLoadTrackingSubmeter($meter, $previousType === 'sub' ? $previousName : null);
 
         return $this->redirectAfterMutation($request, $facility, 'Meter updated successfully.');
     }
@@ -342,6 +346,7 @@ class FacilityMeterController extends Controller
         $meter->deleted_by = auth()->id();
         $meter->archive_reason = $archiveReason;
         $meter->saveQuietly();
+        $this->syncLoadTrackingSubmeter($meter->forceFill(['status' => 'inactive']));
         $meter->delete();
 
         return $this->redirectAfterMutation($request, $facility, 'Meter moved to archive.');
@@ -504,5 +509,70 @@ class FacilityMeterController extends Controller
 
         return redirect()->route('modules.facilities.meters.archive', $facility->id)
             ->with('success', 'Meter permanently deleted.');
+    }
+
+    private function syncLoadTrackingSubmeter(FacilityMeter $meter, ?string $previousName = null): void
+    {
+        $currentType = strtolower((string) ($meter->meter_type ?? ''));
+        $currentName = trim((string) ($meter->meter_name ?? ''));
+
+        if ($currentType !== 'sub') {
+            if ($previousName) {
+                Submeter::query()
+                    ->where('facility_id', (int) $meter->facility_id)
+                    ->whereRaw('LOWER(TRIM(submeter_name)) = ?', [strtolower(trim($previousName))])
+                    ->update(['status' => 'inactive']);
+            }
+
+            return;
+        }
+
+        if ($currentName === '') {
+            return;
+        }
+
+        $submeter = null;
+        if ($previousName) {
+            $submeter = Submeter::query()
+                ->where('facility_id', (int) $meter->facility_id)
+                ->whereRaw('LOWER(TRIM(submeter_name)) = ?', [strtolower(trim($previousName))])
+                ->first();
+        }
+
+        $existingCurrent = Submeter::query()
+            ->where('facility_id', (int) $meter->facility_id)
+            ->whereRaw('LOWER(TRIM(submeter_name)) = ?', [strtolower($currentName)])
+            ->first();
+
+        $status = strtolower((string) ($meter->status ?? 'active')) === 'active' ? 'active' : 'inactive';
+
+        if ($existingCurrent && (! $submeter || (int) $existingCurrent->id !== (int) $submeter->id)) {
+            $existingCurrent->update([
+                'meter_type' => (string) ($existingCurrent->meter_type ?: 'single_phase'),
+                'status' => $status,
+            ]);
+
+            if ($submeter && (int) $submeter->id !== (int) $existingCurrent->id) {
+                $submeter->update(['status' => 'inactive']);
+            }
+
+            return;
+        }
+
+        if ($submeter) {
+            $submeter->update([
+                'submeter_name' => $currentName,
+                'status' => $status,
+            ]);
+
+            return;
+        }
+
+        Submeter::create([
+            'facility_id' => (int) $meter->facility_id,
+            'submeter_name' => $currentName,
+            'meter_type' => 'single_phase',
+            'status' => $status,
+        ]);
     }
 }

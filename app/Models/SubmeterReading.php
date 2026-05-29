@@ -19,6 +19,9 @@ class SubmeterReading extends Model
         'reading_start_kwh',
         'reading_end_kwh',
         'operating_days',
+        'input_source',
+        'device_id',
+        'received_at',
         'encoded_by_user_id',
         'approved_by_engineer_id',
         'approved_at',
@@ -31,6 +34,7 @@ class SubmeterReading extends Model
         'reading_start_kwh' => 'decimal:2',
         'reading_end_kwh' => 'decimal:2',
         'kwh_used' => 'decimal:2',
+        'received_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -100,4 +104,3 @@ class SubmeterReading extends Model
         return $endDate->format('Y-m-d');
     }
 }
-

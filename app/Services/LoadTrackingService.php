@@ -77,6 +77,18 @@ class LoadTrackingService
             $submeters = $submeterQuery
                 ->orderBy('submeter_name')
                 ->get(['id', 'facility_id', 'submeter_name', 'meter_type', 'status']);
+
+            if ($mainMeterId && ! $submeterId) {
+                $linkedSubmeterKeys = $this->linkedSubmeterKeysForMainMeter($mainMeterId);
+                $submeters = $submeters
+                    ->filter(function (Submeter $submeter) use ($linkedSubmeterKeys) {
+                        return $linkedSubmeterKeys->contains($this->meterNameKey(
+                            (int) $submeter->facility_id,
+                            (string) $submeter->submeter_name
+                        ));
+                    })
+                    ->values();
+            }
         }
 
         $mainMeters = collect();
@@ -127,6 +139,7 @@ class LoadTrackingService
 
         $submeterIds = $submeters->pluck('id')->all();
         $mainMeterIds = $mainMeters->pluck('id')->all();
+        $submeterParentMap = $this->submeterParentMap($submeters);
 
         $estimatedByMeter = SubmeterEquipment::query()
             ->select([
@@ -198,11 +211,15 @@ class LoadTrackingService
                 ->keyBy('meter_id');
         }
 
-        $subRows = $submeters->map(function (Submeter $submeter) use ($estimatedByMeter, $actualBySubmeter) {
+        $subRows = $submeters->map(function (Submeter $submeter) use ($estimatedByMeter, $actualBySubmeter, $submeterParentMap) {
             $meterKey = 'sub:' . (int) $submeter->id;
             $meterStats = $estimatedByMeter->get($meterKey);
             $estimated = (float) ($meterStats->total_estimated_kwh ?? 0);
             $actual = (float) ($actualBySubmeter->get($submeter->id)->total_actual_kwh ?? 0);
+            $parentMain = $submeterParentMap->get($this->meterNameKey(
+                (int) $submeter->facility_id,
+                (string) $submeter->submeter_name
+            ));
             $variancePercent = $this->variancePercent($estimated, $actual);
             $consumptionLevel = $this->resolveConsumptionLevel($estimated, $actual, $variancePercent);
             $isFlagged = $consumptionLevel === 'high';
@@ -213,6 +230,8 @@ class LoadTrackingService
                 'meter_scope_label' => 'Sub Meter',
                 'meter_id' => (int) $submeter->id,
                 'meter_name' => $submeter->submeter_name,
+                'parent_main_meter_id' => $parentMain['id'] ?? null,
+                'parent_main_meter_name' => $parentMain['name'] ?? null,
                 'facility_id' => $submeter->facility_id,
                 'facility_name' => $this->resolveFacilityName(
                     $submeter->facility_id,
@@ -245,6 +264,8 @@ class LoadTrackingService
                 'meter_scope_label' => 'Main Meter',
                 'meter_id' => (int) $mainMeter->id,
                 'meter_name' => $mainMeter->meter_name,
+                'parent_main_meter_id' => null,
+                'parent_main_meter_name' => null,
                 'facility_id' => $mainMeter->facility_id,
                 'facility_name' => $this->resolveFacilityName(
                     $mainMeter->facility_id,
@@ -410,5 +431,54 @@ class LoadTrackingService
         }
 
         return [$labels, $values];
+    }
+
+    private function linkedSubmeterKeysForMainMeter(int $mainMeterId): Collection
+    {
+        if ($mainMeterId <= 0) {
+            return collect();
+        }
+
+        return FacilityMeter::query()
+            ->where('meter_type', 'sub')
+            ->where('parent_meter_id', $mainMeterId)
+            ->where('status', 'active')
+            ->whereNotNull('approved_at')
+            ->get(['facility_id', 'meter_name'])
+            ->map(fn (FacilityMeter $meter) => $this->meterNameKey(
+                (int) $meter->facility_id,
+                (string) $meter->meter_name
+            ))
+            ->values();
+    }
+
+    private function submeterParentMap(Collection $submeters): Collection
+    {
+        $facilityIds = $submeters->pluck('facility_id')->map(fn ($id) => (int) $id)->filter()->unique()->values();
+        if ($facilityIds->isEmpty()) {
+            return collect();
+        }
+
+        return FacilityMeter::query()
+            ->with('parentMeter:id,meter_name')
+            ->whereIn('facility_id', $facilityIds)
+            ->where('meter_type', 'sub')
+            ->whereNotNull('parent_meter_id')
+            ->get(['id', 'facility_id', 'meter_name', 'parent_meter_id'])
+            ->mapWithKeys(function (FacilityMeter $meter) {
+                return [
+                    $this->meterNameKey((int) $meter->facility_id, (string) $meter->meter_name) => [
+                        'id' => (int) $meter->parent_meter_id,
+                        'name' => (string) ($meter->parentMeter?->meter_name ?? 'Main Meter #' . (int) $meter->parent_meter_id),
+                    ],
+                ];
+            });
+    }
+
+    private function meterNameKey(int $facilityId, string $name): string
+    {
+        $normalizedName = strtolower((string) preg_replace('/\s+/', ' ', trim($name)));
+
+        return $facilityId . '|' . $normalizedName;
     }
 }

@@ -40,6 +40,10 @@ class SubmeterMonitoringController extends Controller
 
         $selectedFacility = $request->query('facility_id');
         $selectedDepartment = trim((string) $request->query('department', ''));
+        $selectedSensorPeriod = (string) $request->query('sensor_period', 'daily');
+        if (! in_array($selectedSensorPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
+            $selectedSensorPeriod = 'daily';
+        }
         $facilityScope = $this->staffFacilityIds($request);
         $selectedMonth = $this->resolvePreferredReadingMonth(
             (string) $request->query('month', ''),
@@ -145,7 +149,12 @@ class SubmeterMonitoringController extends Controller
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
             ->orderBy('submeter_name')
             ->get(['id', 'facility_id', 'submeter_name', 'status']);
-        $submetersForEncode = $submeters->where('status', 'active')->values();
+        $sensorTrend = $this->buildSensorTrendSeries(
+            $selectedSensorPeriod,
+            $selectedFacility,
+            $selectedDepartment,
+            $facilityScope
+        );
 
         return view('modules.submeters.monitoring', [
             'rows' => $rows,
@@ -153,11 +162,12 @@ class SubmeterMonitoringController extends Controller
             'selectedMonth' => $safeMonth,
             'selectedFacility' => $selectedFacility,
             'selectedDepartment' => $selectedDepartment,
+            'selectedSensorPeriod' => $selectedSensorPeriod,
             'facilities' => $facilities,
             'submeters' => $submeters,
-            'submetersForEncode' => $submetersForEncode,
             'widgets' => $widgets,
-            'canEncode' => $this->canEncode(),
+            'sensorTrend' => $sensorTrend,
+            'canEncode' => false,
             'canApprove' => $this->canApprove(),
             'canViewAlerts' => $this->canViewAlerts(),
         ]);
@@ -272,64 +282,9 @@ class SubmeterMonitoringController extends Controller
 
     public function store(Request $request)
     {
-        if (! $this->canEncode()) {
-            return redirect()->back()->with('error', 'You do not have permission to encode submeter readings.');
-        }
-
-        $validated = $request->validate([
-            'submeter_id' => 'required|integer|exists:submeters,id',
-            'period_type' => 'required|in:daily,weekly,monthly',
-            'period_start_date' => 'required|date',
-            'period_end_date' => 'required|date|after_or_equal:period_start_date',
-            'reading_start_kwh' => 'required|numeric|min:0',
-            'reading_end_kwh' => 'required|numeric|min:0|gte:reading_start_kwh',
-            'operating_days' => 'nullable|integer|min:1|max:366',
-        ]);
-
-        $submeter = Submeter::with('facility')->findOrFail((int) $validated['submeter_id']);
-        if ($submeter->status !== 'active') {
-            return redirect()->back()->withInput()->with('error', 'Selected submeter is inactive.');
-        }
-        if (! $submeter->facility) {
-            return redirect()->back()->withInput()->with('error', 'Selected submeter belongs to an archived facility.');
-        }
-
-        $facilityScope = $this->staffFacilityIds($request);
-        if ($facilityScope !== null && ! in_array((int) $submeter->facility_id, $facilityScope, true)) {
-            return redirect()->back()->withInput()->with('error', 'You can only encode readings for your assigned facility.');
-        }
-
-        $duplicate = SubmeterReading::query()
-            ->where('submeter_id', $submeter->id)
-            ->where('period_type', $validated['period_type'])
-            ->whereDate('period_start_date', $validated['period_start_date'])
-            ->whereDate('period_end_date', $validated['period_end_date'])
-            ->exists();
-
-        if ($duplicate) {
-            return redirect()->back()->withInput()->with('error', 'A reading for the same submeter and period already exists.');
-        }
-
-        $reading = SubmeterReading::create([
-            'submeter_id' => $submeter->id,
-            'period_type' => $validated['period_type'],
-            'period_start_date' => $validated['period_start_date'],
-            'period_end_date' => $validated['period_end_date'],
-            'reading_start_kwh' => $validated['reading_start_kwh'],
-            'reading_end_kwh' => $validated['reading_end_kwh'],
-            'operating_days' => $validated['operating_days'] ?? null,
-            'encoded_by_user_id' => auth()->id(),
-            'approved_by_engineer_id' => auth()->id(),
-            'approved_at' => now(),
-        ]);
-
-        $this->baselineService->processReading($reading->fresh(['submeter.facility']));
-
-        return redirect()->route('modules.submeters.monitoring', [
-            'period_type' => $validated['period_type'],
-            'month' => Carbon::parse($validated['period_end_date'])->format('Y-m'),
-            'facility_id' => $submeter->facility_id,
-        ])->with('success', 'Submeter reading encoded successfully.');
+        return redirect()
+            ->route('modules.submeters.monitoring')
+            ->with('error', 'Submeter readings are sensor-only. Manual encoding is disabled.');
     }
 
     public function approve(Request $request, SubmeterReading $reading)
@@ -636,6 +591,69 @@ class SubmeterMonitoringController extends Controller
         ];
     }
 
+    private function buildSensorTrendSeries(
+        string $period,
+        mixed $selectedFacility,
+        string $selectedDepartment,
+        ?array $facilityScope
+    ): array {
+        $period = in_array($period, ['daily', 'weekly', 'monthly', 'yearly'], true) ? $period : 'daily';
+        $now = now();
+
+        if ($period === 'yearly') {
+            $start = $now->copy()->subYears(4)->startOfYear();
+            $end = $now->copy()->endOfYear();
+            $labels = collect(range(0, 4))->map(fn ($offset) => $start->copy()->addYears($offset)->format('Y'));
+            $labelFor = fn (SubmeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('Y');
+        } elseif ($period === 'monthly') {
+            $start = $now->copy()->subMonthsNoOverflow(11)->startOfMonth();
+            $end = $now->copy()->endOfMonth();
+            $labels = collect(range(0, 11))->map(fn ($offset) => $start->copy()->addMonthsNoOverflow($offset)->format('Y-m'));
+            $labelFor = fn (SubmeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('Y-m');
+        } elseif ($period === 'weekly') {
+            $start = $now->copy()->subWeeks(11)->startOfWeek();
+            $end = $now->copy()->endOfWeek();
+            $labels = collect(range(0, 11))->map(fn ($offset) => $start->copy()->addWeeks($offset)->format('o-\WW'));
+            $labelFor = fn (SubmeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('o-\WW');
+        } else {
+            $start = $now->copy()->subDays(29)->startOfDay();
+            $end = $now->copy()->endOfDay();
+            $labels = collect(range(0, 29))->map(fn ($offset) => $start->copy()->addDays($offset)->format('M d'));
+            $labelFor = fn (SubmeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('M d');
+        }
+
+        $query = SubmeterReading::query()
+            ->with('submeter:id,facility_id,submeter_name')
+            ->where('input_source', 'iot')
+            ->whereBetween(DB::raw('COALESCE(received_at, period_end_date)'), [$start->toDateTimeString(), $end->toDateTimeString()])
+            ->whereHas('submeter.facility');
+
+        if ($selectedFacility) {
+            $query->whereHas('submeter', fn (Builder $builder) => $builder->where('facility_id', $selectedFacility));
+        }
+
+        if ($selectedDepartment !== '') {
+            $query->whereHas('submeter', fn (Builder $builder) => $builder->where('submeter_name', 'like', "%{$selectedDepartment}%"));
+        }
+
+        if ($facilityScope !== null) {
+            $query->whereHas('submeter', fn (Builder $builder) => $builder->whereIn('facility_id', $facilityScope));
+        }
+
+        $readings = $query->get(['submeter_id', 'period_end_date', 'received_at', 'kwh_used']);
+        $totals = $readings
+            ->groupBy(fn (SubmeterReading $reading) => $labelFor($reading))
+            ->map(fn (Collection $group) => round((float) $group->sum('kwh_used'), 2));
+
+        return [
+            'period' => $period,
+            'labels' => $labels->values()->all(),
+            'kwh' => $labels->map(fn ($label) => (float) $totals->get($label, 0))->values()->all(),
+            'total_kwh' => round((float) $readings->sum('kwh_used'), 2),
+            'reading_count' => $readings->count(),
+        ];
+    }
+
     private function canView(): bool
     {
         return RoleAccess::in(auth()->user(), ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer']);
@@ -643,9 +661,7 @@ class SubmeterMonitoringController extends Controller
 
     private function canEncode(): bool
     {
-        $user = auth()->user();
-        return RoleAccess::can($user, 'encode_submeter_readings')
-            || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff']);
+        return false;
     }
 
     private function canApprove(): bool

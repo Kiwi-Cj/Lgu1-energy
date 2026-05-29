@@ -27,6 +27,10 @@ class EfficiencySummaryReportController extends Controller
         $facilityIds = $filteredFacilities->pluck('id')->values();
         $recordsByFacility = EnergyRecord::query()
             ->whereIn('facility_id', $facilityIds)
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
             ->whereNotNull('actual_kwh')
             ->where('actual_kwh', '>', 0)
             ->get(['facility_id', 'year', 'month', 'actual_kwh'])

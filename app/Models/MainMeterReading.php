@@ -21,6 +21,9 @@ class MainMeterReading extends Model
         'operating_days',
         'peak_demand_kw',
         'power_factor',
+        'input_source',
+        'device_id',
+        'received_at',
         'encoded_by',
         'approved_by',
         'approved_at',
@@ -35,6 +38,7 @@ class MainMeterReading extends Model
         'kwh_used' => 'decimal:2',
         'peak_demand_kw' => 'decimal:2',
         'power_factor' => 'decimal:4',
+        'received_at' => 'datetime',
     ];
 
     protected static function booted(): void

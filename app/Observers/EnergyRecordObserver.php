@@ -92,10 +92,11 @@ class EnergyRecordObserver
         $severityKey = match ($alertKey) {
             'critical' => 'critical',
             'very high' => 'very-high',
+            'high' => 'high',
             default => 'normal',
         };
 
-        if (! in_array($severityKey, ['critical', 'very-high'], true)) {
+        if (! in_array($severityKey, ['critical', 'very-high', 'high'], true)) {
             return;
         }
 
@@ -190,17 +191,22 @@ class EnergyRecordObserver
             && $recentUsage[0] > $recentUsage[1]
             && $recentUsage[1] > $recentUsage[2];
 
-        $issueType = $severityKey === 'critical'
-            ? 'Auto-flagged: Critical Consumption'
-            : 'Auto-flagged: Very High Consumption';
+        $issueType = match ($severityKey) {
+            'critical' => 'Auto-flagged: Critical Consumption',
+            'very-high' => 'Auto-flagged: Very High Consumption',
+            default => 'Auto-flagged: High Consumption',
+        };
 
         $remarks = match ($severityKey) {
             'critical' => $trendIncreasing
                 ? 'Critical consumption spike detected with increasing trend. Perform immediate load isolation and root-cause inspection.'
                 : 'Critical consumption spike detected. Validate meter data and inspect major load equipment immediately.',
-            default => $trendIncreasing
+            'very-high' => $trendIncreasing
                 ? 'Very high consumption deviation detected with increasing trend. Schedule urgent corrective checks and monitor weekly.'
                 : 'Very high consumption deviation detected. Schedule corrective maintenance and review operating schedules.',
+            default => $trendIncreasing
+                ? 'High consumption deviation detected with increasing trend. Schedule corrective inspection and monitor closely.'
+                : 'High consumption deviation detected. Schedule corrective maintenance and validate operating schedules.',
         };
 
         $maintenanceQuery = Maintenance::query()
@@ -302,20 +308,26 @@ class EnergyRecordObserver
     private function buildIncidentDescription(string $severityKey, string $statusKey): string
     {
         if ($statusKey === 'resolved') {
-            return $severityKey === 'critical'
-                ? 'Critical energy spike for this billing period was resolved after corrective action.'
-                : 'Very high energy deviation for this billing period has been resolved and stabilized.';
+            return match ($severityKey) {
+                'critical' => 'Critical energy spike for this billing period was resolved after corrective action.',
+                'very-high' => 'Very high energy deviation for this billing period has been resolved and stabilized.',
+                default => 'High energy deviation for this billing period has been resolved and stabilized.',
+            };
         }
 
         if ($statusKey === 'open') {
-            return $severityKey === 'critical'
-                ? 'Critical energy spike is active and requires immediate intervention.'
-                : 'Very high energy deviation is active and under close monitoring.';
+            return match ($severityKey) {
+                'critical' => 'Critical energy spike is active and requires immediate intervention.',
+                'very-high' => 'Very high energy deviation is active and under close monitoring.',
+                default => 'High energy deviation is active and under monitoring.',
+            };
         }
 
         return $severityKey === 'critical'
             ? 'Critical energy spike detected for this billing period and queued for urgent review.'
-            : 'Very high energy deviation detected for this billing period and queued for validation.';
+            : ($severityKey === 'very-high'
+                ? 'Very high energy deviation detected for this billing period and queued for validation.'
+                : 'High energy deviation detected for this billing period and queued for validation.');
     }
 
     private function isSubMeterRecord(EnergyRecord $record): bool

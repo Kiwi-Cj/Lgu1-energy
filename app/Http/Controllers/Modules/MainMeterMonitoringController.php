@@ -30,6 +30,10 @@ class MainMeterMonitoringController extends Controller
         $selectedMonth = (string) $request->query('month', now()->format('Y-m'));
         $selectedFacility = $request->query('facility_id');
         $selectedOverloadOnly = filter_var($request->query('overload_only', false), FILTER_VALIDATE_BOOLEAN);
+        $selectedSensorPeriod = (string) $request->query('sensor_period', 'daily');
+        if (! in_array($selectedSensorPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
+            $selectedSensorPeriod = 'daily';
+        }
         [$periodStart, $periodEnd, $safeMonth] = $this->resolveMonthRange($selectedMonth);
 
         $query = MainMeterReading::query()
@@ -131,16 +135,20 @@ class MainMeterMonitoringController extends Controller
         $widgets = $this->buildDashboardWidgets($periodStart, $periodEnd, $selectedFacility, $facilityScope);
         $dashboard = $this->buildDashboardSummary($rows);
         $trend = $this->buildTrendSeries($safeMonth, $selectedFacility, $facilityScope);
+        $sensorTrend = $this->buildSensorTrendSeries($selectedSensorPeriod, $selectedFacility, $facilityScope);
 
         return view('modules.main-meter.monitoring', [
             'rows' => $tableRows,
             'selectedMonth' => $safeMonth,
             'selectedFacility' => $selectedFacility,
             'selectedOverloadOnly' => $selectedOverloadOnly,
+            'selectedSensorPeriod' => $selectedSensorPeriod,
             'facilities' => $facilities,
             'widgets' => $widgets,
             'dashboard' => $dashboard,
             'trend' => $trend,
+            'sensorTrend' => $sensorTrend,
+            'canEncode' => $this->canEncode(),
             'canApprove' => $this->canApprove(),
         ]);
     }
@@ -149,6 +157,18 @@ class MainMeterMonitoringController extends Controller
     {
         if (! $this->canEncode()) {
             return redirect()->back()->with('error', 'You do not have permission to encode main meter readings.');
+        }
+
+        if (! $request->filled('period_start_date') && $request->filled('reading_month')) {
+            try {
+                $month = Carbon::createFromFormat('Y-m', (string) $request->input('reading_month'))->startOfMonth();
+                $request->merge([
+                    'period_start_date' => $month->toDateString(),
+                    'period_end_date' => $month->copy()->endOfMonth()->toDateString(),
+                ]);
+            } catch (\Throwable $e) {
+                // Let validation report the missing period dates.
+            }
         }
 
         $validated = $request->validate([
@@ -161,6 +181,8 @@ class MainMeterMonitoringController extends Controller
             'operating_days' => 'nullable|integer|min:1|max:366',
             'peak_demand_kw' => 'nullable|numeric|min:0',
             'power_factor' => 'nullable|numeric|min:0|max:1',
+            'input_source' => 'nullable|in:manual,iot',
+            'device_id' => 'nullable|string|max:255',
         ]);
 
         $facilityScope = $this->staffFacilityIds($request);
@@ -207,6 +229,9 @@ class MainMeterMonitoringController extends Controller
             'operating_days' => $validated['operating_days'] ?? null,
             'peak_demand_kw' => $peakDemandKw,
             'power_factor' => $powerFactor,
+            'input_source' => $validated['input_source'] ?? 'manual',
+            'device_id' => $validated['device_id'] ?? null,
+            'received_at' => ($validated['input_source'] ?? 'manual') === 'iot' ? now() : null,
             'encoded_by' => auth()->id(),
             'approved_by' => auth()->id(),
             'approved_at' => now(),
@@ -248,6 +273,105 @@ class MainMeterMonitoringController extends Controller
         $this->baselineService->processReading($reading->fresh(['facility']));
 
         return redirect()->back()->with('success', 'Main meter reading approved.');
+    }
+
+    public function simulateIotReading(Request $request)
+    {
+        if (! $this->canEncode()) {
+            return redirect()->back()->with('error', 'You do not have permission to simulate IoT readings.');
+        }
+
+        $facilityScope = $this->staffFacilityIds($request);
+        $facilityId = (int) $request->input('facility_id', 0);
+
+        $facilityQuery = Facility::query()
+            ->when($facilityScope !== null, fn ($query) => $query->whereIn('id', $facilityScope))
+            ->orderBy('name');
+
+        $facility = $facilityId > 0
+            ? (clone $facilityQuery)->whereKey($facilityId)->first(['id', 'name'])
+            : (clone $facilityQuery)->first(['id', 'name']);
+
+        if (! $facility) {
+            return redirect()->back()->with('error', 'No facility is available for IoT simulation.');
+        }
+
+        $selectedMonth = (string) $request->input('month', now()->format('Y-m'));
+        try {
+            $month = Carbon::createFromFormat('Y-m', $selectedMonth)->startOfMonth();
+        } catch (\Throwable $e) {
+            $month = now()->startOfMonth();
+        }
+
+        $periodStart = null;
+        $periodEnd = null;
+        for ($i = 0; $i < 24; $i++) {
+            $candidate = $month->copy()->subMonthsNoOverflow($i);
+            $candidateStart = $candidate->copy()->startOfMonth();
+            $candidateEnd = $candidate->copy()->endOfMonth();
+
+            $exists = MainMeterReading::query()
+                ->where('facility_id', (int) $facility->id)
+                ->where('period_type', 'monthly')
+                ->whereDate('period_start_date', $candidateStart->toDateString())
+                ->whereDate('period_end_date', $candidateEnd->toDateString())
+                ->exists();
+
+            if (! $exists) {
+                $periodStart = $candidateStart;
+                $periodEnd = $candidateEnd;
+                break;
+            }
+        }
+
+        if (! $periodStart || ! $periodEnd) {
+            return redirect()->back()->with('error', 'No open month found for this facility IoT simulation.');
+        }
+
+        $latestReading = MainMeterReading::query()
+            ->where('facility_id', (int) $facility->id)
+            ->orderByDesc('period_end_date')
+            ->first(['reading_end_kwh']);
+
+        $readingStart = $latestReading && is_numeric($latestReading->reading_end_kwh)
+            ? (float) $latestReading->reading_end_kwh
+            : random_int(9000, 14000);
+        $kwhUsed = random_int(65000, 125000) / 100;
+        $readingEnd = round($readingStart + $kwhUsed, 2);
+        $peakDemandKw = $this->estimatePeakDemandKw(
+            $readingStart,
+            $readingEnd,
+            $periodStart->toDateString(),
+            $periodEnd->toDateString(),
+            null
+        );
+
+        $reading = MainMeterReading::create([
+            'facility_id' => (int) $facility->id,
+            'period_type' => 'monthly',
+            'period_start_date' => $periodStart->toDateString(),
+            'period_end_date' => $periodEnd->toDateString(),
+            'reading_start_kwh' => $readingStart,
+            'reading_end_kwh' => $readingEnd,
+            'operating_days' => $periodStart->daysInMonth,
+            'peak_demand_kw' => $peakDemandKw,
+            'power_factor' => 0.95,
+            'input_source' => 'iot',
+            'device_id' => 'SIM-MAIN-' . str_pad((string) $facility->id, 4, '0', STR_PAD_LEFT),
+            'received_at' => now(),
+            'encoded_by' => auth()->id(),
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        $result = $this->baselineService->processReading($reading->fresh(['facility']));
+        $alert = $result['alert'] ?? null;
+        $alertSuffix = $alert ? (' Alert: ' . strtoupper((string) $alert->alert_level) . '.') : '';
+
+        return redirect()->route('modules.main-meter.monitoring', [
+            'month' => $periodEnd->format('Y-m'),
+            'facility_id' => (int) $facility->id,
+        ])->with('success', 'Simulated IoT sensor reading received from ' . $reading->device_id . '.' . $alertSuffix);
     }
 
     public function alerts(Request $request)
@@ -534,10 +658,10 @@ class MainMeterMonitoringController extends Controller
             $alertQuery->whereIn('facility_id', $facilityScope);
         }
 
-        $top5 = (clone $alertQuery)
+        $top10 = (clone $alertQuery)
             ->with(['facility:id,name', 'reading:id,facility_id,period_end_date'])
             ->orderByDesc('increase_percent')
-            ->limit(5)
+            ->limit(10)
             ->get();
 
         $criticalThisMonth = (clone $alertQuery)
@@ -557,7 +681,8 @@ class MainMeterMonitoringController extends Controller
             ->get();
 
         return [
-            'top5HighestIncrease' => $top5,
+            'top5HighestIncrease' => $top10,
+            'top10HighestIncrease' => $top10,
             'criticalAlertsThisMonth' => $criticalThisMonth,
             'facilitiesWithMostAlerts' => $facilitiesWithMostAlerts,
         ];
@@ -678,6 +803,59 @@ class MainMeterMonitoringController extends Controller
             'labels' => $labels->values()->all(),
             'kwh' => $kwhSeries,
             'baseline' => $baselineSeries,
+        ];
+    }
+
+    private function buildSensorTrendSeries(string $period, mixed $selectedFacility, ?array $facilityScope): array
+    {
+        $period = in_array($period, ['daily', 'weekly', 'monthly', 'yearly'], true) ? $period : 'daily';
+        $now = now();
+
+        if ($period === 'yearly') {
+            $start = $now->copy()->subYears(4)->startOfYear();
+            $end = $now->copy()->endOfYear();
+            $labels = collect(range(0, 4))->map(fn ($offset) => $start->copy()->addYears($offset)->format('Y'));
+            $labelFor = fn (MainMeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('Y');
+        } elseif ($period === 'monthly') {
+            $start = $now->copy()->subMonthsNoOverflow(11)->startOfMonth();
+            $end = $now->copy()->endOfMonth();
+            $labels = collect(range(0, 11))->map(fn ($offset) => $start->copy()->addMonthsNoOverflow($offset)->format('Y-m'));
+            $labelFor = fn (MainMeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('Y-m');
+        } elseif ($period === 'weekly') {
+            $start = $now->copy()->subWeeks(11)->startOfWeek();
+            $end = $now->copy()->endOfWeek();
+            $labels = collect(range(0, 11))->map(fn ($offset) => $start->copy()->addWeeks($offset)->format('o-\WW'));
+            $labelFor = fn (MainMeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('o-\WW');
+        } else {
+            $start = $now->copy()->subDays(29)->startOfDay();
+            $end = $now->copy()->endOfDay();
+            $labels = collect(range(0, 29))->map(fn ($offset) => $start->copy()->addDays($offset)->format('M d'));
+            $labelFor = fn (MainMeterReading $reading): string => Carbon::parse($reading->received_at ?? $reading->period_end_date)->format('M d');
+        }
+
+        $query = MainMeterReading::query()
+            ->where('input_source', 'iot')
+            ->whereBetween(DB::raw('COALESCE(received_at, period_end_date)'), [$start->toDateTimeString(), $end->toDateTimeString()]);
+
+        if ($selectedFacility) {
+            $query->where('facility_id', $selectedFacility);
+        }
+
+        if ($facilityScope !== null) {
+            $query->whereIn('facility_id', $facilityScope);
+        }
+
+        $readings = $query->get(['facility_id', 'period_end_date', 'received_at', 'kwh_used']);
+        $totals = $readings
+            ->groupBy(fn (MainMeterReading $reading) => $labelFor($reading))
+            ->map(fn (Collection $group) => round((float) $group->sum('kwh_used'), 2));
+
+        return [
+            'period' => $period,
+            'labels' => $labels->values()->all(),
+            'kwh' => $labels->map(fn ($label) => (float) $totals->get($label, 0))->values()->all(),
+            'total_kwh' => round((float) $readings->sum('kwh_used'), 2),
+            'reading_count' => $readings->count(),
         ];
     }
 

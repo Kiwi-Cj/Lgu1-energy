@@ -1178,6 +1178,11 @@
                                 </div>
                                 <div class="monthly-org-head-right">
                                     <span class="monthly-chip">Main: {{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh</span>
+                                    @if((float) ($mainItem['sensor_total_kwh'] ?? 0) > 0)
+                                        <span class="monthly-chip" style="background:#ecfeff;border-color:#a5f3fc;color:#0f766e;">
+                                            Sensor: {{ number_format((float) ($mainItem['sensor_total_kwh'] ?? 0), 2) }} kWh
+                                        </span>
+                                    @endif
                                     <span class="monthly-chip">Sub: {{ number_format((float) ($mainItem['linked_sub_total_kwh'] ?? 0), 2) }} kWh</span>
                                     <span class="monthly-chip" style="background:{{ $mainDiffBg }};border-color:{{ $mainDiffBg }};color:{{ $mainDiffColor }};">
                                         Main - Sub: {{ number_format((float) ($mainItem['main_minus_sub_kwh'] ?? 0), 2) }} kWh
