@@ -3,7 +3,7 @@
 
 @section('content')
 @php
-    $totals = $totals ?? ['estimated_kwh' => 0, 'actual_kwh' => 0, 'variance_percent' => null, 'flagged_submeters' => 0];
+    $totals = $totals ?? ['total_watts' => 0, 'estimated_kwh' => 0, 'actual_kwh' => 0, 'variance_percent' => null, 'flagged_submeters' => 0];
     $rows = $rows ?? collect();
     $topEquipment = $topEquipment ?? collect();
     $pieLabels = $pieLabels ?? [];
@@ -54,30 +54,6 @@
     }
     .lt-btn.apply { background: #1d4ed8; color: #fff; }
     .lt-btn.reset { background: #f1f5f9; color: #334155; border-color: #e2e8f0; }
-    .lt-filter-meta {
-        margin-top: 10px;
-        padding: 10px 12px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        color: #334155;
-        font-size: .86rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-    }
-    .lt-meta-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border: 1px solid #dbeafe;
-        background: #eff6ff;
-        color: #1e3a8a;
-        border-radius: 999px;
-        padding: 4px 10px;
-        font-weight: 700;
-    }
 
     .lt-data-table {
         width: 100%;
@@ -122,11 +98,6 @@
     @if($errors->any())
         <div style="margin-bottom:12px;background:#fff7ed;color:#9a3412;padding:12px 16px;border-radius:12px;font-weight:700;">Please check the form fields and try again.</div>
     @endif
-
-    @php
-        $energyTab = 'load';
-    @endphp
-    @include('layouts.partials.energy_monitoring_switcher')
 
     <div class="em-header">
         <div>
@@ -191,14 +162,10 @@
                 <a href="{{ route('modules.load-tracking.index') }}" class="lt-btn reset">Reset</a>
             </div>
         </form>
-        <div class="lt-filter-meta">
-            <span>Showing <strong>{{ number_format((int) $rows->count()) }}</strong> row(s)</span>
-            <span class="lt-meta-chip">Warning &gt; {{ number_format((float) $warningThreshold, 0) }}%</span>
-            <span class="lt-meta-chip">High &gt; {{ number_format((float) $varianceThreshold, 0) }}%</span>
-        </div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+        <div style="background:#fff;border:1px solid #c7d2fe;border-radius:12px;padding:12px;"><div style="font-size:.78rem;color:#4338ca;font-weight:800;">TOTAL WATTS</div><div style="font-size:1.45rem;font-weight:900;">{{ number_format((float) ($totals['total_watts'] ?? 0), 2) }}</div></div>
         <div style="background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:12px;"><div style="font-size:.78rem;color:#1e40af;font-weight:800;">TOTAL ESTIMATED KWH</div><div style="font-size:1.45rem;font-weight:900;">{{ number_format((float) $totals['estimated_kwh'], 2) }}</div></div>
         <div style="background:#fff;border:1px solid #bae6fd;border-radius:12px;padding:12px;"><div style="font-size:.78rem;color:#0f766e;font-weight:800;">TOTAL ACTUAL KWH</div><div style="font-size:1.45rem;font-weight:900;">{{ number_format((float) $totals['actual_kwh'], 2) }}</div></div>
         <div style="background:#fff;border:1px solid #fde68a;border-radius:12px;padding:12px;"><div style="font-size:.78rem;color:#92400e;font-weight:800;">TOTAL VARIANCE %</div><div style="font-size:1.45rem;font-weight:900;">{{ $totals['variance_percent'] !== null ? number_format((float) $totals['variance_percent'], 2).'%' : '-' }}</div></div>
@@ -214,6 +181,7 @@
         <table class="lt-data-table">
             <thead>
                 <tr style="background:#f8fafc;">
+                    <th style="text-align:center;">Tier</th>
                     <th style="text-align:left;">Facility</th>
                     <th style="text-align:left;">Type</th>
                     <th style="text-align:left;">Linked Main</th>
@@ -247,6 +215,9 @@
                             : ($level === 'warning' ? '#fffdf2' : ($level === 'no_estimate' ? '#f8fbff' : '#ffffff'));
                     @endphp
                     <tr style="background:{{ $rowBg }};">
+                        <td style="padding:10px 12px;border-top:1px solid #f1f5f9;text-align:center;font-weight:900;color:#1d4ed8;">
+                            Top {{ $loop->iteration }}
+                        </td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">{{ $facilityLabel }}</td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">{{ $row['meter_scope_label'] }}</td>
                         <td style="padding:10px 12px;border-top:1px solid #f1f5f9;">
@@ -265,7 +236,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" style="padding:16px;text-align:center;color:#64748b;">
+                    <tr><td colspan="11" style="padding:16px;text-align:center;color:#64748b;">
                         {{ $selectedConsumptionFilter === 'warning_high'
                             ? 'No warning/high consumption meter found for selected filters. Meters with "No Estimate" are excluded in this view.'
                             : 'No meter data available for selected filters.' }}

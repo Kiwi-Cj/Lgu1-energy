@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ asset('css/style - Copy.css') }}">
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     <div class="wrapper">
         <div class="card">
             <h2 class="title">OTP Verification</h2>
@@ -14,7 +16,7 @@
             @if(session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
-            <form method="POST" action="{{ route('verify.otp') }}">
+            <form method="POST" action="{{ route('verify.otp.submit') }}">
                 @csrf
                 <input type="hidden" name="user_id" value="{{ $user_id }}">
                 <div class="input-box">

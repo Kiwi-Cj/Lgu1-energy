@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Models\MainMeterReading;
 use App\Models\Submeter;
 use App\Models\SubmeterEquipment;
 use App\Models\SubmeterReading;
@@ -141,14 +142,14 @@ class LoadTrackingService
         $mainMeterIds = $mainMeters->pluck('id')->all();
         $submeterParentMap = $this->submeterParentMap($submeters);
 
-        $estimatedByMeter = SubmeterEquipment::query()
+        $equipmentStatsRows = SubmeterEquipment::query()
             ->select([
                 'meter_scope',
                 'submeter_id',
                 'facility_meter_id',
-                DB::raw('SUM(estimated_kwh) as total_estimated_kwh'),
-                DB::raw('SUM(rated_watts * quantity) as total_watts'),
-                DB::raw('COUNT(*) as total_equipment'),
+                'quantity',
+                'rated_watts',
+                'estimated_kwh',
             ])
             ->where(function ($builder) use ($submeterIds, $mainMeterIds) {
                 $hasCondition = false;
@@ -169,15 +170,25 @@ class LoadTrackingService
                     });
                 }
             })
-            ->groupBy('meter_scope', 'submeter_id', 'facility_meter_id')
-            ->get()
-            ->keyBy(function ($row) {
+            ->get();
+
+        $estimatedByMeter = $equipmentStatsRows
+            ->groupBy(function ($row) {
                 $scope = strtolower((string) ($row->meter_scope ?? 'sub'));
                 $meterId = $scope === 'main'
                     ? (int) ($row->facility_meter_id ?? 0)
                     : (int) ($row->submeter_id ?? 0);
 
                 return $scope . ':' . $meterId;
+            })
+            ->map(function (Collection $group) {
+                return (object) [
+                    'total_estimated_kwh' => round((float) $group->sum(fn ($row) => (float) ($row->estimated_kwh ?? 0)), 2),
+                    'total_watts' => round((float) $group->sum(function ($row) {
+                        return (float) ($row->rated_watts ?? 0) * (int) ($row->quantity ?? 0);
+                    }), 2),
+                    'total_equipment' => $group->count(),
+                ];
             });
 
         $actualBySubmeter = collect();
@@ -196,9 +207,9 @@ class LoadTrackingService
                 ->keyBy('submeter_id');
         }
 
-        $actualByMainMeter = collect();
+        $manualActualByMainMeter = collect();
         if (! empty($mainMeterIds)) {
-            $actualByMainMeter = EnergyRecord::query()
+            $manualActualByMainMeter = EnergyRecord::query()
                 ->whereIn('meter_id', $mainMeterIds)
                 ->where('year', $year)
                 ->where('month', $month)
@@ -210,6 +221,41 @@ class LoadTrackingService
                 ->get()
                 ->keyBy('meter_id');
         }
+
+        $mainMeterIdsCollection = collect($mainMeterIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values();
+        $fallbackSensorMainMeterId = (int) ($mainMeterIdsCollection->first() ?? 0);
+        $resolveSensorMainMeterId = static function ($reading) use ($mainMeterIdsCollection, $fallbackSensorMainMeterId): int {
+            $deviceId = (string) ($reading->device_id ?? '');
+            if (preg_match('/FAKE-MAIN-(\d+)/', $deviceId, $matches)) {
+                $meterId = (int) ltrim($matches[1], '0');
+                if ($meterId > 0 && $mainMeterIdsCollection->contains($meterId)) {
+                    return $meterId;
+                }
+            }
+
+            return $fallbackSensorMainMeterId;
+        };
+
+        $sensorMainRows = collect();
+        if ($mainMeterIdsCollection->isNotEmpty()) {
+            $sensorMainRows = MainMeterReading::query()
+                ->approved()
+                ->where('period_type', 'monthly')
+                ->where('input_source', 'iot')
+                ->whereYear('period_end_date', $year)
+                ->whereMonth('period_end_date', $month)
+                ->get(['id', 'device_id', 'period_end_date', 'kwh_used']);
+        }
+
+        $sensorActualByMainMeter = $sensorMainRows
+            ->groupBy(fn ($reading) => $resolveSensorMainMeterId($reading))
+            ->map(fn ($group) => (object) [
+                'total_actual_kwh' => round((float) $group->sum(fn ($reading) => (float) ($reading->kwh_used ?? 0)), 2),
+                'reading_count' => $group->count(),
+            ]);
 
         $subRows = $submeters->map(function (Submeter $submeter) use ($estimatedByMeter, $actualBySubmeter, $submeterParentMap) {
             $meterKey = 'sub:' . (int) $submeter->id;
@@ -249,11 +295,14 @@ class LoadTrackingService
             ];
         });
 
-        $mainRows = $mainMeters->map(function (FacilityMeter $mainMeter) use ($estimatedByMeter, $actualByMainMeter) {
+        $mainRows = $mainMeters->map(function (FacilityMeter $mainMeter) use ($estimatedByMeter, $manualActualByMainMeter, $sensorActualByMainMeter) {
             $meterKey = 'main:' . (int) $mainMeter->id;
             $meterStats = $estimatedByMeter->get($meterKey);
             $estimated = (float) ($meterStats->total_estimated_kwh ?? 0);
-            $actual = (float) ($actualByMainMeter->get($mainMeter->id)->total_actual_kwh ?? 0);
+            $sensorActual = $sensorActualByMainMeter->get((int) $mainMeter->id);
+            $actual = $sensorActual && (int) ($sensorActual->reading_count ?? 0) > 0
+                ? (float) ($sensorActual->total_actual_kwh ?? 0)
+                : (float) ($manualActualByMainMeter->get($mainMeter->id)->total_actual_kwh ?? 0);
             $variancePercent = $this->variancePercent($estimated, $actual);
             $consumptionLevel = $this->resolveConsumptionLevel($estimated, $actual, $variancePercent);
             $isFlagged = $consumptionLevel === 'high';

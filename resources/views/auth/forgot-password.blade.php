@@ -352,6 +352,8 @@
     </style>
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     @php
         $otpPending = session('password_reset_otp_pending');
         $otpReady = is_array($otpPending);

@@ -19,6 +19,23 @@
         $level = strtolower((string) ($incident->severity_key ?? 'normal'));
         return in_array($level, ['critical', 'very-high'], true);
     })->count();
+    $monthOptions = [
+        1 => 'Jan',
+        2 => 'Feb',
+        3 => 'Mar',
+        4 => 'Apr',
+        5 => 'May',
+        6 => 'Jun',
+        7 => 'Jul',
+        8 => 'Aug',
+        9 => 'Sep',
+        10 => 'Oct',
+        11 => 'Nov',
+        12 => 'Dec',
+    ];
+    $exportQuery = array_filter($filters ?? [], function ($value) {
+        return $value !== null && $value !== '' && $value !== 'all' && $value !== 0;
+    });
 @endphp
 
 @section('content')
@@ -29,9 +46,14 @@
                 <h2>Incident Records</h2>
                 <p>Track active energy anomalies and inspect details for immediate action.</p>
             </div>
-            <a href="{{ route('energy-incidents.history') }}" class="history-btn">
-                <i class="fa-solid fa-clock-rotate-left"></i> View History
-            </a>
+            <div class="header-actions">
+                <a href="{{ route('energy-incidents.export', $exportQuery) }}" class="download-btn" data-secure-download>
+                    <i class="fa-solid fa-download"></i> Download
+                </a>
+                <a href="{{ route('energy-incidents.history') }}" class="history-btn">
+                    <i class="fa-solid fa-clock-rotate-left"></i> View History
+                </a>
+            </div>
         </div>
 
         <div class="incident-metrics">
@@ -70,6 +92,19 @@
                 <option value="critical" {{ ($filters['severity'] ?? 'all') === 'critical' ? 'selected' : '' }}>Critical</option>
                 <option value="very-high" {{ ($filters['severity'] ?? 'all') === 'very-high' ? 'selected' : '' }}>Very High</option>
             </select>
+            <select name="year" id="incidentYearFilter">
+                <option value="">All Years</option>
+                @foreach(($yearOptions ?? collect([now()->year])) as $year)
+                    <option value="{{ $year }}" {{ (int) ($filters['year'] ?? 0) === (int) $year ? 'selected' : '' }}>{{ $year }}</option>
+                @endforeach
+            </select>
+            <select name="month" id="incidentMonthFilter">
+                <option value="">All Months</option>
+                @foreach($monthOptions as $monthNumber => $monthName)
+                    <option value="{{ $monthNumber }}" {{ (int) ($filters['month'] ?? 0) === (int) $monthNumber ? 'selected' : '' }}>{{ $monthName }}</option>
+                @endforeach
+            </select>
+            <input type="date" name="date_detected" id="incidentDateFilter" value="{{ $filters['date_detected'] ?? '' }}" />
             <div class="filter-actions">
                 <button type="submit" class="filter-btn apply">Apply</button>
                 <a href="{{ route('energy-incidents.index') }}" class="filter-btn clear">Reset</a>
@@ -374,6 +409,31 @@ document.addEventListener('DOMContentLoaded', function () {
     white-space: nowrap;
 }
 
+.header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.download-btn {
+    background: #0f766e;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.download-btn:hover {
+    background: #0d9488;
+}
+
 .incident-metrics {
     display: grid;
     grid-template-columns: repeat(5, minmax(120px, 1fr));
@@ -410,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .incident-filters {
     display: grid;
-    grid-template-columns: 1.8fr 1fr 1fr auto;
+    grid-template-columns: minmax(170px, 1.6fr) minmax(120px, 0.8fr) minmax(130px, 0.8fr) minmax(110px, 0.7fr) minmax(120px, 0.7fr) minmax(145px, 0.8fr) auto;
     gap: 10px;
     margin-bottom: 14px;
 }
@@ -805,6 +865,12 @@ body.dark-mode .incident-page .filter-btn.clear {
     color: #e2e8f0;
     border-color: #475569;
 }
+body.dark-mode .incident-page .download-btn {
+    background: #0f766e;
+}
+body.dark-mode .incident-page .download-btn:hover {
+    background: #14b8a6;
+}
 body.dark-mode .incident-page .incident-list-container {
     background: #111827;
     border-color: #334155;
@@ -910,6 +976,13 @@ body.dark-mode .incident-page .attachment-list a {
     .incident-header {
         flex-direction: column;
         align-items: stretch;
+    }
+    .header-actions {
+        width: 100%;
+    }
+    .header-actions a {
+        flex: 1;
+        justify-content: center;
     }
     .history-btn {
         justify-content: center;

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Modules\EnergyController;
+use App\Http\Controllers\Modules\EnergyConservationController;
 use App\Http\Controllers\Modules\AiAlertsController;
 use App\Http\Controllers\Modules\FacilityController;
 use App\Http\Controllers\Modules\FacilityMeterController;
@@ -68,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
     Route::get('/modules/ai-alerts', [AiAlertsController::class, 'index'])->name('modules.ai-alerts.index');
     Route::get('/modules/alerts', [AiAlertsController::class, 'index'])->name('modules.alerts.index');
+    Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
 
     // Load Tracking (equipment-level under submeters)
     Route::get('/modules/load-tracking', [LoadTrackingController::class, 'index'])->name('modules.load-tracking.index');
@@ -127,6 +129,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }])
             ->orderBy('meter_name')
             ->get();
+
+        $mainMeterApprovalStates = \App\Models\FacilityMeter::where('facility_id', $facilityId)
+            ->where('meter_type', 'main')
+            ->get(['id', 'approved_at']);
+        $totalMainMeterCount = (int) $mainMeterApprovalStates->count();
+        $approvedMainMeterCount = (int) $meterOptions->count();
+        $pendingMainMeterCount = (int) $mainMeterApprovalStates
+            ->filter(fn ($meter) => empty($meter->approved_at))
+            ->count();
 
         $allRecords = \App\Models\EnergyRecord::with('meter')
             ->where('facility_id', $facilityId)
@@ -241,7 +252,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return (int) ($record->month ?? 0) === $effectiveSummaryMonth;
         })->values();
 
-        $mainMeterPeriodTotals = $allMainRecordsForSummary
+        $mainMeterManualPeriodTotals = $allMainRecordsForSummary
             ->groupBy(fn ($record) => (int) ($record->meter_id ?? 0))
             ->map(fn ($group) => round((float) $group->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2));
 
@@ -274,12 +285,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->groupBy(fn ($reading) => $resolveSensorMainMeterId($reading))
             ->map(fn ($group) => round((float) $group->sum(fn ($reading) => (float) ($reading->kwh_used ?? 0)), 2));
 
-        foreach ($sensorMainPeriodTotals as $meterId => $sensorKwh) {
-            $meterId = (int) $meterId;
-            if ($meterId > 0) {
-                $mainMeterPeriodTotals[$meterId] = round((float) ($mainMeterPeriodTotals->get($meterId, 0)) + (float) $sensorKwh, 2);
-            }
-        }
+        $sensorMainPeriodReadingCounts = $sensorMainRowsForSummary
+            ->groupBy(fn ($reading) => $resolveSensorMainMeterId($reading))
+            ->map(fn ($group) => $group->count());
+
+        $mainMeterPeriodTotals = $mainMeterIdsForSensor
+            ->mapWithKeys(function ($meterId) use ($mainMeterManualPeriodTotals, $sensorMainPeriodTotals, $sensorMainPeriodReadingCounts) {
+                $meterId = (int) $meterId;
+                $hasSensorReading = (int) ($sensorMainPeriodReadingCounts->get($meterId, 0)) > 0;
+                $preferredKwh = $hasSensorReading
+                    ? (float) $sensorMainPeriodTotals->get($meterId, 0)
+                    : (float) $mainMeterManualPeriodTotals->get($meterId, 0);
+
+                return [$meterId => round($preferredKwh, 2)];
+            });
+
+        $mainMeterPreferredSources = $mainMeterIdsForSensor
+            ->mapWithKeys(function ($meterId) use ($mainMeterManualPeriodTotals, $sensorMainPeriodReadingCounts) {
+                $meterId = (int) $meterId;
+                if ((int) ($sensorMainPeriodReadingCounts->get($meterId, 0)) > 0) {
+                    return [$meterId => 'Sensor'];
+                }
+                if ((float) ($mainMeterManualPeriodTotals->get($meterId, 0)) > 0) {
+                    return [$meterId => 'Manual'];
+                }
+
+                return [$meterId => 'No Data'];
+            });
 
         $submeterPeriodTotalsQuery = \App\Models\EnergyRecord::query()
             ->where('facility_id', $facilityId)
@@ -368,7 +400,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->values();
 
         $mainMeterOrganization = $meterOptions
-            ->map(function ($mainMeter) use ($submeterPeriodTotals, $mainMeterPeriodTotals, $sensorMainPeriodTotals) {
+            ->map(function ($mainMeter) use ($submeterPeriodTotals, $mainMeterPeriodTotals, $mainMeterManualPeriodTotals, $sensorMainPeriodTotals, $mainMeterPreferredSources) {
                 $mainMeterId = (int) ($mainMeter->id ?? 0);
                 $submeters = collect($mainMeter->childMeters ?? [])
                     ->filter(fn ($sub) => (string) ($sub->meter_type ?? '') === 'sub')
@@ -386,6 +418,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     ->values();
 
                 $mainTotalKwh = round((float) ($mainMeterPeriodTotals->get($mainMeterId, 0)), 2);
+                $manualTotalKwh = round((float) ($mainMeterManualPeriodTotals->get($mainMeterId, 0)), 2);
                 $sensorTotalKwh = round((float) ($sensorMainPeriodTotals->get($mainMeterId, 0)), 2);
                 $linkedSubTotalKwh = round((float) $submeters->sum(fn ($item) => (float) ($item['total_kwh'] ?? 0)), 2);
 
@@ -396,7 +429,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'submeters' => $submeters,
                     'submeter_count' => (int) $submeters->count(),
                     'main_total_kwh' => $mainTotalKwh,
+                    'manual_total_kwh' => $manualTotalKwh,
                     'sensor_total_kwh' => $sensorTotalKwh,
+                    'source_label' => (string) ($mainMeterPreferredSources->get($mainMeterId, 'No Data')),
                     'linked_sub_total_kwh' => $linkedSubTotalKwh,
                     'main_minus_sub_kwh' => round($mainTotalKwh - $linkedSubTotalKwh, 2),
                 ];
@@ -498,6 +533,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('modules.facilities.monthly-record.records', compact(
             'facility',
             'meterOptions',
+            'totalMainMeterCount',
+            'approvedMainMeterCount',
+            'pendingMainMeterCount',
             'selectedRecordScope',
             'scopeLabel',
             'mainSubScope',
@@ -561,6 +599,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderBy('meter_name')
             ->get();
 
+        if ($mainMeterOptions->isEmpty()) {
+            return redirect()
+                ->route('facilities.monthly-records', ['facility' => $facilityId])
+                ->with('error', 'Add and approve a Main Meter first before viewing Sub-meter monthly records.');
+        }
+
         $selectedMainMeterId = (int) ($request->query('main_meter_id') ?: 0);
         if ($selectedMainMeterId > 0 && ! $mainMeterOptions->contains(fn ($meter) => (int) $meter->id === $selectedMainMeterId)) {
             $selectedMainMeterId = 0;
@@ -575,6 +619,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $subMeterOptions = $allSubMeterOptions
             ->when($selectedMainMeterId > 0, fn ($collection) => $collection->filter(fn ($meter) => (int) ($meter->parent_meter_id ?? 0) === $selectedMainMeterId))
             ->values();
+
+        $normalizeSubmeterName = static fn (string $name): string => preg_replace('/\s+/', ' ', strtolower(trim($name))) ?? '';
+        $submeterNameToIdMap = \App\Models\Submeter::where('facility_id', $facilityId)
+            ->get(['id', 'submeter_name'])
+            ->mapWithKeys(fn ($submeter) => [$normalizeSubmeterName((string) $submeter->submeter_name) => (int) $submeter->id]);
+        $facilityMeterToSubmeterIdMap = $subMeterOptions
+            ->mapWithKeys(function ($meter) use ($submeterNameToIdMap, $normalizeSubmeterName) {
+                $nameKey = $normalizeSubmeterName((string) ($meter->meter_name ?? ''));
+
+                return [(int) ($meter->id ?? 0) => (int) ($submeterNameToIdMap->get($nameKey) ?? 0)];
+            })
+            ->filter(fn ($submeterId, $facilityMeterId) => (int) $facilityMeterId > 0 && (int) $submeterId > 0);
+        $submeterToFacilityMeterIdMap = $facilityMeterToSubmeterIdMap
+            ->mapWithKeys(fn ($submeterId, $facilityMeterId) => [(int) $submeterId => (int) $facilityMeterId]);
 
         $selectedYear = (int) ($request->query('year') ?: date('Y'));
         $selectedMonth = (int) ($request->query('month') ?: 0);
@@ -593,6 +651,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->distinct()
             ->orderByDesc('year')
             ->pluck('year')
+            ->values();
+
+        $sensorYearOptions = collect();
+        if ($facilityMeterToSubmeterIdMap->isNotEmpty()) {
+            $sensorYearOptions = \App\Models\SubmeterReading::query()
+                ->where('period_type', 'monthly')
+                ->where('input_source', 'iot')
+                ->whereIn('submeter_id', $facilityMeterToSubmeterIdMap->values()->all())
+                ->selectRaw('YEAR(period_end_date) as year')
+                ->distinct()
+                ->orderByDesc('year')
+                ->pluck('year')
+                ->values();
+        }
+
+        $yearOptions = $yearOptions
+            ->merge($sensorYearOptions)
+            ->map(fn ($year) => (int) $year)
+            ->filter(fn ($year) => $year > 0)
+            ->unique()
+            ->sortDesc()
             ->values();
 
         if ($yearOptions->isEmpty()) {
@@ -630,76 +709,135 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderByDesc('day')
             ->get();
 
-        $submeterGroups = $submeterRecords
-            ->groupBy(fn ($record) => (int) ($record->meter_id ?? 0))
-            ->map(function ($groupRecords, $meterId) use ($resolveCost) {
-                $firstRecord = $groupRecords->first();
-                $meterName = (string) ($firstRecord?->meter?->meter_name ?? 'Unknown Sub-meter');
+        $selectedFacilityMeterIds = $subMeterOptions->pluck('id')->map(fn ($id) => (int) $id)->values();
+        if ($selectedMeterId > 0) {
+            $selectedFacilityMeterIds = $selectedFacilityMeterIds->filter(fn ($id) => (int) $id === $selectedMeterId)->values();
+        }
 
-                $rows = $groupRecords->map(function ($record) use ($resolveCost) {
-                    $actualKwh = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
-                    $baselineKwh = is_numeric($record->baseline_kwh)
-                        ? (float) $record->baseline_kwh
-                        : (is_numeric($record->meter?->baseline_kwh) ? (float) $record->meter->baseline_kwh : null);
-                    $deviation = is_numeric($record->deviation)
-                        ? (float) $record->deviation
-                        : \App\Models\EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
+        $sensorSubmeterIds = $selectedFacilityMeterIds
+            ->map(fn ($facilityMeterId) => (int) ($facilityMeterToSubmeterIdMap->get((int) $facilityMeterId) ?? 0))
+            ->filter(fn ($submeterId) => $submeterId > 0)
+            ->unique()
+            ->values();
 
-                    $alertLabel = ($deviation !== null && $baselineKwh !== null && $baselineKwh > 0)
-                        ? \App\Models\EnergyRecord::resolveAlertLevel($deviation, $baselineKwh)
-                        : 'No baseline';
-                    $alertValue = strtolower($alertLabel);
+        $sensorRows = collect();
+        if ($sensorSubmeterIds->isNotEmpty()) {
+            $sensorRows = \App\Models\SubmeterReading::query()
+                ->with('submeter:id,submeter_name')
+                ->where('period_type', 'monthly')
+                ->where('input_source', 'iot')
+                ->whereIn('submeter_id', $sensorSubmeterIds->all())
+                ->whereYear('period_end_date', $selectedYear)
+                ->when($selectedMonth >= 1 && $selectedMonth <= 12, fn ($query) => $query->whereMonth('period_end_date', $selectedMonth))
+                ->orderByDesc('period_end_date')
+                ->get();
+        }
 
-                    $alertColor = '#475569';
-                    $alertBg = '#f1f5f9';
-                    if ($alertValue === 'warning') {
-                        $alertColor = '#92400e';
-                        $alertBg = '#fef3c7';
-                    } elseif ($alertValue === 'high') {
-                        $alertColor = '#9a3412';
-                        $alertBg = '#ffedd5';
-                    } elseif ($alertValue === 'very high') {
-                        $alertColor = '#be123c';
-                        $alertBg = '#fff1f2';
-                    } elseif ($alertValue === 'critical') {
-                        $alertColor = '#991b1b';
-                        $alertBg = '#fee2e2';
-                    } elseif ($alertValue === 'normal') {
-                        $alertColor = '#166534';
-                        $alertBg = '#dcfce7';
-                    }
+        $manualRows = $submeterRecords->map(function ($record) use ($resolveCost) {
+            $actualKwh = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
+            $baselineKwh = is_numeric($record->baseline_kwh)
+                ? (float) $record->baseline_kwh
+                : (is_numeric($record->meter?->baseline_kwh) ? (float) $record->meter->baseline_kwh : null);
+            $deviation = is_numeric($record->deviation)
+                ? (float) $record->deviation
+                : \App\Models\EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
 
-                    return [
-                        'id' => (int) ($record->id ?? 0),
-                        'year' => (int) ($record->year ?? 0),
-                        'month' => (int) ($record->month ?? 0),
-                        'day' => $record->day ?: '-',
-                        'meter_name' => (string) ($record->meter?->meter_name ?? '-'),
-                        'actual_kwh' => $actualKwh,
-                        'baseline_kwh' => $baselineKwh,
-                        'deviation' => $deviation,
-                        'cost' => round((float) $resolveCost($record), 2),
-                        'alert_label' => $alertLabel,
-                        'alert_color' => $alertColor,
-                        'alert_bg' => $alertBg,
-                    ];
-                })->values();
+            return [
+                'id' => (int) ($record->id ?? 0),
+                'meter_id' => (int) ($record->meter_id ?? 0),
+                'year' => (int) ($record->year ?? 0),
+                'month' => (int) ($record->month ?? 0),
+                'day' => $record->day ?: '-',
+                'meter_name' => (string) ($record->meter?->meter_name ?? '-'),
+                'actual_kwh' => $actualKwh,
+                'baseline_kwh' => $baselineKwh,
+                'deviation' => $deviation,
+                'cost' => round((float) $resolveCost($record), 2),
+                'source_label' => 'Manual',
+            ];
+        });
+
+        $sensorPreferredRows = $sensorRows->map(function ($reading) use ($submeterToFacilityMeterIdMap, $subMeterOptions) {
+            $meterId = (int) ($submeterToFacilityMeterIdMap->get((int) ($reading->submeter_id ?? 0)) ?? 0);
+            $meter = $subMeterOptions->first(fn ($option) => (int) ($option->id ?? 0) === $meterId);
+            $endDate = $reading->period_end_date ? \Carbon\Carbon::parse($reading->period_end_date) : null;
+            $actualKwh = is_numeric($reading->kwh_used) ? (float) $reading->kwh_used : null;
+            $baselineKwh = is_numeric($meter?->baseline_kwh) ? (float) $meter->baseline_kwh : null;
+            $deviation = \App\Models\EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
+
+            return [
+                'id' => (int) ($reading->id ?? 0),
+                'meter_id' => $meterId,
+                'year' => $endDate ? (int) $endDate->format('Y') : 0,
+                'month' => $endDate ? (int) $endDate->format('n') : 0,
+                'day' => $endDate ? (int) $endDate->format('j') : '-',
+                'meter_name' => (string) ($meter?->meter_name ?? $reading->submeter?->submeter_name ?? '-'),
+                'actual_kwh' => $actualKwh,
+                'baseline_kwh' => $baselineKwh,
+                'deviation' => $deviation,
+                'cost' => round(\App\Support\EnergyCost::cost(['actual_kwh' => $actualKwh]), 2),
+                'source_label' => 'Sensor',
+            ];
+        })->filter(fn ($row) => (int) ($row['meter_id'] ?? 0) > 0);
+
+        $sensorKeys = $sensorPreferredRows
+            ->mapWithKeys(fn ($row) => [(int) $row['meter_id'] . '-' . (int) $row['year'] . '-' . (int) $row['month'] => true]);
+
+        $preferredRows = $sensorPreferredRows
+            ->merge($manualRows->reject(fn ($row) => $sensorKeys->has((int) $row['meter_id'] . '-' . (int) $row['year'] . '-' . (int) $row['month'])))
+            ->map(function ($row) {
+                $alertLabel = ($row['deviation'] !== null && $row['baseline_kwh'] !== null && $row['baseline_kwh'] > 0)
+                    ? \App\Models\EnergyRecord::resolveAlertLevel((float) $row['deviation'], (float) $row['baseline_kwh'])
+                    : 'No baseline';
+                $alertValue = strtolower($alertLabel);
+                $alertColor = '#475569';
+                $alertBg = '#f1f5f9';
+                if ($alertValue === 'warning') {
+                    $alertColor = '#92400e';
+                    $alertBg = '#fef3c7';
+                } elseif ($alertValue === 'high') {
+                    $alertColor = '#9a3412';
+                    $alertBg = '#ffedd5';
+                } elseif ($alertValue === 'very high') {
+                    $alertColor = '#be123c';
+                    $alertBg = '#fff1f2';
+                } elseif ($alertValue === 'critical') {
+                    $alertColor = '#991b1b';
+                    $alertBg = '#fee2e2';
+                } elseif ($alertValue === 'normal') {
+                    $alertColor = '#166534';
+                    $alertBg = '#dcfce7';
+                }
+
+                $row['alert_label'] = $alertLabel;
+                $row['alert_color'] = $alertColor;
+                $row['alert_bg'] = $alertBg;
+
+                return $row;
+            })
+            ->sortByDesc(fn ($row) => sprintf('%04d-%02d-%02d', (int) ($row['year'] ?? 0), (int) ($row['month'] ?? 0), (int) (is_numeric($row['day'] ?? null) ? $row['day'] : 0)))
+            ->values();
+
+        $submeterGroups = $preferredRows
+            ->groupBy(fn ($row) => (int) ($row['meter_id'] ?? 0))
+            ->map(function ($groupRows, $meterId) {
+                $firstRow = $groupRows->first();
 
                 return [
                     'meter_id' => (int) $meterId,
-                    'meter_name' => $meterName,
-                    'record_count' => (int) $groupRecords->count(),
-                    'total_kwh' => round((float) $groupRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2),
-                    'total_cost' => round((float) $groupRecords->sum(fn ($record) => $resolveCost($record)), 2),
-                    'records' => $rows,
+                    'meter_name' => (string) ($firstRow['meter_name'] ?? 'Unknown Sub-meter'),
+                    'record_count' => (int) $groupRows->count(),
+                    'total_kwh' => round((float) $groupRows->sum(fn ($row) => (float) ($row['actual_kwh'] ?? 0)), 2),
+                    'total_cost' => round((float) $groupRows->sum(fn ($row) => (float) ($row['cost'] ?? 0)), 2),
+                    'records' => $groupRows->values(),
                 ];
             })
             ->sortBy(fn ($group) => strtolower((string) ($group['meter_name'] ?? '')))
             ->values();
 
-        $totalKwh = round((float) $submeterRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2);
-        $totalCost = round((float) $submeterRecords->sum(fn ($record) => $resolveCost($record)), 2);
-        $totalRecords = (int) $submeterRecords->count();
+        $totalKwh = round((float) $preferredRows->sum(fn ($row) => (float) ($row['actual_kwh'] ?? 0)), 2);
+        $totalCost = round((float) $preferredRows->sum(fn ($row) => (float) ($row['cost'] ?? 0)), 2);
+        $totalRecords = (int) $preferredRows->count();
 
         return view('modules.facilities.monthly-record.submeter-records', compact(
             'facility',

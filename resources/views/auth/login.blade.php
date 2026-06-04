@@ -275,6 +275,7 @@
 </head>
 
 <body>
+@include('layouts.partials.flash-toast')
 
 <header class="nav">
     <a href="/" class="nav-logo">

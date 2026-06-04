@@ -300,15 +300,10 @@ class FacilityMeterController extends Controller
         $validated = $this->validateMeter($request, (int) $facility->id);
         $validated['facility_id'] = $facility->id;
 
-        if ($this->canApprove()) {
-            $validated['approved_by_user_id'] = auth()->id();
-            $validated['approved_at'] = now();
-        }
-
         $meter = FacilityMeter::create($validated);
         $this->syncLoadTrackingSubmeter($meter);
 
-        return $this->redirectAfterMutation($request, $facility, 'Meter added successfully.');
+        return $this->redirectAfterMutation($request, $facility, 'Meter added successfully and is pending approval.');
     }
 
     public function update(Request $request, $facilityId, $meterId)

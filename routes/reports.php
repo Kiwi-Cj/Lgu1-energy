@@ -65,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ];
         }
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\EnergyReportExport($energyRows), 'energy_report.xlsx');
-    })->name('reports.energy-export');
+    })->middleware('download.confirmed')->name('reports.energy-export');
 });
 
 

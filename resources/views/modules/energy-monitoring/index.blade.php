@@ -102,31 +102,6 @@
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
     }
 
-    .energy-monitor-page .monitor-period-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 12px;
-    }
-
-    .energy-monitor-page .monitor-period-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        color: #1d4ed8;
-        font-size: 0.84rem;
-        font-weight: 700;
-        line-height: 1;
-    }
-
-    .energy-monitor-page .monitor-period-pill i {
-        font-size: 0.8rem;
-    }
-
     .energy-monitor-page .search-btn {
         background: #2563eb;
         color: #fff;
@@ -211,7 +186,8 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 1000px;
+        min-width: 920px;
+        font-size: 0.86rem;
     }
 
     .energy-monitor-page .monitor-table thead tr {
@@ -219,11 +195,12 @@
     }
 
     .energy-monitor-page .monitor-table th {
-        padding: 15px;
+        padding: 11px 8px;
         color: #475569;
         font-weight: 700;
         text-align: center;
         border-bottom: 1px solid #e2e8f0;
+        line-height: 1.25;
     }
 
     .energy-monitor-page .monitor-table th:first-child {
@@ -235,10 +212,11 @@
     }
 
     .energy-monitor-page .monitor-table td {
-        padding: 15px;
+        padding: 11px 8px;
         text-align: center;
         border-bottom: 1px solid #f1f5f9;
         color: #334155;
+        line-height: 1.3;
     }
 
     .energy-monitor-page .monitor-row:hover {
@@ -265,8 +243,8 @@
     }
 
     .energy-monitor-page .cell-meter-meta {
-        margin-top: 4px;
-        font-size: 0.76rem;
+        margin-top: 3px;
+        font-size: 0.72rem;
         color: #64748b;
     }
 
@@ -275,25 +253,34 @@
     }
 
     .energy-monitor-page .cell-meter-hint {
-        margin-top: 4px;
         font-size: 0.72rem;
-        color: #2563eb;
+        color: inherit;
         font-weight: 700;
     }
 
     .energy-monitor-page .main-meter-trigger {
-        margin-top: 6px;
-        padding: 0;
-        border: none;
-        background: transparent;
+        margin-top: 5px;
+        padding: 4px 8px;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
         color: #2563eb;
         font-weight: 700;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         cursor: pointer;
     }
 
     .energy-monitor-page .main-meter-trigger:hover {
+        background: #dbeafe;
         color: #1d4ed8;
+    }
+
+    .energy-monitor-page .cell-reading-note {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
     }
 
     .energy-monitor-page .monitor-row-seeded {
@@ -394,7 +381,7 @@
     }
 
     .energy-monitor-page .recommendation-icon {
-        font-size: 1.3rem;
+        font-size: 1.08rem;
     }
 
     .energy-monitor-page .monitor-empty {
@@ -628,9 +615,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.72rem;
         font-weight: 700;
         border: 1px solid transparent;
     }
@@ -639,9 +626,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.72rem;
         font-weight: 700;
         border: 1px solid transparent;
     }
@@ -694,7 +681,7 @@
     .energy-monitor-page .facility-status-cluster {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 5px;
         justify-content: center;
     }
 
@@ -702,9 +689,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 20px;
-        font-size: 0.76rem;
+        font-size: 0.7rem;
         font-weight: 700;
         border: 1px solid transparent;
         white-space: nowrap;
@@ -740,8 +727,9 @@
     .energy-monitor-page .recommendation-btn {
         background: none;
         border: none;
-        font-size: 1.3rem;
+        font-size: 1.08rem;
         cursor: pointer;
+        padding: 3px;
     }
 
     .energy-monitor-page .pagination-wrap {
@@ -825,15 +813,22 @@
         color: #94a3b8;
     }
 
+    body.dark-mode .energy-monitor-page .cell-reading-note {
+        color: #94a3b8;
+    }
+
     body.dark-mode .energy-monitor-page .cell-meter-hint {
         color: #93c5fd;
     }
 
     body.dark-mode .energy-monitor-page .main-meter-trigger {
+        background: rgba(37, 99, 235, 0.16);
+        border-color: rgba(147, 197, 253, 0.26);
         color: #93c5fd;
     }
 
     body.dark-mode .energy-monitor-page .main-meter-trigger:hover {
+        background: rgba(37, 99, 235, 0.26);
         color: #bfdbfe;
     }
 
@@ -1131,7 +1126,6 @@
     @php
         $dashboardNow = now()->timezone(config('app.timezone', 'Asia/Manila'));
         $selectedMonthInput = $selectedMonthInput ?? $dashboardNow->format('Y-m');
-        $selectedPeriodLabel = $selectedPeriodLabel ?? $dashboardNow->format('F Y');
     @endphp
     <div class="monitor-header">
         <div>
@@ -1139,12 +1133,6 @@
                 Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
             <p class="monitor-subtitle">Main meter status and trend overview for all facilities</p>
-            <div class="monitor-period-meta">
-                <span class="monitor-period-pill">
-                    <i class="fa-regular fa-calendar"></i>
-                    Period: {{ $selectedPeriodLabel }}
-                </span>
-            </div>
         </div>
         
         <form class="search-form" method="GET" action="">
@@ -1190,7 +1178,7 @@
                     <th>Trend</th>
                     <th>EUI</th>
                     <th>Facility Status</th>
-                    <th>AI Recommendation</th>
+                    <th>Recommendation</th>
                 </tr>
             </thead>
             <tbody>
@@ -1270,7 +1258,7 @@
                                 class="main-meter-trigger"
                                 onclick='openMeterBreakdownModal(@json($facilityNameDisplay !== "" ? $facilityNameDisplay : $facilityNameRaw), @json($mainMeterLabel), @json($mainMeterStatus), @json($record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : null), @json($mainMeterBreakdown))'
                             >
-                                <span class="cell-meter-hint">View main meter breakdown</span>
+                                <span class="cell-meter-hint">View meters</span>
                             </button>
                         @endif
                     </td>
@@ -1283,6 +1271,9 @@
                     </td>
                     <td class="cell-baseline">
                         {{ $record && is_numeric($record->actual_kwh ?? null) ? number_format((float) $record->actual_kwh, 2) : '-' }}
+                        @if($mainMeterCount > 1 && $record && is_numeric($record->actual_kwh ?? null))
+                            <span class="cell-reading-note">Combined</span>
+                        @endif
                     </td>
                     <td>{{ $facility->floor_area ?? '-' }} <small class="unit-label">m2</small></td>
                     <td class="cell-baseline">
@@ -1554,7 +1545,7 @@ function openMeterBreakdownModal(facilityName, meterLabel, meterStatus, totalKwh
     const rows = Array.isArray(meters) ? meters : [];
 
     title.textContent = `${facilityName} Main Meter Breakdown`;
-    meta.textContent = `${meterLabel} - ${meterStatus}`;
+    meta.textContent = rows.length > 1 ? `${rows.length} main meters - ${meterStatus}` : `${meterLabel} - ${meterStatus}`;
     total.textContent = formatMetricValue(totalKwh, ' kWh');
 
     if (rows.length === 0) {

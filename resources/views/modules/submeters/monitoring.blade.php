@@ -465,11 +465,6 @@
         <div class="submeter-flash warn">Please check the form fields.</div>
     @endif
 
-    @php
-        $energyTab = 'sub';
-    @endphp
-    @include('layouts.partials.energy_monitoring_switcher')
-
     <section class="report-card-container">
         <section class="submeter-head">
             <div>

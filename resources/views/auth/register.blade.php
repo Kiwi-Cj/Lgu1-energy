@@ -6,6 +6,8 @@
     <title>Register</title>
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     <h1>Create Account</h1>
 
     @if($errors->any())

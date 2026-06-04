@@ -8,7 +8,7 @@ namespace App\Http\Controllers;
         {
             public function indexHighAlerts()
             {
-                return redirect()->route('modules.energy-incident.history');
+                return redirect()->route('energy-incidents.history');
             }
 
             public function log(Request $request)

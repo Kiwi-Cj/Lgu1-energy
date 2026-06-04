@@ -279,6 +279,8 @@
     </style>
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     <div class="card">
         <div class="header">
             <h1 class="title">Reset Password</h1>

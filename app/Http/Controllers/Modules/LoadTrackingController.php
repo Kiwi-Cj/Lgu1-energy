@@ -106,9 +106,11 @@ class LoadTrackingController extends Controller
         })->all();
         $comparisonEstimated = $rows->pluck('estimated_kwh')->map(fn ($value) => (float) $value)->all();
         $comparisonActual = $rows->pluck('actual_kwh')->map(fn ($value) => (float) $value)->all();
+        $totalWatts = round((float) $rows->sum('total_watts'), 2);
         $totalEstimated = round((float) $rows->sum('estimated_kwh'), 2);
         $totalActual = round((float) $rows->sum('actual_kwh'), 2);
         $totals = [
+            'total_watts' => $totalWatts,
             'estimated_kwh' => $totalEstimated,
             'actual_kwh' => $totalActual,
             'variance_percent' => $this->loadTrackingService->variancePercent($totalEstimated, $totalActual),

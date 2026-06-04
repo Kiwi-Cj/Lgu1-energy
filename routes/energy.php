@@ -137,7 +137,7 @@ Route::get('/modules/energy/export-report', function () {
     return view('modules.energy.export-report', compact('facilities'));
 })->name('energy.exportReport');
 
-Route::get('/modules/energy/export-pdf', [EnergyReportController::class, 'exportPdf'])->name('modules.energy.export-pdf');
+Route::get('/modules/energy/export-pdf', [EnergyReportController::class, 'exportPdf'])->middleware('download.confirmed')->name('modules.energy.export-pdf');
 
 // AJAX route to check for duplicate energy record
 Route::get('/modules/energy/check-duplicate', function (HttpRequest $request) {
@@ -216,7 +216,7 @@ Route::get('/modules/energy/export-excel', function (Request $request) {
         fclose($file);
     };
     return response()->stream($callback, 200, $headers);
-})->name('modules.energy.export-excel');
+})->middleware('download.confirmed')->name('modules.energy.export-excel');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Annual Energy Summary Excel Export (CSV fallback)
@@ -343,7 +343,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             fclose($file);
         };
         return response()->stream($callback, 200, $headers);
-    })->name('modules.energy.annual.export-excel');
+    })->middleware('download.confirmed')->name('modules.energy.annual.export-excel');
 
     // Annual Energy Summary PDF Export
     Route::get('/modules/energy/annual/export-pdf', function (Request $request) {
@@ -471,5 +471,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )->setPaper('a4', 'portrait');
 
         return $pdf->download('annual_energy_monitoring_' . $selectedYear . '.pdf');
-    })->name('modules.energy.annual.export-pdf');
+    })->middleware('download.confirmed')->name('modules.energy.annual.export-pdf');
 });

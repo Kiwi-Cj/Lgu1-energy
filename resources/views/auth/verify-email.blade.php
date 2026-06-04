@@ -6,6 +6,8 @@
     <title>Verify Email</title>
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     <h1>Verify Email</h1>
     <p>Please verify your email address by clicking the link we sent you.</p>
 

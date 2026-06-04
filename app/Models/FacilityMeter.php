@@ -31,6 +31,8 @@ class FacilityMeter extends Model
     protected $casts = [
         'multiplier' => 'decimal:4',
         'baseline_kwh' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
         'approved_at' => 'datetime',
     ];
 

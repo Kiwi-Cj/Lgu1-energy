@@ -571,6 +571,63 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 .logout-btn{ margin-top:8px; background:#3762c8; border:none; color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; width: 100%; }
 .notif-btn:hover .fa-bell { color: #1d4ed8; }
 
+/* ===== GLOBAL FLASH TOASTS ===== */
+.global-toast-stack {
+    position: fixed;
+    top: 22px;
+    right: 22px;
+    z-index: 100000;
+    display: grid;
+    gap: 10px;
+    width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.global-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-weight: 800;
+    border: 1px solid transparent;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .22s ease, transform .22s ease;
+    pointer-events: auto;
+}
+
+.global-toast-success {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.global-toast-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.global-toast.is-hidden {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+body.dark-mode .global-toast-success {
+    background: #052e1a;
+    color: #bbf7d0;
+    border-color: #166534;
+}
+
+body.dark-mode .global-toast-error {
+    background: #450a0a;
+    color: #fecaca;
+    border-color: #991b1b;
+}
+
 .notif-dropdown {
     display: none;
     position: absolute;
@@ -1010,6 +1067,145 @@ body.dark-mode .notif-sev-info .notif-message {
     color: #bfdbfe;
 }
 
+.secure-download-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.48);
+    padding: 18px;
+}
+
+.secure-download-dialog {
+    width: min(420px, 94vw);
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.24);
+    padding: 24px 22px 22px;
+    position: relative;
+}
+
+.secure-download-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 1.8rem;
+    cursor: pointer;
+}
+
+.secure-download-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #1d4ed8;
+    background: #dbeafe;
+    margin-bottom: 12px;
+}
+
+.secure-download-dialog h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.22rem;
+    font-weight: 900;
+}
+
+.secure-download-dialog p {
+    margin: 7px 0 16px;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.secure-download-dialog label {
+    display: block;
+    color: #334155;
+    font-size: 0.82rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.secure-download-dialog input[type="password"] {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background: #fff;
+}
+
+.secure-download-feedback {
+    margin-top: 10px;
+    border-radius: 10px;
+    padding: 9px 11px;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.secure-download-feedback.is-error {
+    display: block;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.secure-download-feedback.is-success {
+    display: block;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.secure-download-dialog button[type="submit"] {
+    width: 100%;
+    margin-top: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #fff;
+    padding: 10px 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.secure-download-dialog button[type="submit"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+body.dark-mode .secure-download-dialog {
+    background: #111827;
+    border: 1px solid #334155;
+}
+body.dark-mode .secure-download-dialog h2 {
+    color: #e2e8f0;
+}
+body.dark-mode .secure-download-dialog p,
+body.dark-mode .secure-download-dialog label {
+    color: #94a3b8;
+}
+body.dark-mode .secure-download-dialog input[type="password"] {
+    background: #0b1220;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .secure-download-feedback.is-error {
+    background: #450a0a;
+    color: #fecaca;
+    border-color: #991b1b;
+}
+body.dark-mode .secure-download-feedback.is-success {
+    background: #052e1a;
+    color: #bbf7d0;
+    border-color: #166534;
+}
+
 @media(max-width:640px) {
     .notif-dropdown {
         right: 12px;
@@ -1023,6 +1219,25 @@ body.dark-mode .notif-sev-info .notif-message {
 </head>
 
 <body>
+@include('layouts.partials.flash-toast')
+
+<div id="secureDownloadModal" class="secure-download-modal" style="display:none;" aria-hidden="true">
+    <div class="secure-download-dialog" role="dialog" aria-modal="true" aria-labelledby="secureDownloadTitle">
+        <button type="button" class="secure-download-close" id="secureDownloadClose" aria-label="Close">&times;</button>
+        <div class="secure-download-icon"><i class="fa-solid fa-lock"></i></div>
+        <h2 id="secureDownloadTitle">Confirm Download</h2>
+        <p>Enter your account password before downloading this report.</p>
+        <form method="POST" action="{{ route('downloads.authorize') }}" id="secureDownloadForm">
+            @csrf
+            <input type="hidden" name="target" id="secureDownloadTarget">
+            <label for="secureDownloadPassword">Password</label>
+            <input type="password" name="download_password" id="secureDownloadPassword" autocomplete="current-password" required>
+            <div id="secureDownloadFeedback" class="secure-download-feedback" style="display:none;"></div>
+            <button type="submit" id="secureDownloadSubmit">Continue Download</button>
+        </form>
+    </div>
+</div>
+
 @php
     $currentUser = auth()->user();
     $currentUserName = $currentUser?->username ?? $currentUser?->name ?? 'User';
@@ -1217,6 +1432,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             }
             $isEnergyMonitoringMenuActive = request()->routeIs('modules.load-tracking.*')
                 || request()->routeIs('modules.energy-monitoring.*')
+                || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.main-meter.*')
                 || request()->routeIs('modules.submeters.*')
@@ -1241,10 +1457,11 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     </a>
                     <ul class="nav-submenu">
                         <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                        <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
                         <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
                         <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
-                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> AI Alerts</a></li>
+                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Smart Alerts</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -1275,10 +1492,11 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             </a>
                             <ul class="nav-submenu">
                                 <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                                <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
                                 <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                                 <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
                                 <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
-                                <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> AI Alerts</a></li>
+                                <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Smart Alerts</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>
@@ -1344,6 +1562,16 @@ if (document.documentElement.classList.contains('dark-mode')) {
 <script src="/js/echo.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-global-toast]').forEach((toast) => {
+        setTimeout(() => {
+            toast.classList.add('is-hidden');
+        }, 2800);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3300);
+    });
+
     // 1. Sidebar & Backdrop Logic
     const sidebar = document.getElementById('sidebar');
     const hamburger = document.getElementById('hamburger');
@@ -1396,6 +1624,219 @@ document.addEventListener('DOMContentLoaded', function() {
         dashboard: "{{ route('dashboard.index') }}"
     };
     let activeNotifFilter = 'all';
+
+    const secureDownloadModal = document.getElementById('secureDownloadModal');
+    const secureDownloadTarget = document.getElementById('secureDownloadTarget');
+    const secureDownloadPassword = document.getElementById('secureDownloadPassword');
+    const secureDownloadClose = document.getElementById('secureDownloadClose');
+    const secureDownloadForm = document.getElementById('secureDownloadForm');
+    const secureDownloadFeedback = document.getElementById('secureDownloadFeedback');
+    const secureDownloadSubmit = document.getElementById('secureDownloadSubmit');
+    let secureDownloadLockTimer = null;
+
+    const showGlobalToast = (message, type = 'success') => {
+        let stack = document.querySelector('.global-toast-stack');
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.className = 'global-toast-stack';
+            stack.setAttribute('aria-live', 'polite');
+            stack.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(stack);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `global-toast global-toast-${type}`;
+        toast.dataset.globalToast = '';
+        toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i><span></span>`;
+        toast.querySelector('span').textContent = message;
+        stack.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('is-hidden'), 2800);
+        setTimeout(() => toast.remove(), 3300);
+    };
+
+    const setSecureDownloadFeedback = (message, type = 'error') => {
+        if (!secureDownloadFeedback) return;
+        secureDownloadFeedback.textContent = message;
+        secureDownloadFeedback.classList.remove('is-error', 'is-success');
+        secureDownloadFeedback.classList.add(type === 'success' ? 'is-success' : 'is-error');
+        secureDownloadFeedback.style.display = 'block';
+    };
+
+    const clearSecureDownloadFeedback = () => {
+        if (!secureDownloadFeedback) return;
+        secureDownloadFeedback.textContent = '';
+        secureDownloadFeedback.classList.remove('is-error', 'is-success');
+        secureDownloadFeedback.style.display = 'none';
+    };
+
+    const applySecureDownloadLock = (seconds) => {
+        if (!secureDownloadSubmit || !secureDownloadPassword) return;
+        let remaining = parseInt(seconds, 10) || 0;
+        if (remaining <= 0) return;
+
+        clearInterval(secureDownloadLockTimer);
+        secureDownloadSubmit.disabled = true;
+        secureDownloadPassword.disabled = true;
+
+        const tick = () => {
+            if (remaining <= 0) {
+                clearInterval(secureDownloadLockTimer);
+                secureDownloadSubmit.disabled = false;
+                secureDownloadPassword.disabled = false;
+                secureDownloadSubmit.textContent = 'Continue Download';
+                setSecureDownloadFeedback('You can try again now.', 'success');
+                return;
+            }
+
+            secureDownloadSubmit.textContent = `Try again in ${remaining}s`;
+            remaining -= 1;
+        };
+
+        tick();
+        secureDownloadLockTimer = setInterval(tick, 1000);
+    };
+
+    window.requestSecureDownload = (targetUrl) => {
+        if (!secureDownloadModal || !secureDownloadTarget) {
+            window.location.href = targetUrl;
+            return;
+        }
+
+        clearInterval(secureDownloadLockTimer);
+        clearSecureDownloadFeedback();
+        secureDownloadTarget.value = targetUrl;
+        if (secureDownloadPassword) {
+            secureDownloadPassword.value = '';
+            secureDownloadPassword.disabled = false;
+        }
+        if (secureDownloadSubmit) {
+            secureDownloadSubmit.disabled = false;
+            secureDownloadSubmit.textContent = 'Continue Download';
+        }
+        secureDownloadModal.style.display = 'flex';
+        secureDownloadModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => secureDownloadPassword?.focus(), 50);
+    };
+
+    const closeSecureDownloadModal = () => {
+        if (!secureDownloadModal) return;
+        clearInterval(secureDownloadLockTimer);
+        clearSecureDownloadFeedback();
+        if (secureDownloadPassword) {
+            secureDownloadPassword.disabled = false;
+        }
+        if (secureDownloadSubmit) {
+            secureDownloadSubmit.disabled = false;
+            secureDownloadSubmit.textContent = 'Continue Download';
+        }
+        secureDownloadModal.style.display = 'none';
+        secureDownloadModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    };
+
+    secureDownloadClose?.addEventListener('click', closeSecureDownloadModal);
+    secureDownloadModal?.addEventListener('click', (event) => {
+        if (event.target === secureDownloadModal) {
+            closeSecureDownloadModal();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && secureDownloadModal?.style.display === 'flex') {
+            closeSecureDownloadModal();
+        }
+    });
+
+    secureDownloadPassword?.addEventListener('input', () => {
+        if (!secureDownloadPassword.disabled) {
+            clearSecureDownloadFeedback();
+        }
+    });
+
+    secureDownloadForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!secureDownloadSubmit || !secureDownloadPassword) return;
+
+        clearSecureDownloadFeedback();
+        secureDownloadSubmit.disabled = true;
+        secureDownloadSubmit.textContent = 'Checking...';
+
+        try {
+            const response = await fetch(secureDownloadForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: new FormData(secureDownloadForm)
+            });
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok || !payload.success) {
+                const message = payload.message || 'Invalid password. Download was not started.';
+                setSecureDownloadFeedback(message, 'error');
+                secureDownloadPassword.value = '';
+                secureDownloadPassword.focus();
+
+                if (payload.retry_after) {
+                    applySecureDownloadLock(payload.retry_after);
+                } else {
+                    secureDownloadSubmit.disabled = false;
+                    secureDownloadSubmit.textContent = 'Continue Download';
+                }
+                return;
+            }
+
+            setSecureDownloadFeedback(payload.message || 'Password confirmed. Download starting...', 'success');
+            showGlobalToast(payload.message || 'Password confirmed. Download starting...', 'success');
+            secureDownloadSubmit.textContent = 'Starting...';
+
+            setTimeout(() => {
+                closeSecureDownloadModal();
+                window.location.href = payload.redirect_url;
+            }, 650);
+        } catch (error) {
+            setSecureDownloadFeedback('Unable to verify password right now. Please try again.', 'error');
+            secureDownloadSubmit.disabled = false;
+            secureDownloadSubmit.textContent = 'Continue Download';
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[data-secure-download]');
+        if (!link) return;
+
+        event.preventDefault();
+        window.requestSecureDownload(link.href);
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        const submitter = event.submitter;
+        const secureSubmitter = submitter instanceof HTMLElement && submitter.matches('[data-secure-download-submit]');
+        if (!(form instanceof HTMLFormElement) || (!form.matches('form[data-secure-download-form]') && !secureSubmitter)) {
+            return;
+        }
+
+        event.preventDefault();
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+            if (key === '_token' || value === '') continue;
+            params.append(key, value);
+        }
+        if (secureSubmitter && submitter.getAttribute('name')) {
+            params.set(submitter.getAttribute('name'), submitter.getAttribute('value') || '');
+        }
+
+        const action = form.getAttribute('action') || window.location.href;
+        const target = new URL(action, window.location.origin);
+        target.search = params.toString();
+        window.requestSecureDownload(target.toString());
+    });
 
     const inferNotifSeverity = (message) => {
         const text = String(message || '').toLowerCase();

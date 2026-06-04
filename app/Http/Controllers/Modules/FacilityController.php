@@ -738,6 +738,12 @@ class FacilityController extends Controller
 
         $exportFormat = strtolower(trim((string) $request->query('export', '')));
         if (in_array($exportFormat, ['csv', 'xlsx'], true)) {
+            if (! $this->consumeDownloadAuthorization($request)) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'Please confirm your password before downloading reports.');
+            }
+
             $exportRows = (clone $query)
                 ->orderByDesc('deleted_at')
                 ->get();
@@ -919,5 +925,34 @@ class FacilityController extends Controller
 
         return redirect()->route('modules.facilities.archive')
             ->with('success', 'Facility permanently deleted.');
+    }
+
+    private function consumeDownloadAuthorization(Request $request): bool
+    {
+        $token = (string) $request->query('download_token', '');
+        $sessionKey = 'download_authorizations.' . $token;
+        $authorization = $token !== '' ? $request->session()->get($sessionKey) : null;
+
+        if (! is_array($authorization) || (int) ($authorization['expires_at'] ?? 0) < now()->timestamp) {
+            return false;
+        }
+
+        if (($authorization['target'] ?? '') !== $this->normalizeDownloadRequest($request)) {
+            $request->session()->forget($sessionKey);
+            return false;
+        }
+
+        $request->session()->forget($sessionKey);
+
+        return true;
+    }
+
+    private function normalizeDownloadRequest(Request $request): string
+    {
+        $query = $request->query();
+        unset($query['download_token']);
+        ksort($query);
+
+        return '/' . ltrim($request->path(), '/') . ($query ? '?' . http_build_query($query) : '');
     }
 }

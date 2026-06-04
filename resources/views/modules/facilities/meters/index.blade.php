@@ -169,6 +169,43 @@
         background: #be123c;
     }
 
+    .meter-toast {
+        position: fixed;
+        top: 22px;
+        right: 22px;
+        z-index: 10070;
+        width: min(400px, calc(100vw - 32px));
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-weight: 800;
+        border: 1px solid transparent;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity .22s ease, transform .22s ease;
+    }
+
+    .meter-toast.success {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #86efac;
+    }
+
+    .meter-toast.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    .meter-toast.is-hidden {
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+    }
+
     .meter-archive-body {
         display: flex;
         flex-direction: column;
@@ -207,10 +244,14 @@
 </style>
 <div style="padding:12px;">
     @if(session('success'))
-        <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:10px;font-weight:700;">{{ session('success') }}</div>
+        <div class="meter-toast success" data-meter-toast>
+            <i class="fa fa-check-circle"></i> {{ session('success') }}
+        </div>
     @endif
     @if(session('error'))
-        <div style="margin-bottom:12px;background:#fee2e2;color:#b91c1c;padding:12px 16px;border-radius:10px;font-weight:700;">{{ session('error') }}</div>
+        <div class="meter-toast error" data-meter-toast>
+            <i class="fa fa-circle-exclamation"></i> {{ session('error') }}
+        </div>
     @endif
     @if ($errors->any())
         <div style="margin-bottom:12px;background:#fff7ed;color:#9a3412;padding:12px 16px;border-radius:10px;font-weight:700;">
@@ -292,7 +333,7 @@
             <div style="padding:22px 16px;color:#64748b;">No meters found for this facility yet. Add your main meter first, then add sub-meters.</div>
         @else
             <div style="overflow-x:auto;">
-                <table style="width:100%;min-width:1220px;border-collapse:collapse;">
+                <table style="width:100%;min-width:1320px;border-collapse:collapse;">
                     <thead>
                         <tr style="background:#f8fafc;color:#334155;">
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Meter</th>
@@ -301,6 +342,7 @@
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Parent</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Location</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Status</th>
+                            <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Date Added</th>
                             <th style="text-align:right;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Multiplier</th>
                             <th style="text-align:right;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Baseline kWh</th>
                             <th style="text-align:left;padding:12px 14px;border-bottom:1px solid #e5e7eb;">Notes</th>
@@ -334,6 +376,9 @@
                                 <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#475569;">
                                     {{ ucfirst($meter->status) }}
                                 </td>
+                                <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:#475569;">
+                                    {{ $meter->created_at ? $meter->created_at->format('M d, Y h:i A') : '-' }}
+                                </td>
                                 <td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;text-align:right;color:#475569;">
                                     {{ number_format((float) ($meter->multiplier ?? 1), 4) }}
                                 </td>
@@ -361,7 +406,8 @@
                                         @endphp
                                         <div style="display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;">
                                             <button type="button"
-                                                onclick='openEditMeterModal(@js($editMeterPayload))'
+                                                data-edit-meter='@json($editMeterPayload, JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_TAG | JSON_HEX_QUOT)'
+                                                onclick="openEditMeterModalFromButton(this, event)"
                                                 style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:7px 10px;font-weight:700;">
                                                 Edit
                                             </button>
@@ -459,6 +505,18 @@
 @endif
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-meter-toast]').forEach(function(toast) {
+        setTimeout(function() {
+            toast.classList.add('is-hidden');
+        }, 2800);
+
+        setTimeout(function() {
+            toast.remove();
+        }, 3300);
+    });
+});
+
 function openAddMeterModal(){ var m=document.getElementById('addMeterModal'); if(m) m.style.display='flex'; }
 function closeAddMeterModal(){ var m=document.getElementById('addMeterModal'); if(m) m.style.display='none'; }
 function closeEditMeterModal(){ var m=document.getElementById('editMeterModal'); if(m) m.style.display='none'; }
@@ -467,12 +525,17 @@ function closeArchiveMeterModal(){ var m=document.getElementById('archiveMeterMo
 function toggleParentSelect(prefix) {
     var typeEl = document.getElementById(prefix + '_meter_type');
     var parentEl = document.getElementById(prefix + '_parent_meter_id');
+    var parentField = document.getElementById(prefix + '_parent_meter_field');
     if (!typeEl || !parentEl) return;
     if (typeEl.value === 'main') {
         parentEl.value = '';
         parentEl.disabled = true;
+        parentEl.required = false;
+        if (parentField) parentField.style.display = 'none';
     } else {
         parentEl.disabled = false;
+        parentEl.required = true;
+        if (parentField) parentField.style.display = '';
     }
 }
 
@@ -504,6 +567,22 @@ function openEditMeterModal(meter) {
     }
     toggleParentSelect('edit');
     modal.style.display = 'flex';
+}
+
+function openEditMeterModalFromButton(button, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (!button) return;
+
+    try {
+        var meter = JSON.parse(button.getAttribute('data-edit-meter') || '{}');
+        openEditMeterModal(meter);
+    } catch (error) {
+        console.error('Unable to open meter editor.', error);
+    }
 }
 
 function openArchiveMeterModal(meterId, meterName) {

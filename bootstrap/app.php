@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'staff' => \App\Http\Middleware\StaffMiddleware::class,
             'block.staff.reports' => \App\Http\Middleware\BlockStaffFromReports::class,
+            'download.confirmed' => \App\Http\Middleware\RequireDownloadAuthorization::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -586,10 +586,11 @@
 							   <option value="">Select Role</option>
 							   @if($isSuperAdmin)
 								 <option value="super admin">Super Admin</option>
+								 <option value="admin">Admin</option>
 							   @endif
-							   <option value="admin">Admin</option>
 							   <option value="staff">Staff</option>
 							   <option value="energy_officer">Energy Officer</option>
+							   <option value="engineer">Engineer</option>
 						   </select>
 					   </div>
 					   <div class="uv-form-field" id="um_facility_wrap" style="display:none;">

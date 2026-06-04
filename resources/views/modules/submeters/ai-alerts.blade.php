@@ -1,5 +1,5 @@
 @extends('layouts.qc-admin')
-@section('title', 'AI Alerts')
+@section('title', 'Smart Alerts')
 
 <style>
     .ai-alerts-table {
@@ -144,15 +144,10 @@
         <div style="margin-bottom:12px;background:#fee2e2;color:#b91c1c;padding:12px 16px;border-radius:12px;font-weight:700;">{{ session('error') }}</div>
     @endif
 
-    @php
-        $energyTab = 'ai';
-    @endphp
-    @include('layouts.partials.energy_monitoring_switcher')
-
     <div class="em-header">
         <div>
-            <h2>AI Alerts and Recommendations</h2>
-            <div class="em-header-subtitle">Combined timeline for Main Meter and Submeter alerts.</div>
+            <h2>Smart Alerts and Recommendations</h2>
+            <div class="em-header-subtitle">Combined timeline for Main Meter and Submeter alerts with system-generated recommendations.</div>
         </div>
         <div class="em-header-actions">
             <a href="{{ route('modules.main-meter.monitoring') }}" class="em-action-btn soft">Main Meter</a>
@@ -302,7 +297,7 @@
                                     $recommendationText = trim((string) ($alert['recommendation'] ?? '')) !== '' ? (string) $alert['recommendation'] : 'No recommendation.';
                                     $recommendationSource = strtolower((string) ($alert['recommendation_source'] ?? 'rules')) === 'ai'
                                         ? 'AI recommendation'
-                                        : 'Rule-based recommendation';
+                                        : 'System recommendation';
                                 @endphp
                                 <div style="text-align:center;">
                                     <button
@@ -342,7 +337,7 @@
         <div class="ai-alerts-reco-card" role="dialog" aria-modal="true" aria-labelledby="aiRecoTitle">
             <button type="button" class="ai-alerts-reco-close" onclick="closeAiRecommendationModal()">&times;</button>
             <h3 id="aiRecoTitle" class="ai-alerts-reco-title">Recommendation</h3>
-            <div id="aiRecoSource" class="ai-alerts-reco-source">Rule-based recommendation</div>
+            <div id="aiRecoSource" class="ai-alerts-reco-source">System recommendation</div>
             <div id="aiRecoBody" class="ai-alerts-reco-body">No recommendation.</div>
             <div class="ai-alerts-reco-foot">
                 <button type="button" class="ai-alerts-open-btn" onclick="closeAiRecommendationModal()">Close</button>
@@ -357,7 +352,7 @@ function openAiRecommendationModal(sourceLabel, recommendationText) {
     const source = document.getElementById('aiRecoSource');
     const body = document.getElementById('aiRecoBody');
     if (!modal || !source || !body) return;
-    source.textContent = sourceLabel || 'Rule-based recommendation';
+    source.textContent = sourceLabel || 'System recommendation';
     body.textContent = recommendationText || 'No recommendation.';
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -374,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-open-recommendation]').forEach(function (btn) {
         btn.addEventListener('click', function () {
             openAiRecommendationModal(
-                btn.getAttribute('data-recommendation-source') || 'Rule-based recommendation',
+                btn.getAttribute('data-recommendation-source') || 'System recommendation',
                 btn.getAttribute('data-recommendation') || 'No recommendation.'
             );
         });

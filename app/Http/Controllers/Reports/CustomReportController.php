@@ -20,6 +20,6 @@ class CustomReportController extends Controller
 
     public function index(Request $request)
     {
-        return redirect()->route('reports.energy');
+        return redirect()->route('modules.reports.energy');
     }
 }

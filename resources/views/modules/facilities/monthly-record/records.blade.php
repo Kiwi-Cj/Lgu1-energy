@@ -696,6 +696,12 @@
         font-weight: 700;
     }
 
+    .monthly-org-empty-title {
+        color: #1e293b;
+        font-weight: 900;
+        margin-bottom: 4px;
+    }
+
     .monthly-modal-overlay {
         display: none;
         align-items: center;
@@ -915,6 +921,10 @@
         color: #94a3b8;
     }
 
+    body.dark-mode .monthly-org-empty-title {
+        color: #f8fafc;
+    }
+
     body.dark-mode .monthly-table thead tr,
     body.dark-mode .monthly-table tbody tr:nth-child(even),
     body.dark-mode .monthly-table tbody tr:hover {
@@ -947,6 +957,10 @@
         7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec',
     ];
     $meterOptions = collect($meterOptions ?? []);
+    $hasApprovedMainMeter = $meterOptions->isNotEmpty();
+    $totalMainMeterCount = (int) ($totalMainMeterCount ?? $meterOptions->count());
+    $approvedMainMeterCount = (int) ($approvedMainMeterCount ?? $meterOptions->count());
+    $pendingMainMeterCount = (int) ($pendingMainMeterCount ?? 0);
     $selectedRecordScope = (string) ($selectedRecordScope ?? 'main');
     $scopeLabel = (string) ($scopeLabel ?? 'Main Meter Records');
 
@@ -1038,6 +1052,18 @@
 
     $tableFilterResetQuery = request()->except(['table_month', 'table_meter_id']);
     $tableFilterResetUrl = request()->url() . (empty($tableFilterResetQuery) ? '' : ('?' . http_build_query($tableFilterResetQuery)));
+    if (! $hasApprovedMainMeter) {
+        if ($totalMainMeterCount === 0) {
+            $mainMeterNoticeTitle = 'No Main Meter configured yet.';
+            $mainMeterNoticeText = 'Add a Main Meter in Energy Profile first, then approve it before encoding monthly records or viewing sub-meter data.';
+        } elseif ($pendingMainMeterCount > 0) {
+            $mainMeterNoticeTitle = $pendingMainMeterCount . ' Main Meter pending approval.';
+            $mainMeterNoticeText = 'Approve at least one Main Meter in Energy Profile before encoding monthly records or viewing sub-meter data.';
+        } else {
+            $mainMeterNoticeTitle = 'No approved Main Meter found for this facility.';
+            $mainMeterNoticeText = 'Check the Main Meter list in Energy Profile and approve an eligible meter first.';
+        }
+    }
 @endphp
 
 <div class="monthly-shell">
@@ -1071,9 +1097,6 @@
                     <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="monthly-action-btn is-info">
                         <i class="fa fa-bolt"></i>Energy Profile
                     </a>
-                    <a href="{{ route('facilities.monthly-records.submeters', $facility->id) }}" class="monthly-action-btn is-submeter">
-                        <i class="fa fa-table-cells"></i>Sub-meter View
-                    </a>
                     <button type="button" onclick="openAddModal()" class="monthly-action-btn is-primary">
                         <i class="fa fa-plus"></i> Add Monthly Record
                     </button>
@@ -1086,86 +1109,30 @@
     <div class="monthly-card">
         <div class="monthly-card-body">
             <div class="monthly-filters-head">
-                <span class="monthly-table-subtitle">{{ $mainMeterOrganization->count() }} main meter(s) configured | {{ $summaryContextLabel }} | Scope: {{ $mainSubScopeLabel }}</span>
-                <form method="GET" action="{{ route('facilities.monthly-records', $facility->id) }}" class="monthly-inline-filter">
-                    <input type="hidden" name="year" value="{{ $selectedYear }}">
-                    <input type="hidden" name="record_scope" value="{{ $selectedRecordScope }}">
-                    <input type="hidden" name="summary_mode" value="{{ $summaryMode }}">
-                    <input type="hidden" name="summary_month" value="{{ $summaryMonth }}">
-                    <label for="main_sub_scope" class="monthly-inline-filter-label">Main vs Sub Filter</label>
-                    <div class="monthly-inline-filter-controls">
-                        <select id="main_sub_scope" name="main_sub_scope">
-                            <option value="all" @selected($mainSubScope === 'all')>All Main Meters</option>
-                            @foreach($meterOptions as $meterOption)
-                                <option value="main:{{ (int) $meterOption->id }}" @selected($mainSubScope === ('main:' . (int) $meterOption->id))>
-                                    {{ $meterOption->meter_name }}@if($meterOption->meter_number) ({{ $meterOption->meter_number }})@endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="monthly-inline-filter-btn">Apply</button>
-                    </div>
-                </form>
-            </div>
-            @php
-                $overallDiffBg = $overallMainMinusSubKwh >= 0 ? '#ecfdf5' : '#fee2e2';
-                $overallDiffColor = $overallMainMinusSubKwh >= 0 ? '#166534' : '#991b1b';
-            @endphp
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                <span class="monthly-chip">Main Total: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
-                <span class="monthly-chip">Linked Sub Total: {{ number_format((float) $overallLinkedSubKwh, 2) }} kWh</span>
-                <span class="monthly-chip" style="background:{{ $overallDiffBg }};border-color:{{ $overallDiffBg }};color:{{ $overallDiffColor }};">
-                    Difference (Main - Sub): {{ number_format((float) $overallMainMinusSubKwh, 2) }} kWh
+                <span class="monthly-table-subtitle">
+                    {{ $approvedMainMeterCount }} approved main meter(s)
+                    @if($pendingMainMeterCount > 0)
+                        | {{ $pendingMainMeterCount }} pending approval
+                    @endif
+                    | {{ $summaryContextLabel }}
                 </span>
             </div>
-            @if($mainSubMonthlyComparison->isNotEmpty())
-                <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:10px;">
-                    <div style="padding:8px 10px;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-weight:800;font-size:.82rem;">
-                        Per-month Main vs Sub Total ({{ $selectedYear }})
-                    </div>
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%;min-width:520px;border-collapse:collapse;">
-                            <thead style="background:#fcfdff;">
-                                <tr>
-                                    <th style="text-align:left;padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:.76rem;text-transform:uppercase;">Month</th>
-                                    <th style="text-align:right;padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:.76rem;text-transform:uppercase;">Main Total</th>
-                                    <th style="text-align:right;padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:.76rem;text-transform:uppercase;">Sub Total</th>
-                                    <th style="text-align:right;padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:.76rem;text-transform:uppercase;">Main - Sub</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($mainSubMonthlyComparison as $monthlyRow)
-                                    @php
-                                        $monthlyDiff = (float) ($monthlyRow['diff_kwh'] ?? 0);
-                                        $monthlyDiffColor = $monthlyDiff >= 0 ? '#166534' : '#991b1b';
-                                    @endphp
-                                    <tr>
-                                        <td style="padding:8px 10px;border-bottom:1px solid #eef2f7;color:#334155;font-weight:700;">{{ $monthlyRow['month_label'] }}</td>
-                                        <td style="padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:right;color:#0f172a;">{{ number_format((float) ($monthlyRow['main_kwh'] ?? 0), 2) }}</td>
-                                        <td style="padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:right;color:#0f172a;">{{ number_format((float) ($monthlyRow['sub_kwh'] ?? 0), 2) }}</td>
-                                        <td style="padding:8px 10px;border-bottom:1px solid #eef2f7;text-align:right;color:{{ $monthlyDiffColor }};font-weight:800;">{{ number_format($monthlyDiff, 2) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+            @if($hasApprovedMainMeter)
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                    <span class="monthly-chip">Main Total: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
                 </div>
             @endif
 
             @if($mainMeterOrganization->isEmpty())
-                <div class="monthly-org-empty">No approved main meter found for this facility.</div>
+                <div class="monthly-org-empty">
+                    <div class="monthly-org-empty-title">{{ $mainMeterNoticeTitle }}</div>
+                    <div style="font-size:.86rem;line-height:1.4;">{{ $mainMeterNoticeText }}</div>
+                </div>
             @else
                 <div class="monthly-org-wrap">
                     @foreach($mainMeterOrganization as $mainItem)
-                        @php $isExpandedDefault = $loop->first; @endphp
-                        @php
-                            $mainDiffBg = ((float) ($mainItem['main_minus_sub_kwh'] ?? 0)) >= 0 ? '#ecfdf5' : '#fee2e2';
-                            $mainDiffColor = ((float) ($mainItem['main_minus_sub_kwh'] ?? 0)) >= 0 ? '#166534' : '#991b1b';
-                        @endphp
                         <div class="monthly-org-block">
-                            <button type="button"
-                                    class="monthly-org-head"
-                                    data-main-sub-toggle="mainSubmeters{{ (int) $mainItem['main_id'] }}"
-                                    aria-expanded="{{ $isExpandedDefault ? 'true' : 'false' }}">
+                            <div class="monthly-org-head">
                                 <div class="monthly-org-main">
                                     <div class="monthly-org-main-name">{{ $mainItem['main_name'] }}</div>
                                     <div class="monthly-org-main-meta">
@@ -1177,47 +1144,18 @@
                                     </div>
                                 </div>
                                 <div class="monthly-org-head-right">
-                                    <span class="monthly-chip">Main: {{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh</span>
-                                    @if((float) ($mainItem['sensor_total_kwh'] ?? 0) > 0)
-                                        <span class="monthly-chip" style="background:#ecfeff;border-color:#a5f3fc;color:#0f766e;">
-                                            Sensor: {{ number_format((float) ($mainItem['sensor_total_kwh'] ?? 0), 2) }} kWh
+                                    @php
+                                        $mainSourceLabel = (string) ($mainItem['source_label'] ?? 'No Data');
+                                    @endphp
+                                    <span class="monthly-chip">
+                                        Main ({{ $mainSourceLabel }}): {{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh
+                                    </span>
+                                    @if($mainSourceLabel === 'Sensor' && (float) ($mainItem['manual_total_kwh'] ?? 0) > 0)
+                                        <span class="monthly-chip" style="background:#f8fafc;border-color:#cbd5e1;color:#475569;">
+                                            Manual fallback available
                                         </span>
                                     @endif
-                                    <span class="monthly-chip">Sub: {{ number_format((float) ($mainItem['linked_sub_total_kwh'] ?? 0), 2) }} kWh</span>
-                                    <span class="monthly-chip" style="background:{{ $mainDiffBg }};border-color:{{ $mainDiffBg }};color:{{ $mainDiffColor }};">
-                                        Main - Sub: {{ number_format((float) ($mainItem['main_minus_sub_kwh'] ?? 0), 2) }} kWh
-                                    </span>
-                                    <span class="monthly-chip">{{ number_format((int) $mainItem['submeter_count']) }} sub-meter(s)</span>
-                                    <span class="monthly-org-arrow"><i class="fa {{ $isExpandedDefault ? 'fa-chevron-up' : 'fa-chevron-down' }}"></i></span>
                                 </div>
-                            </button>
-
-                            <div id="mainSubmeters{{ (int) $mainItem['main_id'] }}" class="monthly-org-content{{ $isExpandedDefault ? '' : ' is-collapsed' }}">
-                                @if((int) $mainItem['submeter_count'] === 0)
-                                    <div class="monthly-org-empty">No linked approved sub-meter for this main meter.</div>
-                                @else
-                                    <div class="monthly-org-sub-grid">
-                                        @foreach($mainItem['submeters'] as $submeter)
-                                            <div class="monthly-org-sub-card">
-                                                <div>
-                                                    <div class="monthly-org-sub-name">{{ $submeter['meter_name'] }}</div>
-                                                    <div class="monthly-org-sub-meta">
-                                                        @if(!empty($submeter['meter_number']))
-                                                            {{ $submeter['meter_number'] }}
-                                                        @else
-                                                            Sub-meter #{{ (int) ($submeter['id'] ?? 0) }}
-                                                        @endif
-                                                    </div>
-                                                    <div class="monthly-org-sub-meta">{{ number_format((float) ($submeter['total_kwh'] ?? 0), 2) }} kWh ({{ $summaryContextLabel }})</div>
-                                                </div>
-                                                <a href="{{ route('facilities.monthly-records.submeters', ['facility' => $facility->id, 'year' => $selectedYear, 'meter_id' => (int) ($submeter['id'] ?? 0)]) }}"
-                                                   class="monthly-org-sub-link">
-                                                    View Records
-                                                </a>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endif
                             </div>
                         </div>
                     @endforeach

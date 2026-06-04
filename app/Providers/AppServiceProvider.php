@@ -6,8 +6,10 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
+use App\Models\Maintenance;
 use App\Observers\EnergyIncidentObserver;
 use App\Observers\EnergyRecordObserver;
+use App\Observers\MaintenanceObserver;
 use App\Models\Setting;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Pagination\Paginator;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
         EnergyRecord::observe(EnergyRecordObserver::class);
         EnergyIncident::observe(EnergyIncidentObserver::class);
+        Maintenance::observe(MaintenanceObserver::class);
 
         // Enforce a strong password policy across registration, reset, and profile updates.
         Password::defaults(function () {

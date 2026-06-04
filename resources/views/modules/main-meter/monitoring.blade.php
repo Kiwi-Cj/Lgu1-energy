@@ -698,11 +698,6 @@
         </div>
     @endif
 
-    @php
-        $energyTab = 'main';
-    @endphp
-    @include('layouts.partials.energy_monitoring_switcher')
-
     <div class="em-header">
         <div>
             <h2>Main Meter Baseline and Alert Detection</h2>

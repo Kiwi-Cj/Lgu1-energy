@@ -3,12 +3,14 @@
 use App\Http\Controllers\Modules\EnergyMonitoringController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\ContactMessageController;
+use App\Http\Controllers\DownloadAuthorizationController;
 use App\Http\Controllers\NotificationController;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth')->name('notifications.markAllRead');
 Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->middleware('auth')->name('notifications.markRead');
+Route::post('/downloads/authorize', [DownloadAuthorizationController::class, 'authorize'])->middleware(['auth', 'verified'])->name('downloads.authorize');
 
 // Backward compatibility: allow GET /modules/settings/index to show settings page
 Route::get('/modules/settings/index', function () {

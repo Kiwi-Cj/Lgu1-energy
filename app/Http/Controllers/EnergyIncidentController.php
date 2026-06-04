@@ -9,6 +9,6 @@ class EnergyIncidentController extends Controller
 {
     public function index(Request $request)
     {
-        return redirect()->route('modules.energy-incident.incidents');
+        return redirect()->route('energy-incidents.index');
     }
 }

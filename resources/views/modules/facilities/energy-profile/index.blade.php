@@ -732,10 +732,20 @@
 
     /* Alerts */
     .alert-box {
-        position: fixed; top: 32px; right: 32px; z-index: 99999; 
-        min-width: 280px; max-width: 420px;
-        padding: 16px 24px; border-radius: 12px; font-weight: 700;
+        position: fixed; top: 22px; right: 22px; z-index: 99999;
+        width: min(400px, calc(100vw - 32px));
+        padding: 14px 16px; border-radius: 12px; font-weight: 800;
         display: flex; align-items: center; gap: 10px;
+        border: 1px solid transparent;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, .18);
+        transform: translateY(0);
+        transition: opacity .22s ease, transform .22s ease;
+    }
+
+    .alert-box.is-hidden {
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
     }
 
     body.dark-mode .energy-profile-page .profile-card {
@@ -1008,6 +1018,7 @@
                              data-meter-location="{{ $meter->location ?? 'N/A' }}"
                              data-meter-status="{{ strtoupper((string) ($meter->status ?? 'active')) }}"
                              data-meter-approval="{{ $approvalText }}"
+                             data-meter-created-at="{{ $meter->created_at ? $meter->created_at->format('M d, Y h:i A') : 'N/A' }}"
                              data-meter-baseline="{{ is_numeric($meter->baseline_kwh) ? number_format((float) $meter->baseline_kwh, 2) . ' kWh' : 'N/A' }}"
                              data-meter-multiplier="{{ is_numeric($meter->multiplier) ? number_format((float) $meter->multiplier, 4) : 'N/A' }}"
                              data-meter-notes="{{ $meter->notes ?? 'N/A' }}"
@@ -1037,6 +1048,7 @@
                             <div class="meter-row-meta">
                                 <span class="meter-meta-item"><i class="fa fa-hashtag"></i> {{ $meter->meter_number ?: 'N/A' }}</span>
                                 <span class="meter-meta-item"><i class="fa fa-map-marker-alt"></i> {{ $meter->location ?: 'N/A' }}</span>
+                                <span class="meter-meta-item"><i class="fa fa-calendar-plus"></i> {{ $meter->created_at ? $meter->created_at->format('M d, Y h:i A') : 'N/A' }}</span>
                                 <span class="meter-meta-item"><i class="fa fa-chart-line"></i> {{ is_numeric($meter->baseline_kwh) ? number_format((float) $meter->baseline_kwh, 2) . ' kWh' : 'N/A' }}</span>
                             </div>
                             <div class="meter-row-footer">
@@ -1079,14 +1091,15 @@
                                                 </button>
                                             </form>
                                         @endif
-                                        @if($canManageMeters)
-                                            <button type="button"
-                                                    class="meter-row-action-btn icon"
-                                                    onclick='openEditMeterProfileModal(@js($editMeterPayload))'
-                                                    title="Edit main meter"
-                                                    aria-label="Edit main meter">
-                                                <i class="fa fa-edit"></i>
-                                            </button>
+                                         @if($canManageMeters)
+                                             <button type="button"
+                                                     class="meter-row-action-btn icon"
+                                                     data-edit-meter='@json($editMeterPayload, JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_TAG | JSON_HEX_QUOT)'
+                                                     onclick="openEditMeterProfileModalFromButton(this, event)"
+                                                     title="Edit main meter"
+                                                     aria-label="Edit main meter">
+                                                 <i class="fa fa-edit"></i>
+                                             </button>
                                             <button type="button"
                                                     class="meter-row-action-btn danger icon"
                                                     onclick="openArchiveMeterProfileModal({{ $meter->id }}, @js($meter->meter_name))"
@@ -1131,6 +1144,7 @@
             <div class="meter-detail-item"><div class="meter-detail-item-label">Location</div><div id="meterDetailLocation" class="meter-detail-item-value">-</div></div>
             <div class="meter-detail-item"><div class="meter-detail-item-label">Status</div><div id="meterDetailStatus" class="meter-detail-item-value">-</div></div>
             <div class="meter-detail-item"><div class="meter-detail-item-label">Approval</div><div id="meterDetailApproval" class="meter-detail-item-value">-</div></div>
+            <div class="meter-detail-item"><div class="meter-detail-item-label">Date Added</div><div id="meterDetailCreatedAt" class="meter-detail-item-value">-</div></div>
             <div class="meter-detail-item"><div class="meter-detail-item-label">Approved At</div><div id="meterDetailApprovedAt" class="meter-detail-item-value">-</div></div>
             <div class="meter-detail-item"><div class="meter-detail-item-label">Baseline</div><div id="meterDetailBaseline" class="meter-detail-item-value">-</div></div>
             <div class="meter-detail-item"><div class="meter-detail-item-label">Multiplier</div><div id="meterDetailMultiplier" class="meter-detail-item-value">-</div></div>
@@ -1152,11 +1166,11 @@
     <div class="meter-modal-card">
         <button type="button" onclick="closeAddMeterProfileModal()" class="meter-modal-close">&times;</button>
         <h3 class="meter-modal-title">Add Meter</h3>
-        <p class="meter-modal-subtitle">Create a main meter or link a sub-meter to an approved main meter.</p>
+        <p class="meter-modal-subtitle">Create the facility Main Meter using the Energy Profile details.</p>
         <form method="POST" action="{{ route('modules.facilities.meters.store', $facilityModel->id) }}" class="meter-manage-form">
             @csrf
             <input type="hidden" name="_redirect_to" value="energy_profile">
-            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'add', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub])
+            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'add', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub, 'forceMeterType' => 'main'])
             <div class="meter-form-actions">
                 <button type="button" onclick="closeAddMeterProfileModal()" class="meter-form-btn cancel">Cancel</button>
                 <button type="submit" class="meter-form-btn save">Save Meter</button>
@@ -1216,8 +1230,17 @@
     window.addEventListener('DOMContentLoaded', function() {
         const s = document.getElementById('successAlert');
         const e = document.getElementById('errorAlert');
-        if (s) setTimeout(() => s.style.opacity = '0', 3000);
-        if (e) setTimeout(() => e.style.opacity = '0', 3000);
+        [s, e].forEach(function(alert) {
+            if (!alert) return;
+
+            setTimeout(function() {
+                alert.classList.add('is-hidden');
+            }, 2800);
+
+            setTimeout(function() {
+                alert.remove();
+            }, 3300);
+        });
 
         document.querySelectorAll('[data-meter-toggle-target]').forEach(function(button) {
             button.addEventListener('click', function() {
@@ -1313,6 +1336,7 @@
             meterDetailLocation: row.getAttribute('data-meter-location') || 'N/A',
             meterDetailStatus: row.getAttribute('data-meter-status') || 'N/A',
             meterDetailApproval: row.getAttribute('data-meter-approval') || 'N/A',
+            meterDetailCreatedAt: row.getAttribute('data-meter-created-at') || 'N/A',
             meterDetailApprovedAt: row.getAttribute('data-meter-approved-at') || 'N/A',
             meterDetailBaseline: row.getAttribute('data-meter-baseline') || 'N/A',
             meterDetailMultiplier: row.getAttribute('data-meter-multiplier') || 'N/A',
@@ -1392,6 +1416,7 @@
     function toggleMeterProfileParentSelect(prefix) {
         const typeEl = document.getElementById(prefix + '_meter_type');
         const parentEl = document.getElementById(prefix + '_parent_meter_id');
+        const parentField = document.getElementById(prefix + '_parent_meter_field');
         if (!typeEl || !parentEl) return;
 
         if (prefix === 'add' && typeEl.value === 'sub' && !meterProfileConfig.hasApprovedMainForSub) {
@@ -1403,9 +1428,11 @@
             parentEl.value = '';
             parentEl.disabled = true;
             parentEl.required = false;
+            if (parentField) parentField.style.display = 'none';
         } else {
             parentEl.disabled = false;
             parentEl.required = true;
+            if (parentField) parentField.style.display = '';
         }
     }
 
@@ -1434,6 +1461,22 @@
 
         toggleMeterProfileParentSelect('edit');
         modal.style.display = 'flex';
+    }
+
+    function openEditMeterProfileModalFromButton(button, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        if (!button) return;
+
+        try {
+            const meter = JSON.parse(button.getAttribute('data-edit-meter') || '{}');
+            openEditMeterProfileModal(meter);
+        } catch (error) {
+            console.error('Unable to open meter editor.', error);
+        }
     }
 
     function openArchiveMeterProfileModal(meterId, meterName) {

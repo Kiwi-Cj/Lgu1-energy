@@ -6,6 +6,8 @@
     <title>Confirm Password</title>
 </head>
 <body>
+    @include('layouts.partials.flash-toast')
+
     <h1>Confirm Password</h1>
     <p>Please confirm your password before continuing.</p>
 

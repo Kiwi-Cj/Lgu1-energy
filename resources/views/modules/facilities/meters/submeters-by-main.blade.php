@@ -726,7 +726,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Number</label>
                 <input type="text" name="meter_number" maxlength="255" value="{{ old('meter_number') }}"
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
-                       placeholder="Utility / serial no.">
+                       placeholder="e.g. SM-2026-001">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Location</label>
@@ -742,8 +742,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
             <div>
-                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier</label>
-                <input type="number" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}"
+                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier <span style="color:#e11d48;">*</span></label>
+                <input type="number" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}" required
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
                        placeholder="1.0000">
             </div>
@@ -752,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="number" name="baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
                        placeholder="e.g. 1200.00">
+                <div style="margin-top:5px;color:#64748b;font-size:.82rem;font-weight:600;">Recommended for sub-meter alert comparison.</div>
             </div>
             <div style="grid-column:1/-1;">
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Notes</label>
@@ -806,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Number</label>
                 <input type="text" id="edit_meter_number" name="meter_number" maxlength="255" value="{{ old('meter_number') }}"
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
-                       placeholder="Utility / serial no.">
+                       placeholder="e.g. SM-2026-001">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Location</label>
@@ -822,8 +823,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
             <div>
-                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier</label>
-                <input type="number" id="edit_multiplier" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}"
+                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier <span style="color:#e11d48;">*</span></label>
+                <input type="number" id="edit_multiplier" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}" required
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
                        placeholder="1.0000">
             </div>
@@ -832,6 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="number" id="edit_baseline_kwh" name="baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
                        style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
                        placeholder="e.g. 1200.00">
+                <div style="margin-top:5px;color:#64748b;font-size:.82rem;font-weight:600;">Recommended for sub-meter alert comparison.</div>
             </div>
             <div style="grid-column:1/-1;">
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Notes</label>

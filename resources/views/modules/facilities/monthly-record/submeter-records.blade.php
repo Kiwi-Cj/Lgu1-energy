@@ -112,6 +112,7 @@
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Month</th>
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Day</th>
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Sub-meter</th>
+                        <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Source</th>
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Actual kWh</th>
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Baseline kWh</th>
                         <th style="padding:11px 12px;text-align:center;border-bottom:1px solid #e2e8f0;">Deviation %</th>
@@ -123,7 +124,7 @@
                     @forelse($submeterGroups as $group)
                         @if((int) $selectedMeterId === 0)
                             <tr id="submeter-group-{{ (int) ($group['meter_id'] ?? 0) }}" style="background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                                <td colspan="9" style="padding:10px 12px;">
+                                <td colspan="10" style="padding:10px 12px;">
                                     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
                                         <span style="font-weight:800;color:#1e293b;">{{ $group['meter_name'] ?? 'Unknown Sub-meter' }}</span>
                                         <span style="font-size:.82rem;color:#475569;font-weight:700;">
@@ -140,6 +141,17 @@
                                 <td style="padding:10px 12px;text-align:center;">{{ $months[(int) ($record['month'] ?? 0)] ?? ($record['month'] ?? '-') }}</td>
                                 <td style="padding:10px 12px;text-align:center;">{{ $record['day'] ?? '-' }}</td>
                                 <td style="padding:10px 12px;text-align:center;font-weight:700;color:#1e293b;">{{ $record['meter_name'] ?? '-' }}</td>
+                                <td style="padding:10px 12px;text-align:center;">
+                                    @php
+                                        $sourceLabel = (string) ($record['source_label'] ?? 'Manual');
+                                        $sourceStyle = $sourceLabel === 'Sensor'
+                                            ? 'background:#ecfeff;color:#0f766e;border:1px solid #a5f3fc;'
+                                            : 'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;';
+                                    @endphp
+                                    <span style="display:inline-flex;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:800;{{ $sourceStyle }}">
+                                        {{ $sourceLabel }}
+                                    </span>
+                                </td>
                                 <td style="padding:10px 12px;text-align:center;font-weight:700;color:#0f172a;">{{ isset($record['actual_kwh']) ? number_format((float) $record['actual_kwh'], 2) : '-' }}</td>
                                 <td style="padding:10px 12px;text-align:center;color:#334155;">{{ isset($record['baseline_kwh']) ? number_format((float) $record['baseline_kwh'], 2) : '-' }}</td>
                                 <td style="padding:10px 12px;text-align:center;color:#334155;">{{ isset($record['deviation']) ? number_format((float) $record['deviation'], 2) . '%' : '-' }}</td>
@@ -153,7 +165,7 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="9" style="padding:20px 12px;text-align:center;color:#64748b;">No sub-meter monthly records found for the selected filters.</td>
+                            <td colspan="10" style="padding:20px 12px;text-align:center;color:#64748b;">No sub-meter monthly records found for the selected filters.</td>
                         </tr>
                     @endforelse
                 </tbody>

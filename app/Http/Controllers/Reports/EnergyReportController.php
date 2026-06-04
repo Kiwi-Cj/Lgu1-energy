@@ -100,7 +100,7 @@ class EnergyReportController extends Controller
 
     public function index()
     {
-        return redirect()->route('reports.energy');
+        return redirect()->route('modules.reports.energy');
     }
 
     private function buildTrendLabelMap($records): array

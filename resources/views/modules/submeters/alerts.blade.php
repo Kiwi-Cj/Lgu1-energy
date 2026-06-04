@@ -10,11 +10,6 @@
         <div style="margin-bottom:12px;background:#fee2e2;color:#b91c1c;padding:12px 16px;border-radius:12px;font-weight:700;">{{ session('error') }}</div>
     @endif
 
-    @php
-        $energyTab = 'sub';
-    @endphp
-    @include('layouts.partials.energy_monitoring_switcher')
-
     <div class="em-header">
         <div>
             <h2>Submeter Alerts Timeline</h2>

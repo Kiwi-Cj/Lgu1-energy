@@ -405,11 +405,11 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
             </div>
             <div class="energy-actions">
                 @if($roleKey !== 'staff')
-                <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-action btn-excel">
+                <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-action btn-excel" data-secure-download>
                     <i class="fa fa-download"></i> Export Excel
                 </a>
                 @endif
-                <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-action btn-pdf">
+                <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-action btn-pdf" data-secure-download>
                     <i class="fa fa-file-pdf-o"></i> Export PDF
                 </a>
             </div>

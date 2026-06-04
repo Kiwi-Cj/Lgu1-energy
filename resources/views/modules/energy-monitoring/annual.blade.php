@@ -95,12 +95,14 @@
         </div>
         <div class="annual-energy-actions">
             <a href="{{ route('modules.energy.annual.export-pdf', request()->query()) }}"
-               class="annual-btn-action annual-btn-pdf">
+               class="annual-btn-action annual-btn-pdf"
+               data-secure-download>
                 <i class="fa fa-file-pdf-o"></i> Export PDF
             </a>
             @if($roleKey !== 'staff')
             <a href="{{ route('modules.energy.annual.export-excel', request()->query()) }}"
-               class="annual-btn-action annual-btn-excel">
+               class="annual-btn-action annual-btn-excel"
+               data-secure-download>
                 <i class="fa fa-download"></i> Export Excel
             </a>
             @endif

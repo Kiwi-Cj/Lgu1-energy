@@ -83,10 +83,10 @@
                 <a href="{{ route('modules.facilities.archive') }}" style="background:#f1f5f9;color:#334155;border-radius:10px;padding:10px 14px;font-weight:700;text-decoration:none;">
                     Reset
                 </a>
-                <button type="submit" name="export" value="csv" style="background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">
+                <button type="submit" name="export" value="csv" data-secure-download-submit style="background:#0f766e;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">
                     Export CSV
                 </button>
-                <button type="submit" name="export" value="xlsx" style="background:#166534;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">
+                <button type="submit" name="export" value="xlsx" data-secure-download-submit style="background:#166534;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">
                     Export Excel
                 </button>
             </div>
