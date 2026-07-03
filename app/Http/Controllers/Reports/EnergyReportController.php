@@ -20,11 +20,13 @@ class EnergyReportController extends Controller
         if ($request->filled('facility_id')) {
             $query->where('facility_id', $request->facility_id);
         }
-        if ($request->filled('year')) {
-            $query->where('year', $request->year);
+        $year = $request->has('year') ? $request->input('year') : date('Y');
+        if ($year) {
+            $query->where('year', $year);
         }
-        if ($request->filled('month')) {
-            $query->where('month', $request->month);
+        $month = $request->has('month') ? $request->input('month') : date('n');
+        if ($month) {
+            $query->where('month', $month);
         }
         $records = $query->orderBy('year')->orderBy('month')->get();
 
@@ -72,11 +74,11 @@ class EnergyReportController extends Controller
             }
         }
 
-        if ($request->filled('year') && $request->filled('month')) {
-            $monthKey = (int) $request->month;
-            $selectedPeriod = ($months[$monthKey] ?? ('Month ' . $monthKey)) . ' ' . $request->year;
-        } elseif ($request->filled('year')) {
-            $selectedPeriod = 'Year ' . $request->year;
+        if ($year && $month) {
+            $monthKey = (int) $month;
+            $selectedPeriod = ($months[$monthKey] ?? ('Month ' . $monthKey)) . ' ' . $year;
+        } elseif ($year) {
+            $selectedPeriod = 'Year ' . $year;
         } else {
             $selectedPeriod = 'All Periods';
         }

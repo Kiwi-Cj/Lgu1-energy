@@ -371,12 +371,16 @@
 
     .monthly-table-wrap {
         overflow-x: auto;
+        border-top: 1px solid #e2e8f0;
+        background: #ffffff;
     }
 
     .monthly-table {
         width: 100%;
-        min-width: 1260px;
-        border-collapse: collapse;
+        min-width: 1160px;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
     }
 
     .monthly-table thead tr {
@@ -386,25 +390,76 @@
     .monthly-table th,
     .monthly-table td {
         border-bottom: 1px solid #eef2f7;
-        padding: 10px 12px;
+        padding: 12px 14px;
     }
 
     .monthly-table th {
-        color: #334155;
-        font-size: .82rem;
+        color: #475569;
+        font-size: .74rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: .02em;
-        text-align: center;
+        letter-spacing: .06em;
+        text-align: left;
         position: sticky;
         top: 0;
         z-index: 1;
+        white-space: normal;
+        line-height: 1.35;
+        box-shadow: inset 0 -1px 0 #e2e8f0;
     }
 
     .monthly-table td {
-        color: #334155;
-        font-size: .9rem;
+        color: #1e293b;
+        font-size: .88rem;
+        line-height: 1.35;
+        vertical-align: middle;
+    }
+
+    .monthly-table th:nth-child(1),
+    .monthly-table td:nth-child(1) {
+        width: 72px;
+    }
+
+    .monthly-table th:nth-child(2),
+    .monthly-table td:nth-child(2) {
+        width: 78px;
+    }
+
+    .monthly-table th:nth-child(3),
+    .monthly-table td:nth-child(3) {
+        width: 210px;
+    }
+
+    .monthly-table th:nth-child(4),
+    .monthly-table td:nth-child(4),
+    .monthly-table th:nth-child(5),
+    .monthly-table td:nth-child(5),
+    .monthly-table th:nth-child(8),
+    .monthly-table td:nth-child(8),
+    .monthly-table th:nth-child(9),
+    .monthly-table td:nth-child(9) {
+        text-align: right;
+    }
+
+    .monthly-table th:nth-child(6),
+    .monthly-table td:nth-child(6),
+    .monthly-table th:nth-child(7),
+    .monthly-table td:nth-child(7),
+    .monthly-table th:nth-child(10),
+    .monthly-table td:nth-child(10),
+    .monthly-table th:nth-child(11),
+    .monthly-table td:nth-child(11) {
         text-align: center;
+    }
+
+    .monthly-table th:nth-child(11),
+    .monthly-table td:nth-child(11) {
+        width: 82px;
+    }
+
+    .monthly-table tbody tr {
+        background: #ffffff;
+        transition: background-color .15s ease, box-shadow .15s ease;
     }
 
     .monthly-summary .meta {
@@ -415,19 +470,91 @@
     }
 
     .monthly-table tbody tr:nth-child(even) {
-        background: #fcfdff;
+        background: #f9fbfd;
     }
 
     .monthly-table tbody tr:hover {
-        background: #f8fafc;
+        background: #f1f7ff;
+        box-shadow: inset 3px 0 0 #2563eb;
     }
 
     .scope-pill {
         display: inline-flex;
-        padding: 4px 10px;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .04em;
+    }
+
+    .monthly-scope-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .monthly-meter-name {
+        min-width: 0;
+        color: #0f172a;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .monthly-number {
+        color: #0f172a;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .monthly-muted-number {
+        color: #334155;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .monthly-cost {
+        color: #047857;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .monthly-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 100%;
+        min-width: 72px;
+        padding: 5px 11px;
         border-radius: 999px;
         font-size: .74rem;
-        font-weight: 800;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+
+    .monthly-bill-thumb {
+        display: inline-flex;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #dbe4f0;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, .08);
+    }
+
+    .monthly-bill-thumb img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .monthly-empty-mark {
+        color: #94a3b8;
+        font-weight: 700;
     }
 
     .monthly-chip.is-success {
@@ -937,6 +1064,39 @@
         color: #cbd5e1;
     }
 
+    body.dark-mode .monthly-table-wrap,
+    body.dark-mode .monthly-table tbody tr {
+        background: #0f172a;
+    }
+
+    body.dark-mode .monthly-table th {
+        color: #94a3b8;
+        box-shadow: inset 0 -1px 0 #334155;
+    }
+
+    body.dark-mode .monthly-table tbody tr:hover {
+        background: #10213f;
+        box-shadow: inset 3px 0 0 #60a5fa;
+    }
+
+    body.dark-mode .monthly-meter-name,
+    body.dark-mode .monthly-number {
+        color: #f8fafc;
+    }
+
+    body.dark-mode .monthly-muted-number {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .monthly-cost {
+        color: #86efac;
+    }
+
+    body.dark-mode .monthly-bill-thumb {
+        border-color: #334155;
+        box-shadow: 0 6px 14px rgba(2, 6, 23, .45);
+    }
+
     body.dark-mode .monthly-modal-card {
         background: #0f172a;
         color: #e2e8f0;
@@ -1344,32 +1504,32 @@
                             <td>{{ $record->year }}</td>
                             <td>{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }}</td>
                             <td>
-                                <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+                                <div class="monthly-scope-cell">
                                     <span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span>
-                                    <span style="font-weight:700;color:#334155;">{{ $scopeNameRow }}</span>
+                                    <span class="monthly-meter-name">{{ $scopeNameRow }}</span>
                                 </div>
                             </td>
-                            <td style="font-weight:700;color:#0f172a;">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2) : '-' }}</td>
-                            <td style="font-weight:700;color:#334155;">{{ $baselineRow !== null ? number_format($baselineRow, 2) : '-' }}</td>
+                            <td class="monthly-number">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2) : '-' }}</td>
+                            <td class="monthly-muted-number">{{ $baselineRow !== null ? number_format($baselineRow, 2) : '-' }}</td>
                             <td>
-                                <span style="display:inline-flex;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:800;background:{{ $changeBg }};color:{{ $changeColor }};">
+                                <span class="monthly-status-pill" style="background:{{ $changeBg }};color:{{ $changeColor }};">
                                     {{ $changeLabel }}
                                 </span>
                             </td>
                             <td>
-                                <span style="display:inline-flex;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:800;background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
+                                <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
                                     {{ $baselineAlertLabel }}
                                 </span>
                             </td>
-                            <td>{{ number_format($rate, 2) }}</td>
-                            <td style="font-weight:800;color:#166534;">{{ number_format($cost, 2) }}</td>
+                            <td class="monthly-muted-number">{{ number_format($rate, 2) }}</td>
+                            <td class="monthly-cost">{{ number_format($cost, 2) }}</td>
                             <td>
                                 @if($billImageUrl)
-                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener">
-                                        <img src="{{ $billImageUrl }}" alt="Bill Image" style="max-width:58px;max-height:58px;border-radius:7px;object-fit:cover;border:1px solid #e2e8f0;">
+                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener" class="monthly-bill-thumb">
+                                        <img src="{{ $billImageUrl }}" alt="Bill Image">
                                     </a>
                                 @else
-                                    <span style="color:#94a3b8;">-</span>
+                                    <span class="monthly-empty-mark">-</span>
                                 @endif
                             </td>
                             <td>

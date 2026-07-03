@@ -17,6 +17,107 @@
 @endphp
 
 <style>
+    .em-page {
+        width: 100%;
+        margin: 0;
+        display: grid;
+        gap: 14px;
+    }
+
+    .report-card-container {
+        width: 100%;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        border: 0;
+        border-radius: 26px;
+        box-shadow: 0 12px 40px rgba(37, 99, 235, .18);
+        padding: 28px 40px 40px;
+        display: grid;
+        gap: 18px;
+    }
+
+    .em-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 0 0 2px;
+    }
+
+    .em-header h2 {
+        margin: 0;
+        color: #1e3a8a;
+        font-size: 1.48rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .em-header-subtitle {
+        margin-top: 4px;
+        color: #64748b;
+        font-size: .95rem;
+        line-height: 1.4;
+    }
+
+    .em-header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .em-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 10px 14px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        color: #0f172a;
+        font-size: .9rem;
+        font-weight: 800;
+        line-height: 1.15;
+        text-decoration: none;
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .em-action-btn:hover,
+    .em-action-btn:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(15, 23, 42, .10);
+        text-decoration: none;
+        outline: none;
+    }
+
+    .em-action-btn.soft {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #0f172a;
+    }
+
+    .em-action-btn.soft:hover,
+    .em-action-btn.soft:focus-visible {
+        background: #eff6ff;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+
+    .main-meter-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+    }
+
+    .main-meter-workspace {
+        background: #ffffff;
+        border: 1px solid #dbe4f2;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
     .main-meter-filter-bar {
         padding: 14px;
         border-bottom: 1px solid #e2e8f0;
@@ -481,6 +582,33 @@
     }
 
     @media (max-width: 700px) {
+        .em-page {
+            margin: 0;
+        }
+
+        .report-card-container {
+            padding: 18px;
+            border-radius: 20px;
+        }
+
+        .em-header {
+            padding: 0;
+        }
+
+        .em-header h2 {
+            font-size: 1.25rem;
+        }
+
+        .em-header-actions {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        .em-action-btn {
+            flex: 1;
+            min-width: 138px;
+        }
+
         .main-meter-filter-form {
             grid-template-columns: 1fr;
         }
@@ -505,6 +633,38 @@
     body.dark-mode .main-meter-filter-bar {
         background: #0f172a;
         border-bottom-color: #334155;
+    }
+
+    body.dark-mode .report-card-container {
+        background: #111827;
+        border-color: #334155;
+        box-shadow: none;
+    }
+
+    body.dark-mode .main-meter-workspace {
+        background: #111827;
+        border-color: #334155;
+    }
+
+    body.dark-mode .em-header h2 {
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .em-header-subtitle {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .em-action-btn.soft {
+        background: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .em-action-btn.soft:hover,
+    body.dark-mode .em-action-btn.soft:focus-visible {
+        background: #172554;
+        border-color: #1d4ed8;
+        color: #bfdbfe;
     }
 
     body.dark-mode .main-meter-filter-field label,
@@ -698,55 +858,56 @@
         </div>
     @endif
 
-    <div class="em-header">
-        <div>
-            <h2>Main Meter Baseline and Alert Detection</h2>
-            <div class="em-header-subtitle">City Hall facility-level electrical consumption and demand monitoring.</div>
-        </div>
-        <div class="em-header-actions">
-            <a href="{{ route('modules.main-meter.reports.monthly', ['month' => $selectedMonth, 'facility_id' => $selectedFacility]) }}"
-                class="em-action-btn soft">
-                Monthly Report
-            </a>
-            <a href="{{ route('modules.main-meter.alerts', ['month' => $selectedMonth, 'facility_id' => $selectedFacility]) }}"
-                class="em-action-btn soft">
-                View Alerts
-            </a>
-        </div>
-    </div>
-
-    <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">
-        <div style="background:linear-gradient(135deg,#eff6ff,#ffffff);border:1px solid #dbeafe;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#1e40af;font-weight:800;letter-spacing:.05em;">CURRENT MONTH KWH</div>
-            <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['current_kwh'] ?? 0), 2) }}</div>
-        </div>
-        <div style="background:linear-gradient(135deg,#ecfeff,#ffffff);border:1px solid #bae6fd;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#0f766e;font-weight:800;letter-spacing:.05em;">BASELINE KWH</div>
-            <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['baseline_kwh'] ?? 0), 2) }}</div>
-        </div>
-        <div style="background:linear-gradient(135deg,#fffbeb,#ffffff);border:1px solid #fde68a;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#a16207;font-weight:800;letter-spacing:.05em;">INCREASE %</div>
-            <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">
-                {{ $dashboard['increase_percent'] !== null ? number_format((float) $dashboard['increase_percent'], 2) . '%' : '-' }}
+    <section class="report-card-container">
+        <div class="em-header">
+            <div>
+                <h2>Main Meter Baseline and Alert Detection</h2>
+                <div class="em-header-subtitle">City Hall facility-level electrical consumption and demand monitoring.</div>
+            </div>
+            <div class="em-header-actions">
+                <a href="{{ route('modules.main-meter.reports.monthly', ['month' => $selectedMonth, 'facility_id' => $selectedFacility]) }}"
+                    class="em-action-btn soft">
+                    Monthly Report
+                </a>
+                <a href="{{ route('modules.main-meter.alerts', ['month' => $selectedMonth, 'facility_id' => $selectedFacility]) }}"
+                    class="em-action-btn soft">
+                    View Alerts
+                </a>
             </div>
         </div>
-        <div style="background:linear-gradient(135deg,#f8fafc,#ffffff);border:1px solid #e2e8f0;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#334155;font-weight:800;letter-spacing:.05em;">PEAK DEMAND (KW)</div>
-            <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['peak_demand_kw'] ?? 0), 2) }}</div>
-        </div>
-        <div style="background:linear-gradient(135deg,#f8fafc,#ffffff);border:1px solid #e2e8f0;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#334155;font-weight:800;letter-spacing:.05em;">ALERT BADGE</div>
-            <div style="margin-top:8px;display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;background:{{ $badgeBg }};color:{{ $badgeColor }};font-weight:800;">
-                {{ strtoupper($badge) }}
+
+        <div class="main-meter-kpis">
+            <div style="background:linear-gradient(135deg,#eff6ff,#ffffff);border:1px solid #dbeafe;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#1e40af;font-weight:800;letter-spacing:.05em;">CURRENT MONTH KWH</div>
+                <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['current_kwh'] ?? 0), 2) }}</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#ecfeff,#ffffff);border:1px solid #bae6fd;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#0f766e;font-weight:800;letter-spacing:.05em;">BASELINE KWH</div>
+                <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['baseline_kwh'] ?? 0), 2) }}</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#fffbeb,#ffffff);border:1px solid #fde68a;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#a16207;font-weight:800;letter-spacing:.05em;">INCREASE %</div>
+                <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">
+                    {{ $dashboard['increase_percent'] !== null ? number_format((float) $dashboard['increase_percent'], 2) . '%' : '-' }}
+                </div>
+            </div>
+            <div style="background:linear-gradient(135deg,#f8fafc,#ffffff);border:1px solid #e2e8f0;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#334155;font-weight:800;letter-spacing:.05em;">PEAK DEMAND (KW)</div>
+                <div style="font-size:1.55rem;font-weight:900;color:#0f172a;">{{ number_format((float) ($dashboard['peak_demand_kw'] ?? 0), 2) }}</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#f8fafc,#ffffff);border:1px solid #e2e8f0;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#334155;font-weight:800;letter-spacing:.05em;">ALERT BADGE</div>
+                <div style="margin-top:8px;display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;background:{{ $badgeBg }};color:{{ $badgeColor }};font-weight:800;">
+                    {{ strtoupper($badge) }}
+                </div>
+            </div>
+            <div style="background:linear-gradient(135deg,#fef2f2,#ffffff);border:1px solid #fecaca;border-radius:14px;padding:14px;">
+                <div style="font-size:.78rem;color:#b91c1c;font-weight:800;letter-spacing:.05em;">CRITICAL ALERTS THIS MONTH</div>
+                <div style="font-size:1.55rem;font-weight:900;color:#991b1b;">{{ $criticalCount }}</div>
             </div>
         </div>
-        <div style="background:linear-gradient(135deg,#fef2f2,#ffffff);border:1px solid #fecaca;border-radius:14px;padding:14px;">
-            <div style="font-size:.78rem;color:#b91c1c;font-weight:800;letter-spacing:.05em;">CRITICAL ALERTS THIS MONTH</div>
-            <div style="font-size:1.55rem;font-weight:900;color:#991b1b;">{{ $criticalCount }}</div>
-        </div>
-    </div>
 
-    <div style="margin-top:14px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
+    <div class="main-meter-workspace">
         <div class="main-meter-filter-bar">
         <form method="GET" action="{{ route('modules.main-meter.monitoring') }}" class="main-meter-filter-form">
             <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
@@ -976,6 +1137,7 @@
             </table>
         </div>
     </div>
+    </section>
 
 </div>
 

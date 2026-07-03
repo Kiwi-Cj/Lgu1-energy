@@ -13,6 +13,12 @@
 
 <style>
     .conservation-page {
+        width: 100%;
+        margin: 0;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        border-radius: 26px;
+        box-shadow: 0 12px 40px rgba(37, 99, 235, .18);
+        padding: 28px 40px 40px;
         display: grid;
         gap: 18px;
     }
@@ -85,9 +91,10 @@
     .metric-card {
         background: #fff;
         border: 1px solid #dbe4f0;
-        border-radius: 8px;
+        border-radius: 14px;
         padding: 15px;
         min-height: 104px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
     }
     .metric-icon {
         width: 34px;
@@ -122,8 +129,9 @@
     .conservation-panel {
         background: #fff;
         border: 1px solid #dbe4f0;
-        border-radius: 8px;
+        border-radius: 16px;
         overflow: hidden;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, .08);
     }
     .panel-head {
         display: flex;
@@ -347,6 +355,10 @@
         text-align: center;
         font-weight: 700;
     }
+    body.dark-mode .conservation-page {
+        background: #111827;
+        box-shadow: none;
+    }
     body.dark-mode .conservation-title,
     body.dark-mode .metric-value,
     body.dark-mode .panel-title,
@@ -395,6 +407,10 @@
         }
     }
     @media (max-width: 560px) {
+        .conservation-page {
+            padding: 18px;
+            border-radius: 20px;
+        }
         .conservation-filter {
             width: 100%;
             align-items: stretch;

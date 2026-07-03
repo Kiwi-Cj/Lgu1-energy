@@ -22,6 +22,16 @@
     });
     $increasingCount = $rows->where('trend', 'up')->count();
     $decreasingCount = $rows->where('trend', 'down')->count();
+    $selectedMonthValue = isset($selectedMonth)
+        ? (string) $selectedMonth
+        : (request()->has('month') ? (string) request('month') : (string) date('n'));
+    $exportFilters = request()->all();
+    if (! request()->has('year')) {
+        $exportFilters['year'] = date('Y');
+    }
+    if (! request()->has('month') && $selectedMonthValue !== '') {
+        $exportFilters['month'] = $selectedMonthValue;
+    }
 @endphp
 
 @section('content')
@@ -169,6 +179,72 @@
     font-size: 0.92rem;
     color: #0f172a;
     background: #fff;
+}
+
+.month-picker {
+    position: relative;
+}
+
+.month-picker-toggle {
+    width: 100%;
+    min-height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 0.92rem;
+    color: #0f172a;
+    background: #fff;
+    cursor: pointer;
+}
+
+.month-picker-toggle:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.month-picker-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    display: none;
+    max-height: 230px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+    padding: 4px;
+}
+
+.month-picker.open .month-picker-menu {
+    display: block;
+}
+
+.month-picker-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #0f172a;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+.month-picker-option:hover,
+.month-picker-option.is-selected {
+    background: #eaf1ff;
+    color: #1d4ed8;
 }
 
 .filter-group select:focus,
@@ -336,6 +412,20 @@ body.dark-mode .filter-group input {
     border-color: #334155;
     color: #e2e8f0;
 }
+body.dark-mode .month-picker-toggle,
+body.dark-mode .month-picker-menu {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .month-picker-option {
+    color: #e2e8f0;
+}
+body.dark-mode .month-picker-option:hover,
+body.dark-mode .month-picker-option.is-selected {
+    background: #1f2937;
+    color: #93c5fd;
+}
 body.dark-mode .btn-reset {
     background: #1f2937;
     border-color: #334155;
@@ -405,11 +495,11 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
             </div>
             <div class="energy-actions">
                 @if($roleKey !== 'staff')
-                <a href="{{ route('reports.energy-export', request()->all()) }}" class="btn-action btn-excel" data-secure-download>
+                <a href="{{ route('reports.energy-export', $exportFilters) }}" class="btn-action btn-excel" data-secure-download>
                     <i class="fa fa-download"></i> Export Excel
                 </a>
                 @endif
-                <a href="{{ route('modules.energy.export-pdf', array_filter(request()->all())) }}" class="btn-action btn-pdf" data-secure-download>
+                <a href="{{ route('modules.energy.export-pdf', array_filter($exportFilters, fn ($value) => $value !== null && $value !== '')) }}" class="btn-action btn-pdf" data-secure-download>
                     <i class="fa fa-file-pdf-o"></i> Export PDF
                 </a>
             </div>
@@ -467,13 +557,25 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
 
             <div class="filter-group">
                 <label for="month">Month</label>
-                <select name="month" id="month">
-                    <option value="">All Months</option>
-                    @php $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec']; @endphp
-                    @foreach($months as $num => $name)
-                        <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
-                    @endforeach
-                </select>
+                @php
+                    $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec'];
+                    $selectedMonthLabel = $selectedMonthValue !== ''
+                        ? ($months[(int) $selectedMonthValue] ?? 'All Months')
+                        : 'All Months';
+                @endphp
+                <div class="month-picker" id="monthPicker">
+                    <input type="hidden" name="month" id="month" value="{{ $selectedMonthValue }}">
+                    <button type="button" class="month-picker-toggle" id="monthPickerToggle" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="monthPickerLabel">{{ $selectedMonthLabel }}</span>
+                        <i class="fa fa-chevron-down"></i>
+                    </button>
+                    <div class="month-picker-menu" id="monthPickerMenu" role="listbox">
+                        <button type="button" class="month-picker-option {{ $selectedMonthValue === '' ? 'is-selected' : '' }}" data-value="" role="option">All Months</button>
+                        @foreach($months as $num => $name)
+                            <button type="button" class="month-picker-option {{ $selectedMonthValue !== '' && (int) $selectedMonthValue === $num ? 'is-selected' : '' }}" data-value="{{ $num }}" role="option">{{ $name }}</button>
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
             <div class="filter-group">
@@ -543,6 +645,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('tableSearch');
     const rows = Array.from(document.querySelectorAll('.energy-row'));
     const noMatch = document.getElementById('energyNoMatch');
+    const monthPicker = document.getElementById('monthPicker');
+    const monthToggle = document.getElementById('monthPickerToggle');
+    const monthInput = document.getElementById('month');
+    const monthLabel = document.getElementById('monthPickerLabel');
+    const monthOptions = Array.from(document.querySelectorAll('.month-picker-option'));
 
     const applySearch = () => {
         const q = (input?.value || '').toLowerCase().trim();
@@ -561,6 +668,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (input) {
         input.addEventListener('input', applySearch);
+    }
+
+    if (monthPicker && monthToggle && monthInput && monthLabel) {
+        const closeMonthPicker = () => {
+            monthPicker.classList.remove('open');
+            monthToggle.setAttribute('aria-expanded', 'false');
+        };
+
+        monthToggle.addEventListener('click', () => {
+            const isOpen = monthPicker.classList.toggle('open');
+            monthToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        monthOptions.forEach((option) => {
+            option.addEventListener('click', () => {
+                monthInput.value = option.dataset.value || '';
+                monthLabel.textContent = option.textContent.trim();
+                monthOptions.forEach((item) => item.classList.toggle('is-selected', item === option));
+                closeMonthPicker();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!monthPicker.contains(event.target)) {
+                closeMonthPicker();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeMonthPicker();
+            }
+        });
     }
 });
 </script>

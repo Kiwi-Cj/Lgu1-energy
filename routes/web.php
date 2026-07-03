@@ -9,6 +9,7 @@ use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth')->name('notifications.markAllRead');
+Route::get('/notifications', [NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notifications.index');
 Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->middleware('auth')->name('notifications.markRead');
 Route::post('/downloads/authorize', [DownloadAuthorizationController::class, 'authorize'])->middleware(['auth', 'verified'])->name('downloads.authorize');
 

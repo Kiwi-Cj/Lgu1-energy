@@ -2,7 +2,7 @@
 @section('title', 'Submeter Monitoring')
 
 <style>
-    .submeter-ui { padding: 16px; display: grid; gap: 14px; }
+    .submeter-ui { width: 100%; margin: 0; display: grid; gap: 14px; }
     .submeter-flash { border-radius: 12px; padding: 12px 14px; font-weight: 700; border: 1px solid transparent; }
     .submeter-flash.ok { background: #dcfce7; color: #166534; border-color: #86efac; }
     .submeter-flash.err { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
@@ -19,13 +19,14 @@
     .sm-btn.soft { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
     .sm-btn.neutral { background: #f1f5f9; color: #334155; border-color: #e2e8f0; }
     .report-card-container {
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 2px 12px rgba(31, 38, 135, 0.06);
-        border: 1px solid #e2e8f0;
-        padding: 20px;
+        width: 100%;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        border-radius: 26px;
+        box-shadow: 0 12px 40px rgba(37, 99, 235, .18);
+        border: 0;
+        padding: 28px 40px 40px;
         display: grid;
-        gap: 14px;
+        gap: 18px;
     }
 
     .submeter-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
@@ -40,7 +41,7 @@
     .submeter-kpi.fac { background: linear-gradient(135deg,#f8fafc,#fff); }
     .submeter-kpi.fac .label { color: #334155; }
 
-    .submeter-sensor-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; }
+    .submeter-sensor-panel { background: #fff; border: 1px solid #dbe4f2; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(15, 23, 42, .08); }
     .submeter-sensor-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px; border-bottom: 1px solid #e2e8f0; background: #ffffff; }
     .submeter-sensor-title { margin: 0; color: #1e293b; font-size: 1rem; font-weight: 900; }
     .submeter-sensor-subtitle { margin-top: 3px; color: #64748b; font-size: .84rem; font-weight: 600; }
@@ -54,7 +55,7 @@
     .submeter-sensor-stat-value { margin-top: 4px; color: #0f172a; font-size: 1.28rem; font-weight: 900; }
     .submeter-sensor-chart { position: relative; height: 300px; max-height: 300px; width: 100%; }
 
-    .submeter-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; }
+    .submeter-panel { background: #fff; border: 1px solid #dbe4f2; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(15, 23, 42, .08); }
     .submeter-filter { padding: 12px; display: grid; grid-template-columns: minmax(140px,170px) minmax(160px,200px) minmax(220px,1fr) minmax(220px,1fr) auto; gap: 10px; align-items: end; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
     .submeter-field { display: grid; gap: 6px; }
     .submeter-field label { font-size: .8rem; font-weight: 700; color: #475569; }
@@ -276,9 +277,8 @@
     }
 
     body.dark-mode .report-card-container {
-        background: #0f172a;
-        border: 1px solid #1f2937;
-        box-shadow: 0 10px 28px rgba(2, 6, 23, 0.55);
+        background: #111827;
+        box-shadow: none;
     }
 
     body.dark-mode .submeter-title,
@@ -430,7 +430,8 @@
     }
 
     @media (max-width: 680px) {
-        .submeter-ui { padding: 10px; }
+        .submeter-ui { margin: 0; }
+        .report-card-container { padding: 18px; border-radius: 20px; }
         .submeter-title { font-size: 1.28rem; }
         .submeter-filter { grid-template-columns: 1fr; }
         .submeter-head-actions { width: 100%; }

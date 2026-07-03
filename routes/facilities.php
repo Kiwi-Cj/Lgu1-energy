@@ -29,7 +29,7 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}', functio
         return response()->json(['success' => true, 'message' => 'Monthly record archived successfully!']);
     }
     // Redirect to the monthly records list for the facility
-    return redirect('/modules/facilities/' . $facilityId . '/monthly-records')->with('success', 'Monthly record moved to archive.');
+    return redirect('/modules/facilities/' . $facilityId . '/monthly-records');
 })->middleware(['auth', 'verified'])->name('energy-records.delete');
 
 // Restore an archived monthly energy record for a facility
@@ -187,7 +187,7 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     }
 
     EnergyRecord::create($validated);
-    return redirect()->back()->with('success', 'Monthly record added!');
+    return redirect()->back();
 })->middleware(['auth', 'verified'])->name('energy-records.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {

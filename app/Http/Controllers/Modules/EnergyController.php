@@ -120,7 +120,7 @@ class EnergyController extends Controller
         // Get all energy records with facility relationships
         $facilityId = $request->input('facility_id');
         $year = $request->input('year');
-        $month = $request->input('month');
+        $month = $request->has('month') ? $request->input('month') : date('n');
         $query = EnergyRecord::with('facility');
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
@@ -171,7 +171,9 @@ class EnergyController extends Controller
         $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year');
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
-        return view('modules.reports.energy', compact('energyRows', 'facilities', 'years', 'role', 'user'));
+        $selectedMonth = (string) $month;
+
+        return view('modules.reports.energy', compact('energyRows', 'facilities', 'years', 'role', 'user', 'selectedMonth'));
     }
 
     private function buildTrendDirectionMap($records): array

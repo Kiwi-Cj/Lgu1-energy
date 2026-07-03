@@ -6,6 +6,8 @@ use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\Maintenance;
+use App\Models\User;
+use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
@@ -52,12 +54,83 @@ class EnergyRecordObserver
             $record->forceFill($updates)->saveQuietly();
         }
 
+        $this->notifyRecipientsOfAlert($record, $facility, $deviation, $alert);
+
         // Legacy incident/maintenance automation is only for non-submeter streams.
         if ($this->isSubMeterRecord($record)) {
             return;
         }
 
         $this->syncIncidentAndMaintenance($record, $facility, $deviation, $alert);
+    }
+
+    private function notifyRecipientsOfAlert(
+        EnergyRecord $record,
+        Facility $facility,
+        ?float $deviation,
+        string $alert
+    ): void {
+        try {
+            if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $alertKey = strtolower(trim($alert));
+            if (! in_array($alertKey, ['high', 'very high', 'critical'], true)) {
+                return;
+            }
+
+            $month = (int) ($record->month ?? 0);
+            $year = (int) ($record->year ?? 0);
+            if ($month <= 0 || $year <= 0) {
+                return;
+            }
+
+            $facilityName = trim((string) ($facility->name ?? 'Unknown Facility'));
+            $periodLabel = date('M Y', mktime(0, 0, 0, $month, 1, $year));
+            $scopeLabel = $this->isSubMeterRecord($record) ? 'Submeter' : 'Main meter';
+            $meterName = trim((string) ($record->meter?->meter_name ?? $scopeLabel));
+            $level = ucwords($alertKey);
+            $deviationLabel = $deviation !== null ? ' by ' . number_format($deviation, 2) . '%' : '';
+
+            $title = 'Energy Alert';
+            $message = "Alert: {$scopeLabel} {$meterName} at {$facilityName} ({$periodLabel}) increased{$deviationLabel} [{$level}]";
+
+            User::query()
+                ->with('facilities:id')
+                ->get()
+                ->filter(function (User $user) use ($facility) {
+                    $role = RoleAccess::normalize($user);
+
+                    if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
+                        return true;
+                    }
+
+                    if ($role === 'staff') {
+                        return $user->facilities->contains('id', (int) $facility->id);
+                    }
+
+                    return false;
+                })
+                ->each(function (User $recipient) use ($message, $title) {
+                    $exists = $recipient->notifications()
+                        ->where('type', 'energy_record_alert')
+                        ->where('message', $message)
+                        ->exists();
+
+                    if ($exists) {
+                        return;
+                    }
+
+                    $recipient->notifications()->create([
+                        'title' => $title,
+                        'message' => $message,
+                        'type' => 'energy_record_alert',
+                    ]);
+                });
+        } catch (\Throwable $e) {
+            // Notification failure must not block monthly record persistence.
+        }
     }
 
     private function resolveBaseline(EnergyRecord $record, Facility $facility): ?float

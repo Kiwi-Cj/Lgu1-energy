@@ -708,6 +708,28 @@ body.dark-mode .global-toast-error {
     color: #1d4ed8;
 }
 
+.notif-view-all {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 11px 12px;
+    border-top: 1px solid #dbeafe;
+    background: #ffffff;
+    color: #2563eb;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.notif-view-all:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
 .notif-item {
     display: block;
     padding: 10px 12px;
@@ -1066,6 +1088,11 @@ body.dark-mode .notif-sev-info .notif-level-badge {
 body.dark-mode .notif-sev-info .notif-message {
     color: #bfdbfe;
 }
+body.dark-mode .notif-view-all {
+    background: #111827;
+    border-color: #334155;
+    color: #93c5fd;
+}
 
 .secure-download-modal {
     position: fixed;
@@ -1309,6 +1336,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
                                 $notifType = 'record';
                             }
                         }
+                        if (in_array($notifType, ['energy_record_alert', 'main_meter_alert', 'submeter_alert'], true)) {
+                            $notifType = 'record';
+                        }
                         $notifSeverity = 'info';
                         if (\Illuminate\Support\Str::contains($notifLower, 'critical')) {
                             $notifSeverity = 'critical';
@@ -1387,6 +1417,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 @endforelse
                 <div id="notifFilterEmpty" class="notif-filter-empty" style="display:none;">No notifications for this filter.</div>
             </div>
+            <a class="notif-view-all" href="{{ route('notifications.index') }}">View all notifications <i class="fa-solid fa-arrow-right"></i></a>
         </div>
 
         <button id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
@@ -1855,6 +1886,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return text.includes('completed') ? notifRoutes.maintenanceHistory : notifRoutes.maintenance;
         }
         if (t === 'contact' || text.includes('contact message')) return notifRoutes.contactInbox;
+        if (['energy_record_alert', 'main_meter_alert', 'submeter_alert', 'record', 'consumption'].includes(t) || text.includes('alert:') || text.includes('baseline')) return notifRoutes.dashboard;
         return notifRoutes.dashboard;
     };
 
@@ -1868,7 +1900,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (t === 'maintenance' || text.includes('maintenance:')) return 'Maintenance Alert';
         if (t === 'contact' || text.includes('contact message')) return 'Contact Inbox';
         if (t === 'consumption' || text.includes('baseline')) return 'Consumption Alert';
-        if (t === 'record' || text.includes('alert:')) return 'Energy Alert';
+        if (['energy_record_alert', 'main_meter_alert', 'submeter_alert', 'record'].includes(t) || text.includes('alert:')) return 'Energy Alert';
         return 'System Alert';
     };
 

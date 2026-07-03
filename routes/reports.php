@@ -1,10 +1,11 @@
 <?php
+use App\Http\Controllers\Modules\EnergyController;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('/modules/reports/index', '/modules/reports/energy')->name('reports.index');
-    Route::view('/modules/reports/energy', 'modules.reports.energy')->name('reports.energy');
+    Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('reports.energy');
     Route::get('/modules/reports/efficiency-summary', [\App\Http\Controllers\Reports\EfficiencySummaryReportController::class, 'show'])->name('reports.efficiency-summary');
     Route::redirect('/modules/reports/facilities', '/modules/reports/energy')->name('reports.facilities');
     // Monthly report route for dashboard shortcut
@@ -21,8 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         $facilityId = $request->input('facility_id');
-        $year = $request->input('year');
-        $month = $request->input('month');
+        $year = $request->has('year') ? $request->input('year') : date('Y');
+        $month = $request->has('month') ? $request->input('month') : date('n');
         $query = \App\Models\EnergyRecord::with('facility');
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
