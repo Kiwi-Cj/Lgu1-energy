@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\Modules\AuditLogController;
+use App\Http\Controllers\Modules\ChatbotController;
+use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\EnergyConservationController;
-use App\Http\Controllers\Modules\AiAlertsController;
 use App\Http\Controllers\Modules\FacilityController;
 use App\Http\Controllers\Modules\FacilityMeterController;
-use App\Http\Controllers\Modules\AuditLogController;
-use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\LoadTrackingController;
 use App\Http\Controllers\Modules\MainMeterMonitoringController;
 use App\Http\Controllers\Modules\MaintenanceController;
@@ -67,8 +67,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/alerts', [SubmeterMonitoringController::class, 'alerts'])->name('modules.submeters.alerts');
     Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
-    Route::get('/modules/ai-alerts', [AiAlertsController::class, 'index'])->name('modules.ai-alerts.index');
-    Route::get('/modules/alerts', [AiAlertsController::class, 'index'])->name('modules.alerts.index');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
 
     // Load Tracking (equipment-level under submeters)
@@ -895,6 +893,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('modules.reports.energy');
     Route::get('/modules/reports/facilities', fn() => redirect()->route('modules.reports.energy'))->name('modules.reports.facilities');
+
+    // Chatbot
+    Route::get('/modules/chatbot', [ChatbotController::class, 'index'])->name('modules.chatbot.index');
+    Route::post('/modules/chatbot/respond', [ChatbotController::class, 'respond'])->name('modules.chatbot.respond');
 
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');

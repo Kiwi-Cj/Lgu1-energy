@@ -67,6 +67,19 @@ Route::post('/modules/facilities/{facility}/monthly-records/{record}/restore', f
         ->with('success', 'Monthly record restored successfully.');
 })->middleware(['auth', 'verified'])->name('energy-records.restore');
 
+// Permanently delete an archived monthly energy record for a facility
+Route::delete('/modules/facilities/{facility}/monthly-records/{record}/force-delete', function ($facilityId, $recordId) {
+    $record = EnergyRecord::onlyTrashed()
+        ->where('facility_id', $facilityId)
+        ->where('id', $recordId)
+        ->firstOrFail();
+
+    $record->forceDelete();
+
+    return redirect('/modules/facilities/' . $facilityId . '/monthly-records/archive')
+        ->with('success', 'Monthly record permanently deleted.');
+})->middleware(['auth', 'verified'])->name('energy-records.force-delete');
+
 // Store new monthly energy record for a facility (for modal form)
 Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
     $validated = $request->validate([

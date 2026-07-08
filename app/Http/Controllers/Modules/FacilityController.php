@@ -16,6 +16,7 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
 use App\Models\Submeter;
 use App\Models\SubmeterEquipment;
+use App\Services\ArchivePruneService;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -811,111 +812,7 @@ class FacilityController extends Controller
         $facility = Facility::onlyTrashed()->findOrFail($id);
 
         try {
-            DB::transaction(function () use ($facility) {
-                $facilityId = $facility->id;
-                $facilityName = $facility->name;
-                $archiveReason = $facility->archive_reason;
-
-                $this->logFacilityAudit(
-                    $facility,
-                    'permanently_deleted',
-                    $archiveReason
-                        ? 'Permanent delete from archive. Original archive reason: ' . $archiveReason
-                        : 'Permanent delete from archive.'
-                );
-
-                $energyRecordIds = EnergyRecord::withTrashed()
-                    ->where('facility_id', $facilityId)
-                    ->pluck('id');
-
-                if ($energyRecordIds->isNotEmpty()) {
-                    EnergyIncidentHistory::whereIn('energy_record_id', $energyRecordIds)->delete();
-                    EnergyIncident::whereIn('energy_record_id', $energyRecordIds)->delete();
-                    Maintenance::whereIn('energy_record_id', $energyRecordIds)->update(['energy_record_id' => null]);
-                }
-
-                $mainMeterReadingIds = DB::table('main_meter_readings')
-                    ->where('facility_id', $facilityId)
-                    ->pluck('id');
-
-                if ($mainMeterReadingIds->isNotEmpty()) {
-                    DB::table('main_meter_alerts')
-                        ->whereIn('main_meter_reading_id', $mainMeterReadingIds)
-                        ->delete();
-                }
-
-                DB::table('main_meter_alerts')->where('facility_id', $facilityId)->delete();
-                DB::table('main_meter_baselines')->where('facility_id', $facilityId)->delete();
-                DB::table('main_meter_readings')->where('facility_id', $facilityId)->delete();
-
-                $submeterIds = DB::table('submeters')
-                    ->where('facility_id', $facilityId)
-                    ->pluck('id');
-
-                if ($submeterIds->isNotEmpty()) {
-                    $submeterReadingIds = DB::table('submeter_readings')
-                        ->whereIn('submeter_id', $submeterIds)
-                        ->pluck('id');
-
-                    if ($submeterReadingIds->isNotEmpty()) {
-                        DB::table('submeter_alerts')
-                            ->whereIn('submeter_reading_id', $submeterReadingIds)
-                            ->delete();
-                    }
-
-                    DB::table('submeter_alerts')->whereIn('submeter_id', $submeterIds)->delete();
-                    DB::table('submeter_baselines')->whereIn('submeter_id', $submeterIds)->delete();
-
-                    if (Schema::hasTable('submeter_equipment_files')) {
-                        DB::table('submeter_equipment_files')->whereIn('submeter_id', $submeterIds)->delete();
-                    }
-
-                    if (Schema::hasTable('submeter_equipments')) {
-                        DB::table('submeter_equipments')->whereIn('submeter_id', $submeterIds)->delete();
-                    }
-
-                    DB::table('submeter_readings')->whereIn('submeter_id', $submeterIds)->delete();
-                }
-
-                $facilityMeterIds = FacilityMeter::withTrashed()
-                    ->where('facility_id', $facilityId)
-                    ->pluck('id');
-
-                if ($facilityMeterIds->isNotEmpty()) {
-                    if (Schema::hasTable('submeter_equipment_files')) {
-                        DB::table('submeter_equipment_files')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
-                    }
-
-                    if (Schema::hasTable('submeter_equipments')) {
-                        DB::table('submeter_equipments')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
-                    }
-                }
-
-                // Force delete monthly records to avoid orphan rows and trigger cleanup observer logic.
-                EnergyRecord::withTrashed()
-                    ->where('facility_id', $facilityId)
-                    ->get()
-                    ->each(function (EnergyRecord $record) {
-                        $record->forceDelete();
-                    });
-
-                EnergyIncident::where('facility_id', $facilityId)->delete();
-                Maintenance::where('facility_id', $facilityId)->delete();
-                MaintenanceHistory::where('facility_id', $facilityId)->delete();
-                EnergyProfile::where('facility_id', $facilityId)->delete();
-                if (Schema::hasTable('baseline_reset_logs')) {
-                    DB::table('baseline_reset_logs')->where('facility_id', $facilityId)->delete();
-                }
-                Submeter::whereIn('id', $submeterIds)->delete();
-                FacilityMeter::withTrashed()->where('facility_id', $facilityId)->forceDelete();
-
-                $facility->users()->detach();
-                $facility->forceDelete();
-
-                // Keep facility audit logs viewable historically even after force delete.
-                FacilityAuditLog::where('facility_id', $facilityId)
-                    ->update(['facility_name' => $facilityName]);
-            });
+            app(ArchivePruneService::class)->permanentlyDeleteFacility($facility);
         } catch (\Throwable $e) {
             report($e);
 

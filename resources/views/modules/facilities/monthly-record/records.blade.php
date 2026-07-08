@@ -1365,9 +1365,14 @@
                     @endif
                 </div>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <span class="monthly-chip">Total kWh: {{ number_format($tableActualKwhTotal, 2) }}</span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
+                <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}" 
+                   style="display:inline-flex;align-items:center;gap:6px;background:#dc2626;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:0.875rem;font-weight:600;transition:background 0.2s;"
+                   title="View archived records">
+                    <i class="fa fa-archive"></i> Archive
+                </a>
             </div>
         </div>
 

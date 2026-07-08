@@ -7,11 +7,13 @@ use App\Models\MainMeterReading;
 use App\Models\Submeter;
 use App\Models\SubmeterReading;
 use App\Models\User;
+use App\Services\ArchivePruneService;
 use App\Services\MainMeterBaselineAlertService;
 use App\Services\SubmeterBaselineAlertService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -59,6 +61,26 @@ Artisan::command('energy:archive-legacy-facility-aggregate {--dry-run : Preview 
 
     $this->info("Archived {$archived} legacy facility-aggregate record(s).");
 })->purpose('Soft-delete old monthly energy records with null meter_id');
+
+Artisan::command('archive:prune-expired
+    {--days=30 : Permanently delete archive rows older than this many days}
+    {--dry-run : Preview how many archived rows would be permanently deleted}', function () {
+    $days = max(1, (int) $this->option('days'));
+    $dryRun = (bool) $this->option('dry-run');
+
+    $result = app(ArchivePruneService::class)->pruneExpired($days, $dryRun);
+    $cutoff = $result['cutoff']->format('Y-m-d H:i:s');
+
+    $this->info(($dryRun ? 'Preview' : 'Pruned') . " archives older than {$days} day(s).");
+    $this->line("Cutoff: {$cutoff}");
+    $this->line("Facilities: {$result['facilities']}");
+    $this->line("Meters: {$result['meters']}");
+    $this->line("Monthly records: {$result['monthly_records']}");
+})->purpose('Permanently delete archived facilities, meters, and monthly records after the retention window');
+
+Schedule::command('archive:prune-expired --days=30')
+    ->dailyAt('01:30')
+    ->withoutOverlapping();
 
 Artisan::command('main-meter:backfill-from-energy-records
     {--dry-run : Preview records to be migrated}

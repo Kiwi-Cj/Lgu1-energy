@@ -178,7 +178,4 @@
     <a href="{{ route('modules.load-tracking.index') }}" class="ems-tab{{ $energyTab === 'load' ? ' active' : '' }}">
         <i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking
     </a>
-    <a href="{{ route('modules.ai-alerts.index') }}" class="ems-tab{{ $energyTab === 'ai' ? ' active' : '' }}">
-        <i class="fa-solid fa-robot"></i> Smart Alerts
-    </a>
 </div>

@@ -1466,9 +1466,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.main-meter.*')
-                || request()->routeIs('modules.submeters.*')
-                || request()->routeIs('modules.ai-alerts.*')
-                || request()->routeIs('modules.alerts.*');
+                || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
                 || request()->routeIs('modules.reports.*')
                 || request()->routeIs('reports.*')
@@ -1492,7 +1490,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
                         <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
-                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Smart Alerts</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -1510,6 +1507,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
+                <li><a href="{{ route('modules.chatbot.index') }}" class="nav-link{{ request()->routeIs('modules.chatbot.index') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Chatbot</a></li>
             @else
                 <!-- ...existing code for other roles... -->
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
@@ -1527,7 +1525,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                                 <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                                 <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
                                 <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
-                                <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') || request()->routeIs('modules.alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Smart Alerts</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>
@@ -1549,6 +1546,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                         </ul>
                     </li>
+                    <li><a href="{{ route('modules.chatbot.index') }}" class="nav-link{{ request()->routeIs('modules.chatbot.index') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Chatbot</a></li>
                 @endif
             @endif
 
