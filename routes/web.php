@@ -41,6 +41,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('modules/users/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'update'])->name('users.update');
     Route::get('modules/users/disable/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'disable'])->name('users.disable');
     Route::get('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('users.roles');
+    Route::post('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'storeRole'])->name('users.roles.store');
+    Route::delete('/users/roles/{role}', [\App\Http\Controllers\Modules\UsersController::class, 'destroyRole'])->name('users.roles.destroy');
 });
 
 Route::get('/', function () {

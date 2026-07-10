@@ -1,14 +1,12 @@
 <?php
 
 use App\Http\Controllers\Modules\AuditLogController;
-use App\Http\Controllers\Modules\ChatbotController;
 use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\EnergyConservationController;
 use App\Http\Controllers\Modules\FacilityController;
 use App\Http\Controllers\Modules\FacilityMeterController;
 use App\Http\Controllers\Modules\LoadTrackingController;
-use App\Http\Controllers\Modules\MainMeterMonitoringController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\SubmeterMonitoringController;
 use App\Support\EnergyCost;
@@ -77,16 +75,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/load-tracking/equipment/{equipment}/files', [LoadTrackingController::class, 'uploadFile'])->name('modules.load-tracking.equipment.files.upload');
     Route::get('/modules/load-tracking/equipment/{equipment}/files/{file}', [LoadTrackingController::class, 'downloadFile'])->name('modules.load-tracking.equipment.files.download');
     Route::delete('/modules/load-tracking/equipment/{equipment}/files/{file}', [LoadTrackingController::class, 'destroyFile'])->name('modules.load-tracking.equipment.files.destroy');
-
-    // Main Meter Monitoring and Alerts
-    Route::get('/modules/main-meter/monitoring', [MainMeterMonitoringController::class, 'index'])->name('modules.main-meter.monitoring');
-    Route::post('/modules/main-meter/readings', [MainMeterMonitoringController::class, 'store'])->name('modules.main-meter.readings.store');
-    Route::post('/modules/main-meter/readings/simulate-iot', [MainMeterMonitoringController::class, 'simulateIotReading'])->name('modules.main-meter.readings.simulate-iot');
-    Route::post('/modules/main-meter/readings/{reading}/approve', [MainMeterMonitoringController::class, 'approve'])->name('modules.main-meter.readings.approve');
-    Route::get('/modules/main-meter/alerts', [MainMeterMonitoringController::class, 'alerts'])->name('modules.main-meter.alerts');
-    Route::get('/modules/main-meter/reports/monthly', [MainMeterMonitoringController::class, 'monthlyReport'])->name('modules.main-meter.reports.monthly');
-    Route::get('/modules/main-meter/reports/baseline-comparison', [MainMeterMonitoringController::class, 'baselineComparisonReport'])->name('modules.main-meter.reports.baseline-comparison');
-    Route::get('/modules/main-meter/reports/demand-spikes', [MainMeterMonitoringController::class, 'demandSpikeReport'])->name('modules.main-meter.reports.demand-spikes');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -893,10 +881,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('modules.reports.energy');
     Route::get('/modules/reports/facilities', fn() => redirect()->route('modules.reports.energy'))->name('modules.reports.facilities');
-
-    // Chatbot
-    Route::get('/modules/chatbot', [ChatbotController::class, 'index'])->name('modules.chatbot.index');
-    Route::post('/modules/chatbot/respond', [ChatbotController::class, 'respond'])->name('modules.chatbot.respond');
 
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');
