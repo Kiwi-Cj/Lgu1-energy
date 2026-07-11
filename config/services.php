@@ -56,4 +56,17 @@ return [
         'token' => env('SUBMETER_SENSOR_TOKEN', env('MAIN_METER_SENSOR_TOKEN')),
     ],
 
+    'mqtt' => [
+        'host' => env('MQTT_HOST', '127.0.0.1'),
+        'port' => env('MQTT_PORT', 1883),
+        'username' => env('MQTT_USERNAME'),
+        'password' => env('MQTT_PASSWORD'),
+        'client_id' => env('MQTT_CLIENT_ID', 'lgu-energy-laravel-subscriber'),
+        'topic' => env('MQTT_SUBMETER_TOPIC', 'lgu/submeters/+/telemetry'),
+        'qos' => env('MQTT_QOS', 0),
+        'keep_alive' => env('MQTT_KEEP_ALIVE', 10),
+        'connect_timeout' => env('MQTT_CONNECT_TIMEOUT', 60),
+        'socket_timeout' => env('MQTT_SOCKET_TIMEOUT', 5),
+    ],
+
 ];

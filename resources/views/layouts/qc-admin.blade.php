@@ -1464,8 +1464,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             if (!isset($p) || !is_callable($p)) {
                 $p = fn ($path = '') => url($path);
             }
-            $isEnergyMonitoringMenuActive = request()->routeIs('modules.load-tracking.*')
-                || request()->routeIs('modules.energy-monitoring.*')
+            $isEnergyMonitoringMenuActive = request()->routeIs('modules.energy-monitoring.*')
                 || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.submeters.*');
@@ -1490,7 +1489,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                        <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -1523,7 +1521,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                                 <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
                                 <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
                                 <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                                <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>

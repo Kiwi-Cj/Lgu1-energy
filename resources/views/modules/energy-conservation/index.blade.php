@@ -526,36 +526,6 @@
             </div>
         </section>
 
-        <aside class="conservation-panel">
-            <div class="panel-head">
-                <div>
-                    <h2 class="panel-title">High Load Equipment</h2>
-                    <div class="panel-note">Largest estimated monthly kWh</div>
-                </div>
-                <a class="panel-link" href="{{ route('modules.load-tracking.index', ['month' => $selectedMonth]) }}">
-                    <i class="fa-solid fa-list"></i> View full list
-                </a>
-            </div>
-            <div class="side-list equipment-compact-list">
-                @forelse($topEquipment->take(5) as $equipment)
-                    <div class="equipment-compact-item">
-                        <div>
-                            <div class="equipment-compact-title">{{ $equipment['equipment_name'] }}</div>
-                            <div class="equipment-compact-meta">
-                                {{ $equipment['facility_name'] }}<br>
-                                {{ $equipment['scope_label'] }}: {{ $equipment['meter_name'] }}
-                            </div>
-                        </div>
-                        <div class="equipment-compact-kwh">{{ number_format((float) $equipment['estimated_kwh'], 2) }} kWh/mo</div>
-                    </div>
-                @empty
-                    <div class="empty-state">No equipment inventory yet.</div>
-                @endforelse
-                @if($topEquipment->count() > 5)
-                    <div class="equipment-limit-note">Showing top 5 of {{ number_format($topEquipment->count()) }} high-load equipment items.</div>
-                @endif
-            </div>
-        </aside>
     </div>
 
     @if($facilitiesWithoutCurrentRecord->isNotEmpty())

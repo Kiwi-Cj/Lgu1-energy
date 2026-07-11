@@ -172,7 +172,4 @@
     <a href="{{ route('modules.submeters.monitoring') }}" class="ems-tab{{ $energyTab === 'sub' ? ' active' : '' }}">
         <i class="fa-solid fa-network-wired"></i> Submeter
     </a>
-    <a href="{{ route('modules.load-tracking.index') }}" class="ems-tab{{ $energyTab === 'load' ? ' active' : '' }}">
-        <i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking
-    </a>
 </div>

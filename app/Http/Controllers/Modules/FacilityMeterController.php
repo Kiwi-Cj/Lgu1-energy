@@ -55,7 +55,7 @@ class FacilityMeterController extends Controller
 
     private function canManageEquipment(): bool
     {
-        return $this->canManage() || RoleAccess::can(auth()->user(), 'manage_load_tracking');
+        return $this->canManage();
     }
 
     private function validateMeter(Request $request, int $facilityId, ?int $meterId = null): array
@@ -301,7 +301,7 @@ class FacilityMeterController extends Controller
         $validated['facility_id'] = $facility->id;
 
         $meter = FacilityMeter::create($validated);
-        $this->syncLoadTrackingSubmeter($meter);
+        $this->syncLinkedSubmeterInventory($meter);
 
         return $this->redirectAfterMutation($request, $facility, 'Meter added successfully and is pending approval.');
     }
@@ -319,7 +319,7 @@ class FacilityMeterController extends Controller
         $previousType = (string) $meter->meter_type;
         $validated = $this->validateMeter($request, (int) $facility->id, (int) $meter->id);
         $meter->update($validated);
-        $this->syncLoadTrackingSubmeter($meter, $previousType === 'sub' ? $previousName : null);
+        $this->syncLinkedSubmeterInventory($meter, $previousType === 'sub' ? $previousName : null);
 
         return $this->redirectAfterMutation($request, $facility, 'Meter updated successfully.');
     }
@@ -341,7 +341,7 @@ class FacilityMeterController extends Controller
         $meter->deleted_by = auth()->id();
         $meter->archive_reason = $archiveReason;
         $meter->saveQuietly();
-        $this->syncLoadTrackingSubmeter($meter->forceFill(['status' => 'inactive']));
+        $this->syncLinkedSubmeterInventory($meter->forceFill(['status' => 'inactive']));
         $meter->delete();
 
         return $this->redirectAfterMutation($request, $facility, 'Meter moved to archive.');
@@ -506,7 +506,7 @@ class FacilityMeterController extends Controller
             ->with('success', 'Meter permanently deleted.');
     }
 
-    private function syncLoadTrackingSubmeter(FacilityMeter $meter, ?string $previousName = null): void
+    private function syncLinkedSubmeterInventory(FacilityMeter $meter, ?string $previousName = null): void
     {
         $currentType = strtolower((string) ($meter->meter_type ?? ''));
         $currentName = trim((string) ($meter->meter_name ?? ''));

@@ -439,7 +439,7 @@ class UsersController extends Controller
             'staff' => [
                 'name' => 'Staff',
                 'description' => 'Limited access for facility-level data entry and daily operational updates.',
-                'permissions' => ['access_reports', 'encode_submeter_readings', 'encode_main_meter_readings', 'view_submeter_alerts', 'view_main_meter_alerts', 'view_load_tracking', 'manage_load_tracking'],
+                'permissions' => ['access_reports', 'encode_submeter_readings', 'encode_main_meter_readings', 'view_submeter_alerts', 'view_main_meter_alerts'],
                 'badge_color' => '#6b7280',
                 'is_system' => true,
             ],

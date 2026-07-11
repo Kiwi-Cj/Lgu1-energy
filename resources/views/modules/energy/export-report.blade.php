@@ -25,7 +25,8 @@
     <!-- Export Card -->
     <div style="background:linear-gradient(120deg,#f5f8ff 60%,#e0e7ff 100%);border-radius:20px;padding:2.5rem 2rem 2rem 2rem;box-shadow:0 8px 32px rgba(55,98,200,0.10);">
         <!-- Filters -->
-        <form method="GET" action="{{ url('/modules/energy/export-excel') }}" data-secure-download-form>
+        <form method="GET" action="{{ url('/modules/energy/export-excel') }}" data-secure-download-form id="coaExportForm">
+            <input type="hidden" name="format" id="coaExportFormat" value="xlsx">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;align-items:end;">
                 <div>
                     <label style="font-weight:700;color:#3762c8;letter-spacing:0.2px;margin-bottom:0.4rem;display:block;">From Date</label>
@@ -54,7 +55,10 @@
                     <i class="fa-solid fa-file-pdf"></i> Download PDF
                 </a>
                 @if($userRole !== 'staff')
-                <button type="submit" class="btn btn-success" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #22c55e0a;display:flex;align-items:center;gap:8px;">
+                <button type="submit" class="btn btn-success" onclick="document.getElementById('coaExportFormat').value='csv';" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #22c55e0a;display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-file-csv"></i> Download CSV
+                </button>
+                <button type="submit" class="btn btn-primary" onclick="document.getElementById('coaExportFormat').value='xlsx';" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #3b82f60a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </button>
                 @endif

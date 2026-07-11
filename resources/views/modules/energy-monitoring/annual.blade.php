@@ -30,6 +30,11 @@
         box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
     }
 
+    .annual-btn-csv {
+        background: linear-gradient(90deg, #0f766e, #14b8a6);
+        box-shadow: 0 6px 16px rgba(20, 184, 166, 0.22);
+    }
+
     .annual-btn-pdf {
         background: linear-gradient(90deg, #be123c, #e11d48);
         box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25);
@@ -101,9 +106,9 @@
             </a>
             @if($roleKey !== 'staff')
             <a href="{{ route('modules.energy.annual.export-excel', request()->query()) }}"
-               class="annual-btn-action annual-btn-excel"
+               class="annual-btn-action annual-btn-csv"
                data-secure-download>
-                <i class="fa fa-download"></i> Export Excel
+                <i class="fa fa-file-text-o"></i> Export CSV
             </a>
             @endif
         </div>
