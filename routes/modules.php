@@ -1,14 +1,11 @@
 <?php
 
 use App\Http\Controllers\Modules\AuditLogController;
-use App\Http\Controllers\Modules\ChatbotController;
 use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\EnergyConservationController;
 use App\Http\Controllers\Modules\FacilityController;
 use App\Http\Controllers\Modules\FacilityMeterController;
-use App\Http\Controllers\Modules\LoadTrackingController;
-use App\Http\Controllers\Modules\MainMeterMonitoringController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\Modules\SubmeterMonitoringController;
 use App\Support\EnergyCost;
@@ -68,25 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
-
-    // Load Tracking (equipment-level under submeters)
-    Route::get('/modules/load-tracking', [LoadTrackingController::class, 'index'])->name('modules.load-tracking.index');
-    Route::post('/modules/load-tracking/equipment', [LoadTrackingController::class, 'store'])->name('modules.load-tracking.equipment.store');
-    Route::put('/modules/load-tracking/equipment/{equipment}', [LoadTrackingController::class, 'update'])->name('modules.load-tracking.equipment.update');
-    Route::delete('/modules/load-tracking/equipment/{equipment}', [LoadTrackingController::class, 'destroy'])->name('modules.load-tracking.equipment.destroy');
-    Route::post('/modules/load-tracking/equipment/{equipment}/files', [LoadTrackingController::class, 'uploadFile'])->name('modules.load-tracking.equipment.files.upload');
-    Route::get('/modules/load-tracking/equipment/{equipment}/files/{file}', [LoadTrackingController::class, 'downloadFile'])->name('modules.load-tracking.equipment.files.download');
-    Route::delete('/modules/load-tracking/equipment/{equipment}/files/{file}', [LoadTrackingController::class, 'destroyFile'])->name('modules.load-tracking.equipment.files.destroy');
-
-    // Main Meter Monitoring and Alerts
-    Route::get('/modules/main-meter/monitoring', [MainMeterMonitoringController::class, 'index'])->name('modules.main-meter.monitoring');
-    Route::post('/modules/main-meter/readings', [MainMeterMonitoringController::class, 'store'])->name('modules.main-meter.readings.store');
-    Route::post('/modules/main-meter/readings/simulate-iot', [MainMeterMonitoringController::class, 'simulateIotReading'])->name('modules.main-meter.readings.simulate-iot');
-    Route::post('/modules/main-meter/readings/{reading}/approve', [MainMeterMonitoringController::class, 'approve'])->name('modules.main-meter.readings.approve');
-    Route::get('/modules/main-meter/alerts', [MainMeterMonitoringController::class, 'alerts'])->name('modules.main-meter.alerts');
-    Route::get('/modules/main-meter/reports/monthly', [MainMeterMonitoringController::class, 'monthlyReport'])->name('modules.main-meter.reports.monthly');
-    Route::get('/modules/main-meter/reports/baseline-comparison', [MainMeterMonitoringController::class, 'baselineComparisonReport'])->name('modules.main-meter.reports.baseline-comparison');
-    Route::get('/modules/main-meter/reports/demand-spikes', [MainMeterMonitoringController::class, 'demandSpikeReport'])->name('modules.main-meter.reports.demand-spikes');
+    Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -894,10 +873,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('modules.reports.energy');
     Route::get('/modules/reports/facilities', fn() => redirect()->route('modules.reports.energy'))->name('modules.reports.facilities');
 
-    // Chatbot
-    Route::get('/modules/chatbot', [ChatbotController::class, 'index'])->name('modules.chatbot.index');
-    Route::post('/modules/chatbot/respond', [ChatbotController::class, 'respond'])->name('modules.chatbot.respond');
-
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');
     Route::get('/modules/audit/index', [AuditLogController::class, 'index'])->name('modules.audit.index');
@@ -1074,32 +1049,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             return [(int) $meter->id => $linkedSubmeterId ? (int) $linkedSubmeterId : null];
         });
-        $subMeterLoadTrackingMap = $subMeterOptions->mapWithKeys(function ($meter) use ($facilityModel, $submeterNameToIdMap, $normalizeName) {
-            $nameKey = $normalizeName((string) $meter->meter_name);
-            $linkedSubmeterId = $submeterNameToIdMap->get($nameKey);
-            if (! $linkedSubmeterId) {
-                return [];
-            }
-
-            return [
-                (int) $meter->id => route('modules.load-tracking.index', [
-                    'month' => now()->format('Y-m'),
-                    'facility_id' => $facilityModel->id,
-                    'meter_scope' => 'sub',
-                    'submeter_id' => $linkedSubmeterId,
-                ]),
-            ];
-        });
-        $mainMeterLoadTrackingMap = $mainMeters->mapWithKeys(function ($meter) use ($facilityModel) {
-            return [
-                (int) $meter->id => route('modules.load-tracking.index', [
-                    'month' => now()->format('Y-m'),
-                    'facility_id' => $facilityModel->id,
-                    'meter_scope' => 'main',
-                    'main_meter_id' => (int) $meter->id,
-                ]),
-            ];
-        });
         $submeterToFacilityMeterIdMap = $subMeterEntityIdMap
             ->filter(fn ($submeterId) => ! empty($submeterId))
             ->mapWithKeys(fn ($submeterId, $facilityMeterId) => [(int) $submeterId => (int) $facilityMeterId]);
@@ -1195,7 +1144,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()->where('facility_id', $facilityModel->id)->count();
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
-        $canManageLoadTracking = \App\Support\RoleAccess::can($user, 'manage_load_tracking');
         // 3-Month average update logic removed
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
@@ -1204,9 +1152,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'mainMeters',
             'subMeterOptions',
             'subMeterEntityIdMap',
-            'subMeterLoadTrackingMap',
             'subMetersByParentMainId',
-            'mainMeterLoadTrackingMap',
             'equipmentByMeterKey',
             'parentMeterOptions',
             'activeMeterCount',
@@ -1215,8 +1161,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'unapprovedMeterCount',
             'archivedMeterCount',
             'canManageMeters',
-            'canApproveMeters',
-            'canManageLoadTracking'
+            'canApproveMeters'
         ));
     })->name('modules.facilities.energy-profile.index');
 

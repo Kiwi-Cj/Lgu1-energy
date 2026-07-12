@@ -43,12 +43,6 @@
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                @if($submeterEntity)
-                    <a href="{{ route('modules.load-tracking.index', ['month' => now()->format('Y-m'), 'facility_id' => $facility->id, 'meter_scope' => 'sub', 'submeter_id' => (int) $submeterEntity->id]) }}"
-                       style="text-decoration:none;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fa fa-chart-line"></i> Open in Load Tracking
-                    </a>
-                @endif
                 <a href="{{ $backUrl }}"
                    style="text-decoration:none;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:10px;padding:9px 12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
                     <i class="fa fa-arrow-left"></i> Back

@@ -60,6 +60,40 @@
         max-width: 760px;
     }
 
+    .eff-actions {
+        display: inline-flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .eff-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 0.86rem;
+        border-radius: 10px;
+        padding: 10px 14px;
+        white-space: nowrap;
+    }
+
+    .eff-btn-csv {
+        background: linear-gradient(90deg, #0f766e, #14b8a6);
+        box-shadow: 0 6px 16px rgba(20, 184, 166, 0.22);
+    }
+
+    .eff-btn-xlsx {
+        background: linear-gradient(90deg, #15803d, #16a34a);
+        box-shadow: 0 6px 16px rgba(22, 163, 74, 0.22);
+    }
+
+    .eff-btn-pdf {
+        background: linear-gradient(90deg, #be123c, #e11d48);
+        box-shadow: 0 6px 16px rgba(225, 29, 72, 0.22);
+    }
+
     .eff-help b {
         color: #0f172a;
     }
@@ -302,6 +336,15 @@
     body.dark-mode .eff-help .formula {
         color: #7dd3fc;
     }
+    body.dark-mode .eff-btn-csv {
+        background: linear-gradient(90deg, #115e59, #0f766e);
+    }
+    body.dark-mode .eff-btn-xlsx {
+        background: linear-gradient(90deg, #14532d, #15803d);
+    }
+    body.dark-mode .eff-btn-pdf {
+        background: linear-gradient(90deg, #9f1239, #be123c);
+    }
     body.dark-mode .eff-kpi {
         border-color: #334155;
         box-shadow: none;
@@ -456,6 +499,19 @@
                     <b>Low</b> if EUI &gt;= 10.
                 </div>
             </div>
+            @if(($role ?? '') !== 'staff')
+                <div class="eff-actions">
+                    <a href="{{ route('reports.efficiency-summary-export', array_merge(request()->query(), ['format' => 'csv'])) }}" class="eff-btn eff-btn-csv" data-secure-download>
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </a>
+                    <a href="{{ route('reports.efficiency-summary-export', array_merge(request()->query(), ['format' => 'xlsx'])) }}" class="eff-btn eff-btn-xlsx" data-secure-download>
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
+                    </a>
+                    <a href="{{ route('reports.efficiency-summary-export', array_merge(request()->query(), ['format' => 'pdf'])) }}" class="eff-btn eff-btn-pdf" data-secure-download>
+                        <i class="fa-solid fa-file-pdf"></i> Export PDF
+                    </a>
+                </div>
+            @endif
         </div>
 
         <div class="eff-kpis">

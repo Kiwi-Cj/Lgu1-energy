@@ -264,10 +264,10 @@ class FacilityController extends Controller
     public function equipmentInventory(Request $request, Facility $facility)
     {
         $user = $request->user();
-        $canViewInventory = RoleAccess::can($user, 'view_load_tracking')
+        $canViewInventory = RoleAccess::can($user, 'manage_facility_master')
             || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer']);
-        $canManageInventory = RoleAccess::can($user, 'manage_load_tracking')
-            || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff']);
+        $canManageInventory = RoleAccess::can($user, 'manage_facility_master')
+            || RoleAccess::in($user, ['super_admin', 'admin']);
 
         if (! $canViewInventory) {
             return redirect()->route('modules.facilities.index')

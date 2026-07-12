@@ -1,54 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</title>
+    <title>Session Expired</title>
     <style>
-        .error-btn {
-            display: inline-block;
-            margin-bottom: 10px;
-            padding: 10px 28px;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.08rem;
-            text-decoration: none;
-            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-            cursor: pointer;
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .error-btn.primary {
-            background: linear-gradient(90deg,#6366f1,#2563eb);
+        .session-modal-card {
+            width: 100%;
+            max-width: 430px;
+            background: #fff;
+            border-radius: 22px;
+            padding: 40px 34px 32px;
+            text-align: center;
+            box-shadow: 0 18px 60px rgba(15, 23, 42, 0.16);
+        }
+        .session-modal-icon {
+            width: 78px;
+            height: 78px;
+            margin: 0 auto 14px;
+            border-radius: 24px;
+            display: grid;
+            place-items: center;
+            color: #e11d48;
+            background: #fff1f2;
+            font-size: 2rem;
+        }
+        .session-modal-title {
+            font-size: 1.55rem;
+            font-weight: 900;
+            color: #e11d48;
+            margin-bottom: 10px;
+        }
+        .session-modal-copy {
+            color: #334155;
+            line-height: 1.55;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .session-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .session-modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 132px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 800;
+        }
+        .session-modal-btn.primary {
+            background: linear-gradient(90deg,#2563eb,#6366f1);
             color: #fff;
         }
-        .error-btn.primary:hover {
-            background: linear-gradient(90deg,#2563eb,#6366f1);
-            box-shadow: 0 2px 12px rgba(37,99,235,0.18);
-        }
-        .error-btn.secondary {
-            background: #f3f4f6;
-            color: #2563eb;
-        }
-        .error-btn.secondary:hover {
-            background: #e0e7ff;
-            color: #1e40af;
-            box-shadow: 0 2px 12px rgba(99,102,241,0.10);
+        .session-modal-btn.secondary {
+            background: #f8fafc;
+            color: #1d4ed8;
+            border: 1px solid #cbd5e1;
         }
     </style>
 </head>
-<body style="margin:0;padding:0;min-height:100vh;width:100vw;box-sizing:border-box;">
-    <div style="min-height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f8fafc 0%,#e0e7ff 100%);font-family:'Inter',sans-serif;">
-        <div style="width:100%;max-width:420px;padding:48px 36px 40px 36px;background:#fff;border-radius:22px;box-shadow:0 8px 32px rgba(37,99,235,0.10);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
-            <div style="font-size:4.5rem;font-weight:900;color:#6366f1;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;">419</div>
-            <div style="font-size:2rem;font-weight:700;color:#1e293b;margin-bottom:10px;">{{ __('Page Expired') }}</div>
-            <!-- Removed default session expired message as requested -->
-            <div style="font-size:1.15rem;color:#1e293b;margin-bottom:18px;font-weight:600;letter-spacing:0.01em;text-shadow:0 1px 8px #e0e7ff;">{{ __('You have been logged out because there was no activity or interaction for a period of time.') }}</div>
-            <a href="{{ url('/') }}" class="error-btn primary">Go to Home</a>
-            <a href="{{ route('login') }}" class="error-btn secondary" style="margin-left:8px;">Login</a>
-            @if (request()->is('logout'))
-                <div style="margin-top:18px;font-size:1rem;color:#64748b;">You have been logged out. Please log in again.</div>
-            @endif
+<body>
+    <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionExpiredTitle">
+        <div class="session-modal-icon">🔒</div>
+        <div id="sessionExpiredTitle" class="session-modal-title">Session Ended for Security</div>
+        <div class="session-modal-copy">
+            Your session has expired because there was no activity for a period of time.
+            Please sign in again to continue using the system.
+        </div>
+        <div class="session-modal-actions">
+            <a href="{{ route('login') }}" class="session-modal-btn primary">Continue to Login</a>
+            <a href="{{ url('/') }}" class="session-modal-btn secondary">Go to Home</a>
         </div>
     </div>
 </body>

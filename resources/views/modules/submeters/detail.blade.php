@@ -16,10 +16,6 @@
             <div style="margin-top:4px;color:#64748b;">Facility: <strong style="color:#1e293b;">{{ $submeter->facility?->name }}</strong> | Type: {{ strtoupper($periodType) }}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="{{ route('modules.load-tracking.index', ['month' => ($loadTrackingMonth ?? now()->format('Y-m')), 'facility_id' => $submeter->facility_id, 'submeter_id' => $submeter->id]) }}"
-               style="text-decoration:none;background:#eff6ff;color:#1d4ed8;padding:10px 14px;border-radius:10px;border:1px solid #bfdbfe;font-weight:700;">
-                View Equipment
-            </a>
             <a href="{{ route('modules.submeters.monitoring') }}" style="text-decoration:none;background:#f1f5f9;color:#334155;padding:10px 14px;border-radius:10px;font-weight:700;">
                 Back to Monitoring
             </a>

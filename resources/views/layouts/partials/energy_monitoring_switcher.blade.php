@@ -169,13 +169,7 @@
     <a href="{{ route('modules.energy-monitoring.index') }}" class="ems-tab{{ $energyTab === 'facility' ? ' active' : '' }}">
         <i class="fa-solid fa-building"></i> Facility Monitoring
     </a>
-    <a href="{{ route('modules.main-meter.monitoring') }}" class="ems-tab{{ $energyTab === 'main' ? ' active' : '' }}">
-        <i class="fa-solid fa-bolt"></i> Main Meter
-    </a>
     <a href="{{ route('modules.submeters.monitoring') }}" class="ems-tab{{ $energyTab === 'sub' ? ' active' : '' }}">
         <i class="fa-solid fa-network-wired"></i> Submeter
-    </a>
-    <a href="{{ route('modules.load-tracking.index') }}" class="ems-tab{{ $energyTab === 'load' ? ' active' : '' }}">
-        <i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking
     </a>
 </div>

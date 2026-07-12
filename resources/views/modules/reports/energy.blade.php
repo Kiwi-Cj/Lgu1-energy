@@ -32,6 +32,8 @@
     if (! request()->has('month') && $selectedMonthValue !== '') {
         $exportFilters['month'] = $selectedMonthValue;
     }
+    $exportCsvFilters = array_merge($exportFilters, ['format' => 'csv']);
+    $exportXlsxFilters = array_merge($exportFilters, ['format' => 'xlsx']);
 @endphp
 
 @section('content')
@@ -90,6 +92,11 @@
 .btn-excel {
     background: linear-gradient(90deg, #15803d, #16a34a);
     box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
+}
+
+.btn-csv {
+    background: linear-gradient(90deg, #0f766e, #14b8a6);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.22);
 }
 
 .btn-pdf {
@@ -403,6 +410,7 @@ body.dark-mode .kpi-actual { background: rgba(14, 116, 144, 0.2); color: #67e8f9
 body.dark-mode .kpi-baseline { background: rgba(51, 65, 85, 0.32); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.25); }
 body.dark-mode .kpi-var { background: rgba(194, 65, 12, 0.2); color: #fdba74; border-color: rgba(251, 146, 60, 0.28); }
 body.dark-mode .kpi-trend { background: rgba(22, 101, 52, 0.24); color: #86efac; border-color: rgba(74, 222, 128, 0.25); }
+body.dark-mode .btn-csv { background: linear-gradient(90deg, #115e59, #0f766e); }
 body.dark-mode .energy-filters,
 body.dark-mode .energy-table-wrap { background: #111827; border-color: #1f2937; }
 body.dark-mode .filter-group label { color: #cbd5e1; }
@@ -495,7 +503,10 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
             </div>
             <div class="energy-actions">
                 @if($roleKey !== 'staff')
-                <a href="{{ route('reports.energy-export', $exportFilters) }}" class="btn-action btn-excel" data-secure-download>
+                <a href="{{ route('reports.energy-export', $exportCsvFilters) }}" class="btn-action btn-csv" data-secure-download>
+                    <i class="fa fa-file-text-o"></i> Export CSV
+                </a>
+                <a href="{{ route('reports.energy-export', $exportXlsxFilters) }}" class="btn-action btn-excel" data-secure-download>
                     <i class="fa fa-download"></i> Export Excel
                 </a>
                 @endif

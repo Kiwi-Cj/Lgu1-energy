@@ -1424,29 +1424,32 @@ if (document.documentElement.classList.contains('dark-mode')) {
             <i id="darkModeIcon" class="fa fa-moon"></i>
         </button>
 
-        <div class="header-user user-menu-wrap">
-            <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
-                <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar">
-                <span class="user-name">{{ $currentUserName }}</span>
-                <i class="fa fa-caret-down user-menu-caret"></i>
-            </button>
-            <div id="userDropdown" class="user-dropdown">
-                <div class="user-dropdown-head">
-                    <div class="user-dropdown-name">{{ $currentUserName }}</div>
-                    <div class="user-dropdown-role">{{ $currentUserRole }}</div>
+        @auth
+            <div class="header-user user-menu-wrap">
+                <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
+                    <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar">
+                    <span class="user-name">{{ $currentUserName }}</span>
+                    <i class="fa fa-caret-down user-menu-caret"></i>
+                </button>
+                <div id="userDropdown" class="user-dropdown">
+                    <div class="user-dropdown-head">
+                        <div class="user-dropdown-name">{{ $currentUserName }}</div>
+                        <div class="user-dropdown-role">{{ $currentUserRole ?: 'Guest' }}</div>
+                    </div>
+                    <a href="{{ route('profile.show') }}" class="user-dropdown-link">
+                        <i class="fa fa-user"></i> My Profile
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="logout-btn">Logout</button>
+                    </form>
                 </div>
-                <a href="{{ route('profile.show') }}" class="user-dropdown-link">
-                    <i class="fa fa-user"></i> My Profile
-                </a>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="logout-btn">Logout</button>
-                </form>
             </div>
-        </div>
+        @endauth
     </div>
 </header>
 
+@auth
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
         <div class="site-logo">
@@ -1461,11 +1464,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
             if (!isset($p) || !is_callable($p)) {
                 $p = fn ($path = '') => url($path);
             }
-            $isEnergyMonitoringMenuActive = request()->routeIs('modules.load-tracking.*')
-                || request()->routeIs('modules.energy-monitoring.*')
+            $isEnergyMonitoringMenuActive = request()->routeIs('modules.energy-monitoring.*')
                 || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('energy.dashboard')
-                || request()->routeIs('modules.main-meter.*')
                 || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
                 || request()->routeIs('modules.reports.*')
@@ -1487,9 +1488,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     <ul class="nav-submenu">
                         <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
-                        <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                        <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
                         <!-- Removed Export Report submenu -->
                        
                     </ul>
@@ -1507,7 +1506,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
-                <li><a href="{{ route('modules.chatbot.index') }}" class="nav-link{{ request()->routeIs('modules.chatbot.index') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Chatbot</a></li>
             @else
                 <!-- ...existing code for other roles... -->
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
@@ -1522,9 +1520,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             <ul class="nav-submenu">
                                 <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
                                 <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
-                                <li><a href="{{ route('modules.main-meter.monitoring') }}" class="nav-link{{ request()->routeIs('modules.main-meter.monitoring') ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Main Meter</a></li>
                                 <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                                <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Load Tracking</a></li>
                                 <!-- Removed Export Report sidebar link -->
                              
                             </ul>
@@ -1546,7 +1542,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                         </ul>
                     </li>
-                    <li><a href="{{ route('modules.chatbot.index') }}" class="nav-link{{ request()->routeIs('modules.chatbot.index') ? ' active' : '' }}"><i class="fa-solid fa-robot"></i> Chatbot</a></li>
                 @endif
             @endif
 
@@ -1562,14 +1557,15 @@ if (document.documentElement.classList.contains('dark-mode')) {
     </div>
 
     <div class="user-info">
-        Welcome, {{ auth()->user()?->username ?? auth()->user()?->name ?? 'User' }}<br>
-        <small style="color:#666;font-size:0.8rem;">{{ ucwords(str_replace('_', ' ', (string) ($role ?? auth()->user()?->role_key ?? 'User'))) }}</small>
+        Welcome, {{ auth()->user()?->username ?? auth()->user()?->name ?? 'Guest' }}<br>
+        <small style="color:#666;font-size:0.8rem;">{{ ucwords(str_replace('_', ' ', (string) ($role ?: auth()->user()?->role_key ?: 'Guest'))) }}</small>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="logout-btn">Logout</button>
         </form>
     </div>
 </div>
+@endauth
 
 <div class="main-content">
     <div class="main-content-inner">

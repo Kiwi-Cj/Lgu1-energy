@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToFacility;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class MainMeterReading extends Model
 {
     use HasFactory;
+    use BelongsToFacility;
+
+    protected $table = 'main_meter_readings';
 
     protected $fillable = [
         'facility_id',
@@ -19,8 +22,6 @@ class MainMeterReading extends Model
         'reading_start_kwh',
         'reading_end_kwh',
         'operating_days',
-        'peak_demand_kw',
-        'power_factor',
         'input_source',
         'device_id',
         'received_at',
@@ -32,38 +33,11 @@ class MainMeterReading extends Model
     protected $casts = [
         'period_start_date' => 'date',
         'period_end_date' => 'date',
-        'approved_at' => 'datetime',
         'reading_start_kwh' => 'decimal:2',
         'reading_end_kwh' => 'decimal:2',
-        'kwh_used' => 'decimal:2',
-        'peak_demand_kw' => 'decimal:2',
-        'power_factor' => 'decimal:4',
         'received_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
-
-    protected static function booted(): void
-    {
-        static::saving(function (self $reading) {
-            if ($reading->period_start_date && $reading->period_end_date) {
-                $start = Carbon::parse($reading->period_start_date);
-                $end = Carbon::parse($reading->period_end_date);
-                if ($start->greaterThan($end)) {
-                    throw new \InvalidArgumentException('Period start date cannot be later than period end date.');
-                }
-            }
-
-            if ($reading->reading_end_kwh !== null && $reading->reading_start_kwh !== null
-                && (float) $reading->reading_end_kwh < (float) $reading->reading_start_kwh
-            ) {
-                throw new \InvalidArgumentException('Ending kWh reading must be greater than or equal to starting kWh.');
-            }
-        });
-    }
-
-    public function scopeApproved(Builder $query): Builder
-    {
-        return $query->whereNotNull('approved_at');
-    }
 
     public function facility()
     {
@@ -80,9 +54,18 @@ class MainMeterReading extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function alert()
+    public function scopeApproved($query)
     {
-        return $this->hasOne(MainMeterAlert::class, 'main_meter_reading_id');
+        return $query->whereNotNull('approved_at');
+    }
+
+    public function getKwhUsedAttribute(): ?float
+    {
+        if ($this->reading_start_kwh === null || $this->reading_end_kwh === null) {
+            return null;
+        }
+
+        return round((float) $this->reading_end_kwh - (float) $this->reading_start_kwh, 2);
     }
 
     public function periodLabel(): string
@@ -91,6 +74,14 @@ class MainMeterReading extends Model
             ? $this->period_end_date
             : Carbon::parse($this->period_end_date);
 
-        return $endDate->format('Y-m');
+        if ($this->period_type === 'monthly') {
+            return $endDate->format('Y-m');
+        }
+
+        if ($this->period_type === 'weekly') {
+            return sprintf('%s-W%s', $endDate->format('o'), $endDate->format('W'));
+        }
+
+        return $endDate->format('Y-m-d');
     }
 }

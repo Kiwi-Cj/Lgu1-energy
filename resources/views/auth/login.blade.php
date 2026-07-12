@@ -213,6 +213,83 @@
             transform: translateY(0) scale(0.98);
         }
 
+        .session-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.62);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .session-modal-card {
+            width: 100%;
+            max-width: 430px;
+            background: #fff;
+            border-radius: 22px;
+            padding: 40px 34px 32px;
+            text-align: center;
+            box-shadow: 0 18px 60px rgba(15, 23, 42, 0.32);
+        }
+
+        .session-modal-icon {
+            width: 78px;
+            height: 78px;
+            margin: 0 auto 14px;
+            border-radius: 24px;
+            display: grid;
+            place-items: center;
+            color: #e11d48;
+            background: #fff1f2;
+            font-size: 2rem;
+        }
+
+        .session-modal-title {
+            font-size: 1.55rem;
+            font-weight: 900;
+            color: #e11d48;
+            margin-bottom: 10px;
+        }
+
+        .session-modal-copy {
+            color: #334155;
+            line-height: 1.55;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .session-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .session-modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 132px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .session-modal-btn.primary {
+            background: linear-gradient(90deg,#2563eb,#6366f1);
+            color: #fff;
+        }
+
+        .session-modal-btn.secondary {
+            background: #f8fafc;
+            color: #1d4ed8;
+            border: 1px solid #cbd5e1;
+        }
+
         .modern-spinner {
             animation: spinner-rotate 0.9s linear infinite;
             margin-right: 6px;
@@ -328,6 +405,21 @@
 
 @include('auth.partials.otp-modal-auto')
 
+<div id="sessionEndedModal" class="session-modal-backdrop" aria-hidden="true">
+    <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionEndedTitle">
+        <div class="session-modal-icon"><i class="fa fa-lock"></i></div>
+        <div id="sessionEndedTitle" class="session-modal-title">Session Ended for Security</div>
+        <div class="session-modal-copy">
+            Your session has ended and you need to sign in again to continue.
+            This keeps your account and portal access protected.
+        </div>
+        <div class="session-modal-actions">
+            <a href="{{ route('login') }}" class="session-modal-btn primary">Continue to Login</a>
+            <a href="{{ url('/') }}" class="session-modal-btn secondary">Go to Home</a>
+        </div>
+    </div>
+</div>
+
 <footer class="footer">
     <div class="footer-links">
         <a href="#">Privacy Policy</a>
@@ -420,6 +512,12 @@
     window.addEventListener('DOMContentLoaded', () => {
         const otpModal = document.getElementById('otpModalAuto');
         if (otpModal) otpModal.style.display = 'none';
+
+        const sessionEndedModal = document.getElementById('sessionEndedModal');
+        const showSessionEndedModal = @json((bool) session('session_ended_modal'));
+        if (sessionEndedModal && showSessionEndedModal) {
+            sessionEndedModal.style.display = 'flex';
+        }
 
         // Patch: Reset login button if OTP modal is closed (user clicks back/close)
         window.closeOtpModalAuto = function() {

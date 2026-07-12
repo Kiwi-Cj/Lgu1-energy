@@ -10,8 +10,6 @@
     $subMeterOptions = $subMeterOptions ?? collect();
     $subMetersByParentMainId = $subMetersByParentMainId ?? collect();
     $subMeterEntityIdMap = $subMeterEntityIdMap ?? collect();
-    $subMeterLoadTrackingMap = $subMeterLoadTrackingMap ?? collect();
-    $mainMeterLoadTrackingMap = $mainMeterLoadTrackingMap ?? collect();
     $equipmentByMeterKey = $equipmentByMeterKey ?? collect();
     $parentMeterOptions = $parentMeterOptions ?? collect();
     $parentMeterMap = collect($parentMeterOptions)->keyBy('id');
@@ -22,7 +20,6 @@
     $archivedMeterCount = $archivedMeterCount ?? 0;
     $canManageMeters = $canManageMeters ?? false;
     $canApproveMeters = $canApproveMeters ?? false;
-    $canManageLoadTracking = $canManageLoadTracking ?? false;
     $hasApprovedMainForSub = $mainMeterOptions->isNotEmpty();
 @endphp
 
@@ -989,7 +986,7 @@
                             $isActiveMeter = strtolower((string) ($meter->status ?? 'active')) === 'active';
                             $approvalState = $meter->approved_at ? 'approved' : 'not_approved';
                             $approvalText = $approvalState === 'approved' ? 'APPROVED' : 'NOT APPROVED';
-                            $mainEquipmentUrl = (string) ($mainMeterLoadTrackingMap[$meter->id] ?? '');
+                            $mainEquipmentUrl = '';
                             $linkedSubMeters = collect($subMetersByParentMainId->get((int) $meter->id, collect()));
                             $linkedSubNames = $linkedSubMeters->pluck('meter_name')
                                 ->filter(fn ($name) => trim((string) $name) !== '')

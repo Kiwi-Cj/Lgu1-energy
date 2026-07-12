@@ -20,7 +20,5 @@ return [
         'encode_main_meter_readings' => ['super_admin', 'admin', 'energy_officer', 'staff'],
         'approve_main_meter_readings' => ['super_admin', 'admin', 'energy_officer', 'engineer'],
         'view_main_meter_alerts' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
-        'view_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
-        'manage_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'staff'],
     ],
 ];
