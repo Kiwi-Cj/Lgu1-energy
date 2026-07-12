@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
+use App\Models\ContactMessage;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
-use App\Models\SubmeterEquipment;
 use App\Support\EnergyCost;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
@@ -16,9 +16,52 @@ class EnergyConservationController extends Controller
 {
     public function index(Request $request)
     {
+        return $this->renderOverview($request);
+    }
+
+    public function feature(Request $request, string $feature)
+    {
+        $features = $this->featureCatalog();
+        $selected = $features[$feature] ?? null;
+        if (! $selected) {
+            return redirect()->route('modules.energy-conservation.index')->with('error', 'Feature not found.');
+        }
+
+        $overview = $this->buildOverviewData($request);
+        $selectedFacilityId = (int) $request->query('facility_id', 0);
+        $selectedFacility = $overview['facilities']->firstWhere('id', $selectedFacilityId);
+
+        return view('modules.energy-conservation.feature', [
+            'selectedMonth' => $overview['selectedMonth'],
+            'featureSlug' => $feature,
+            'feature' => $selected,
+            'featureCatalog' => $features,
+            'overview' => $overview,
+            'selectedFacility' => $selectedFacility,
+            'selectedFacilityId' => $selectedFacilityId,
+        ]);
+    }
+
+    private function renderOverview(Request $request)
+    {
         $user = $request->user();
         if (! RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'])) {
             return redirect()->route('dashboard.index')->with('error', 'You do not have permission to view energy conservation.');
+        }
+
+        $catalog = $this->featureCatalog();
+
+        return view('modules.energy-conservation.index', [
+            'selectedMonth' => (string) $request->query('month', now()->format('Y-m')),
+            'featureCatalog' => $catalog,
+        ]);
+    }
+
+    private function buildOverviewData(Request $request): array
+    {
+        $user = $request->user();
+        if (! RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'])) {
+            abort(403);
         }
 
         [$year, $month, $selectedMonth, $periodLabel] = $this->resolveMonth($request->query('month'));
@@ -78,8 +121,6 @@ class EnergyConservationController extends Controller
             ->reject(fn (Facility $facility) => $rows->contains('facility_id', (int) $facility->id))
             ->values();
 
-        $topEquipment = $this->topEquipment($facilityScope);
-
         $totals = [
             'facilities' => $facilities->count(),
             'monitored_facilities' => $rows->count(),
@@ -90,14 +131,147 @@ class EnergyConservationController extends Controller
             'priority_count' => $rows->filter(fn (array $row) => in_array($row['alert_level'], ['High', 'Very High', 'Critical'], true))->count(),
         ];
 
-        return view('modules.energy-conservation.index', [
+        return [
             'selectedMonth' => $selectedMonth,
             'periodLabel' => $periodLabel,
+            'facilities' => $facilities,
             'rows' => $rows,
             'totals' => $totals,
-            'topEquipment' => $topEquipment,
             'facilitiesWithoutCurrentRecord' => $facilitiesWithoutCurrentRecord,
-        ]);
+            'topFacility' => $rows->first(),
+            'averageDeviation' => $rows->isNotEmpty() ? round((float) $rows->filter(fn (array $row) => $row['deviation'] !== null)->avg('deviation'), 2) : null,
+            'contactInboxCount' => ContactMessage::count(),
+            'latestContactSuggestions' => ContactMessage::query()
+                ->latest()
+                ->limit(5)
+                ->get(['id', 'name', 'subject', 'message', 'created_at']),
+        ];
+    }
+
+    private function featureCatalog(): array
+    {
+        return [
+            'energy-saving-tips' => [
+                'title' => 'Energy Saving Tips',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-sun',
+                'description' => 'Nagpapakita ng mga tip para makatipid sa kuryente.',
+                'details' => [
+                    'Post practical tips for AC, lighting, and equipment use.',
+                    'Highlight weekly or monthly saving reminders.',
+                    'Use this area for quick staff education.',
+                ],
+            ],
+            'conservation-goals' => [
+                'title' => 'Conservation Goals',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-bullseye',
+                'description' => 'Nagtatakda ng energy reduction targets.',
+                'details' => [
+                    'Set reduction targets per month or quarter.',
+                    'Track progress against baseline usage.',
+                    'Show goal progress in percent and kWh.',
+                ],
+            ],
+            'department-ranking' => [
+                'title' => 'Department Ranking',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
+                'icon' => 'fa-solid fa-ranking-star',
+                'description' => 'Nagra-rank ng departments base sa energy efficiency.',
+                'details' => [
+                    'Compare department usage against targets.',
+                    'Rank by savings percentage and consistency.',
+                    'Allow filters by month, quarter, and year.',
+                ],
+            ],
+            'rewards-system' => [
+                'title' => 'Rewards System',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
+                'icon' => 'fa-solid fa-medal',
+                'description' => 'Nagbibigay ng badges o incentives sa mga nakakatipid.',
+                'details' => [
+                    'Issue badges for consistent low-consumption teams.',
+                    'Highlight top performers in the dashboard.',
+                    'Optionally connect to incentive approvals.',
+                ],
+            ],
+            'ai-recommendations' => [
+                'title' => 'AI Recommendations',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-robot',
+                'description' => 'Nagbibigay ng AI-based energy-saving suggestions.',
+                'details' => [
+                    'Suggest actions based on monthly trends.',
+                    'Summarize inefficiencies in plain language.',
+                    'Combine manual rules with AI output.',
+                ],
+            ],
+            'campaign-management' => [
+                'title' => 'Campaign Management',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
+                'icon' => 'fa-solid fa-bullhorn',
+                'description' => 'Nagpo-post ng energy conservation campaigns.',
+                'details' => [
+                    'Publish campaigns and reminders.',
+                    'Attach target dates and campaign owners.',
+                    'Track which departments acknowledged the campaign.',
+                ],
+            ],
+            'daily-checklist' => [
+                'title' => 'Daily Checklist',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-clipboard-check',
+                'description' => 'Checklist ng energy-saving practices.',
+                'details' => [
+                    'Use a simple checklist for opening and closing routines.',
+                    'Mark completed conservation tasks each day.',
+                    'Show overdue checklist items clearly.',
+                ],
+            ],
+            'estimated-savings' => [
+                'title' => 'Estimated Savings',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-chart-line',
+                'description' => 'Nagpapakita ng natipid na kWh, gastos, at CO2 reduction.',
+                'details' => [
+                    'Display kWh savings, peso savings, and CO2 impact.',
+                    'Break down savings by month and department.',
+                    'Use baseline comparisons to compute estimates.',
+                ],
+            ],
+            'suggestions-box' => [
+                'title' => 'Suggestions Box',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-inbox',
+                'description' => 'Tumatanggap ng energy-saving suggestions mula sa users.',
+                'details' => [
+                    'Let users submit ideas and observations.',
+                    'Show admin review status and follow-up notes.',
+                    'Keep the suggestions visible for everyone to see progress.',
+                ],
+            ],
+            'conservation-reports' => [
+                'title' => 'Conservation Reports',
+                'badge' => 'Enabled',
+                'status' => 'enabled',
+                'icon' => 'fa-solid fa-file-lines',
+                'description' => 'Gumagawa ng reports tungkol sa conservation efforts.',
+                'details' => [
+                    'Generate printable and exportable reports.',
+                    'Summarize goals, tips, ranking, and savings in one place.',
+                    'Use reports for management review and compliance.',
+                ],
+            ],
+        ];
     }
 
     private function resolveMonth(mixed $month): array
@@ -135,48 +309,4 @@ class EnergyConservationController extends Controller
         };
     }
 
-    private function topEquipment(?array $facilityScope): Collection
-    {
-        return SubmeterEquipment::query()
-            ->with([
-                'submeter:id,facility_id,submeter_name',
-                'submeter.facility:id,name',
-                'mainMeter:id,facility_id,meter_name',
-                'mainMeter.facility:id,name',
-            ])
-            ->where(function ($query) use ($facilityScope) {
-                $query->where(function ($subQuery) use ($facilityScope) {
-                    $subQuery->where('meter_scope', 'sub')
-                        ->whereHas('submeter', function ($meterQuery) use ($facilityScope) {
-                            if ($facilityScope !== null) {
-                                $meterQuery->whereIn('facility_id', $facilityScope);
-                            }
-                        });
-                })->orWhere(function ($mainQuery) use ($facilityScope) {
-                    $mainQuery->where('meter_scope', 'main')
-                        ->whereHas('mainMeter', function ($meterQuery) use ($facilityScope) {
-                            if ($facilityScope !== null) {
-                                $meterQuery->whereIn('facility_id', $facilityScope);
-                            }
-                        });
-                });
-            })
-            ->orderByDesc('estimated_kwh')
-            ->limit(8)
-            ->get()
-            ->map(function (SubmeterEquipment $equipment) {
-                $scope = strtolower((string) ($equipment->meter_scope ?? 'sub'));
-                $facility = $scope === 'main'
-                    ? $equipment->mainMeter?->facility
-                    : $equipment->submeter?->facility;
-
-                return [
-                    'equipment_name' => (string) ($equipment->equipment_name ?? 'Equipment'),
-                    'facility_name' => (string) ($facility?->name ?? 'Unassigned facility'),
-                    'meter_name' => $equipment->meter_name,
-                    'estimated_kwh' => round((float) ($equipment->estimated_kwh ?? 0), 2),
-                    'scope_label' => $equipment->meter_scope_label,
-                ];
-            });
-    }
 }

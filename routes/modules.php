@@ -65,6 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
+    Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
