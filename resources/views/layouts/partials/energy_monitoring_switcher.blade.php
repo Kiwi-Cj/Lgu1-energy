@@ -163,6 +163,48 @@
         border-color: #2563eb;
         background: linear-gradient(90deg, #1d4ed8, #2563eb);
     }
+
+    @media (max-width: 640px) {
+        .em-page {
+            padding: 0;
+        }
+
+        .em-header {
+            flex-direction: column;
+        }
+
+        .em-header-actions,
+        .em-header > .em-action-btn {
+            width: 100%;
+        }
+
+        .em-filter > div {
+            flex: 1 1 100% !important;
+            width: 100%;
+            min-width: 0 !important;
+        }
+
+        .em-filter > div:last-child {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+        }
+
+        .em-filter button,
+        .em-filter a {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .ems-switcher {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .ems-tab {
+            justify-content: center;
+            text-align: center;
+        }
+    }
 </style>
 
 <div class="ems-switcher">

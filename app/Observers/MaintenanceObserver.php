@@ -62,6 +62,7 @@ class MaintenanceObserver
                         'title' => $title,
                         'message' => $message,
                         'type' => 'maintenance',
+                        'target_url' => route('modules.maintenance.index'),
                     ]);
                 });
         } catch (\Throwable) {

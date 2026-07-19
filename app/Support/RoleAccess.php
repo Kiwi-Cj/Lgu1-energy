@@ -3,9 +3,13 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\UserRole;
 
 class RoleAccess
 {
+    /** @var array<string, array<int, string>|null> */
+    private static array $customPermissionsCache = [];
+
     public static function normalize(null|string|User $roleOrUser): string
     {
         if ($roleOrUser instanceof User) {
@@ -51,12 +55,58 @@ class RoleAccess
             return false;
         }
 
+        $role = static::normalize($user);
+        if ($role === '') {
+            return false;
+        }
+
+        $customPermissions = static::customRolePermissions($role);
+        if ($customPermissions !== null) {
+            return in_array($ability, $customPermissions, true);
+        }
+
         $allowedRoles = static::abilityRoles($ability);
         if (! is_array($allowedRoles)) {
             return false;
         }
 
         return static::in($user, $allowedRoles);
+    }
+
+    /**
+     * Return null when the role is not a database-backed custom role.
+     *
+     * @return array<int, string>|null
+     */
+    private static function customRolePermissions(string $role): ?array
+    {
+        if (array_key_exists($role, static::$customPermissionsCache)) {
+            return static::$customPermissionsCache[$role];
+        }
+
+        try {
+            $customRole = UserRole::query()->where('slug', $role)->first(['permissions']);
+        } catch (\Throwable $e) {
+            // Keep config-backed roles usable while migrations/database are unavailable.
+            return null;
+        }
+
+        if (! $customRole) {
+            return static::$customPermissionsCache[$role] = null;
+        }
+
+        $permissions = $customRole->permissions;
+        if (is_string($permissions)) {
+            $permissions = json_decode($permissions, true);
+        }
+
+        if (! is_array($permissions)) {
+            return static::$customPermissionsCache[$role] = [];
+        }
+
+        return static::$customPermissionsCache[$role] = array_values(
+            array_unique(array_filter(array_map('strval', $permissions)))
+        );
     }
 
     /**

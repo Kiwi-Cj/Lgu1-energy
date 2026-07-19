@@ -246,8 +246,9 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
-    $query = \App\Models\Maintenance::with('facility:id,name')
+    $query = \App\Models\Maintenance::with('facility:id,name,image_path,image')
         ->whereHas('facility');
+    $query->where('maintenance_type', '!=', 'Task');
     if ($facilityIds) {
         $query->whereIn('facility_id', $facilityIds);
     }
@@ -288,6 +289,7 @@ public function index()
         $maintenanceRows[] = [
             'id' => $row->id,
             'facility' => $row->facility?->name ?? '-',
+            'facility_image_url' => $row->facility?->resolved_image_url,
             'issue_type' => $row->issue_type,
             'trigger_month' => $row->trigger_month,
             'maintenance_type' => $row->maintenance_type,
@@ -639,7 +641,7 @@ private function notifyMaintenanceStatusTransition(\App\Models\Maintenance $main
 
             return false;
         })
-        ->each(function (User $user) use ($title, $message) {
+        ->each(function (User $user) use ($title, $message, $newStatus) {
             $exists = $user->notifications()
                 ->where('type', 'maintenance')
                 ->where('message', $message)
@@ -654,6 +656,9 @@ private function notifyMaintenanceStatusTransition(\App\Models\Maintenance $main
                 'title' => $title,
                 'message' => $message,
                 'type' => 'maintenance',
+                'target_url' => $newStatus === 'completed'
+                    ? route('maintenance.history')
+                    : route('modules.maintenance.index'),
             ]);
         });
 }

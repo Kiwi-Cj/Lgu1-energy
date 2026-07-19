@@ -10,6 +10,7 @@ use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
 {
@@ -43,6 +44,16 @@ class UsersController extends Controller
         $rolesList = $users->pluck('role')->unique()->implode(', ');
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
+        $availableRoleOptions = collect($this->roleTemplates())
+            ->mapWithKeys(fn ($meta, $slug) => [$slug => $meta['name']])
+            ->merge(
+                UserRole::query()
+                    ->orderBy('name')
+                    ->get(['name', 'slug'])
+                    ->mapWithKeys(fn (UserRole $customRole) => [
+                        RoleAccess::normalize($customRole->slug) => $customRole->name,
+                    ])
+            );
 
         return view('modules.users.index', compact(
             'users',
@@ -53,7 +64,8 @@ class UsersController extends Controller
             'rolesList',
             'role',
             'user',
-            'selectedRole'
+            'selectedRole',
+            'availableRoleOptions'
         ));
     }
 
@@ -310,7 +322,7 @@ class UsersController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'permissions' => 'nullable|array',
-            'permissions.*' => 'string',
+            'permissions.*' => ['string', Rule::in(array_keys(config('role_permissions.abilities', [])))],
             'badge_color' => 'nullable|string|max:32',
         ]);
 
@@ -336,7 +348,7 @@ class UsersController extends Controller
             'name' => trim((string) $validated['name']),
             'slug' => $slug,
             'description' => trim((string) ($validated['description'] ?? '')) ?: null,
-            'permissions' => ! empty($validated['permissions']) ? json_encode(array_values($validated['permissions'])) : null,
+            'permissions' => array_values(array_unique($validated['permissions'] ?? [])),
             'badge_color' => trim((string) ($validated['badge_color'] ?? '')) ?: '#6366f1',
             'is_system' => false,
         ]);
@@ -402,7 +414,7 @@ class UsersController extends Controller
 
     private function canAccessUserManagement(): bool
     {
-        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+        return RoleAccess::can(auth()->user(), 'access_users');
     }
 
     private function roleTemplates(): array
@@ -411,39 +423,50 @@ class UsersController extends Controller
             'super_admin' => [
                 'name' => 'Super Admin',
                 'description' => 'Full system access including security, configuration, and user management.',
-                'permissions' => array_keys(config('role_permissions.abilities', [])),
+                'permissions' => $this->permissionsForRole('super_admin'),
                 'badge_color' => '#4f46e5',
                 'is_system' => true,
             ],
             'admin' => [
                 'name' => 'Admin',
                 'description' => 'Operational management with access to reports, users, and maintenance modules.',
-                'permissions' => ['access_users', 'access_audit_logs', 'manage_facility_master', 'access_reports'],
+                'permissions' => $this->permissionsForRole('admin'),
                 'badge_color' => '#2563eb',
                 'is_system' => true,
             ],
             'energy_officer' => [
                 'name' => 'Energy Officer',
                 'description' => 'Monitors energy trends, validates records, and manages analytics outputs.',
-                'permissions' => ['manage_energy_profile', 'maintenance_actions', 'access_reports', 'encode_main_meter_readings', 'encode_submeter_readings', 'view_main_meter_alerts', 'view_submeter_alerts'],
+                'permissions' => $this->permissionsForRole('energy_officer'),
                 'badge_color' => '#0ea5e9',
                 'is_system' => true,
             ],
             'engineer' => [
                 'name' => 'Engineer',
                 'description' => 'Reviews technical approvals, meter validation, and facility engineering checks.',
-                'permissions' => ['approve_facility_meters', 'approve_energy_profile', 'approve_submeter_readings', 'approve_main_meter_readings', 'view_submeter_alerts', 'view_main_meter_alerts'],
+                'permissions' => $this->permissionsForRole('engineer'),
                 'badge_color' => '#0891b2',
                 'is_system' => true,
             ],
             'staff' => [
                 'name' => 'Staff',
                 'description' => 'Limited access for facility-level data entry and daily operational updates.',
-                'permissions' => ['access_reports', 'encode_submeter_readings', 'encode_main_meter_readings', 'view_submeter_alerts', 'view_main_meter_alerts'],
+                'permissions' => $this->permissionsForRole('staff'),
                 'badge_color' => '#6b7280',
                 'is_system' => true,
             ],
         ];
+    }
+
+    private function permissionsForRole(string $role): array
+    {
+        $role = RoleAccess::normalize($role);
+
+        return collect(config('role_permissions.abilities', []))
+            ->filter(fn ($roles) => is_array($roles) && RoleAccess::in($role, $roles))
+            ->keys()
+            ->values()
+            ->all();
     }
 
     private function allowedRoleSlugs(): array

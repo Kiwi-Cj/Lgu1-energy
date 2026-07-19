@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\Submeter;
 use App\Models\SubmeterAlert;
 use App\Models\SubmeterBaseline;
@@ -40,11 +41,46 @@ class SubmeterMonitoringController extends Controller
 
         $selectedFacility = $request->query('facility_id');
         $selectedDepartment = trim((string) $request->query('department', ''));
+        $selectedMainMeterId = (int) $request->query('main_meter_id', 0);
         $selectedSensorPeriod = (string) $request->query('sensor_period', 'daily');
         if (! in_array($selectedSensorPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
             $selectedSensorPeriod = 'daily';
         }
+        $selectedSensorSubmeterId = (int) $request->query('sensor_submeter_id', 0);
+        $selectedSensorMainMeterId = (int) $request->query('sensor_main_meter_id', 0);
         $facilityScope = $this->staffFacilityIds($request);
+
+        $tableMainMeters = FacilityMeter::query()
+            ->with([
+                'facility:id,name',
+                'childMeters' => fn ($query) => $query
+                    ->where('meter_type', 'sub')
+                    ->whereNotNull('approved_at')
+                    ->select(['id', 'facility_id', 'parent_meter_id', 'meter_name']),
+            ])
+            ->where('meter_type', 'main')
+            ->whereNotNull('approved_at')
+            ->when($selectedFacility, fn ($query) => $query->where('facility_id', $selectedFacility))
+            ->when($facilityScope !== null, fn ($query) => $query->whereIn('facility_id', $facilityScope))
+            ->orderBy('meter_name')
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number']);
+
+        $selectedMainMeter = $selectedMainMeterId > 0
+            ? $tableMainMeters->firstWhere('id', $selectedMainMeterId)
+            : null;
+        if (! $selectedMainMeter) {
+            $selectedMainMeterId = 0;
+        }
+
+        $selectedMainSubmeterNames = $selectedMainMeter
+            ? $selectedMainMeter->childMeters
+                ->pluck('meter_name')
+                ->map(fn ($name) => strtolower(trim((string) $name)))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all()
+            : null;
         $selectedMonth = $this->resolvePreferredReadingMonth(
             (string) $request->query('month', ''),
             $periodType,
@@ -58,6 +94,14 @@ class SubmeterMonitoringController extends Controller
             ->with('facility:id,name')
             ->whereHas('facility')
             ->when($selectedFacility, fn ($q) => $q->where('facility_id', $selectedFacility))
+            ->when($selectedMainMeter, function ($query) use ($selectedMainMeter, $selectedMainSubmeterNames) {
+                $query->where('facility_id', $selectedMainMeter->facility_id);
+                if (empty($selectedMainSubmeterNames)) {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+                $query->whereIn(DB::raw('LOWER(TRIM(submeter_name))'), $selectedMainSubmeterNames);
+            })
             ->when($selectedDepartment !== '', fn ($q) => $q->where('submeter_name', 'like', "%{$selectedDepartment}%"))
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
             ->orderBy('submeter_name')
@@ -149,11 +193,82 @@ class SubmeterMonitoringController extends Controller
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
             ->orderBy('submeter_name')
             ->get(['id', 'facility_id', 'submeter_name', 'status']);
+
+        $sensorMainMeters = FacilityMeter::query()
+            ->with([
+                'facility:id,name',
+                'childMeters' => fn ($query) => $query
+                    ->where('meter_type', 'sub')
+                    ->whereNotNull('approved_at')
+                    ->orderBy('meter_name')
+                    ->select(['id', 'facility_id', 'parent_meter_id', 'meter_name']),
+            ])
+            ->where('meter_type', 'main')
+            ->whereNotNull('approved_at')
+            ->when($selectedFacility, fn ($query) => $query->where('facility_id', $selectedFacility))
+            ->when($facilityScope !== null, fn ($query) => $query->whereIn('facility_id', $facilityScope))
+            ->orderBy('meter_name')
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number']);
+
+        $normalizeMeterName = fn (string $name): string => strtolower(trim(preg_replace('/\s+/', ' ', $name) ?? $name));
+        $sensorSubmeterLookup = $submeters->keyBy(
+            fn (Submeter $submeter) => (int) $submeter->facility_id . '|' . $normalizeMeterName((string) $submeter->submeter_name)
+        );
+        $sensorSubmeterMainMap = collect();
+        foreach ($sensorMainMeters as $mainMeter) {
+            foreach ($mainMeter->childMeters as $childMeter) {
+                $sensorSubmeter = $sensorSubmeterLookup->get(
+                    (int) $mainMeter->facility_id . '|' . $normalizeMeterName((string) $childMeter->meter_name)
+                );
+                if ($sensorSubmeter) {
+                    $sensorSubmeterMainMap->put((int) $sensorSubmeter->id, (int) $mainMeter->id);
+                }
+            }
+        }
+
+        $selectedSensorMainMeter = $selectedSensorMainMeterId > 0
+            ? $sensorMainMeters->firstWhere('id', $selectedSensorMainMeterId)
+            : null;
+        if (! $selectedSensorMainMeter) {
+            $selectedSensorMainMeterId = 0;
+        }
+
+        $selectedSensorSubmeter = $selectedSensorSubmeterId > 0
+            ? $submeters->firstWhere('id', $selectedSensorSubmeterId)
+            : null;
+        if (
+            $selectedSensorSubmeter
+            && (
+                $selectedSensorMainMeterId === 0
+                || (int) $sensorSubmeterMainMap->get((int) $selectedSensorSubmeter->id, 0) !== $selectedSensorMainMeterId
+            )
+        ) {
+            $selectedSensorSubmeter = null;
+        }
+        if (! $selectedSensorSubmeter) {
+            $selectedSensorSubmeterId = 0;
+        }
+
+        // Never aggregate sensor data across every main meter. A main meter
+        // selection is required; an empty scope intentionally returns no data.
+        $sensorScopeSubmeterIds = [];
+        if ($selectedSensorSubmeterId > 0) {
+            $sensorScopeSubmeterIds = [$selectedSensorSubmeterId];
+        } elseif ($selectedSensorMainMeterId > 0) {
+            $sensorScopeSubmeterIds = $sensorSubmeterMainMap
+                ->filter(fn ($mainMeterId) => (int) $mainMeterId === $selectedSensorMainMeterId)
+                ->keys()
+                ->map(fn ($submeterId) => (int) $submeterId)
+                ->values()
+                ->all();
+        }
+
         $sensorTrend = $this->buildSensorTrendSeries(
             $selectedSensorPeriod,
             $selectedFacility,
             $selectedDepartment,
-            $facilityScope
+            $facilityScope,
+            $sensorScopeSubmeterIds
         );
 
         return view('modules.submeters.monitoring', [
@@ -162,7 +277,16 @@ class SubmeterMonitoringController extends Controller
             'selectedMonth' => $safeMonth,
             'selectedFacility' => $selectedFacility,
             'selectedDepartment' => $selectedDepartment,
+            'selectedMainMeterId' => $selectedMainMeterId,
+            'selectedMainMeter' => $selectedMainMeter,
+            'tableMainMeters' => $tableMainMeters,
             'selectedSensorPeriod' => $selectedSensorPeriod,
+            'selectedSensorSubmeterId' => $selectedSensorSubmeterId,
+            'selectedSensorSubmeter' => $selectedSensorSubmeter,
+            'selectedSensorMainMeterId' => $selectedSensorMainMeterId,
+            'selectedSensorMainMeter' => $selectedSensorMainMeter,
+            'sensorMainMeters' => $sensorMainMeters,
+            'sensorSubmeterMainMap' => $sensorSubmeterMainMap,
             'facilities' => $facilities,
             'submeters' => $submeters,
             'widgets' => $widgets,
@@ -595,7 +719,8 @@ class SubmeterMonitoringController extends Controller
         string $period,
         mixed $selectedFacility,
         string $selectedDepartment,
-        ?array $facilityScope
+        ?array $facilityScope,
+        ?array $sensorScopeSubmeterIds = null
     ): array {
         $period = in_array($period, ['daily', 'weekly', 'monthly', 'yearly'], true) ? $period : 'daily';
         $now = now();
@@ -632,8 +757,12 @@ class SubmeterMonitoringController extends Controller
             $query->whereHas('submeter', fn (Builder $builder) => $builder->where('facility_id', $selectedFacility));
         }
 
-        if ($selectedDepartment !== '') {
+        if ($selectedDepartment !== '' && $sensorScopeSubmeterIds === null) {
             $query->whereHas('submeter', fn (Builder $builder) => $builder->where('submeter_name', 'like', "%{$selectedDepartment}%"));
+        }
+
+        if ($sensorScopeSubmeterIds !== null) {
+            $query->whereIn('submeter_id', $sensorScopeSubmeterIds);
         }
 
         if ($facilityScope !== null) {
@@ -656,7 +785,7 @@ class SubmeterMonitoringController extends Controller
 
     private function canView(): bool
     {
-        return RoleAccess::in(auth()->user(), ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer']);
+        return RoleAccess::can(auth()->user(), 'view_submeter_monitoring');
     }
 
     private function canEncode(): bool
@@ -666,16 +795,12 @@ class SubmeterMonitoringController extends Controller
 
     private function canApprove(): bool
     {
-        $user = auth()->user();
-        return RoleAccess::can($user, 'approve_submeter_readings')
-            || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'engineer']);
+        return RoleAccess::can(auth()->user(), 'approve_submeter_readings');
     }
 
     private function canViewAlerts(): bool
     {
-        $user = auth()->user();
-        return RoleAccess::can($user, 'view_submeter_alerts')
-            || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer']);
+        return RoleAccess::can(auth()->user(), 'view_submeter_alerts');
     }
 
     private function staffFacilityIds(Request $request): ?array

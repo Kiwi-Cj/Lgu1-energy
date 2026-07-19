@@ -258,7 +258,11 @@ function closeEditFacilityModal() {
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;">
                 <label for="edit_image" style="font-weight:600;">Image</label>
-                <input type="file" id="edit_image" name="image" accept="image/*" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                <input type="file" id="edit_image" name="image" accept="image/jpeg,image/png,image/gif,image/webp" style="width:100%;border-radius:8px;border:1px solid #c3cbe5;padding:9px 12px;font-size:1.08rem;">
+                <small style="color:#64748b;">Accepted: JPG, PNG, GIF, or WebP. Maximum: 10 MB.</small>
+                <div id="edit_image_error" style="{{ $errors->has('image') ? '' : 'display:none;' }}color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:.88rem;font-weight:700;">
+                    {{ $errors->first('image') }}
+                </div>
                 <div id="edit_image_preview" style="margin-top:8px;"></div>
             </div>
             <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;">

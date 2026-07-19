@@ -1,13 +1,31 @@
 @extends('layouts.qc-admin')
 @section('title', 'Facility Equipment Inventory')
 
+<style>
+@media (max-width: 640px) {
+    .facility-equipment-page {
+        padding: 0 !important;
+    }
+
+    .facility-equipment-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .facility-equipment-actions > * {
+        justify-content: center;
+        text-align: center;
+    }
+}
+</style>
+
 @section('content')
 @php
     $totals = $totals ?? ['items' => 0, 'total_watts' => 0, 'estimated_kwh' => 0];
     $selectedMeterScope = $selectedMeterScope ?? 'all';
 @endphp
 
-<div style="padding:14px;">
+<div class="facility-equipment-page" style="padding:14px;">
     @if(session('success'))
         <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:12px;font-weight:700;">{{ session('success') }}</div>
     @endif
@@ -56,7 +74,7 @@
                     @endforeach
                 </select>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div class="facility-equipment-actions" style="display:flex;gap:8px;">
                 <button type="submit" style="background:#1d4ed8;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Apply</button>
                 <a href="{{ route('modules.facilities.equipment-inventory', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#334155;border-radius:10px;padding:10px 14px;font-weight:700;">Reset</a>
             </div>

@@ -66,6 +66,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
     Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
+    Route::post('/modules/energy-conservation/daily-checklist', [EnergyConservationController::class, 'saveDailyChecklist'])->name('modules.energy-conservation.daily-checklist.save');
+    Route::post('/modules/energy-conservation/daily-checklist/tasks', [EnergyConservationController::class, 'storeDailyTask'])->name('modules.energy-conservation.daily-checklist.tasks.store');
+    Route::post('/modules/energy-conservation/daily-checklist/tasks/{task}/progress', [EnergyConservationController::class, 'submitDailyTaskProgress'])->name('modules.energy-conservation.daily-checklist.tasks.progress');
+    Route::post('/modules/energy-conservation/daily-checklist/tasks/{task}/complete', [EnergyConservationController::class, 'completeDailyTask'])->name('modules.energy-conservation.daily-checklist.tasks.complete');
+    Route::post('/modules/energy-conservation/daily-checklist/tasks/{task}/delete', [EnergyConservationController::class, 'deleteDailyTask'])->name('modules.energy-conservation.daily-checklist.tasks.delete');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -789,8 +794,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $row['alert_label'] = $alertLabel;
                 $row['alert_color'] = $alertColor;
                 $row['alert_bg'] = $alertBg;
+                $row['trend_spike_detected'] = false;
 
                 return $row;
+            })
+            ->sortByDesc(fn ($row) => sprintf('%04d-%02d-%02d', (int) ($row['year'] ?? 0), (int) ($row['month'] ?? 0), (int) (is_numeric($row['day'] ?? null) ? $row['day'] : 0)))
+            ->values();
+
+        $preferredRows = $preferredRows
+            ->groupBy(fn ($row) => (int) ($row['meter_id'] ?? 0))
+            ->flatMap(function ($groupRows) {
+                $ordered = $groupRows
+                    ->sortBy(fn ($row) => sprintf('%04d-%02d-%02d', (int) ($row['year'] ?? 0), (int) ($row['month'] ?? 0), (int) (is_numeric($row['day'] ?? null) ? $row['day'] : 0)))
+                    ->values();
+                $history = [];
+
+                return $ordered->map(function ($row) use (&$history) {
+                    $actual = is_numeric($row['actual_kwh'] ?? null) ? (float) $row['actual_kwh'] : null;
+                    if ($actual !== null && $actual > 0) {
+                        $history[] = $actual;
+                        if (count($history) >= 3) {
+                            $lastThree = array_slice($history, -3);
+                            $row['trend_spike_detected'] = $lastThree[2] > $lastThree[1] && $lastThree[1] > $lastThree[0];
+                        }
+                    }
+
+                    return $row;
+                });
             })
             ->sortByDesc(fn ($row) => sprintf('%04d-%02d-%02d', (int) ($row['year'] ?? 0), (int) ($row['month'] ?? 0), (int) (is_numeric($row['day'] ?? null) ? $row['day'] : 0)))
             ->values();
@@ -853,7 +883,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
         $facilityId = $facility->id;
         $archivedRecords = \App\Models\EnergyRecord::onlyTrashed()
-            ->with('meter')
+            ->with(['meter', 'deletedByUser'])
             ->where('facility_id', $facilityId)
             ->orderByDesc('deleted_at')
             ->orderByDesc('year')
@@ -897,35 +927,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $query->where('year', $selectedYear);
         $records = $query->get();
 
-        $getAlertBySize = function ($deviation, $baselineKwh) {
-            if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
-                return '-';
-            }
-
-            if ($baselineKwh <= 1000) {
-                $size = 'Small';
-            } elseif ($baselineKwh <= 3000) {
-                $size = 'Medium';
-            } elseif ($baselineKwh <= 10000) {
-                $size = 'Large';
-            } else {
-                $size = 'Extra Large';
-            }
-
-            $thresholds = [
-                'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-                'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-                'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-                'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-            ];
-            $t = $thresholds[$size];
-
-            if ($deviation > $t['level5']) return 'Critical';
-            if ($deviation > $t['level4']) return 'Very High';
-            if ($deviation > $t['level3']) return 'High';
-            if ($deviation > $t['level2']) return 'Warning';
-            return 'Normal';
-        };
+        $getAlertBySize = fn ($deviation, $baselineKwh) => $deviation === null || $baselineKwh === null || $baselineKwh <= 0
+            ? '-'
+            : \App\Models\EnergyRecord::resolveAlertLevel((float) $deviation, (float) $baselineKwh);
 
         $getHighestAlert = function ($alerts) {
             $priority = [
@@ -933,6 +937,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'Very High' => 4,
                 'High' => 3,
                 'Warning' => 2,
+                'Drop Critical' => 5,
+                'Drop High' => 4,
+                'Drop Warning' => 2,
                 'Normal' => 1,
                 '-' => 0,
             ];

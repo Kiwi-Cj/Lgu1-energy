@@ -98,4 +98,24 @@ class EnergyRecommendationServiceTest extends TestCase
         $this->assertStringContainsString('dispatch-room cooling', $message);
         $this->assertStringContainsString('Last maintenance was logged on Jan 15, 2026', $message);
     }
+
+    public function test_it_prioritizes_the_main_meter_driving_the_variance(): void
+    {
+        config(['services.ai_recommendations.enabled' => false]);
+
+        $message = app(EnergyRecommendationService::class)->generateFacilityRecommendation([
+            'facility_name' => 'City Hall Annex',
+            'facility_type' => 'Government Office',
+            'alert_level' => 'High',
+            'actual_kwh' => 2400,
+            'baseline_kwh' => 1900,
+            'meter_breakdown' => [
+                ['name' => 'Admin Wing Meter', 'actual_kwh' => 900, 'baseline_kwh' => 850],
+                ['name' => 'Annex Cooling Meter', 'actual_kwh' => 1500, 'baseline_kwh' => 1050],
+            ],
+        ], false);
+
+        $this->assertStringContainsString('Annex Cooling Meter is the first meter to investigate', $message);
+        $this->assertStringContainsString('+450.00 kWh versus baseline', $message);
+    }
 }

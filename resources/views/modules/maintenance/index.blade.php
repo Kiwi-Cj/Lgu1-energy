@@ -183,6 +183,29 @@
     .facility-cell {
         font-weight: 700;
     }
+    .facility-picture {
+        width: 58px;
+        height: 58px;
+        display: block;
+        margin: 0 auto;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #dbe3ef;
+        background: #f8fafc;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    }
+    .facility-picture-placeholder {
+        width: 58px;
+        height: 58px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px dashed #cbd5e1;
+        background: #f8fafc;
+        color: #94a3b8;
+        font-size: 1.15rem;
+    }
     .remarks-muted {
         color: #64748b;
     }
@@ -367,6 +390,11 @@
     body.dark-mode .maintenance-page .maint-table tr:hover {
         background-color: #1f2937;
     }
+    body.dark-mode .maintenance-page .facility-picture,
+    body.dark-mode .maintenance-page .facility-picture-placeholder {
+        background: #111827;
+        border-color: #475569;
+    }
     body.dark-mode .maintenance-page .status-pill.pending {
         background: rgba(146, 64, 14, 0.3);
         color: #fde68a;
@@ -548,6 +576,7 @@
         <table class="maint-table">
             <thead>
                 <tr>
+                    <th>Facility Picture</th>
                     <th>Facility</th>
                     <th>Issue Type</th>
                     <th>Trigger Month</th>
@@ -582,6 +611,18 @@
                     data-scheduled_date="{{ $row['scheduled_date'] ?? '' }}" 
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
                     data-completed_date="{{ $row['completed_date'] ?? '' }}">
+                    <td>
+                        @if(!empty($row['facility_image_url']))
+                            <img src="{{ $row['facility_image_url'] }}"
+                                 alt="{{ $row['facility'] }} facility"
+                                 class="facility-picture"
+                                 loading="lazy">
+                        @else
+                            <span class="facility-picture-placeholder" title="No facility picture">
+                                <i class="fa-regular fa-building"></i>
+                            </span>
+                        @endif
+                    </td>
                     <td class="facility-cell">{{ $row['facility'] }}</td>
                     <td>{{ $row['issue_type'] }}</td>
                     <td>{{ $row['trigger_month'] }}</td>
@@ -596,10 +637,10 @@
                     @endif
                 </tr>
                 @empty
-                <tr><td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
+                <tr><td colspan="{{ $userRole === 'staff' ? 7 : 8 }}" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
                 @endforelse
                 <tr id="maintenanceNoMatchRow" class="hidden-row">
-                    <td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="empty-row-cell compact">No matching maintenance records found.</td>
+                    <td colspan="{{ $userRole === 'staff' ? 7 : 8 }}" class="empty-row-cell compact">No matching maintenance records found.</td>
                 </tr>
             </tbody>
         </table>
@@ -810,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTitle) modalTitle.innerText = 'Update Maintenance';
             if (modalMaintenanceId) modalMaintenanceId.value = row.getAttribute('data-id') || '';
 
-            const facilityName = cells[0]?.innerText.trim();
+            const facilityName = cells[1]?.innerText.trim();
             if (modalFacility && facilityName) {
                 for (let i = 0; i < modalFacility.options.length; i++) {
                     if (modalFacility.options[i].text === facilityName) {
@@ -822,10 +863,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (modalIssueType) {
-                modalIssueType.value = cells[1]?.innerText.trim() || '';
+                modalIssueType.value = cells[2]?.innerText.trim() || '';
             }
 
-            const triggerMonthText = row.getAttribute('data-trigger_month') || cells[2]?.innerText || '';
+            const triggerMonthText = row.getAttribute('data-trigger_month') || cells[3]?.innerText || '';
             const parsed = parseTriggerMonth(triggerMonthText);
             if (modalTriggerMonth) {
                 if (parsed.month) modalTriggerMonth.value = parsed.month;
@@ -844,7 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalRemarks.value = remarksText === '-' ? '' : remarksText;
             }
             if (modalStatus) {
-                const statusText = row.querySelector('.status-pill')?.innerText?.trim() || cells[3]?.innerText.trim() || 'Pending';
+                const statusText = row.querySelector('.status-pill')?.innerText?.trim() || cells[4]?.innerText.trim() || 'Pending';
                 const canUseStatus = Array.from(modalStatus.options || []).some((opt) => opt.value === statusText);
                 modalStatus.value = canUseStatus ? statusText : 'Ongoing';
             }

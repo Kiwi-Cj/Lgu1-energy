@@ -78,7 +78,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
         // Handle image upload if present
@@ -109,7 +109,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
         // Handle image upload if present
@@ -159,12 +159,12 @@ class FacilityController extends Controller
 
     private function isEngineer()
     {
-        return RoleAccess::is(auth()->user(), 'engineer');
+        return RoleAccess::can(auth()->user(), 'approve_energy_profile');
     }
 
     private function isArchiveAdmin(): bool
     {
-        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+        return RoleAccess::can(auth()->user(), 'manage_facility_master');
     }
 
     private function logFacilityAudit(Facility $facility, string $action, ?string $reason = null): void
@@ -264,10 +264,8 @@ class FacilityController extends Controller
     public function equipmentInventory(Request $request, Facility $facility)
     {
         $user = $request->user();
-        $canViewInventory = RoleAccess::can($user, 'manage_facility_master')
-            || RoleAccess::in($user, ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer']);
-        $canManageInventory = RoleAccess::can($user, 'manage_facility_master')
-            || RoleAccess::in($user, ['super_admin', 'admin']);
+        $canViewInventory = RoleAccess::can($user, 'view_facilities');
+        $canManageInventory = RoleAccess::can($user, 'manage_facility_master');
 
         if (! $canViewInventory) {
             return redirect()->route('modules.facilities.index')

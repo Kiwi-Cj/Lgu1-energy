@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         $hasOpenMaintenance = \App\Models\Maintenance::query()
             ->whereIn('facility_id', $facilityIds)
+            ->where('maintenance_type', '!=', 'Task')
             ->whereIn('maintenance_status', ['Pending', 'Ongoing'])
             ->select('facility_id')
             ->distinct()
@@ -84,10 +85,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             if ($euiValue !== null) {
                 if ($euiValue < 5) {
                     $rating = 'High';
-                    $highCount++;
                 } elseif ($euiValue < 10) {
                     $rating = 'Medium';
-                    $mediumCount++;
                 } else {
                     $rating = 'Low';
                 }
@@ -95,6 +94,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             if ($selectedRating && $selectedRating !== 'all' && $selectedRating !== $rating) {
                 continue;
+            }
+
+            if ($rating === 'High') {
+                $highCount++;
+            } elseif ($rating === 'Medium') {
+                $mediumCount++;
             }
 
             $lastAudit = $lastAuditByFacility->get($facility->id);
@@ -107,19 +112,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $flaggedCount++;
             }
 
+            $ratingLabel = match ($rating) {
+                'High' => 'Efficient',
+                'Medium' => 'Moderate',
+                'Low' => 'Needs Improvement',
+                default => 'Not Evaluated',
+            };
+            $latestRecord = $records
+                ->sortByDesc(fn ($record) => sprintf('%04d-%02d', (int) $record->year, (int) $record->month))
+                ->first();
+
             $efficiencyRows[] = [
                 'facility' => $facility->name,
+                'avg_monthly_kwh' => $avgMonthlyKwh !== null ? number_format($avgMonthlyKwh, 2) : '-',
+                'floor_area' => $floorArea > 0 ? number_format($floorArea, 0) : '-',
                 'eui' => $euiValue !== null ? number_format($euiValue, 2) : '-',
-                'rating' => $rating,
+                'rating' => $ratingLabel,
+                'months_count' => $monthlyTotals->count(),
+                'latest_period' => $latestRecord
+                    ? \Carbon\Carbon::create((int) $latestRecord->year, (int) $latestRecord->month, 1)->format('M Y')
+                    : 'No readings',
                 'last_audit' => $lastAuditDate,
-                'maintenance_status' => $needsMaintenance ? 'Needs Maintenance' : 'Operational',
+                'maintenance_status' => $needsMaintenance ? 'Requires Action' : 'No Immediate Action',
             ];
         }
 
         $selectedFacilityName = $selectedFacility
             ? optional(\App\Models\Facility::find($selectedFacility))->name ?? 'All Facilities'
             : 'All Facilities';
-        $selectedRatingLabel = ($selectedRating && $selectedRating !== 'all') ? $selectedRating : 'All Ratings';
+        $selectedRatingLabel = match ($selectedRating) {
+            'High' => 'Efficient',
+            'Medium' => 'Moderate',
+            'Low' => 'Needs Improvement',
+            default => 'All Efficiency Bands',
+        };
         $generatedAt = now()->format('M d, Y h:i A');
 
         if ($exportFormat === 'pdf') {
@@ -145,12 +171,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $filename = 'efficiency_summary_' . date('Ymd_His') . '.csv';
         return response()->streamDownload(function () use ($efficiencyRows) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Facility Name', 'EUI (kWh/sqm)', 'Efficiency Rating', 'Last Audit', 'Maintenance Status']);
+            fputcsv($handle, ['Facility Name', 'Average Monthly kWh', 'Floor Area (sqm)', 'EUI (kWh/sqm)', 'Efficiency Band', 'Months Included', 'Latest Period', 'Last Completed Maintenance', 'Action Status']);
             foreach ($efficiencyRows as $row) {
                 fputcsv($handle, [
                     $row['facility'],
+                    $row['avg_monthly_kwh'],
+                    $row['floor_area'],
                     $row['eui'],
                     $row['rating'],
+                    $row['months_count'],
+                    $row['latest_period'],
                     $row['last_audit'],
                     $row['maintenance_status'],
                 ]);
@@ -189,20 +219,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             $query->where('month', $month);
         }
         $records = $query->orderByDesc('year')->orderByDesc('month')->get();
+        $trendService = app(\App\Services\EnergyTrendService::class);
+        $trendByRecordId = $trendService->labelsFor($records);
         $energyRows = [];
         foreach ($records as $record) {
             $facility = $record->facility;
-            $baseline = $facility ? $facility->baseline_kwh : null;
+            $baseline = is_numeric($record->baseline_kwh ?? null)
+                ? (float) $record->baseline_kwh
+                : (is_numeric($facility?->baseline_kwh ?? null) ? (float) $facility->baseline_kwh : null);
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
-            $trend = 'stable';
-            if ($variance !== null && $baseline !== null && $baseline != 0) {
-                if ($variance > ($baseline * 0.05)) {
-                    $trend = 'up';
-                } elseif ($variance < -($baseline * 0.05)) {
-                    $trend = 'down';
-                }
-            }
+            $trend = $trendService->displayLabel($trendByRecordId[$record->id] ?? 'insufficient');
             $monthNum = (int)ltrim($record->month, '0');
             $monthName = date('M', mktime(0, 0, 0, $monthNum, 1));
             $monthYear = $monthName . ' ' . $record->year;

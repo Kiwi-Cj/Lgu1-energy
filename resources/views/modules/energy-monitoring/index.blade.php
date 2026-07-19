@@ -154,6 +154,13 @@
         color: #1e293b;
     }
 
+    .energy-monitor-page .metric-meta {
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
     .energy-monitor-page .metric-facilities {
         background: linear-gradient(140deg, #f4f9ff, #f8fbff);
         border-color: #dbeafe;
@@ -186,7 +193,7 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 920px;
+        min-width: 820px;
         font-size: 0.86rem;
     }
 
@@ -446,9 +453,27 @@
     .energy-monitor-page .recommendation-meta {
         display: none;
         margin-top: 6px;
-        font-size: 0.82rem;
-        color: #64748b;
-        font-weight: 600;
+        width: fit-content;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        color: #475569;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+
+    .energy-monitor-page .recommendation-meta.source-ai {
+        color: #1d4ed8;
+        background: #eff6ff;
+        border-color: #93c5fd;
+    }
+
+    .energy-monitor-page .recommendation-meta.source-system {
+        color: #475569;
+        background: #f8fafc;
+        border-color: #cbd5e1;
     }
 
     .energy-monitor-page .recommendation-alert-badge {
@@ -725,11 +750,19 @@
     }
 
     .energy-monitor-page .recommendation-btn {
-        background: none;
-        border: none;
-        font-size: 1.08rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        color: #1d4ed8;
+        font-size: 0.76rem;
+        font-weight: 800;
         cursor: pointer;
-        padding: 3px;
+        padding: 7px 10px;
+        white-space: nowrap;
     }
 
     .energy-monitor-page .pagination-wrap {
@@ -1132,7 +1165,7 @@
             <h1 class="monitor-title">
                 Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
-            <p class="monitor-subtitle">Main meter status and trend overview for all facilities</p>
+            <p class="monitor-subtitle">Period consumption, variance, and facilities requiring attention</p>
         </div>
         
         <form class="search-form" method="GET" action="">
@@ -1151,16 +1184,19 @@
     </div>
     <div class="overview-cards">
         <div class="metric-card metric-facilities">
-            <div class="metric-label">Total Facilities</div>
-            <div class="metric-value">{{ $totalFacilities ?? '-' }}</div>
+            <div class="metric-label">Main Meter Consumption</div>
+            <div class="metric-value">{{ number_format($totalConsumptionKwh ?? 0, 2) }} kWh</div>
+            <div class="metric-meta">Across {{ $totalFacilities ?? 0 }} monitored facilities</div>
         </div>
         <div class="metric-card metric-alert">
-            <div class="metric-label">High Alert Facilities</div>
+            <div class="metric-label">Facilities Requiring Attention</div>
             <div class="metric-value">{{ $highAlertCount ?? 0 }}</div>
+            <div class="metric-meta">High, very high, or critical alert</div>
         </div>
         <div class="metric-card metric-cost">
-            <div class="metric-label">Total Cost (Period)</div>
+            <div class="metric-label">Estimated Energy Cost</div>
             <div class="metric-value">PHP {{ number_format($totalEnergyCost ?? 0, 2) }}</div>
+            <div class="metric-meta">For the selected billing period</div>
         </div>
     </div>
     <div class="monitor-table-wrap">
@@ -1168,17 +1204,13 @@
             <thead>
                 <tr>
                     <th>Facility</th>
-                    <th>Type</th>
                     <th>Main Meter</th>
-                    <th>Main Meter Status</th>
-                    <th>Month</th>
-                    <th>Main Meter kWh</th>
-                    <th>Floor Area</th>
-                    <th>Baseline kWh</th>
-                    <th>Trend</th>
+                    <th>Consumption</th>
+                    <th>Baseline</th>
+                    <th>Variance</th>
                     <th>EUI</th>
-                    <th>Facility Status</th>
-                    <th>Recommendation</th>
+                    <th>Condition</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -1186,12 +1218,11 @@
                 @php 
                     $record = $facility->currentMonthRecord;
                     $trendAnalysis = $facility->trend_analysis ?? '-';
+                    $trendSpikeDetected = (bool) ($facility->trend_spike_detected ?? false);
                     $alertLevel = $facility->alert_level ?? 'No Data';
                     $mainMeterLabel = $facility->main_meter_name ?? 'No Main Meter';
                     $mainMeterStatus = $facility->main_meter_status_label ?? 'No Main Meter';
                     $mainMeterMeta = trim((string) ($facility->main_meter_meta_label ?? ''));
-                    $mainMeterAlertSummary = trim((string) ($facility->main_meter_alert_summary_label ?? ''));
-                    $mainMeterAlertSummarySlug = \Illuminate\Support\Str::slug($alertLevel, '-');
                     $mainMeterCount = collect($facility->main_meters ?? [])->count();
                     $mainMeterTooltip = collect($facility->main_meters ?? [])
                         ->map(function ($meter) {
@@ -1237,21 +1268,17 @@
                 <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
                     <td class="cell-facility">
                         <div>{{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }}</div>
+                        <div class="cell-meter-meta">{{ $facility->type ?: 'Facility' }}</div>
                         @if($isSeededDualMain)
                             <div class="seeded-facility-badge">Sample: 2 Main Meters</div>
                         @endif
                     </td>
-                    <td class="cell-type">{{ $facility->type }}</td>
                     <td title="{{ $mainMeterTooltip !== '' ? $mainMeterTooltip : 'No main meter configured' }}">
                         <div class="cell-meter-name">{{ $mainMeterLabel }}</div>
                         @if($mainMeterMeta !== '')
                             <div class="cell-meter-meta">{{ $mainMeterMeta }}</div>
                         @endif
-                        @if($mainMeterAlertSummary !== '')
-                            <div class="cell-meter-alert-summary">
-                                <span class="monitor-alert-pill alert-pill-level-{{ $mainMeterAlertSummarySlug }}">{{ $mainMeterAlertSummary }}</span>
-                            </div>
-                        @endif
+                        <div style="margin-top:5px;"><span class="meter-status-pill status-{{ $statusSlug }}">{{ $mainMeterStatus }}</span></div>
                         @if($mainMeterCount > 1)
                             <button
                                 type="button"
@@ -1262,25 +1289,22 @@
                             </button>
                         @endif
                     </td>
-                    <td>
-                        <span class="meter-status-pill status-{{ $statusSlug }}">{{ $mainMeterStatus }}</span>
-                    </td>
-                    <td>
-                        @php $monthsArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; @endphp
-                        {{ $record ? ($monthsArr[$record->month - 1] ?? '-') : '-' }}
-                    </td>
                     <td class="cell-baseline">
                         {{ $record && is_numeric($record->actual_kwh ?? null) ? number_format((float) $record->actual_kwh, 2) : '-' }}
                         @if($mainMeterCount > 1 && $record && is_numeric($record->actual_kwh ?? null))
                             <span class="cell-reading-note">Combined</span>
                         @endif
                     </td>
-                    <td>{{ $facility->floor_area ?? '-' }} <small class="unit-label">m2</small></td>
                     <td class="cell-baseline">
                         {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
                     </td>
                     <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
                         {{ $trendAnalysis }}
+                        @if($trendSpikeDetected)
+                            <div class="trend-spike-badge" style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
+                                3-Month Spike
+                            </div>
+                        @endif
                     </td>
                     <td>{{ $eui ?? '-' }}</td>
                     <td>
@@ -1288,12 +1312,9 @@
                             <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" data-alert-pill>
                                 {{ $alertLevel }}
                             </span>
-                            <span class="facility-status-pill status-{{ \Illuminate\Support\Str::slug($facilityStatusLabel, '-') }}">
-                                {{ $facilityStatusLabel }}
-                            </span>
-                            <span class="facility-status-pill status-{{ \Illuminate\Support\Str::slug($maintenanceStatusLabel, '-') }}">
-                                {{ $maintenanceStatusLabel }}
-                            </span>
+                            @if(!in_array($maintenanceStatusLabel, ['No Maintenance Log', 'No Maintenance'], true))
+                                <span class="facility-status-pill status-{{ \Illuminate\Support\Str::slug($maintenanceStatusLabel, '-') }}">{{ $maintenanceStatusLabel }}</span>
+                            @endif
                         </div>
                     </td>
                     <td>
@@ -1309,11 +1330,12 @@
                         @endphp
                         <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
                             <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
+                            <span>View Guidance</span>
                         </button>
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="12" class="monitor-empty">No facilities found.</td></tr>
+                <tr><td colspan="8" class="monitor-empty">No facilities found for the selected period.</td></tr>
             @endforelse
             </tbody>
         </table>
@@ -1410,6 +1432,16 @@ function alertPillClass(alertLevel) {
     return `alert-pill-level-${alertSlug(alertLevel)}`;
 }
 
+function updateRecommendationSource(meta, source) {
+    if (!meta) return;
+
+    const normalized = String(source || 'rules').toLowerCase();
+    meta.style.display = 'inline-flex';
+    meta.classList.remove('source-ai', 'source-system');
+    meta.classList.add(normalized === 'ai' ? 'source-ai' : 'source-system');
+    meta.textContent = normalized === 'ai' ? 'AI Generated' : 'System Generated';
+}
+
 function updateTableAlertPill(facilityId, alertLevel) {
     const row = document.querySelector(`[data-facility-row][data-facility-id="${facilityId}"]`);
     if (!row) return;
@@ -1461,8 +1493,7 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     title.textContent = `Recommendation for ${facilityName}`;
     modal.dataset.facilityId = String(facilityId);
     if (meta) {
-        meta.style.display = 'block';
-        meta.textContent = 'Rule-based recommendation';
+        updateRecommendationSource(meta, 'rules');
     }
     text.textContent = fallbackRecommendation || 'No recommendation';
     applyAlertStyle(initialAlert);
@@ -1475,9 +1506,7 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
         applyAlertStyle(cached.alertLevel);
         updateTableAlertPill(facilityId, cached.alertLevel);
         if (meta) {
-            meta.textContent = cached.source === 'ai'
-                ? 'AI recommendation + AI alert'
-                : 'Rule-based recommendation';
+            updateRecommendationSource(meta, cached.source);
         }
         return;
     }
@@ -1487,6 +1516,7 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     }
 
     if (meta) {
+        meta.classList.remove('source-ai', 'source-system');
         meta.textContent = 'Loading AI recommendation...';
     }
 
@@ -1521,14 +1551,12 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
             text.textContent = recommendation;
             applyAlertStyle(resolvedAlertLevel);
             if (meta) {
-                meta.textContent = resolvedSource === 'ai'
-                    ? 'AI recommendation + AI alert'
-                    : 'Rule-based recommendation';
+                updateRecommendationSource(meta, resolvedSource);
             }
         }
     } catch (error) {
         if (meta) {
-            meta.textContent = 'Using default recommendation';
+            updateRecommendationSource(meta, 'rules');
         }
     }
 }

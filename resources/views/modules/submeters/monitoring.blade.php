@@ -46,6 +46,14 @@
     .submeter-sensor-title { margin: 0; color: #1e293b; font-size: 1rem; font-weight: 900; }
     .submeter-sensor-subtitle { margin-top: 3px; color: #64748b; font-size: .84rem; font-weight: 600; }
     .submeter-sensor-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .submeter-sensor-controls { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .submeter-sensor-picker { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+    .submeter-sensor-picker-field { display: flex; flex-direction: column; gap: 5px; }
+    .submeter-sensor-picker-field label { color: #475569; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .submeter-sensor-picker-field select { min-width: 300px; max-width: 460px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #0f172a; padding: 9px 11px; font-size: .88rem; font-weight: 700; }
+    .submeter-sensor-picker-field select:disabled { cursor: not-allowed; opacity: .65; background: #f1f5f9; }
+    .submeter-sensor-selection { color: #475569; font-size: .84rem; font-weight: 700; }
+    .submeter-sensor-selection strong { color: #0f172a; }
     .submeter-sensor-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #334155; padding: 7px 12px; font-weight: 900; text-decoration: none; font-size: .84rem; }
     .submeter-sensor-tab.active { border-color: #22d3ee; background: #ecfeff; color: #0f766e; }
     .submeter-sensor-body { padding: 14px; }
@@ -56,7 +64,7 @@
     .submeter-sensor-chart { position: relative; height: 300px; max-height: 300px; width: 100%; }
 
     .submeter-panel { background: #fff; border: 1px solid #dbe4f2; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(15, 23, 42, .08); }
-    .submeter-filter { padding: 12px; display: grid; grid-template-columns: minmax(140px,170px) minmax(160px,200px) minmax(220px,1fr) minmax(220px,1fr) auto; gap: 10px; align-items: end; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .submeter-filter { padding: 12px; display: grid; grid-template-columns: minmax(130px,150px) minmax(155px,185px) minmax(190px,1fr) minmax(210px,1fr) minmax(220px,1.1fr) auto; gap: 10px; align-items: end; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
     .submeter-field { display: grid; gap: 6px; }
     .submeter-field label { font-size: .8rem; font-weight: 700; color: #475569; }
     .submeter-input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #0f172a; font-size: .95rem; }
@@ -207,12 +215,16 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 999px;
+        gap: 7px;
+        min-height: 36px;
+        padding: 7px 12px;
+        border-radius: 10px;
         border: 1px solid #93c5fd;
         background: #eff6ff;
         color: #1d4ed8;
+        font-size: .78rem;
+        font-weight: 800;
+        white-space: nowrap;
         cursor: pointer;
         transition: all .15s ease;
     }
@@ -226,9 +238,24 @@
         box-shadow: 0 0 0 3px rgba(59,130,246,.2);
     }
     .ai-rec-icon {
-        font-size: .95rem;
+        font-size: .82rem;
         font-weight: 800;
         line-height: 1;
+    }
+    .baseline-required-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 36px;
+        padding: 7px 11px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: .76rem;
+        font-weight: 800;
+        white-space: nowrap;
     }
 
     .alert-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; border: 1px solid transparent; min-width: 80px; }
@@ -329,6 +356,11 @@
         background: #1d4ed8;
         border-color: #60a5fa;
     }
+    body.dark-mode .baseline-required-label {
+        background: #111827;
+        border-color: #475569;
+        color: #94a3b8;
+    }
 
     body.dark-mode .submeter-filter,
     body.dark-mode .submeter-sensor-head,
@@ -342,6 +374,19 @@
         background: #111827;
         border-color: #334155;
         color: #cbd5e1;
+    }
+    body.dark-mode .submeter-sensor-controls,
+    body.dark-mode .submeter-sensor-picker-field select {
+        background: #111827;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+    body.dark-mode .submeter-sensor-picker-field label,
+    body.dark-mode .submeter-sensor-selection {
+        color: #94a3b8;
+    }
+    body.dark-mode .submeter-sensor-selection strong {
+        color: #f8fafc;
     }
 
     body.dark-mode .submeter-sensor-tab.active {
@@ -453,6 +498,14 @@
     $facilitiesMostAlerts = $widgets['facilitiesWithMostAlerts'] ?? collect();
     $sensorTrend = $sensorTrend ?? ['labels' => [], 'kwh' => [], 'total_kwh' => 0, 'reading_count' => 0];
     $selectedSensorPeriod = $selectedSensorPeriod ?? 'daily';
+    $selectedSensorSubmeterId = (int) ($selectedSensorSubmeterId ?? 0);
+    $selectedSensorSubmeter = $selectedSensorSubmeter ?? null;
+    $selectedMainMeterId = (int) ($selectedMainMeterId ?? 0);
+    $tableMainMeters = collect($tableMainMeters ?? []);
+    $selectedSensorMainMeterId = (int) ($selectedSensorMainMeterId ?? 0);
+    $selectedSensorMainMeter = $selectedSensorMainMeter ?? null;
+    $sensorMainMeters = collect($sensorMainMeters ?? []);
+    $sensorSubmeterMainMap = collect($sensorSubmeterMainMap ?? []);
 @endphp
 
 <div class="submeter-ui">
@@ -506,13 +559,66 @@
                                 'month' => $selectedMonth,
                                 'facility_id' => $selectedFacility,
                                 'department' => $selectedDepartment,
+                                'main_meter_id' => $selectedMainMeterId ?: null,
                                 'sensor_period' => $periodKey,
+                                'sensor_main_meter_id' => $selectedSensorMainMeterId ?: null,
+                                'sensor_submeter_id' => $selectedSensorSubmeterId ?: null,
                             ], fn ($value) => $value !== null && $value !== '')) }}"
                             class="submeter-sensor-tab{{ $selectedSensorPeriod === $periodKey ? ' active' : '' }}"
                         >
                             {{ $periodLabel }}
                         </a>
                     @endforeach
+                </div>
+            </div>
+            <div class="submeter-sensor-controls">
+                <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-sensor-picker">
+                    <input type="hidden" name="period_type" value="{{ $periodType }}">
+                    <input type="hidden" name="month" value="{{ $selectedMonth }}">
+                    <input type="hidden" name="facility_id" value="{{ $selectedFacility }}">
+                    <input type="hidden" name="department" value="{{ $selectedDepartment }}">
+                    <input type="hidden" name="main_meter_id" value="{{ $selectedMainMeterId }}">
+                    <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                    <div class="submeter-sensor-picker-field">
+                        <label for="sensor_main_meter_id">Main Meter</label>
+                        <select id="sensor_main_meter_id" name="sensor_main_meter_id" required>
+                            <option value="">Select Main Meter</option>
+                            @foreach($sensorMainMeters as $sensorMainMeterOption)
+                                <option value="{{ $sensorMainMeterOption->id }}" @selected($selectedSensorMainMeterId === (int) $sensorMainMeterOption->id)>
+                                    {{ $sensorMainMeterOption->meter_name }} — {{ $sensorMainMeterOption->facility?->name ?? 'Unknown Facility' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="submeter-sensor-picker-field">
+                        <label for="sensor_submeter_id">Submeter</label>
+                        <select id="sensor_submeter_id" name="sensor_submeter_id">
+                            <option value="0">{{ $selectedSensorMainMeterId > 0 ? 'All Submeters under Main Meter' : 'Select a Main Meter first' }}</option>
+                            @foreach($submeters as $sensorSubmeterOption)
+                                <option
+                                    value="{{ $sensorSubmeterOption->id }}"
+                                    data-main-meter-id="{{ (int) $sensorSubmeterMainMap->get((int) $sensorSubmeterOption->id, 0) }}"
+                                    @selected($selectedSensorSubmeterId === (int) $sensorSubmeterOption->id)
+                                >
+                                    {{ $sensorSubmeterOption->submeter_name }} — {{ $sensorSubmeterOption->facility?->name ?? 'Unknown Facility' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="sm-btn primary">Show Sensor Data</button>
+                </form>
+                <div class="submeter-sensor-selection">
+                    Showing:
+                    <strong>{{ $selectedSensorMainMeter?->meter_name ?? 'Select a Main Meter' }}</strong>
+                    @if($selectedSensorMainMeter)
+                        &middot;
+                        <strong>{{ $selectedSensorSubmeter?->submeter_name ?? 'All Linked Submeters' }}</strong>
+                    @endif
+                    @if($selectedSensorSubmeter?->facility)
+                        &middot; {{ $selectedSensorSubmeter->facility->name }}
+                    @elseif($selectedSensorMainMeter?->facility)
+                        &middot; {{ $selectedSensorMainMeter->facility->name }}
+                    @endif
                 </div>
             </div>
             <div class="submeter-sensor-body">
@@ -535,6 +641,8 @@
         <section class="submeter-panel">
             <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-filter">
                 <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                <input type="hidden" name="sensor_main_meter_id" value="{{ $selectedSensorMainMeterId }}">
+                <input type="hidden" name="sensor_submeter_id" value="{{ $selectedSensorSubmeterId }}">
                 <div class="submeter-field">
                     <label for="period_type">Period Type</label>
                     <select id="period_type" name="period_type" class="submeter-input">
@@ -553,6 +661,17 @@
                         <option value="">All Facilities</option>
                         @foreach($facilities as $facility)
                             <option value="{{ $facility->id }}" @selected((string) $selectedFacility === (string) $facility->id)>{{ $facility->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="submeter-field">
+                    <label for="main_meter_id">Main Meter</label>
+                    <select id="main_meter_id" name="main_meter_id" class="submeter-input">
+                        <option value="0">All Main Meters</option>
+                        @foreach($tableMainMeters as $tableMainMeter)
+                            <option value="{{ $tableMainMeter->id }}" @selected($selectedMainMeterId === (int) $tableMainMeter->id)>
+                                {{ $tableMainMeter->meter_name }} — {{ $tableMainMeter->facility?->name ?? 'Unknown Facility' }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -588,7 +707,7 @@
                                 <th class="center">Baseline Method</th>
                                 <th class="num">Variance (%)</th>
                                 <th class="center">Alert Status</th>
-                                <th class="center">Recommendation</th>
+                                <th class="center">Action / Recommendation</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -596,6 +715,12 @@
                             @php
                                 $level = strtolower((string) ($row->monitor_alert_level ?? 'none'));
                                 $increase = $row->monitor_increase_percent;
+                                $hasBaseline = is_numeric($row->monitor_baseline_kwh ?? null)
+                                    && (float) $row->monitor_baseline_kwh > 0;
+                                if (! $hasBaseline) {
+                                    $level = 'none';
+                                    $increase = null;
+                                }
                                 $baselineSource = strtolower((string) ($row->monitor_baseline_source ?? ''));
                                 $rowClass = match ($level) {
                                     'critical' => 'critical',
@@ -615,7 +740,7 @@
                                     'critical' => 'CRITICAL',
                                     'warning' => 'WARNING',
                                     'normal' => 'NORMAL',
-                                    default => 'NO DATA',
+                                    default => $hasBaseline ? 'NO DATA' : 'NOT EVALUATED',
                                 };
                                 $alertPillClass = match ($level) {
                                     'critical' => 'pill-critical',
@@ -644,7 +769,7 @@
                                 class="submeter-row {{ $rowClass }}"
                                 data-submeter-row
                                 data-submeter-id="{{ (int) $row->submeter_id }}"
-                                data-ai-url="{{ $insightUrl }}"
+                                @if($hasBaseline) data-ai-url="{{ $insightUrl }}" @endif
                                 data-fallback-alert="{{ strtolower($fallbackAlertForAi) }}"
                                 data-fallback-recommendation="{{ $fallbackRecommendationForAi }}"
                                 data-submeter-name="{{ $row->submeter?->submeter_name }}"
@@ -670,6 +795,7 @@
                                     <span data-alert-pill data-alert-level="{{ strtolower($fallbackAlertForAi) }}" class="alert-pill {{ $alertPillClass }}">{{ $alertDisplay }}</span>
                                 </td>
                                 <td class="recommendation-cell">
+                                    @if($hasBaseline)
                                     <button
                                         type="button"
                                         class="ai-rec-btn"
@@ -677,8 +803,14 @@
                                         aria-label="View AI recommendation"
                                         data-open-ai-modal
                                     >
-                                        <span class="ai-rec-icon">AI</span>
+                                        <span class="ai-rec-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                                        <span>View Recommendation</span>
                                     </button>
+                                    @else
+                                        <span class="baseline-required-label" title="A baseline will be generated after enough historical readings are available.">
+                                            <i class="fa-solid fa-chart-line"></i> Baseline Required
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -977,6 +1109,42 @@ async function prefetchSubmeterAiAlerts() {
         updateSubmeterRecommendationText(submeterId, insight.recommendation, insight.source);
     }
 }
+
+window.addEventListener('DOMContentLoaded', function () {
+    const sensorMainMeterSelect = document.getElementById('sensor_main_meter_id');
+    const sensorSubmeterSelect = document.getElementById('sensor_submeter_id');
+    if (!sensorMainMeterSelect || !sensorSubmeterSelect) return;
+
+    const filterSensorSubmeters = function () {
+        const selectedMainMeterId = Number(sensorMainMeterSelect.value || 0);
+        let visibleSubmeterCount = 0;
+
+        Array.from(sensorSubmeterSelect.options).forEach(function (option, index) {
+            if (index === 0) return;
+            const optionMainMeterId = Number(option.dataset.mainMeterId || 0);
+            const visible = selectedMainMeterId > 0 && optionMainMeterId === selectedMainMeterId;
+            option.hidden = !visible;
+            option.disabled = !visible;
+            if (visible) visibleSubmeterCount++;
+        });
+
+        const selectedOption = sensorSubmeterSelect.options[sensorSubmeterSelect.selectedIndex];
+        if (selectedOption && selectedOption.disabled) {
+            sensorSubmeterSelect.value = '0';
+        }
+        sensorSubmeterSelect.disabled = selectedMainMeterId === 0 || visibleSubmeterCount === 0;
+        sensorSubmeterSelect.options[0].disabled = selectedMainMeterId === 0;
+        sensorSubmeterSelect.options[0].textContent = selectedMainMeterId > 0
+            ? (visibleSubmeterCount > 0 ? 'All Submeters under Main Meter' : 'No linked submeters found')
+            : 'Select a Main Meter first';
+    };
+
+    sensorMainMeterSelect.addEventListener('change', function () {
+        sensorSubmeterSelect.value = '0';
+        filterSensorSubmeters();
+    });
+    filterSensorSubmeters();
+});
 
 window.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-open-ai-modal]').forEach(function (button) {

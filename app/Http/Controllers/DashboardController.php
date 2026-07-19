@@ -8,6 +8,7 @@ use App\Models\Maintenance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
@@ -24,40 +25,8 @@ class DashboardController extends Controller
             };
         };
 
-        $computeConsumptionStatus = function (float $deviation, float $baselineKwh): string {
-            if ($baselineKwh <= 1000) {
-                $size = 'Small';
-            } elseif ($baselineKwh <= 3000) {
-                $size = 'Medium';
-            } elseif ($baselineKwh <= 10000) {
-                $size = 'Large';
-            } else {
-                $size = 'Extra Large';
-            }
-
-            $thresholds = [
-                'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-                'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-                'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-                'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-            ];
-            $t = $thresholds[$size];
-
-            if ($deviation > $t['level5']) {
-                return 'Critical';
-            }
-            if ($deviation > $t['level4']) {
-                return 'Very High';
-            }
-            if ($deviation > $t['level3']) {
-                return 'High';
-            }
-            if ($deviation > $t['level2']) {
-                return 'Warning';
-            }
-
-            return 'Normal';
-        };
+        $computeConsumptionStatus = fn (float $deviation, float $baselineKwh): string
+            => \App\Models\EnergyRecord::resolveAlertLevel($deviation, $baselineKwh);
 
         // Alerts for dashboard/notifications (structured with severity for sorting and UI)
         $alerts = [];
@@ -225,23 +194,38 @@ class DashboardController extends Controller
                     ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100
                     : 0;
                 $status = 'Normal';
+                $trendSpikeDetected = false;
                 if ($totalBaseline > 0) {
                     $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
                     $status = $computeConsumptionStatus($deviation, $baselineForSize);
+                    $monthTotals = $records
+                        ->groupBy(fn ($row) => sprintf('%04d-%02d', (int) $row->year, (int) $row->month))
+                        ->map(fn (Collection $group) => (float) $group->sum('actual_kwh'))
+                        ->sortKeys()
+                        ->values();
+                    if ($monthTotals->count() >= 3) {
+                        $lastThree = $monthTotals->slice(-3)->values();
+                        $trendSpikeDetected = $lastThree[2] > $lastThree[1] && $lastThree[1] > $lastThree[0];
+                        if ($trendSpikeDetected && in_array($status, ['Normal', 'Warning'], true)) {
+                            $status = 'High';
+                        }
+                    }
                 }
 
                 return [
                     'name' => $facility->name,
                     'status' => $status,
                     'deviation' => round($deviation, 2),
+                    'trend_spike_detected' => $trendSpikeDetected,
                 ];
             })
             ->filter(function ($f) {
                 return in_array($f['status'], ['Critical', 'Very High', 'High'], true);
             });
         foreach ($criticalFacilities as $f) {
+            $spikeLabel = !empty($f['trend_spike_detected']) ? ' [3-Month Spike]' : '';
             $pushAlert(
-                "{$f['status']}: {$f['name']} is above baseline by {$f['deviation']}%.",
+                "{$f['status']}: {$f['name']} is above baseline by {$f['deviation']}%.{$spikeLabel}",
                 $f['status'],
                 'consumption'
             );
@@ -273,6 +257,7 @@ class DashboardController extends Controller
 
         // 3. Add alert for ongoing maintenance in selected period.
         $ongoingMaint = Maintenance::where('maintenance_status', 'Ongoing')
+            ->where('maintenance_type', '!=', 'Task')
             ->whereDate('created_at', '>=', $periodStartDate->toDateString())
             ->whereDate('created_at', '<=', $periodEndDate->toDateString())
             ->when($facilityIds, function ($q) use ($facilityIds) {
@@ -319,6 +304,7 @@ class DashboardController extends Controller
             ->whereDate('created_at', '<=', $periodEndDate->toDateString());
         $applyMainMeterRecordScope($activeAlertsQuery);
         $ongoingMaintenanceQuery = Maintenance::where('maintenance_status', 'Ongoing')
+            ->where('maintenance_type', '!=', 'Task')
             ->whereDate('created_at', '>=', $periodStartDate->toDateString())
             ->whereDate('created_at', '<=', $periodEndDate->toDateString());
 
@@ -426,9 +412,22 @@ class DashboardController extends Controller
                     ? (($totalKwh - $totalBaseline) / $totalBaseline) * 100
                     : 0;
                 $status = 'Normal';
+                $trendSpikeDetected = false;
                 if ($totalBaseline > 0) {
                     $baselineForSize = $records->count() > 0 ? ($totalBaseline / $records->count()) : $totalBaseline;
                     $status = $computeConsumptionStatus($deviation, $baselineForSize);
+                    $monthTotals = $records
+                        ->groupBy(fn ($row) => sprintf('%04d-%02d', (int) $row->year, (int) $row->month))
+                        ->map(fn (Collection $group) => (float) $group->sum('actual_kwh'))
+                        ->sortKeys()
+                        ->values();
+                    if ($monthTotals->count() >= 3) {
+                        $lastThree = $monthTotals->slice(-3)->values();
+                        $trendSpikeDetected = $lastThree[2] > $lastThree[1] && $lastThree[1] > $lastThree[0];
+                        if ($trendSpikeDetected && in_array($status, ['Normal', 'Warning'], true)) {
+                            $status = 'High';
+                        }
+                    }
                 }
 
                 return (object) [
@@ -437,6 +436,7 @@ class DashboardController extends Controller
                     'baseline_kwh' => round($totalBaseline, 2),
                     'deviation' => round($deviation, 2),
                     'status' => $status,
+                    'trend_spike_detected' => $trendSpikeDetected,
                 ];
             })
             ->sortByDesc('deviation')

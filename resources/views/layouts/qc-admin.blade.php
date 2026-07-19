@@ -566,6 +566,175 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     .user-menu-btn { padding-right: 8px; }
 }
 
+/* ===== APP-WIDE MOBILE UI SAFEGUARDS ===== */
+.main-content-inner {
+    min-width: 0;
+}
+
+.main-content-inner img,
+.main-content-inner video,
+.main-content-inner canvas,
+.main-content-inner svg {
+    max-width: 100%;
+}
+
+.main-content-inner input,
+.main-content-inner select,
+.main-content-inner textarea,
+.main-content-inner button {
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .top-header {
+        height: 64px;
+        padding: 0 10px 0 64px;
+        gap: 8px;
+    }
+
+    .main-content {
+        padding-top: 64px;
+    }
+
+    .main-content-inner {
+        min-height: calc(100vh - 64px);
+        padding: 16px 12px;
+    }
+
+    .header-left {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .header-left h1 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .header-right {
+        flex: 0 0 auto;
+        gap: 5px;
+    }
+
+    .header-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+    }
+
+    .main-content-inner h1 { font-size: clamp(1.35rem, 6vw, 1.75rem); }
+    .main-content-inner h2 { font-size: clamp(1.2rem, 5vw, 1.5rem); }
+    .main-content-inner h3 { font-size: clamp(1.05rem, 4.5vw, 1.3rem); }
+
+    .main-content-inner table {
+        display: block;
+        width: 100% !important;
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .main-content-inner .table-responsive,
+    .main-content-inner .table-scroll,
+    .main-content-inner [class*="table-wrap"],
+    .main-content-inner [class*="table-container"] {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .main-content-inner [style*="display:grid"],
+    .main-content-inner [style*="display: grid"] {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .main-content-inner [style*="display:flex"],
+    .main-content-inner [style*="display: flex"] {
+        min-width: 0;
+    }
+
+    .main-content-inner form [style*="display:flex"],
+    .main-content-inner form [style*="display: flex"],
+    .main-content-inner [class*="filter"] {
+        flex-wrap: wrap;
+    }
+
+    .main-content-inner input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    .main-content-inner select,
+    .main-content-inner textarea {
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    .main-content-inner .modal-overlay,
+    .main-content-inner [id$="Modal"][style*="position:fixed"],
+    .main-content-inner [id$="Modal"][style*="position: fixed"] {
+        padding: 12px !important;
+        overflow-y: auto;
+    }
+
+    .main-content-inner .modal-content,
+    .main-content-inner [class*="modal-dialog"],
+    .main-content-inner [id$="Modal"] > div {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+        max-height: calc(100dvh - 24px);
+        margin: auto !important;
+        padding: 20px 16px !important;
+        overflow-y: auto;
+    }
+
+    .main-content-inner [style*="position:fixed"][style*="right:"],
+    .main-content-inner [style*="position: fixed"][style*="right:"] {
+        max-width: calc(100vw - 24px) !important;
+    }
+
+    .global-toast-stack {
+        top: 74px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+
+    .has-hover-label::before,
+    .has-hover-label::after {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-hamburger {
+        top: 12px;
+        left: 12px;
+    }
+
+    .header-user .user-menu-btn .fa-chevron-down {
+        display: none;
+    }
+
+    .main-content-inner .btn,
+    .main-content-inner button,
+    .main-content-inner a[class*="btn"] {
+        min-height: 40px;
+    }
+
+    .session-timeout-dialog {
+        padding: 28px 18px 22px !important;
+    }
+
+    .session-timeout-title {
+        font-size: 1.45rem !important;
+        line-height: 1.2;
+    }
+
+    .session-timeout-message {
+        font-size: .95rem !important;
+    }
+}
+
 /* Additional Styles from Original */
 .user-info{ padding:16px; text-align:center; border-top:1px solid rgba(0,0,0,.1); }
 .logout-btn{ margin-top:8px; background:#3762c8; border:none; color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; width: 100%; }
@@ -1314,6 +1483,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         $notifMessage = (string) ($notif->message ?? '');
                         $notifLower = strtolower($notifMessage);
                         $notifType = strtolower((string) ($notif->type ?? 'alert'));
+                        $notifTargetUrl = trim((string) ($notif->target_url ?? ''));
                         $notifFacility = null;
                         foreach ([
                             '/\bfor\s+(.+?)\s+\([A-Za-z]{3,9}\s+\d{4}\)/i',
@@ -1365,6 +1535,14 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             'warning' => 'fa-bell',
                             'info' => 'fa-circle-info',
                         ][$notifSeverity] ?? 'fa-circle-info';
+                        $notifStoredTitle = trim((string) ($notif->title ?? ''));
+
+                        $isChecklistNotif = $notifType === 'maintenance'
+                            && (
+                                \Illuminate\Support\Str::contains($notifLower, 'checklist item')
+                                || \Illuminate\Support\Str::contains($notifLower, 'checklist')
+                                || \Illuminate\Support\Str::contains(strtolower($notifStoredTitle), 'checklist')
+                            );
 
                         $notifDisplayTitle = match ($notifType) {
                             'incident' => 'Incident Alert',
@@ -1374,25 +1552,35 @@ if (document.documentElement.classList.contains('dark-mode')) {
                             'contact' => 'Contact Inbox',
                             default => 'System Alert',
                         };
-                        $notifStoredTitle = trim((string) ($notif->title ?? ''));
                         if ($notifStoredTitle !== '' && strtolower($notifStoredTitle) !== 'system alert') {
                             $notifDisplayTitle = $notifStoredTitle;
                         }
 
-                        $notifTargetUrl = route('dashboard.index');
+                        if ($notifTargetUrl === '') {
+                            $notifTargetUrl = route('dashboard.index');
+                        }
                         if ($notifType === 'incident' || \Illuminate\Support\Str::contains($notifLower, 'incident:')) {
                             $notifTargetUrl = route('energy-incidents.index');
+                        } elseif ($isChecklistNotif) {
+                            $notifTargetUrl = route('modules.energy-conservation.feature', [
+                                'feature' => 'daily-checklist',
+                                'month' => now()->format('Y-m'),
+                            ]);
                         } elseif ($notifType === 'maintenance' || \Illuminate\Support\Str::contains($notifLower, 'maintenance:')) {
-                            $notifTargetUrl = \Illuminate\Support\Str::contains($notifLower, 'completed')
-                                ? route('maintenance.history')
-                                : route('modules.maintenance.index');
+                            if ($notifTargetUrl === '' || $notifTargetUrl === route('dashboard.index')) {
+                                $notifTargetUrl = \Illuminate\Support\Str::contains($notifLower, 'completed')
+                                    ? route('maintenance.history')
+                                    : route('modules.maintenance.index');
+                            }
                         } elseif ($notifType === 'contact' || \Illuminate\Support\Str::contains($notifLower, 'contact message')) {
                             $canAccessContactInbox = \App\Support\RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
                             $notifTargetUrl = $canAccessContactInbox
                                 ? route('modules.contact-messages.index')
                                 : route('dashboard.index');
                         } elseif ($notifType === 'record' || $notifType === 'consumption' || \Illuminate\Support\Str::contains($notifLower, 'alert:') || \Illuminate\Support\Str::contains($notifLower, 'baseline')) {
-                            $notifTargetUrl = route('dashboard.index');
+                            if ($notifTargetUrl === '' || $notifTargetUrl === route('dashboard.index')) {
+                                $notifTargetUrl = route('dashboard.index');
+                            }
                         }
                     @endphp
                     <a href="{{ $notifTargetUrl }}" class="notif-item notif-sev-{{ $notifSeverity }} {{ $notif->read_at ? 'is-read' : 'is-unread' }}" data-id="{{ $notif->id }}" data-read-url="{{ route('notifications.markRead', $notif) }}" data-level="{{ $notifSeverity }}" data-read="{{ $notif->read_at ? 'read' : 'unread' }}">
@@ -1472,28 +1660,49 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('modules.reports.*')
                 || request()->routeIs('reports.*')
                 || request()->routeIs('energy-incidents.*');
+            $canViewFacilities = \App\Support\RoleAccess::can($user, 'view_facilities');
+            $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
+            $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
+            $canViewSubmeters = \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
+            $canViewMaintenance = \App\Support\RoleAccess::can($user, 'view_maintenance');
+            $canViewReports = \App\Support\RoleAccess::can($user, 'access_reports');
+            $canAccessUsers = \App\Support\RoleAccess::can($user, 'access_users');
+            $canAccessSettings = \App\Support\RoleAccess::can($user, 'access_settings');
         @endphp
 
         <ul class="nav-list">
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            @if($roleKey==='energy_officer')
+            @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance)
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+                @if($canViewFacilities)
                 <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                @endif
+                @if($canViewEnergy || $canViewConservation || $canViewSubmeters)
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
                         <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
+                        @if($canViewEnergy)
                         <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                        @endif
+                        @if($canViewConservation)
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
+                        @endif
+                        @if($canViewSubmeters)
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                        <!-- Removed Export Report submenu -->
-                       
+                        @endif
                     </ul>
                 </li>
+                @endif
+                @if($canViewMaintenance)
                 <li><a href="{{ $p('modules/maintenance/index') }}" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
+                @endif
+            @endif
+
+            @if($canViewReports)
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
@@ -1506,50 +1715,17 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
-            @else
-                <!-- ...existing code for other roles... -->
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
-                @if(in_array($roleKey, ['super_admin', 'admin', 'staff'], true))
-                    <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
-                    @if(in_array($roleKey, ['super_admin', 'admin', 'energy_officer', 'staff'], true))
-                        <li class="nav-item-has-submenu">
-                            <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
-                                <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
-                                <i class="fa fa-caret-down"></i>
-                            </a>
-                            <ul class="nav-submenu">
-                                <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
-                                <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
-                                <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
-                                <!-- Removed Export Report sidebar link -->
-                             
-                            </ul>
-                        </li>
-                    @endif
-                    <li><a href="{{ $p('modules/maintenance/index') }}" class="nav-link{{ request()->is('modules/maintenance*') ? ' active' : '' }}"><i class="fa-solid fa-wrench"></i> Maintenance</a></li>
-                @endif
-
-                @if(in_array($roleKey, ['super_admin', 'admin', 'energy_officer', 'staff'], true))
-                    <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
-                    <li class="nav-item-has-submenu">
-                        <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
-                            <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
-                            <i class="fa fa-caret-down"></i>
-                        </a>
-                        <ul class="nav-submenu">
-                            <li><a href="{{ $p('modules/reports/energy') }}" class="nav-link{{ (request()->routeIs('modules.reports.energy') || request()->routeIs('reports.energy') || request()->is('modules/reports/energy')) ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
-                            <li><a href="{{ $p('modules/reports/efficiency-summary') }}" class="nav-link{{ request()->routeIs('reports.efficiency-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
-                            <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
-                        </ul>
-                    </li>
-                @endif
             @endif
 
-            @if(in_array($roleKey, ['super_admin', 'admin'], true))
+            @if($canAccessUsers || $canAccessSettings)
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
+                @if($canAccessUsers)
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
+                @if(in_array($roleKey, ['super_admin', 'admin'], true))
                 <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
-                @if($roleKey==='super_admin')
+                @endif
+                @endif
+                @if($canAccessSettings)
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
@@ -1573,11 +1749,11 @@ if (document.documentElement.classList.contains('dark-mode')) {
     </div>
 </div>
 
-<div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;">
-    <div style="background:#fff;padding:44px 36px 36px 36px;border-radius:20px;max-width:430px;text-align:center;box-shadow:0 12px 40px rgba(37,99,235,0.15);">
+<div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;padding:12px;">
+    <div class="session-timeout-dialog" style="width:100%;background:#fff;padding:44px 36px 36px 36px;border-radius:20px;max-width:430px;text-align:center;box-shadow:0 12px 40px rgba(37,99,235,0.15);">
         <div style="font-size:3rem;line-height:1;color:#e11d48;margin-bottom:8px;"><i class="fa fa-lock"></i></div>
-        <div style="font-size:2rem;font-weight:900;color:#e11d48;margin-bottom:10px;letter-spacing:-1px;">Session Ended for Security</div>
-        <div style="color:#334155;font-size:1.15rem;margin-bottom:18px;font-weight:600;">Your session has timed out due to inactivity or a security update.<br>To protect your account, we've signed you out automatically.</div>
+        <div class="session-timeout-title" style="font-size:2rem;font-weight:900;color:#e11d48;margin-bottom:10px;letter-spacing:-1px;">Session Ended for Security</div>
+        <div class="session-timeout-message" style="color:#334155;font-size:1.15rem;margin-bottom:18px;font-weight:600;">Your session has timed out due to inactivity or a security update.<br>To protect your account, we've signed you out automatically.</div>
         <div style="color:#64748b;font-size:1.01rem;margin-bottom:24px;">Please log in again to continue your work. If you need help, contact your system administrator.</div>
         <a href="/login" style="background:linear-gradient(90deg,#2563eb,#6366f1);color:#fff;padding:13px 36px;border-radius:10px;text-decoration:none;display:inline-block;font-weight:800;font-size:1.13rem;box-shadow:0 2px 8px #2563eb22;transition:background 0.18s;">Log In</a>
     </div>

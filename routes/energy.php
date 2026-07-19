@@ -242,35 +242,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $query->where('year', $selectedYear);
         $records = $query->get();
 
-        $getAlertBySize = function ($deviation, $baselineKwh) {
-            if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
-                return '-';
-            }
-
-            if ($baselineKwh <= 1000) {
-                $size = 'Small';
-            } elseif ($baselineKwh <= 3000) {
-                $size = 'Medium';
-            } elseif ($baselineKwh <= 10000) {
-                $size = 'Large';
-            } else {
-                $size = 'Extra Large';
-            }
-
-            $thresholds = [
-                'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-                'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-                'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-                'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-            ];
-            $t = $thresholds[$size];
-
-            if ($deviation > $t['level5']) return 'Critical';
-            if ($deviation > $t['level4']) return 'Very High';
-            if ($deviation > $t['level3']) return 'High';
-            if ($deviation > $t['level2']) return 'Warning';
-            return 'Normal';
-        };
+        $getAlertBySize = fn ($deviation, $baselineKwh) => $deviation === null || $baselineKwh === null || $baselineKwh <= 0
+            ? '-'
+            : \App\Models\EnergyRecord::resolveAlertLevel((float) $deviation, (float) $baselineKwh);
 
         $getHighestAlert = function ($alerts) {
             $priority = [
@@ -278,6 +252,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'Very High' => 4,
                 'High' => 3,
                 'Warning' => 2,
+                'Drop Critical' => 5,
+                'Drop High' => 4,
+                'Drop Warning' => 2,
                 'Normal' => 1,
                 '-' => 0,
             ];

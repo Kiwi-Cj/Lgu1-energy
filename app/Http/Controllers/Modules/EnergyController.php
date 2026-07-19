@@ -5,11 +5,16 @@ use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Support\RoleAccess;
+use App\Services\EnergyTrendService;
 use Illuminate\Http\Request;
 
 class EnergyController extends Controller
 {
     private ?array $trendPercentThresholdsBySize = null;
+
+    public function __construct(private readonly EnergyTrendService $energyTrendService)
+    {
+    }
 
     public function destroy($id)
     {
@@ -142,7 +147,7 @@ class EnergyController extends Controller
             ->orderByDesc('month')
             ->get();
 
-        $trendByRecordId = $this->buildTrendDirectionMap($records);
+        $trendByRecordId = $this->energyTrendService->labelsFor($records);
         $energyRows = [];
 
         foreach ($records as $record) {
@@ -150,7 +155,7 @@ class EnergyController extends Controller
             $baseline = $record->baseline_kwh;
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
-            $trend = $trendByRecordId[$record->id] ?? 'stable';
+            $trend = $trendByRecordId[$record->id] ?? 'insufficient';
 
             // Format month display
             $monthNum = (int)ltrim($record->month, '0');
@@ -323,30 +328,7 @@ class EnergyController extends Controller
             return '';
         }
 
-        $sizeLabel = match (true) {
-            $baseline === null => 'Medium',
-            $baseline <= 1000 => 'Small',
-            $baseline <= 3000 => 'Medium',
-            $baseline <= 10000 => 'Large',
-            default => 'Extra Large',
-        };
-
-        $thresholds = [
-            'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-            'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-            'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-            'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-        ];
-
-        $t = $thresholds[$sizeLabel];
-
-        return match (true) {
-            $deviation > $t['level5'] => 'Critical',
-            $deviation > $t['level4'] => 'Very High',
-            $deviation > $t['level3'] => 'High',
-            $deviation > $t['level2'] => 'Warning',
-            default => 'Normal',
-        };
+        return \App\Models\EnergyRecord::resolveAlertLevel($deviation, $baseline);
     }
 
     private function buildIndexParams(Request $request): array
