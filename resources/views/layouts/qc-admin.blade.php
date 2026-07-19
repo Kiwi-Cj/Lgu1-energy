@@ -1432,18 +1432,27 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     <i class="fa fa-caret-down user-menu-caret"></i>
                 </button>
                 <div id="userDropdown" class="user-dropdown">
-                    <div class="user-dropdown-head">
-                        <div class="user-dropdown-name">{{ $currentUserName }}</div>
-                        <div class="user-dropdown-role">{{ $currentUserRole ?: 'Guest' }}</div>
-                    </div>
-                    <a href="{{ route('profile.show') }}" class="user-dropdown-link">
-                        <i class="fa fa-user"></i> My Profile
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="logout-btn">Logout</button>
-                    </form>
-                </div>
+    <div class="user-dropdown-head">
+        <div class="user-dropdown-name">{{ $currentUserName }}</div>
+        <div class="user-dropdown-role">{{ $currentUserRole ?: 'Guest' }}</div>
+    </div>
+    <a href="{{ route('profile.show') }}" class="user-dropdown-link">
+        <i class="fa fa-user"></i> My Profile
+    </a>
+    <a href="{{ route('about.index') }}" class="user-dropdown-link">
+        <i class="fa fa-info-circle"></i> About LGU Energy System
+    </a>
+    <a href="{{ route('faqs.index') }}" class="user-dropdown-link">
+        <i class="fa fa-question-circle"></i> FAQs
+    </a>
+    <a href="{{ route('privacy.index') }}" class="user-dropdown-link">
+        <i class="fa fa-shield-alt"></i> Privacy Notice
+    </a>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button class="logout-btn">Logout</button>
+    </form>
+</div>
             </div>
         @endauth
     </div>

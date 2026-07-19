@@ -45,6 +45,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/users/roles/{role}', [\App\Http\Controllers\Modules\UsersController::class, 'destroyRole'])->name('users.roles.destroy');
 });
 
+// ============================================================
+// LANDING PAGES (Public)
+// ============================================================
 Route::get('/', function () {
     return view('welcome');
 });
@@ -53,6 +56,13 @@ Route::view('/features', 'landing.features')->name('landing.features');
 Route::view('/testimonials', 'landing.testimonials')->name('landing.testimonials');
 Route::view('/contact', 'landing.contact')->name('landing.contact');
 Route::post('/contact', [ContactMessageController::class, 'store'])->name('landing.contact.store');
+
+// ============================================================
+// ABOUT, FAQS, PRIVACY NOTICE (Public Pages)
+// ============================================================
+Route::view('/about', 'pages.about')->name('about.index');
+Route::view('/faqs', 'pages.faqs')->name('faqs.index');
+Route::view('/privacy', 'pages.privacy')->name('privacy.index');
 
 // Maintenance History Route
 Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
