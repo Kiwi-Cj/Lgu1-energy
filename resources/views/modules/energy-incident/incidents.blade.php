@@ -242,7 +242,7 @@
                         </div>
                         <div class="action-col">
                             <button type="button" class="detail-btn" onclick="event.stopPropagation(); openIncidentModal({{ $incident->id }})">
-                                Details
+                                View Details <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -1000,8 +1000,93 @@ body.dark-mode .incident-page .attachment-list a {
         flex: 1;
     }
     .row-main {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+        padding: 0;
+    }
+    .incident-list-container {
+        display: grid;
+        gap: 12px;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+    .incident-list-row {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #dbe4f2;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 5px 14px rgba(15, 23, 42, .07);
+    }
+    .incident-list-row::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #ef4444;
+    }
+    .incident-list-row[data-level="very-high"]::before { background: #f43f5e; }
+    .incident-list-row[data-level="high"]::before { background: #f97316; }
+    .incident-list-row[data-level="warning"]::before { background: #eab308; }
+    .incident-list-row[data-level="normal"]::before { background: #22c55e; }
+    .incident-list-row:hover,
+    .incident-list-row:focus {
+        transform: none;
+        border-color: #93c5fd;
+        box-shadow: 0 7px 18px rgba(37, 99, 235, .12);
+    }
+    .facility-col {
+        grid-column: 1 / -1;
+        padding: 14px 14px 10px 17px;
+    }
+    .facility-name { font-size: .98rem; }
+    .facility-desc {
+        margin-top: 5px;
+        font-size: .82rem;
+        line-height: 1.45;
+    }
+    .meta-col {
+        grid-column: 1 / -1;
+        padding: 0 14px 12px 17px;
+    }
+    .value-col {
+        min-width: 0;
+        padding: 11px 14px;
+        border-top: 1px solid #edf2f7;
+        background: #fcfdff;
+    }
+    .value-col + .value-col { border-left: 1px solid #edf2f7; }
+    .value-main { font-size: .93rem; }
+    .action-col {
+        grid-column: 1 / -1;
+        padding: 11px 14px 13px;
+        border-top: 1px solid #edf2f7;
+        text-align: center;
+    }
+    .detail-btn {
+        width: 100%;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         gap: 8px;
+        font-size: .82rem;
+    }
+    .detail-btn i { transition: transform .16s ease; }
+    .detail-btn:hover i { transform: translateX(3px); }
+    body.dark-mode .incident-page .incident-list-container { background: transparent; border-color: transparent; }
+    body.dark-mode .incident-page .incident-list-row { background: #111827; border-color: #334155; }
+    body.dark-mode .incident-page .value-col,
+    body.dark-mode .incident-page .action-col { background: #0f172a; border-color: #334155; }
+    body.dark-mode .incident-page .value-col + .value-col { border-left-color: #334155; }
+    .incident-modal { padding: 12px; }
+    .incident-modal-content {
+        width: 100%;
+        max-height: calc(100dvh - 24px);
+        padding: 20px 16px 16px;
+        border-radius: 14px;
     }
     .detail-grid {
         grid-template-columns: 1fr;

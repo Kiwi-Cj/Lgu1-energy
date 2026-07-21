@@ -448,6 +448,87 @@
         .maintenance-form-grid {
             grid-template-columns: 1fr;
         }
+        .report-card { padding: 16px; }
+        .table-toolbar { align-items: stretch; }
+        .table-search { width: 100%; }
+        .maint-table-wrapper { overflow: visible; border: 0; background: transparent; }
+        .maint-table,
+        .maint-table tbody { display: block; width: 100%; }
+        .maint-table thead { display: none; }
+        .maint-table tbody { display: grid; gap: 12px; }
+        .maint-table tbody tr[data-maintenance-row] {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            overflow: hidden;
+            border: 1px solid #dbe4f2;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, .07);
+        }
+        .maint-table tbody tr[data-maintenance-row] > td {
+            display: grid;
+            grid-template-columns: minmax(100px, .75fr) minmax(0, 1.25fr);
+            align-items: center;
+            gap: 12px;
+            min-height: 46px;
+            padding: 10px 12px;
+            border: 0;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+        }
+        .maint-table tbody tr[data-maintenance-row] > td::before {
+            content: attr(data-label);
+            color: #64748b;
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .045em;
+            text-transform: uppercase;
+        }
+        .maint-table tbody tr[data-maintenance-row] > td:first-child {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 12px;
+            background: #f8fbff;
+        }
+        .maint-table tbody tr[data-maintenance-row] > td:first-child::before { display: none; }
+        .maint-table tbody tr[data-maintenance-row] > td:last-child { border-bottom: 0; }
+        .maint-table tbody tr[data-maintenance-row] > td:nth-child(n+5) { display: none; }
+        .maint-table tbody tr[data-maintenance-row].is-expanded > td:nth-child(n+5) { display: grid; }
+        .maint-table tbody tr[data-maintenance-row].is-expanded > td:first-child { background: #eff6ff; }
+        .mobile-row-toggle {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            background: #fff;
+            color: #1d4ed8;
+            padding: 6px 9px;
+            font-size: .72rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .mobile-row-toggle i { transition: transform .2s ease; }
+        .is-expanded .mobile-row-toggle i { transform: rotate(180deg); }
+        .maint-table .remarks-cell { max-width: none; margin: 0; }
+        .maint-table tbody tr:not([data-maintenance-row]) { display: block; }
+        .maint-table .empty-row-cell { display: block; width: 100%; border: 1px solid #dbe4f2; border-radius: 12px; }
+        body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row] {
+            background: #111827;
+            border-color: #334155;
+        }
+        body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row] > td { border-color: #334155; }
+        body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row] > td:first-child { background: #182437; }
+        body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row].is-expanded > td:first-child { background: #1e3a5f; }
+        body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row] > td::before { color: #94a3b8; }
+        body.dark-mode .maintenance-page .mobile-row-toggle { background: #0f172a; color: #93c5fd; border-color: #334155; }
+    }
+
+    @media (min-width: 761px) {
+        .mobile-row-toggle { display: none; }
     }
 </style>
 
@@ -575,6 +656,7 @@
                     ]));
                 @endphp
                 <tr data-id="{{ $row['id'] ?? $i }}"
+                    data-maintenance-row
                     data-trigger_month="{{ $row['trigger_month'] ?? '' }}"
                     data-status="{{ $statusClass }}"
                     data-search="{{ $searchText }}"
@@ -582,17 +664,22 @@
                     data-scheduled_date="{{ $row['scheduled_date'] ?? '' }}" 
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
                     data-completed_date="{{ $row['completed_date'] ?? '' }}">
-                    <td class="facility-cell">{{ $row['facility'] }}</td>
-                    <td>{{ $row['issue_type'] }}</td>
-                    <td>{{ $row['trigger_month'] }}</td>
+                    <td class="facility-cell">
+                        <span>{{ $row['facility'] }}</span>
+                        <button type="button" class="mobile-row-toggle" aria-expanded="false">
+                            <span>Details</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                    </td>
+                    <td data-label="Issue Type">{{ $row['issue_type'] }}</td>
+                    <td data-label="Trigger Month">{{ $row['trigger_month'] }}</td>
                     <!-- Efficiency value removed -->
-                    <td><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
-                    <td>{{ $row['scheduled_date'] }}</td>
-                    <td class="remarks-muted">
+                    <td data-label="Status"><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
+                    <td data-label="Scheduled">{{ $row['scheduled_date'] }}</td>
+                    <td class="remarks-muted" data-label="Remarks">
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
                     </td>
                     @if($userRole !== 'staff')
-                    <td>{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
+                    <td data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
                     @endif
                 </tr>
                 @empty
@@ -800,6 +887,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (noMatchRow) noMatchRow.classList.toggle('hidden-row', visible !== 0);
     };
 
+    document.querySelectorAll('.mobile-row-toggle').forEach((button) => {
+        button.addEventListener('click', function () {
+            const row = this.closest('[data-maintenance-row]');
+            if (!row) return;
+            const expanded = row.classList.toggle('is-expanded');
+            this.setAttribute('aria-expanded', String(expanded));
+            const label = this.querySelector('span');
+            if (label) label.textContent = expanded ? 'Less' : 'Details';
+        });
+    });
+
     document.querySelectorAll('.schedule-btn').forEach((btn) => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -810,7 +908,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTitle) modalTitle.innerText = 'Update Maintenance';
             if (modalMaintenanceId) modalMaintenanceId.value = row.getAttribute('data-id') || '';
 
-            const facilityName = cells[0]?.innerText.trim();
+            const facilityName = cells[0]?.querySelector(':scope > span')?.innerText.trim();
             if (modalFacility && facilityName) {
                 for (let i = 0; i < modalFacility.options.length; i++) {
                     if (modalFacility.options[i].text === facilityName) {

@@ -560,10 +560,30 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
 
 @media(max-width:480px){
     .header-sub { display: none; }
-    .main-content-inner { padding: 20px 15px; }
+    .top-header {
+        padding-left: 68px;
+        padding-right: 10px;
+    }
+    .header-left {
+        min-width: 0;
+        flex: 1;
+    }
     .header-left h1 { font-size: 1.1rem; }
+    .header-right { gap: 6px; }
+    .header-icon-btn {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+    }
+    .main-content-inner { padding: 18px 12px; }
     .user-name { display: none; }
-    .user-menu-btn { padding-right: 8px; }
+    .user-menu-btn {
+        width: 44px;
+        padding: 0 5px;
+        justify-content: center;
+        gap: 3px;
+    }
+    .user-menu-caret { font-size: .72rem; }
 }
 
 /* Additional Styles from Original */
@@ -1427,7 +1447,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         @auth
             <div class="header-user user-menu-wrap">
                 <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
-                    <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar">
+                    <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar" onerror="this.onerror=null;this.src='{{ asset('img/default-avatar.png') }}';">
                     <span class="user-name">{{ $currentUserName }}</span>
                     <i class="fa fa-caret-down user-menu-caret"></i>
                 </button>

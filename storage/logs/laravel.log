@@ -509,3 +509,29 @@
 #76 /home/my_pc/lgu-energy/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('...')
 #77 {main}
 "} 
+[2026-07-20 10:25:29] local.ERROR: Writing to C:/Users/cjpog/AppData/Roaming/PsySH/psysh_history is not allowed. {"exception":"[object] (ErrorException(code: 0): Writing to C:/Users/cjpog/AppData/Roaming/PsySH/psysh_history is not allowed. at C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/ConfigPaths.php:419)
+[stacktrace]
+#0 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleError(1024, 'Writing to C:/U...', 'C://xampp//htdocs...', 419)
+#1 [internal function]: Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure}(1024, 'Writing to C:/U...', 'C://xampp//htdocs...', 419)
+#2 C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/ConfigPaths.php(419): trigger_error('Writing to C:/U...', 1024)
+#3 C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/Configuration.php(683): Psy/ConfigPaths::touchFileWithMkdir('C:/Users/cjpog/...')
+#4 C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/Configuration.php(707): Psy/Configuration->setHistoryFile('C:/Users/cjpog/...')
+#5 C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/Configuration.php(852): Psy/Configuration->getHistoryFile()
+#6 C:/xampp/htdocs/Lgu1-energy/vendor/psy/psysh/src/Shell.php(95): Psy/Configuration->getReadline()
+#7 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/tinker/src/Console/TinkerCommand.php(59): Psy/Shell->__construct(Object(Psy/Configuration))
+#8 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#9 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#10 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#11 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#12 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#13 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate/Container/Container->call(Array)
+#14 C:/xampp/htdocs/Lgu1-energy/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#15 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#16 C:/xampp/htdocs/Lgu1-energy/vendor/symfony/console/Application.php(1102): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#17 C:/xampp/htdocs/Lgu1-energy/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#18 C:/xampp/htdocs/Lgu1-energy/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#19 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#20 C:/xampp/htdocs/Lgu1-energy/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#21 C:/xampp/htdocs/Lgu1-energy/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#22 {main}
+"}

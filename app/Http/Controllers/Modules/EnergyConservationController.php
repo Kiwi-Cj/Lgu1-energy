@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules;
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use App\Models\EnergyRecord;
+use App\Models\EnergySavingRecommendation;
 use App\Models\Facility;
 use App\Support\EnergyCost;
 use App\Support\RoleAccess;
@@ -30,6 +31,30 @@ class EnergyConservationController extends Controller
         $overview = $this->buildOverviewData($request);
         $selectedFacilityId = (int) $request->query('facility_id', 0);
         $selectedFacility = $overview['facilities']->firstWhere('id', $selectedFacilityId);
+        $canReviewTips = RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer']);
+        $energyTips = collect();
+
+        if ($feature === 'energy-saving-tips') {
+            $energyTips = $this->energySavingTips($overview['rows'], $selectedFacilityId, $overview['periodLabel']);
+            [$tipYear, $tipMonth] = array_map('intval', explode('-', $overview['selectedMonth']));
+            $reviews = EnergySavingRecommendation::query()
+                ->with('reviewer:id,username')
+                ->where('year', $tipYear)
+                ->where('month', $tipMonth)
+                ->whereIn('facility_id', $energyTips->pluck('facility_id')->filter())
+                ->get()
+                ->keyBy('facility_id');
+
+            $energyTips = $energyTips
+                ->map(function (array $tip) use ($reviews) {
+                    $tip['review'] = $reviews->get($tip['facility_id'] ?? 0);
+                    return $tip;
+                })
+                ->when(! $canReviewTips, fn (Collection $tips) => $tips->filter(
+                    fn (array $tip) => ($tip['review']?->status ?? null) === 'approved' || empty($tip['facility_id'])
+                ))
+                ->values();
+        }
 
         return view('modules.energy-conservation.feature', [
             'selectedMonth' => $overview['selectedMonth'],
@@ -39,7 +64,50 @@ class EnergyConservationController extends Controller
             'overview' => $overview,
             'selectedFacility' => $selectedFacility,
             'selectedFacilityId' => $selectedFacilityId,
+            'energyTips' => $energyTips,
+            'canReviewTips' => $canReviewTips,
         ]);
+    }
+
+    public function reviewEnergyTip(Request $request)
+    {
+        if (! RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer'])) {
+            abort(403, 'Only Engineering, Energy Officers, or administrators can review energy tips.');
+        }
+
+        $validated = $request->validate([
+            'facility_id' => ['required', 'integer', 'exists:facilities,id'],
+            'period' => ['required', 'date_format:Y-m'],
+            'status' => ['required', 'in:for_review,approved,dismissed'],
+            'engineer_recommendation' => ['nullable', 'string', 'max:3000', 'required_if:status,approved'],
+            'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'target_date' => ['nullable', 'date'],
+        ]);
+
+        $request->merge(['month' => $validated['period'], 'facility_id' => $validated['facility_id']]);
+        $overview = $this->buildOverviewData($request);
+        $tip = $this->energySavingTips($overview['rows'], (int) $validated['facility_id'], $overview['periodLabel'])->first();
+        abort_unless($tip && ! empty($tip['facility_id']), 422, 'No monthly energy data is available for this facility.');
+        [$year, $month] = array_map('intval', explode('-', $validated['period']));
+
+        EnergySavingRecommendation::updateOrCreate(
+            ['facility_id' => $validated['facility_id'], 'year' => $year, 'month' => $month],
+            [
+                'generated_message' => $tip['message'],
+                'engineer_recommendation' => $validated['engineer_recommendation'],
+                'status' => $validated['status'],
+                'expected_savings_kwh' => $validated['expected_savings_kwh'] ?? null,
+                'target_date' => $validated['target_date'] ?? null,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]
+        );
+
+        return redirect()->route('modules.energy-conservation.feature', [
+            'feature' => 'energy-saving-tips',
+            'month' => $validated['period'],
+            'facility_id' => $validated['facility_id'],
+        ])->with('success', 'Energy-saving recommendation updated.');
     }
 
     private function renderOverview(Request $request)
@@ -156,7 +224,7 @@ class EnergyConservationController extends Controller
                 'badge' => 'Enabled',
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-sun',
-                'description' => 'Nagpapakita ng mga tip para makatipid sa kuryente.',
+                'description' => 'Data-driven recommendations for reducing electricity use across LGU facilities.',
                 'details' => [
                     'Post practical tips for AC, lighting, and equipment use.',
                     'Highlight weekly or monthly saving reminders.',
@@ -306,6 +374,124 @@ class EnergyConservationController extends Controller
             default => $deviation === null
                 ? 'Add current main meter readings and baseline data to generate conservation guidance.'
                 : 'Continue monitoring this facility for conservation opportunities.',
+        };
+    }
+
+    private function energySavingTips(Collection $rows, int $facilityId, string $periodLabel): Collection
+    {
+        $targetRows = $facilityId > 0
+            ? $rows->where('facility_id', $facilityId)
+            : $rows;
+
+        if ($targetRows->isEmpty()) {
+            return collect([[
+                'priority' => 'Data needed',
+                'tone' => 'info',
+                'icon' => 'fa-solid fa-circle-info',
+                'title' => 'Add a monthly main-meter record',
+                'message' => "No usable energy record was found for {$periodLabel}. Add actual kWh and a baseline so the system can calculate targeted saving tips.",
+                'facility_name' => null,
+                'facility_id' => null,
+                'metric' => null,
+            ]]);
+        }
+
+        return $targetRows
+            ->sortByDesc(fn (array $row) => (float) ($row['deviation'] ?? -999))
+            ->take(6)
+            ->map(function (array $row) use ($periodLabel) {
+                $actual = (float) ($row['actual_kwh'] ?? 0);
+                $baseline = (float) ($row['baseline_kwh'] ?? 0);
+                $excess = (float) ($row['excess_kwh'] ?? 0);
+                $avoidableCost = (float) ($row['avoidable_cost'] ?? 0);
+                $deviation = $row['deviation'];
+                $facilityName = (string) ($row['facility_name'] ?? 'Facility');
+                $facilityType = (string) ($row['facility_type'] ?? 'Facility');
+                $operationalAction = $this->operationalTipFor($facilityType);
+
+                if ($baseline <= 0 || $deviation === null) {
+                    return [
+                        'priority' => 'Set baseline',
+                        'tone' => 'info',
+                        'icon' => 'fa-solid fa-gauge-high',
+                        'title' => 'Establish a reliable consumption baseline',
+                        'message' => "{$facilityName} used " . number_format($actual, 2) . " kWh in {$periodLabel}, but has no valid baseline. Add a baseline before setting a reduction target. {$operationalAction}",
+                        'facility_name' => $facilityName,
+                        'facility_id' => $row['facility_id'],
+                        'metric' => number_format($actual, 2) . ' kWh actual',
+                    ];
+                }
+
+                if ($deviation >= 20) {
+                    return [
+                        'priority' => 'Urgent',
+                        'tone' => 'critical',
+                        'icon' => 'fa-solid fa-triangle-exclamation',
+                        'title' => 'Cut the current excess load first',
+                        'message' => "{$facilityName} is " . number_format((float) $deviation, 2) . "% above baseline. Target at least " . number_format($excess, 2) . " kWh reduction and review the largest loads immediately. {$operationalAction}",
+                        'facility_name' => $facilityName,
+                        'facility_id' => $row['facility_id'],
+                        'metric' => 'Potential PHP ' . number_format($avoidableCost, 2) . ' avoidable cost',
+                    ];
+                }
+
+                if ($deviation >= 10) {
+                    return [
+                        'priority' => 'High priority',
+                        'tone' => 'warning',
+                        'icon' => 'fa-solid fa-bolt',
+                        'title' => 'Reduce operating-hour consumption',
+                        'message' => "{$facilityName} is " . number_format((float) $deviation, 2) . "% above baseline for {$periodLabel}. {$operationalAction} Track the meter weekly until usage returns to baseline.",
+                        'facility_name' => $facilityName,
+                        'facility_id' => $row['facility_id'],
+                        'metric' => number_format($excess, 2) . ' excess kWh',
+                    ];
+                }
+
+                if ($deviation > 0) {
+                    return [
+                        'priority' => 'Monitor',
+                        'tone' => 'watch',
+                        'icon' => 'fa-solid fa-chart-line',
+                        'title' => 'Prevent the small increase from growing',
+                        'message' => "{$facilityName} is slightly above baseline by " . number_format((float) $deviation, 2) . "%. {$operationalAction} Compare weekly readings to confirm the adjustment works.",
+                        'facility_name' => $facilityName,
+                        'facility_id' => $row['facility_id'],
+                        'metric' => number_format($excess, 2) . ' excess kWh',
+                    ];
+                }
+
+                $savedKwh = max(0, $baseline - $actual);
+
+                return [
+                    'priority' => 'Maintain',
+                    'tone' => 'success',
+                    'icon' => 'fa-solid fa-leaf',
+                    'title' => 'Maintain the current energy controls',
+                    'message' => "{$facilityName} is within or below baseline for {$periodLabel}. Keep the current operating schedule and check for rebound consumption next month.",
+                    'facility_name' => $facilityName,
+                    'facility_id' => $row['facility_id'],
+                    'metric' => number_format($savedKwh, 2) . ' kWh below baseline',
+                ];
+            })
+            ->values();
+    }
+
+    private function operationalTipFor(string $facilityType): string
+    {
+        $type = strtolower($facilityType);
+
+        return match (true) {
+            str_contains($type, 'health'), str_contains($type, 'hospital'), str_contains($type, 'clinic')
+                => 'Keep critical medical loads on, but optimize AC zoning, lighting, and non-clinical equipment schedules.',
+            str_contains($type, 'market')
+                => 'Check refrigeration seals and setpoints, stagger heavy equipment startup, and switch off unused stall lighting.',
+            str_contains($type, 'office'), str_contains($type, 'administrative')
+                => 'Set AC to 24–25°C, use natural light where practical, and enforce shutdown of idle computers after office hours.',
+            str_contains($type, 'engineering'), str_contains($type, 'workshop')
+                => 'Stagger high-load tools, inspect motors, and avoid leaving workshop equipment energized while idle.',
+            default
+                => 'Review AC runtime, lighting schedules, and equipment left energized outside operating hours.',
         };
     }
 
