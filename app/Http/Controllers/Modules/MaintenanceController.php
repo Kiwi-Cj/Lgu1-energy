@@ -7,6 +7,7 @@ use App\Models\Facility;
 use App\Models\User;
 use App\Support\RoleAccess;
 use App\Traits\MaintenanceSyncHelpers;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -55,12 +56,13 @@ class MaintenanceController extends Controller
                 'facility' => $this->resolveFacilityName((int) $row->facility_id, $row->facility?->name),
                 'issue_type' => $row->issue_type,
                 'trigger_month' => $row->trigger_month,
+                'trigger_date' => $this->formatHistoryDate($row->trigger_date ?? $row->created_at),
                 'trend' => $row->trend,
                 'maintenance_type' => $row->maintenance_type,
                 'maintenance_status' => $row->maintenance_status,
-                'scheduled_date' => $row->scheduled_date ?? '-',
+                'scheduled_date' => $this->formatHistoryDate($row->scheduled_date),
                 'assigned_to' => $row->assigned_to,
-                'completed_date' => $row->completed_date,
+                'completed_date' => $this->formatHistoryDate($row->completed_date),
                 'remarks' => $resolvedRemarks,
             ];
         }
@@ -250,6 +252,7 @@ public function index()
             'facility_image_url' => $row->facility?->resolved_image_url,
             'issue_type' => $row->issue_type,
             'trigger_month' => $row->trigger_month,
+            'trigger_date' => $row->created_at?->format('M d, Y') ?? $row->trigger_month,
             'maintenance_type' => $row->maintenance_type,
             'maintenance_status' => $row->maintenance_status,
             'scheduled_date' => $row->scheduled_date ?? '-',
@@ -349,6 +352,19 @@ private function ensureMaintenanceHistoryDeleteAccess(?Request $request = null)
     }
 
     return redirect()->back()->with('error', $message);
+}
+
+private function formatHistoryDate(mixed $value): string
+{
+    if ($value === null || trim((string) $value) === '') {
+        return '-';
+    }
+
+    try {
+        return Carbon::parse($value)->format('M d, Y');
+    } catch (\Throwable) {
+        return (string) $value;
+    }
 }
 
 }

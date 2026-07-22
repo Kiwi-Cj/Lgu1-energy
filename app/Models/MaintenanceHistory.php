@@ -13,6 +13,7 @@ class MaintenanceHistory extends Model
         'facility_id',
         'issue_type',
         'trigger_month',
+        'trigger_date',
         'trend',
         'efficiency_rating',
         'maintenance_type',
@@ -21,6 +22,12 @@ class MaintenanceHistory extends Model
         'assigned_to',
         'completed_date',
         'remarks',
+    ];
+
+    protected $casts = [
+        'trigger_date' => 'date',
+        'scheduled_date' => 'date',
+        'completed_date' => 'date',
     ];
     public function facility()
     {

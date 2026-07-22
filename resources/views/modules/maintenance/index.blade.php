@@ -708,7 +708,7 @@
                 <tr>
                     <th>Facility</th>
                     <th>Issue Type</th>
-                    <th>Trigger Month</th>
+                    <th>Trigger Date</th>
                     <!-- Efficiency column removed -->
                     <th>Status</th>
                     <th>Scheduled</th>
@@ -727,7 +727,7 @@
                     $statusKey = strtolower((string) ($row['maintenance_status'] ?? ''));
                     $statusClass = str_contains($statusKey, 'complete') ? 'completed' : (str_contains($statusKey, 'ongoing') ? 'ongoing' : 'pending');
                     $searchText = strtolower($facilityIssues->map(fn ($issue) => implode(' ', [
-                        $issue['facility'] ?? '', $issue['issue_type'] ?? '', $issue['trigger_month'] ?? '',
+                        $issue['facility'] ?? '', $issue['issue_type'] ?? '', $issue['trigger_date'] ?? $issue['trigger_month'] ?? '',
                         $issue['maintenance_status'] ?? '', $issue['scheduled_date'] ?? '', $issue['remarks'] ?? '',
                     ]))->implode(' '));
                 @endphp
@@ -776,7 +776,7 @@
                         </button>
                     </td>
                     <td data-label="Issue Type">{{ $row['issue_type'] }}</td>
-                    <td data-label="Trigger Month">{{ $row['trigger_month'] }}</td>
+                    <td data-label="Trigger Date">{{ $row['trigger_date'] ?? $row['trigger_month'] }}</td>
                     <!-- Efficiency value removed -->
                     <td data-label="Status"><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
                     <td data-label="Scheduled">{{ $row['scheduled_date'] }}</td>
@@ -809,7 +809,7 @@
                                         data-completed_date="{{ $issue['completed_date'] ?? '' }}"
                                         data-remarks="{{ $issue['remarks'] ?? '' }}">
                                         <strong>{{ $issue['issue_type'] ?? '-' }}</strong>
-                                        <span class="facility-issue-period">{{ $issue['trigger_month'] ?? '-' }}</span>
+                                        <span class="facility-issue-period">{{ $issue['trigger_date'] ?? $issue['trigger_month'] ?? '-' }}</span>
                                         <span><span class="status-pill {{ $issueStatusClass }}">{{ $issue['maintenance_status'] ?? '-' }}</span></span>
                                         <span class="facility-issue-remarks">{{ \Illuminate\Support\Str::limit((string) ($issue['remarks'] ?? '-'), 120) }}</span>
                                         @if($userRole !== 'staff')
