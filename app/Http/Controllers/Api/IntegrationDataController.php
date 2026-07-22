@@ -8,14 +8,20 @@ use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\Maintenance;
+use App\Models\MaintenanceHistory;
 use App\Models\Submeter;
 use App\Models\SubmeterReading;
+use App\Traits\MaintenanceSyncHelpers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class IntegrationDataController extends Controller
 {
+    use MaintenanceSyncHelpers;
+
+
     public function summary(): JsonResponse
     {
         return response()->json([
@@ -168,6 +174,7 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (Maintenance $maintenance) => [
             'id' => $maintenance->id,
+            'source' => 'active',
             'facility' => [
                 'id' => $maintenance->facility_id,
                 'name' => $maintenance->facility?->name,
@@ -183,6 +190,101 @@ class IntegrationDataController extends Controller
             'remarks' => $maintenance->remarks,
             'created_at' => $maintenance->created_at?->toIso8601String(),
             'updated_at' => $maintenance->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Completed maintenance history — the counterpart to maintenance() above.
+     * Read-only: once a record lands here it's terminal on the Energy side,
+     * so unlike /maintenance there is no matching sync-back endpoint for it.
+     */
+    public function maintenanceHistory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'facility_id' => ['nullable', 'integer', 'min:1'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'updated_since' => ['nullable', 'date'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = MaintenanceHistory::query()
+            ->with('facility:id,name')
+            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
+            ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
+            ->orderByDesc('completed_date')
+            ->orderByDesc('id');
+
+        return $this->paginated($query, $request, fn (MaintenanceHistory $history) => [
+            'id' => $history->id,
+            'source' => 'history',
+            'facility' => [
+                'id' => $history->facility_id,
+                'name' => $history->facility?->name,
+            ],
+            'issue_type' => $history->issue_type,
+            'trigger_month' => $history->trigger_month,
+            'trend' => $history->trend,
+            'maintenance_type' => $history->maintenance_type,
+            'status' => $history->maintenance_status,
+            'scheduled_date' => $history->scheduled_date,
+            'assigned_to' => $history->assigned_to,
+            'completed_date' => $history->completed_date,
+            'remarks' => $history->remarks,
+            'created_at' => $history->created_at?->toIso8601String(),
+            'updated_at' => $history->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Sync-back target for CIMM: applies a status/schedule change made in
+     * CIMM's maintenance_schedule to the originating Energy `maintenance`
+     * row, via the same trait both this and MaintenanceController::store()
+     * use — so a CIMM-initiated "Completed" archives to history, flips
+     * facility status, resolves the linked incident, and notifies users
+     * exactly like a change made on this app's own Maintenance page would.
+     *
+     * Only targets active (still-open) records: once a record is archived
+     * to history it's terminal here, so there's nothing left to sync.
+     */
+    public function updateMaintenance(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in(['Pending', 'Ongoing', 'Completed'])],
+            'scheduled_date' => ['nullable', 'date'],
+            'assigned_to' => ['nullable', 'string', 'max:255'],
+            'completed_date' => ['nullable', 'date', 'required_if:status,Completed'],
+        ]);
+
+        $maintenance = Maintenance::find($id);
+        if (!$maintenance) {
+            return response()->json(['success' => false, 'message' => 'Maintenance record not found or already archived.'], 404);
+        }
+
+        $previousStatus = $maintenance->maintenance_status;
+
+        $this->applyMaintenanceStatusUpdate($maintenance, [
+            'maintenance_status' => $validated['status'],
+            'scheduled_date' => $validated['scheduled_date'] ?? null,
+            'assigned_to' => $validated['assigned_to'] ?? null,
+            'completed_date' => $validated['completed_date'] ?? null,
+        ]);
+
+        $effects = $this->applyMaintenancePostSaveEffects($maintenance, $previousStatus);
+        $record = $effects['maintenance'];
+
+        return response()->json([
+            'success' => true,
+            'archived' => $effects['archived'],
+            'maintenance' => [
+                'id' => $effects['archived'] ? null : $record->id,
+                'facility_id' => $record->facility_id,
+                'status' => $record->maintenance_status,
+                'scheduled_date' => $record->scheduled_date,
+                'assigned_to' => $record->assigned_to,
+                'completed_date' => $record->completed_date,
+            ],
         ]);
     }
 

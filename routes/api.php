@@ -39,3 +39,17 @@ Route::prefix('v1')->middleware(['integration.api', 'throttle:60,1'])->group(fun
     Route::get('/incidents', [IntegrationDataController::class, 'incidents']);
     Route::get('/maintenance', [IntegrationDataController::class, 'maintenance']);
 });
+
+// CIMM <-> Energy maintenance sync integration (Facilities Needing Maintenance
+// page). Kept on its own prefix/token (services.cimm_maintenance_sync)
+// instead of reusing 'integration.api' above: that token already gates
+// several unrelated read endpoints and may have a real secret configured
+// elsewhere, while this token is scoped to just this integration and
+// defaults to a shared dev key so the sync works out of the box. Read
+// endpoints reuse the same maintenance()/maintenanceHistory() controller
+// methods as their /api/v1/... counterparts -- only the auth differs.
+Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 'throttle:60,1'])->group(function () {
+    Route::get('/maintenance', [IntegrationDataController::class, 'maintenance']);
+    Route::get('/maintenance-history', [IntegrationDataController::class, 'maintenanceHistory']);
+    Route::post('/maintenance/{id}/sync', [IntegrationDataController::class, 'updateMaintenance']);
+});
