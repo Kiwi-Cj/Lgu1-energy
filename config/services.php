@@ -60,6 +60,17 @@ return [
         'token' => env('INTEGRATION_API_TOKEN'),
     ],
 
+    // CIMM <-> Energy maintenance sync (Facilities Needing Maintenance page).
+    // Separate from integration_api.token above on purpose: that token gates
+    // read access to ALL integration endpoints (facilities, meters, energy
+    // records, incidents...), which some other consumer may already depend
+    // on with a real secret configured. Sharing it here would silently widen
+    // what that key grants. Keeping CIMM's own key means it can be set (or
+    // rotated) independently.
+    'cimm_maintenance_sync' => [
+        'token' => env('CIMM_MAINTENANCE_SYNC_TOKEN', 'CIMM_ENERGY_SHARED_KEY_2026'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),
