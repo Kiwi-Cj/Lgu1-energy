@@ -46,6 +46,11 @@
     .submeter-sensor-title { margin: 0; color: #1e293b; font-size: 1rem; font-weight: 900; }
     .submeter-sensor-subtitle { margin-top: 3px; color: #64748b; font-size: .84rem; font-weight: 600; }
     .submeter-sensor-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .submeter-sensor-controls { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+    .submeter-sensor-picker { display: grid; grid-template-columns: repeat(2, minmax(190px, 280px)); gap: 8px; }
+    .submeter-sensor-picker-field { display: grid; gap: 4px; }
+    .submeter-sensor-picker label { color: #475569; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .submeter-sensor-picker select { min-height: 36px; padding: 7px 34px 7px 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #0f172a; font-weight: 700; }
     .submeter-sensor-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #334155; padding: 7px 12px; font-weight: 900; text-decoration: none; font-size: .84rem; }
     .submeter-sensor-tab.active { border-color: #22d3ee; background: #ecfeff; color: #0f766e; }
     .submeter-sensor-body { padding: 14px; }
@@ -593,7 +598,31 @@
                     <h3 class="submeter-sensor-title">Submeter Sensor Graph</h3>
                     <div class="submeter-sensor-subtitle">IoT source readings grouped by selected time range.</div>
                 </div>
-                <div class="submeter-sensor-tabs">
+                <div class="submeter-sensor-controls">
+                    <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-sensor-picker">
+                        <input type="hidden" name="period_type" value="{{ $periodType }}">
+                        <input type="hidden" name="month" value="{{ $selectedMonth }}">
+                        <input type="hidden" name="facility_id" value="{{ $selectedFacility }}">
+                        <input type="hidden" name="department" value="{{ $selectedDepartment }}">
+                        <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                        <div class="submeter-sensor-picker-field">
+                            <label for="sensor_main_meter_id">Main Meter</label>
+                            <select id="sensor_main_meter_id">
+                                @foreach($sensorMeterGroups as $meterGroup)
+                                    <option value="{{ $meterGroup['id'] }}" @selected((int) $selectedSensorMainMeter === (int) $meterGroup['id'])>{{ $meterGroup['label'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="submeter-sensor-picker-field">
+                            <label for="sensor_submeter_id">Submeter</label>
+                            <select id="sensor_submeter_id" name="sensor_submeter_id" onchange="this.form.submit()">
+                                @foreach(($sensorMeterGroups->firstWhere('id', $selectedSensorMainMeter)['submeters'] ?? collect()) as $sensorSubmeter)
+                                    <option value="{{ $sensorSubmeter->id }}" @selected((int) $selectedSensorSubmeter === (int) $sensorSubmeter->id)>{{ $sensorSubmeter->submeter_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
+                    <div class="submeter-sensor-tabs">
                     @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $periodKey => $periodLabel)
                         <a
                             href="{{ route('modules.submeters.monitoring', array_filter([
@@ -602,12 +631,14 @@
                                 'facility_id' => $selectedFacility,
                                 'department' => $selectedDepartment,
                                 'sensor_period' => $periodKey,
+                                'sensor_submeter_id' => $selectedSensorSubmeter,
                             ], fn ($value) => $value !== null && $value !== '')) }}"
                             class="submeter-sensor-tab{{ $selectedSensorPeriod === $periodKey ? ' active' : '' }}"
                         >
                             {{ $periodLabel }}
                         </a>
                     @endforeach
+                    </div>
                 </div>
             </div>
             <div class="submeter-sensor-body">
@@ -630,6 +661,7 @@
         <section class="submeter-panel">
             <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-filter">
                 <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                <input type="hidden" name="sensor_submeter_id" value="{{ $selectedSensorSubmeter }}">
                 <div class="submeter-field">
                     <label for="period_type">Period Type</label>
                     <select id="period_type" name="period_type" class="submeter-input">
@@ -815,7 +847,30 @@
 <script>
 const submeterAiCache = {};
 
+const sensorMeterGroups = @json($sensorMeterGroups->map(fn ($group) => [
+    'id' => $group['id'],
+    'submeters' => $group['submeters']->map(fn ($submeter) => ['id' => $submeter->id, 'name' => $submeter->submeter_name])->values(),
+])->values());
+
 window.addEventListener('DOMContentLoaded', function () {
+    const mainMeterSelect = document.getElementById('sensor_main_meter_id');
+    const submeterSelect = document.getElementById('sensor_submeter_id');
+    if (mainMeterSelect && submeterSelect) {
+        mainMeterSelect.addEventListener('change', function () {
+            const group = sensorMeterGroups.find((item) => String(item.id) === String(this.value));
+            submeterSelect.innerHTML = '';
+            (group?.submeters || []).forEach((submeter) => {
+                const option = document.createElement('option');
+                option.value = submeter.id;
+                option.textContent = submeter.name;
+                submeterSelect.appendChild(option);
+            });
+            if (submeterSelect.options.length > 0) {
+                submeterSelect.form.submit();
+            }
+        });
+    }
+
     if (typeof Chart === 'undefined') {
         return;
     }

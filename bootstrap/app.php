@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => \App\Http\Middleware\StaffMiddleware::class,
             'block.staff.reports' => \App\Http\Middleware\BlockStaffFromReports::class,
             'download.confirmed' => \App\Http\Middleware\RequireDownloadAuthorization::class,
+            'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

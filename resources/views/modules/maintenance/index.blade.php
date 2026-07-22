@@ -183,6 +183,80 @@
     .facility-cell {
         font-weight: 700;
     }
+    .facility-identity {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-align: left;
+    }
+    .facility-thumbnail,
+    .facility-thumbnail-fallback {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        border-radius: 10px;
+        border: 1px solid #dbeafe;
+    }
+    .facility-thumbnail {
+        display: block;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+    .facility-thumbnail-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        color: #60a5fa;
+    }
+    .facility-issues-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 7px;
+        padding: 5px 9px;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: .75rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .facility-issues-toggle i { transition: transform .2s ease; }
+    .facility-issues-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+    .facility-issues-row.hidden-row { display: none; }
+    .facility-issues-cell { padding: 0 !important; background: #f8fafc; }
+    .facility-issues-panel {
+        padding: 14px 18px 18px;
+        display: grid;
+        gap: 9px;
+    }
+    .facility-issues-heading {
+        color: #475569;
+        font-size: .78rem;
+        font-weight: 800;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .facility-issue-item {
+        display: grid;
+        grid-template-columns: minmax(190px, 1.25fr) minmax(90px, .55fr) minmax(90px, .55fr) minmax(220px, 1.5fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        text-align: left;
+    }
+    .facility-issue-period,
+    .facility-issue-remarks { color: #64748b; font-size: .86rem; }
+    .facility-issue-remarks { overflow-wrap: anywhere; }
+    @media (max-width: 900px) {
+        .facility-issue-item { grid-template-columns: 1fr; }
+    }
     .remarks-muted {
         color: #64748b;
     }
@@ -622,7 +696,10 @@
             class="table-search"
             placeholder="Quick search: facility, issue type, status, remarks..."
         >
-        <div class="result-count">Visible rows: <span id="maintenanceVisibleCount">{{ count($maintenanceRows ?? []) }}</span></div>
+        @php
+            $maintenanceGroups = collect($maintenanceRows ?? [])->groupBy('facility_id');
+        @endphp
+        <div class="result-count">Visible facilities: <span id="maintenanceVisibleCount">{{ $maintenanceGroups->count() }}</span></div>
     </div>
 
     <div class="maint-table-wrapper">
@@ -642,21 +719,24 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($maintenanceRows ?? [] as $i => $row)
+                @forelse($maintenanceGroups as $facilityId => $facilityIssues)
                 @php
+                    $row = $facilityIssues->first();
+                    $i = $row['id'] ?? $facilityId;
+                    $issueCount = $facilityIssues->count();
                     $statusKey = strtolower((string) ($row['maintenance_status'] ?? ''));
                     $statusClass = str_contains($statusKey, 'complete') ? 'completed' : (str_contains($statusKey, 'ongoing') ? 'ongoing' : 'pending');
-                    $searchText = strtolower(implode(' ', [
-                        $row['facility'] ?? '',
-                        $row['issue_type'] ?? '',
-                        $row['trigger_month'] ?? '',
-                        $row['maintenance_status'] ?? '',
-                        $row['scheduled_date'] ?? '',
-                        $row['remarks'] ?? '',
-                    ]));
+                    $searchText = strtolower($facilityIssues->map(fn ($issue) => implode(' ', [
+                        $issue['facility'] ?? '', $issue['issue_type'] ?? '', $issue['trigger_month'] ?? '',
+                        $issue['maintenance_status'] ?? '', $issue['scheduled_date'] ?? '', $issue['remarks'] ?? '',
+                    ]))->implode(' '));
                 @endphp
                 <tr data-id="{{ $row['id'] ?? $i }}"
                     data-maintenance-row
+                    data-maintenance-item
+                    data-facility_name="{{ $row['facility'] ?? '' }}"
+                    data-issue_type="{{ $row['issue_type'] ?? '' }}"
+                    data-remarks="{{ $row['remarks'] ?? '' }}"
                     data-trigger_month="{{ $row['trigger_month'] ?? '' }}"
                     data-status="{{ $statusClass }}"
                     data-search="{{ $searchText }}"
@@ -665,7 +745,32 @@
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
                     data-completed_date="{{ $row['completed_date'] ?? '' }}">
                     <td class="facility-cell">
-                        <span>{{ $row['facility'] }}</span>
+                        <div class="facility-identity">
+                            @if(!empty($row['facility_image_url']))
+                                <img
+                                    src="{{ $row['facility_image_url'] }}"
+                                    alt="{{ $row['facility'] }}"
+                                    class="facility-thumbnail"
+                                    loading="lazy"
+                                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                                >
+                                <span class="facility-thumbnail-fallback" style="display:none" aria-hidden="true">
+                                    <i class="fa fa-building"></i>
+                                </span>
+                            @else
+                                <span class="facility-thumbnail-fallback" aria-hidden="true">
+                                    <i class="fa fa-building"></i>
+                                </span>
+                            @endif
+                            <div>
+                                <span>{{ $row['facility'] }}</span>
+                                @if($issueCount > 1)
+                                    <button type="button" class="facility-issues-toggle" data-issues-target="facility-issues-{{ $facilityId }}" data-issue-count="{{ $issueCount }}" aria-expanded="false">
+                                        <span>View {{ $issueCount }} issues</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
                         <button type="button" class="mobile-row-toggle" aria-expanded="false">
                             <span>Details</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
                         </button>
@@ -682,6 +787,40 @@
                     <td data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
                     @endif
                 </tr>
+                @if($issueCount > 1)
+                    <tr id="facility-issues-{{ $facilityId }}" class="facility-issues-row hidden-row">
+                        <td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="facility-issues-cell">
+                            <div class="facility-issues-panel">
+                                <div class="facility-issues-heading">All maintenance issues — latest first</div>
+                                @foreach($facilityIssues as $issue)
+                                    @php
+                                        $issueStatusKey = strtolower((string) ($issue['maintenance_status'] ?? ''));
+                                        $issueStatusClass = str_contains($issueStatusKey, 'complete') ? 'completed' : (str_contains($issueStatusKey, 'ongoing') ? 'ongoing' : 'pending');
+                                    @endphp
+                                    <div class="facility-issue-item"
+                                        data-maintenance-item
+                                        data-id="{{ $issue['id'] }}"
+                                        data-facility_name="{{ $issue['facility'] ?? '' }}"
+                                        data-issue_type="{{ $issue['issue_type'] ?? '' }}"
+                                        data-trigger_month="{{ $issue['trigger_month'] ?? '' }}"
+                                        data-maintenance_type="{{ $issue['maintenance_type'] ?? '' }}"
+                                        data-scheduled_date="{{ $issue['scheduled_date'] ?? '' }}"
+                                        data-assigned_to="{{ $issue['assigned_to'] ?? '' }}"
+                                        data-completed_date="{{ $issue['completed_date'] ?? '' }}"
+                                        data-remarks="{{ $issue['remarks'] ?? '' }}">
+                                        <strong>{{ $issue['issue_type'] ?? '-' }}</strong>
+                                        <span class="facility-issue-period">{{ $issue['trigger_month'] ?? '-' }}</span>
+                                        <span><span class="status-pill {{ $issueStatusClass }}">{{ $issue['maintenance_status'] ?? '-' }}</span></span>
+                                        <span class="facility-issue-remarks">{{ \Illuminate\Support\Str::limit((string) ($issue['remarks'] ?? '-'), 120) }}</span>
+                                        @if($userRole !== 'staff')
+                                            <span>{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $issue['action']) !!}</span>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </td>
+                    </tr>
+                @endif
                 @empty
                 <tr><td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="empty-row-cell">No facilities needing maintenance found.</td></tr>
                 @endforelse
@@ -735,8 +874,6 @@
                         <label for="modalIssueType" class="field-label">Issue Type</label>
                         <select id="modalIssueType" class="field-control">
                             <option value="" disabled selected>Select Issue</option>
-                            <option value="High Consumption / Inefficient">High Consumption / Inefficient</option>
-                            <option value="Trend Increasing">Trend Increasing</option>
                             <option value="Electrical - Power Outage">Electrical - Power Outage</option>
                             <option value="Electrical - Circuit Overload">Electrical - Circuit Overload</option>
                             <option value="Lighting - Bulb Replacement">Lighting - Bulb Replacement</option>
@@ -881,6 +1018,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const haystack = String(row.getAttribute('data-search') || '');
             const matched = query === '' || haystack.includes(query);
             row.classList.toggle('hidden-row', !matched);
+            if (!matched) {
+                const toggle = row.querySelector('.facility-issues-toggle');
+                const target = toggle ? document.getElementById(toggle.getAttribute('data-issues-target')) : null;
+                if (target) target.classList.add('hidden-row');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            }
             if (matched) visible++;
         });
         if (visibleCountEl) visibleCountEl.textContent = String(visible);
@@ -898,17 +1041,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    document.querySelectorAll('.facility-issues-toggle').forEach((button) => {
+        button.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const target = document.getElementById(this.getAttribute('data-issues-target'));
+            if (!target) return;
+            const willExpand = target.classList.contains('hidden-row');
+            target.classList.toggle('hidden-row', !willExpand);
+            this.setAttribute('aria-expanded', String(willExpand));
+            const label = this.querySelector('span');
+            const count = this.getAttribute('data-issue-count') || '';
+            if (label) label.textContent = willExpand ? 'Hide issues' : `View ${count} issues`;
+        });
+    });
+
     document.querySelectorAll('.schedule-btn').forEach((btn) => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const row = this.closest('tr');
+            const row = this.closest('[data-maintenance-item]');
             if (!row) return;
-            const cells = row.querySelectorAll('td');
 
             if (modalTitle) modalTitle.innerText = 'Update Maintenance';
             if (modalMaintenanceId) modalMaintenanceId.value = row.getAttribute('data-id') || '';
 
-            const facilityName = cells[0]?.querySelector(':scope > span')?.innerText.trim();
+            const facilityName = row.getAttribute('data-facility_name') || '';
             if (modalFacility && facilityName) {
                 for (let i = 0; i < modalFacility.options.length; i++) {
                     if (modalFacility.options[i].text === facilityName) {
@@ -920,10 +1076,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (modalIssueType) {
-                modalIssueType.value = cells[1]?.innerText.trim() || '';
+                modalIssueType.value = row.getAttribute('data-issue_type') || '';
             }
 
-            const triggerMonthText = row.getAttribute('data-trigger_month') || cells[2]?.innerText || '';
+            const triggerMonthText = row.getAttribute('data-trigger_month') || '';
             const parsed = parseTriggerMonth(triggerMonthText);
             if (modalTriggerMonth) {
                 if (parsed.month) modalTriggerMonth.value = parsed.month;
@@ -938,11 +1094,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalScheduleDate) modalScheduleDate.value = row.getAttribute('data-scheduled_date') || '';
             if (modalAssignedTo) modalAssignedTo.value = row.getAttribute('data-assigned_to') || '';
             if (modalRemarks) {
-                const remarksText = row.querySelector('.remarks-cell')?.getAttribute('title') || '';
+                const remarksText = row.getAttribute('data-remarks') || '';
                 modalRemarks.value = remarksText === '-' ? '' : remarksText;
             }
             if (modalStatus) {
-                const statusText = row.querySelector('.status-pill')?.innerText?.trim() || cells[3]?.innerText.trim() || 'Pending';
+                const statusText = row.querySelector('.status-pill')?.innerText?.trim() || 'Pending';
                 const canUseStatus = Array.from(modalStatus.options || []).some((opt) => opt.value === statusText);
                 modalStatus.value = canUseStatus ? statusText : 'Ongoing';
             }

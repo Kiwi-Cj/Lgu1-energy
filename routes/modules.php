@@ -65,6 +65,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
     Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
+    Route::post('/modules/energy-conservation/daily-checklist', [EnergyConservationController::class, 'updateDailyChecklist'])->name('modules.energy-conservation.daily-checklist.update');
+    Route::post('/modules/energy-conservation/daily-checklist/tasks', [EnergyConservationController::class, 'storeDailyChecklistTask'])->name('modules.energy-conservation.daily-checklist.tasks.store');
+    Route::delete('/modules/energy-conservation/daily-checklist/tasks/{task}', [EnergyConservationController::class, 'destroyDailyChecklistTask'])->name('modules.energy-conservation.daily-checklist.tasks.destroy');
+    Route::post('/modules/energy-conservation/goals', [EnergyConservationController::class, 'storeConservationGoal'])->name('modules.energy-conservation.goals.store');
+    Route::delete('/modules/energy-conservation/goals/{goal}', [EnergyConservationController::class, 'destroyConservationGoal'])->name('modules.energy-conservation.goals.destroy');
     Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
     Route::post('/modules/energy-conservation/energy-saving-tips/review', [EnergyConservationController::class, 'reviewEnergyTip'])->name('modules.energy-conservation.tips.review');
 

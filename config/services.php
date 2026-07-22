@@ -56,6 +56,10 @@ return [
         'token' => env('SUBMETER_SENSOR_TOKEN', env('MAIN_METER_SENSOR_TOKEN')),
     ],
 
+    'integration_api' => [
+        'token' => env('INTEGRATION_API_TOKEN'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),
