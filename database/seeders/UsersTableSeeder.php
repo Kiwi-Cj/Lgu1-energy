@@ -69,20 +69,6 @@ class UsersTableSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // NEW ACCOUNT 
-    [
-        'facility_id' => null,
-        'full_name' => 'Jennifer Montil',           
-        'email' => 'jdmontil2024@gmail.com',  
-        'username' => 'Admin',         
-        'password' => Hash::make('nizan122n'), 
-        'role' => 'super admin',
-        'status' => 'active',
-        'contact_number' => '09123456789',
-        'department' => 'Admin',
-        'created_at' => $now,
-        'updated_at' => $now,
-    ],
         ];
 
         foreach ($users as $user) {
