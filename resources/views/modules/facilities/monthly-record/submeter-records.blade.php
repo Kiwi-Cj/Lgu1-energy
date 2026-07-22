@@ -1,6 +1,30 @@
 @extends('layouts.qc-admin')
 @section('title', 'Sub-meter Monthly Records')
 
+<style>
+@media (max-width: 640px) {
+    .submeter-records-page {
+        padding: 0 !important;
+    }
+
+    .submeter-records-filter > div {
+        flex: 1 1 100% !important;
+        width: 100%;
+    }
+
+    .submeter-records-filter > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .submeter-records-filter button,
+    .submeter-records-filter a {
+        text-align: center;
+        justify-content: center;
+    }
+}
+</style>
+
 @section('content')
 @php
     $months = $monthLabels ?? [1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'];
@@ -8,7 +32,7 @@
     $selectedMainMeterId = (int) ($selectedMainMeterId ?? 0);
 @endphp
 
-<div style="padding:14px;">
+<div class="submeter-records-page" style="padding:14px;">
     @if(session('success'))
         <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:10px;font-weight:700;">{{ session('success') }}</div>
     @endif
@@ -62,7 +86,7 @@
     @endif
 
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
-        <form method="GET" action="{{ route('facilities.monthly-records.submeters', $facility->id) }}" style="padding:12px;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:#f8fafc;">
+        <form class="submeter-records-filter" method="GET" action="{{ route('facilities.monthly-records.submeters', $facility->id) }}" style="padding:12px;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:#f8fafc;">
             <div style="display:flex;flex-direction:column;gap:6px;min-width:150px;">
                 <label style="font-size:.8rem;color:#475569;font-weight:700;">Year</label>
                 <select name="year" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">

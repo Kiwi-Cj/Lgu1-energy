@@ -12,6 +12,10 @@ return new class extends Migration
             return;
         }
 
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement(
             "ALTER TABLE `submeter_baselines` MODIFY `baseline_type` ENUM(
                 'moving_avg_3',
@@ -33,6 +37,10 @@ return new class extends Migration
         DB::table('submeter_baselines')
             ->whereIn('baseline_type', ['normalized_per_day', 'equipment_estimate'])
             ->delete();
+
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
 
         DB::statement(
             "ALTER TABLE `submeter_baselines` MODIFY `baseline_type` ENUM(

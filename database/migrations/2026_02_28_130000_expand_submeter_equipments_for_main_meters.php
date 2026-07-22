@@ -24,21 +24,27 @@ return new class extends Migration
             }
         });
 
-        $submeterColumn = DB::selectOne("SHOW COLUMNS FROM `submeter_equipments` LIKE 'submeter_id'");
-        $isSubmeterNullable = isset($submeterColumn->Null) && strtoupper((string) $submeterColumn->Null) === 'YES';
-        if (! $isSubmeterNullable) {
+        if (DB::connection()->getDriverName() === 'sqlite') {
             Schema::table('submeter_equipments', function (Blueprint $table) {
-                $table->dropForeign(['submeter_id']);
+                $table->unsignedBigInteger('submeter_id')->nullable()->change();
             });
+        } else {
+            $submeterColumn = DB::selectOne("SHOW COLUMNS FROM `submeter_equipments` LIKE 'submeter_id'");
+            $isSubmeterNullable = isset($submeterColumn->Null) && strtoupper((string) $submeterColumn->Null) === 'YES';
+            if (! $isSubmeterNullable) {
+                Schema::table('submeter_equipments', function (Blueprint $table) {
+                    $table->dropForeign(['submeter_id']);
+                });
 
-            DB::statement('ALTER TABLE `submeter_equipments` MODIFY `submeter_id` BIGINT UNSIGNED NULL');
+                DB::statement('ALTER TABLE `submeter_equipments` MODIFY `submeter_id` BIGINT UNSIGNED NULL');
 
-            Schema::table('submeter_equipments', function (Blueprint $table) {
-                $table->foreign('submeter_id')
-                    ->references('id')
-                    ->on('submeters')
-                    ->cascadeOnDelete();
-            });
+                Schema::table('submeter_equipments', function (Blueprint $table) {
+                    $table->foreign('submeter_id')
+                        ->references('id')
+                        ->on('submeters')
+                        ->cascadeOnDelete();
+                });
+            }
         }
 
         Schema::table('submeter_equipments', function (Blueprint $table) {
@@ -69,22 +75,27 @@ return new class extends Migration
             });
         }
 
-        $submeterColumn = DB::selectOne("SHOW COLUMNS FROM `submeter_equipments` LIKE 'submeter_id'");
-        $isSubmeterNullable = isset($submeterColumn->Null) && strtoupper((string) $submeterColumn->Null) === 'YES';
-        if ($isSubmeterNullable) {
+        if (DB::connection()->getDriverName() === 'sqlite') {
             Schema::table('submeter_equipments', function (Blueprint $table) {
-                $table->dropForeign(['submeter_id']);
+                $table->unsignedBigInteger('submeter_id')->nullable(false)->change();
             });
+        } else {
+            $submeterColumn = DB::selectOne("SHOW COLUMNS FROM `submeter_equipments` LIKE 'submeter_id'");
+            $isSubmeterNullable = isset($submeterColumn->Null) && strtoupper((string) $submeterColumn->Null) === 'YES';
+            if ($isSubmeterNullable) {
+                Schema::table('submeter_equipments', function (Blueprint $table) {
+                    $table->dropForeign(['submeter_id']);
+                });
 
-            DB::statement('ALTER TABLE `submeter_equipments` MODIFY `submeter_id` BIGINT UNSIGNED NOT NULL');
+                DB::statement('ALTER TABLE `submeter_equipments` MODIFY `submeter_id` BIGINT UNSIGNED NOT NULL');
 
-            Schema::table('submeter_equipments', function (Blueprint $table) {
-                $table->foreign('submeter_id')
-                    ->references('id')
-                    ->on('submeters')
-                    ->cascadeOnDelete();
-            });
+                Schema::table('submeter_equipments', function (Blueprint $table) {
+                    $table->foreign('submeter_id')
+                        ->references('id')
+                        ->on('submeters')
+                        ->cascadeOnDelete();
+                });
+            }
         }
     }
 };
-

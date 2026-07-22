@@ -353,7 +353,7 @@
                                 <th style="text-align:center;">Actual kWh</th>
                                 <th style="text-align:center;">Energy Cost</th>
                                 <th style="text-align:center;">Alert Level</th>
-                                <th style="text-align:center;">Archived At</th>
+                                <th style="text-align:center;">Archive Details</th>
                                 <th style="text-align:center;">Action</th>
                             </tr>
                         </thead>
@@ -389,6 +389,8 @@
                                     </td>
                                     <td style="text-align:center;color:#475569;font-size:.9rem;">
                                         <div>{{ $deletedAt ? $deletedAt->format('M d, Y h:i A') : '-' }}</div>
+                                        <div style="margin-top:4px;font-weight:700;color:#334155;">{{ $record->deletedByUser?->name ?? 'Unknown user' }}</div>
+                                        <div style="margin-top:5px;color:#64748b;max-width:260px;white-space:normal;">{{ $record->archive_reason ?: 'No reason recorded (legacy archive)' }}</div>
                                         @if($daysLeft !== null)
                                             <div style="font-size:.8rem;color:#64748b;">{{ $daysLeft > 0 ? $daysLeft . ' day(s) left' : '⚠️ Due for cleanup' }}</div>
                                         @endif

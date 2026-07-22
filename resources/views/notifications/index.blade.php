@@ -87,8 +87,16 @@
                 $level = str_contains($text, 'critical') ? 'critical' : ((str_contains($text, 'very high') || str_contains($text, 'high')) ? 'high' : 'info');
                 $label = $level === 'critical' ? 'Critical' : ($level === 'high' ? 'High' : 'Info');
                 $icon = $level === 'critical' ? 'fa-circle-exclamation' : ($level === 'high' ? 'fa-triangle-exclamation' : 'fa-bell');
+                $isChecklistNotif = str_contains($text, 'checklist item') || str_contains($text, 'checklist');
+                $targetUrl = trim((string) ($notification->target_url ?? '')) ?: route('dashboard.index');
+                if ($isChecklistNotif && $targetUrl === route('dashboard.index')) {
+                    $targetUrl = route('modules.energy-conservation.feature', [
+                        'feature' => 'daily-checklist',
+                        'month' => now()->format('Y-m'),
+                    ]);
+                }
             @endphp
-            <a href="{{ route('dashboard.index') }}" class="notification-row {{ $notification->read_at ? '' : 'unread' }}" data-read-url="{{ route('notifications.markRead', $notification) }}">
+            <a href="{{ $targetUrl }}" class="notification-row {{ $notification->read_at ? '' : 'unread' }}" data-read-url="{{ route('notifications.markRead', $notification) }}">
                 <span class="notification-icon {{ $level }}"><i class="fa-solid {{ $icon }}"></i></span>
                 <span class="notification-copy">
                     <span class="notification-title-row">

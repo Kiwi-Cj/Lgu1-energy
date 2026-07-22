@@ -314,6 +314,68 @@ body.dark-mode .facility-show-page .facility-title,
 body.dark-mode .facility-show-page .facility-info-value {
     color: #e2e8f0 !important;
 }
+
+@media (max-width: 720px) {
+    .facility-show-page-container {
+        margin: 18px 0 0;
+    }
+
+    .facility-show-shell {
+        padding: 28px 14px 18px;
+        border-radius: 18px;
+    }
+
+    .facility-back-btn {
+        left: 14px;
+        top: -16px;
+        padding: 8px 14px;
+    }
+
+    .facility-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .facility-hero-image,
+    .facility-hero-image-placeholder {
+        width: 100%;
+        height: 180px;
+    }
+
+    .facility-title {
+        font-size: 1.55rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .facility-info-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .facility-info-card {
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .facility-info-value {
+        overflow-wrap: anywhere;
+    }
+
+    .facility-action-row {
+        align-items: stretch;
+        flex-direction: column;
+        margin-top: 18px;
+    }
+
+    .facility-action-link,
+    .facility-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
 </style>
 
 <div class="facility-show-page facility-show-page-container">
@@ -354,7 +416,7 @@ $primaryMainMeter = ($profile?->primaryMeter && !empty($profile->primaryMeter->a
 <div class="facility-subtitle">
 	{{ $facility->type }} &bull; {{ $facility->department }}
 </div>
-@if(!in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
+@if(\App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
 <button type="button" onclick="openEditFacilityModal()" class="facility-edit-btn">
 	<i class="fa fa-edit" style="margin-right:6px;"></i> Edit Facility
 </button>
@@ -529,9 +591,13 @@ function openEditFacilityModal() {
 	document.getElementById('edit_floors').value = facility.floors || '';
 	document.getElementById('edit_year_built').value = facility.year_built || '';
 	document.getElementById('edit_operating_hours').value = facility.operating_hours || '';
-	document.getElementById('edit_status').value = facility.status || '';
+	var normalizedStatus = String(facility.status || 'active').trim().toLowerCase();
+	document.getElementById('edit_status').value = ['active', 'inactive', 'maintenance'].includes(normalizedStatus)
+		? normalizedStatus
+		: 'active';
 	// Set form action dynamically
-	document.getElementById('editFacilityForm').action = '/facilities/' + facility.id;
+	var updateUrl = @json(route('facilities.update', ['id' => '__FACILITY_ID__']));
+	document.getElementById('editFacilityForm').action = updateUrl.replace('__FACILITY_ID__', facility.id);
 	// Image preview
 	var preview = document.getElementById('edit_image_preview');
 	var imagePath = facility.image_path || facility.image || '';
@@ -550,4 +616,54 @@ function openEditFacilityModal() {
 	}
 	document.getElementById('editFacilityModal').style.display = 'flex';
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+	var imageInput = document.getElementById('edit_image');
+	var imagePreview = document.getElementById('edit_image_preview');
+	var imageError = document.getElementById('edit_image_error');
+	var allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+	var maxImageBytes = 10 * 1024 * 1024;
+
+	if (imageInput) {
+		imageInput.addEventListener('change', function () {
+			var file = this.files && this.files[0] ? this.files[0] : null;
+			if (!file) return;
+
+			if (!allowedTypes.includes(file.type)) {
+				this.value = '';
+				if (imageError) {
+					imageError.textContent = 'Unsupported image format. Use JPG, PNG, GIF, or WebP.';
+					imageError.style.display = 'block';
+				}
+				return;
+			}
+
+			if (file.size > maxImageBytes) {
+				this.value = '';
+				if (imageError) {
+					imageError.textContent = 'The selected image is larger than 10 MB.';
+					imageError.style.display = 'block';
+				}
+				return;
+			}
+
+			if (imageError) {
+				imageError.textContent = '';
+				imageError.style.display = 'none';
+			}
+
+			var reader = new FileReader();
+			reader.onload = function (event) {
+				if (imagePreview) {
+					imagePreview.innerHTML = '<img src="' + event.target.result + '" alt="Selected facility image" style="max-width:100%;max-height:160px;border-radius:10px;object-fit:cover;">';
+				}
+			};
+			reader.readAsDataURL(file);
+		});
+	}
+
+	@if($errors->has('image'))
+		openEditFacilityModal();
+	@endif
+});
 </script>

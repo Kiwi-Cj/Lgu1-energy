@@ -7,11 +7,11 @@ test('staff is blocked from users and settings routes', function () {
 
     $this->actingAs($staff)
         ->get('/modules/users')
-        ->assertRedirect(route('modules.energy.index', absolute: false));
+        ->assertRedirect(route('modules.energy-monitoring.index', absolute: false));
 
     $this->actingAs($staff)
         ->get('/modules/settings')
-        ->assertRedirect(route('modules.energy.index', absolute: false));
+        ->assertRedirect(route('modules.energy-monitoring.index', absolute: false));
 });
 
 test('admin is blocked from system settings route', function () {

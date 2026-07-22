@@ -1,8 +1,35 @@
 @extends('layouts.qc-admin')
 @section('title', 'Submeter Detail')
 
+<style>
+@media (max-width: 640px) {
+    .submeter-detail-page {
+        padding: 0 !important;
+    }
+
+    .submeter-detail-filter {
+        align-items: stretch !important;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .submeter-detail-filter label {
+        width: 100%;
+    }
+
+    .submeter-detail-chart {
+        min-height: 230px;
+        overflow: hidden;
+    }
+
+    .submeter-detail-chart canvas {
+        min-height: 210px;
+    }
+}
+</style>
+
 @section('content')
-<div style="padding:14px;">
+<div class="submeter-detail-page" style="padding:14px;">
     @if(session('success'))
         <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:12px;font-weight:700;">{{ session('success') }}</div>
     @endif
@@ -25,7 +52,7 @@
     <div style="margin-top:12px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
             <h3 style="margin:0;color:#1e293b;font-size:1.05rem;font-weight:800;">Trend Chart (Last 12 Periods)</h3>
-            <form method="GET" action="{{ route('modules.submeters.show', $submeter->id) }}" style="display:flex;gap:8px;align-items:center;">
+            <form class="submeter-detail-filter" method="GET" action="{{ route('modules.submeters.show', $submeter->id) }}" style="display:flex;gap:8px;align-items:center;">
                 <label style="font-size:.8rem;color:#475569;font-weight:700;">Period Type</label>
                 <select name="period_type" onchange="this.form.submit()" style="padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px;">
                     <option value="daily" @selected($periodType === 'daily')>Daily</option>
@@ -34,7 +61,7 @@
                 </select>
             </form>
         </div>
-        <div style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;">
+        <div class="submeter-detail-chart" style="margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;">
             <canvas id="trendChart" height="120"></canvas>
         </div>
     </div>

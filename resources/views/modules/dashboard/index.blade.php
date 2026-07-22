@@ -608,6 +608,7 @@
                                 <th style="text-align:center;">Total Baseline ({{ $periodMonthCount ?? 6 }}mo)</th>
                                 <th style="text-align:center;">Deviation %</th>
                                 <th style="text-align:center;">Status</th>
+                                <th style="text-align:center;">Trend Alert</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -615,6 +616,7 @@
                             @php
                                 $deviation = (float) ($facility->deviation ?? 0);
                                 $status = (string) ($facility->status ?? 'Normal');
+                                $trendSpikeDetected = (bool) ($facility->trend_spike_detected ?? false);
                                 $statusStyles = [
                                     'Critical' => ['bg' => '#fee2e2', 'text' => '#7f1d1d', 'border' => '#fecaca'],
                                     'Very High' => ['bg' => '#fff1f2', 'text' => '#e11d48', 'border' => '#fecdd3'],
@@ -635,9 +637,18 @@
                                         {{ $status }}
                                     </span>
                                 </td>
+                                <td style="text-align:center;">
+                                    @if($trendSpikeDetected)
+                                        <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size:.76rem; font-weight:800; white-space:nowrap;">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> 3-Month Spike
+                                        </span>
+                                    @else
+                                        <span style="color:#94a3b8;">-</span>
+                                    @endif
+                                </td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">No records found for this period.</td></tr>
+                            <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No records found for this period.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+    use App\Support\RoleAccess;
     use Illuminate\Foundation\Auth\User as Authenticatable;
     use Illuminate\Notifications\Notifiable;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -59,6 +60,11 @@ namespace App\Models;
         protected $hidden = [
             'password', 'remember_token',
         ];
+
+        public function getRoleKeyAttribute(): string
+        {
+            return RoleAccess::normalize($this);
+        }
 
         // Many-to-many: User can have many facilities
         public function facilities()

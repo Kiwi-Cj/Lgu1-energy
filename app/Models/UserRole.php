@@ -16,6 +16,7 @@ class UserRole extends Model
     ];
 
     protected $casts = [
+        'permissions' => 'array',
         'is_system' => 'boolean',
     ];
 }

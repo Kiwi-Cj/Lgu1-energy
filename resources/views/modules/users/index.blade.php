@@ -11,14 +11,14 @@
 	$user = auth()->user();
 	$role = \App\Support\RoleAccess::normalize($user?->role ?? '');
 	$isSuperAdmin = $role === 'super_admin';
-	$canAccessUsersPage = in_array($role, ['super_admin', 'admin'], true);
+	$canAccessUsersPage = \App\Support\RoleAccess::can($user, 'access_users');
 @endphp
 
 
 @if(!$canAccessUsersPage)
 	<div style="max-width:600px;margin:60px auto 0 auto;padding:32px 24px;background:#fff0f3;border-radius:14px;box-shadow:0 2px 8px rgba(225,29,72,0.08);text-align:center;">
 		<h2 style="color:#e11d48;font-size:2rem;font-weight:800;margin-bottom:12px;">Restricted Access</h2>
-		<div style="font-size:1.2rem;color:#b91c1c;margin-bottom:18px;">This page is for <b>Super Admin</b> and <b>Admin</b> only.</div>
+		<div style="font-size:1.2rem;color:#b91c1c;margin-bottom:18px;">Your role does not have permission to manage users.</div>
 		<a href="/modules/dashboard/index" style="display:inline-block;margin-top:18px;padding:10px 24px;background:#3762c8;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Go to Dashboard</a>
 	</div>
 @else
@@ -584,13 +584,10 @@
 						   <label for="um_role">Role *</label>
 						   <select id="um_role" name="role" required onchange="toggleUserModalFacility()">
 							   <option value="">Select Role</option>
-							   @if($isSuperAdmin)
-								 <option value="super admin">Super Admin</option>
-								 <option value="admin">Admin</option>
-							   @endif
-							   <option value="staff">Staff</option>
-							   <option value="energy_officer">Energy Officer</option>
-							   <option value="engineer">Engineer</option>
+							   @foreach(($availableRoleOptions ?? collect()) as $roleSlug => $roleName)
+								   @continue(!$isSuperAdmin && in_array($roleSlug, ['super_admin', 'admin'], true))
+								   <option value="{{ $roleSlug }}">{{ $roleName }}</option>
+							   @endforeach
 						   </select>
 					   </div>
 					   <div class="uv-form-field" id="um_facility_wrap" style="display:none;">

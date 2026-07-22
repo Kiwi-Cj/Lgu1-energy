@@ -67,15 +67,15 @@
             <td>{{ count($efficiencyRows ?? []) }}</td>
         </tr>
         <tr>
-            <td class="label">High Rating</td>
+            <td class="label">Energy Efficient</td>
             <td>{{ $highCount ?? 0 }}</td>
         </tr>
         <tr>
-            <td class="label">Medium Rating</td>
+            <td class="label">Moderate Efficiency</td>
             <td>{{ $mediumCount ?? 0 }}</td>
         </tr>
         <tr>
-            <td class="label">Needs Attention</td>
+            <td class="label">Requires Action</td>
             <td>{{ $flaggedCount ?? 0 }}</td>
         </tr>
     </table>
@@ -84,24 +84,26 @@
         <thead>
             <tr>
                 <th>Facility Name</th>
+                <th>Avg. Monthly kWh</th>
                 <th>EUI (kWh/sqm)</th>
-                <th>Efficiency Rating</th>
-                <th>Last Audit</th>
-                <th>Maintenance Status</th>
+                <th>Efficiency Band</th>
+                <th>Data Coverage</th>
+                <th>Action Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($efficiencyRows ?? [] as $row)
                 <tr>
                     <td>{{ $row['facility'] ?? '-' }}</td>
+                    <td>{{ $row['avg_monthly_kwh'] ?? '-' }}</td>
                     <td>{{ $row['eui'] ?? '-' }}</td>
                     <td>{{ $row['rating'] ?? '-' }}</td>
-                    <td>{{ $row['last_audit'] ?? '-' }}</td>
+                    <td>{{ $row['months_count'] ?? 0 }} month(s), latest {{ $row['latest_period'] ?? 'No readings' }}</td>
                     <td>{{ $row['maintenance_status'] ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5">No efficiency data available for selected filters.</td>
+                    <td colspan="6">No efficiency data available for selected filters.</td>
                 </tr>
             @endforelse
         </tbody>

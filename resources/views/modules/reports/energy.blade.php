@@ -4,6 +4,7 @@
 @php
     $user = auth()->user();
     $roleKey = $user?->role_key ?? str_replace(' ', '_', strtolower((string) ($user?->role ?? '')));
+    $canExportReports = \App\Support\RoleAccess::can($user, 'export_reports');
 
     $rows = collect($energyRows ?? []);
     $toNumber = function ($value) {
@@ -20,8 +21,8 @@
     $totalVariance = $rows->sum(function ($row) use ($toNumber) {
         return $toNumber($row['variance'] ?? 0) ?? 0;
     });
-    $increasingCount = $rows->where('trend', 'up')->count();
-    $decreasingCount = $rows->where('trend', 'down')->count();
+    $increasingCount = $rows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'up'))->count();
+    $decreasingCount = $rows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'down'))->count();
     $selectedMonthValue = isset($selectedMonth)
         ? (string) $selectedMonth
         : (request()->has('month') ? (string) request('month') : (string) date('n'));
@@ -502,17 +503,17 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
                 <p>Track facility consumption variance and trend behavior by period.</p>
             </div>
             <div class="energy-actions">
-                @if($roleKey !== 'staff')
+                @if($canExportReports)
                 <a href="{{ route('reports.energy-export', $exportCsvFilters) }}" class="btn-action btn-csv" data-secure-download>
                     <i class="fa fa-file-text-o"></i> Export CSV
                 </a>
                 <a href="{{ route('reports.energy-export', $exportXlsxFilters) }}" class="btn-action btn-excel" data-secure-download>
                     <i class="fa fa-download"></i> Export Excel
                 </a>
-                @endif
                 <a href="{{ route('modules.energy.export-pdf', array_filter($exportFilters, fn ($value) => $value !== null && $value !== '')) }}" class="btn-action btn-pdf" data-secure-download>
                     <i class="fa fa-file-pdf-o"></i> Export PDF
                 </a>
+                @endif
             </div>
         </div>
 
@@ -615,10 +616,12 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
                 <tbody>
                     @forelse($energyRows ?? [] as $row)
                         @php
-                            $trend = $row['trend'] ?? 'stable';
-                            $trendClass = $trend === 'up' ? 'trend-up' : ($trend === 'down' ? 'trend-down' : 'trend-stable');
-                            $trendLabel = $trend === 'up' ? 'Increasing' : ($trend === 'down' ? 'Decreasing' : 'Stable');
-                            $trendIcon = $trend === 'up' ? 'fa-arrow-up' : ($trend === 'down' ? 'fa-arrow-down' : 'fa-minus');
+                            $trend = (string) ($row['trend'] ?? 'stable');
+                            $trendBase = str_starts_with($trend, 'up') ? 'up' : (str_starts_with($trend, 'down') ? 'down' : (str_starts_with($trend, 'insufficient') ? 'insufficient' : 'stable'));
+                            $trendClass = $trendBase === 'up' ? 'trend-up' : ($trendBase === 'down' ? 'trend-down' : 'trend-stable');
+                            $trendLabel = $trendBase === 'up' ? 'Increasing' : ($trendBase === 'down' ? 'Decreasing' : ($trendBase === 'insufficient' ? 'Insufficient Data' : 'Stable'));
+                            $trendIcon = $trendBase === 'up' ? 'fa-arrow-up' : ($trendBase === 'down' ? 'fa-arrow-down' : ($trendBase === 'insufficient' ? 'fa-circle-question' : 'fa-minus'));
+                            $trendSpike = str_contains($trend, '3-Month Spike');
                         @endphp
                         <tr class="energy-row" data-search="{{ strtolower((string)($row['facility'] ?? '')) }}">
                             <td>
@@ -635,6 +638,9 @@ body.dark-mode .trend-stable { background: rgba(148, 163, 184, 0.12); color: #cb
                                 <span class="trend-pill {{ $trendClass }}">
                                     <i class="fa {{ $trendIcon }}"></i> {{ $trendLabel }}
                                 </span>
+                                @if($trendSpike)
+                                    <div style="margin-top:6px;font-size:0.78rem;font-weight:800;color:#b91c1c;">3-Month Spike</div>
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -2,6 +2,14 @@
 
 return [
     'abilities' => [
+        'view_facilities' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'view_energy_monitoring' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'view_submeter_monitoring' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'view_maintenance' => ['super_admin', 'admin', 'energy_officer', 'staff'],
+        'access_energy_conservation' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'manage_conservation_tasks' => ['super_admin', 'admin', 'energy_officer'],
+        'approve_conservation_tasks' => ['super_admin', 'admin'],
+        'submit_conservation_progress' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'access_users' => ['super_admin', 'admin'],
         'access_audit_logs' => ['super_admin', 'admin'],
         'access_settings' => ['super_admin'],
@@ -14,11 +22,10 @@ return [
         'maintenance_complete' => ['super_admin', 'admin'],
         'delete_maintenance_history' => ['super_admin', 'admin'],
         'access_reports' => ['super_admin', 'admin', 'energy_officer', 'staff'],
-        'encode_submeter_readings' => ['super_admin', 'admin', 'energy_officer', 'staff'],
+        'export_reports' => ['super_admin', 'admin', 'energy_officer'],
         'approve_submeter_readings' => ['super_admin', 'admin', 'energy_officer', 'engineer'],
         'view_submeter_alerts' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'encode_main_meter_readings' => ['super_admin', 'admin', 'energy_officer', 'staff'],
-        'approve_main_meter_readings' => ['super_admin', 'admin', 'energy_officer', 'engineer'],
-        'view_main_meter_alerts' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'manage_energy_incidents' => ['super_admin', 'admin', 'energy_officer'],
     ],
 ];
