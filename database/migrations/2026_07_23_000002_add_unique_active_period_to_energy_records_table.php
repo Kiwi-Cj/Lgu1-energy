@@ -28,8 +28,10 @@ return new class extends Migration
             // COALESCE(meter_id,0) for ACTIVE rows; NULL for soft-deleted rows.
             // NULLs are distinct in unique indexes on both MariaDB and sqlite, so
             // archived rows are exempt while active periods are enforced unique.
+            // VIRTUAL (not STORED): sqlite cannot ADD a stored generated column via
+            // ALTER TABLE, and both MariaDB and sqlite index virtual columns fine.
             $table->unsignedBigInteger('active_period_key')->nullable()
-                ->storedAs('CASE WHEN deleted_at IS NULL THEN COALESCE(meter_id, 0) ELSE NULL END');
+                ->virtualAs('CASE WHEN deleted_at IS NULL THEN COALESCE(meter_id, 0) ELSE NULL END');
             $table->unique(['facility_id', 'active_period_key', 'year', 'month'], 'energy_records_active_period_unique');
         });
     }
