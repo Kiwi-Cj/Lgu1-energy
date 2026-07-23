@@ -80,11 +80,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // If this session originated from a Main LGU SSO launch, send the
+        // admin back to the SSO hub instead of this system's own login page.
+        $returnToMainLgu = (bool) $request->session()->get('sso_from_mainlgu');
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        if ($returnToMainLgu) {
+            $mainLguUrl = $request->getHost() === 'localhost'
+                ? 'http://localhost/Main%20LGU/admin/dashboard.php'
+                : 'https://infragovservices.com/admin/dashboard.php';
+            return redirect()->away($mainLguUrl);
+        }
 
         return redirect()->route('login')
             ->with('session_ended_modal', true)
