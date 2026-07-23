@@ -28,6 +28,7 @@ class EnergyRecord extends Model
         'energy_cost',
         'rate_per_kwh',
         'recorded_by',
+        'input_source',
         'bill_image',
         'baseline_kwh',
         'deviation',
