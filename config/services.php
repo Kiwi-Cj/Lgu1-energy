@@ -71,6 +71,15 @@ return [
         'token' => env('CIMM_MAINTENANCE_SYNC_TOKEN', 'CIMM_ENERGY_SHARED_KEY_2026'),
     ],
 
+    // CPRF (facilities reservation) <-> Energy integration. Same isolation
+    // rationale as cimm_maintenance_sync above: CPRF gets its own token so it
+    // can be set or rotated independently of the generic integration_api
+    // token. Defaults to a shared dev key so local integration works out of
+    // the box; override CPRF_INTEGRATION_TOKEN in production.
+    'cprf_integration' => [
+        'token' => env('CPRF_INTEGRATION_TOKEN', 'CPRF_ENERGY_SHARED_KEY_2026'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),
