@@ -60,5 +60,7 @@ Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 
 // per-partner token pattern as the CIMM group above (services.cprf_integration).
 // GET endpoints reuse IntegrationDataController methods -- only the auth differs.
 Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->group(function () {
+    Route::get('/facilities', [IntegrationDataController::class, 'facilities']);
+    Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
     Route::post('/facility-readings', [CprfFacilityReadingController::class, 'store']);
 });
