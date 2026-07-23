@@ -2,6 +2,7 @@
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use Illuminate\Database\QueryException;
 
 function validReadingPayload(Facility $facility, array $overrides = []): array
 {
@@ -95,4 +96,47 @@ test('validation rejects an unknown facility', function () {
         ]))
         ->assertStatus(422)
         ->assertJsonValidationErrors(['facility_id']);
+});
+
+test('database blocks duplicate active facility-level periods', function () {
+    $facility = Facility::factory()->create();
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 100,
+    ]);
+
+    expect(fn () => EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 100,
+    ]))->toThrow(QueryException::class);
+});
+
+test('soft-deleted period can be re-created', function () {
+    $facility = Facility::factory()->create();
+
+    $record = EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 100,
+    ]);
+    $record->delete();
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 120,
+    ]);
+
+    expect(EnergyRecord::withTrashed()->count())->toBe(2);
 });
