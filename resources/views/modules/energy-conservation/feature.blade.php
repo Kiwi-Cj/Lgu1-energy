@@ -248,6 +248,31 @@
         margin-top: 3px;
         line-height: 1.35;
     }
+    .summary-period {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: fit-content;
+        padding: 8px 12px;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #475569;
+        font-size: .8rem;
+        font-weight: 700;
+    }
+    .summary-period i,
+    .summary-period strong {
+        color: #1d4ed8;
+    }
+    .metric-info {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 4px;
+        color: #2563eb;
+        cursor: help;
+    }
     .form-grid {
         display: grid;
         gap: 12px;
@@ -1255,21 +1280,34 @@
                         </div>
                     </form>
                 @elseif(in_array($featureSlug, ['energy-saving-tips', 'estimated-savings', 'ai-recommendations'], true))
+                    <div class="summary-period" aria-label="Reporting period: {{ $overview['periodLabel'] ?? 'Selected month' }}">
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        <span>Reporting Period:</span>
+                        <strong>{{ $overview['periodLabel'] ?? 'Selected month' }}</strong>
+                    </div>
                     <div class="stat-grid">
                         <div class="stat-card">
                             <div class="stat-label">Monitored Facilities</div>
                             <div class="stat-value">{{ number_format((int) ($totals['monitored_facilities'] ?? 0)) }}</div>
-                            <div class="stat-sub">Facilities with monthly energy records.</div>
+                            <div class="stat-sub">Facilities with records for {{ $overview['periodLabel'] ?? 'the selected month' }}.</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">Actual kWh</div>
                             <div class="stat-value">{{ number_format((float) ($totals['actual_kwh'] ?? 0), 2) }}</div>
-                            <div class="stat-sub">Pulled from existing energy data.</div>
+                            <div class="stat-sub">Total main-meter consumption for {{ $overview['periodLabel'] ?? 'the selected month' }}.</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Avoidable Cost</div>
+                            <div class="stat-label">
+                                Avoidable Cost
+                                <span class="metric-info"
+                                      tabindex="0"
+                                      title="Estimated as max(0, actual kWh minus baseline kWh) multiplied by the applicable PHP/kWh rate for the selected month."
+                                      aria-label="Avoidable Cost formula: excess consumption above baseline multiplied by the applicable electricity rate.">
+                                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                </span>
+                            </div>
                             <div class="stat-value">PHP {{ number_format((float) ($totals['avoidable_cost'] ?? 0), 2) }}</div>
-                            <div class="stat-sub">Baseline vs actual monthly comparison.</div>
+                            <div class="stat-sub">Estimated excess cost above baseline for {{ $overview['periodLabel'] ?? 'the selected month' }}.</div>
                         </div>
                     </div>
 
