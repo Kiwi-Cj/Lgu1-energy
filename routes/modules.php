@@ -70,6 +70,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/modules/energy-conservation/goals/{goal}', [EnergyConservationController::class, 'destroyConservationGoal'])->name('modules.energy-conservation.goals.destroy');
     Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
     Route::post('/modules/energy-conservation/energy-saving-tips/review', [EnergyConservationController::class, 'reviewEnergyTip'])->name('modules.energy-conservation.tips.review');
+    Route::put('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'updateEnergyTip'])->name('modules.energy-conservation.tips.update');
+    Route::delete('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'destroyEnergyTip'])->name('modules.energy-conservation.tips.destroy');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -225,6 +227,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $allRecordsForYear = $allRecords
             ->filter(fn ($record) => (int) ($record->year ?? 0) === $selectedYear)
             ->values();
+
+        $recommendationsByPeriod = \App\Models\EnergySavingRecommendation::query()
+            ->with('assignee:id,full_name,username,profile_photo_path')
+            ->where('facility_id', $facilityId)
+            ->where('year', $selectedYear)
+            ->get()
+            ->keyBy(fn ($recommendation) => (int) $recommendation->year.'-'.(int) $recommendation->month);
 
         $allMainRecordsForSummary = $allRecordsForYear->filter(function ($record) use ($effectiveSummaryMonth) {
             if ($effectiveSummaryMonth === null) {
@@ -522,6 +531,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'mainSubScope',
             'mainSubScopeLabel',
             'recordsForYear',
+            'recommendationsByPeriod',
             'mainRecordIndex',
             'years',
             'selectedYear',

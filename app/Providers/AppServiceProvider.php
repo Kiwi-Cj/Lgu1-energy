@@ -126,14 +126,29 @@ class AppServiceProvider extends ServiceProvider
 
         $logoPath = trim((string) ($branding['system_logo'] ?? ''), '/');
         $faviconPath = trim((string) ($branding['favicon'] ?? ''), '/');
+        $brandingUrl = static function (string $path): ?string {
+            if ($path === '') {
+                return null;
+            }
+
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+
+            if (str_starts_with($path, 'uploads/')
+                || str_starts_with($path, 'storage/')
+                || str_starts_with($path, 'img/')) {
+                return asset($path);
+            }
+
+            // Backward compatibility for branding previously stored on the
+            // Laravel public disk as "settings/<filename>".
+            return asset('storage/'.$path);
+        };
 
         View::share([
-            'systemLogoUrl' => $logoPath !== ''
-                ? asset('storage/' . $logoPath)
-                : asset('img/logocityhall.jpg'),
-            'systemFaviconUrl' => $faviconPath !== ''
-                ? asset('storage/' . $faviconPath)
-                : asset('img/logocityhall.jpg'),
+            'systemLogoUrl' => $brandingUrl($logoPath) ?? asset('img/logocityhall.jpg'),
+            'systemFaviconUrl' => $brandingUrl($faviconPath) ?? asset('img/logocityhall.jpg'),
         ]);
     }
 }

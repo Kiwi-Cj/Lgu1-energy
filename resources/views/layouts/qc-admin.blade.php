@@ -1807,15 +1807,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const hamburger = document.getElementById('hamburger');
     const backdrop = document.getElementById('backdrop');
 
-    hamburger.onclick = () => {
-        sidebar.classList.toggle('open');
-        backdrop.classList.toggle('active');
-    };
+    if (hamburger && sidebar && backdrop) {
+        hamburger.onclick = () => {
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('active');
+        };
 
-    backdrop.onclick = () => {
-        sidebar.classList.remove('open');
-        backdrop.classList.remove('active');
-    };
+        backdrop.onclick = () => {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('active');
+        };
+    }
 
     // 2. Submenu Logic
     document.querySelectorAll('.nav-item-has-submenu').forEach((item) => {
@@ -1845,7 +1847,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const notifMarkAllBtn = document.getElementById('notifMarkAll');
     const notifFilterButtons = document.querySelectorAll('.notif-filter-btn');
     const notifFilterEmpty = document.getElementById('notifFilterEmpty');
-    const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content');
+    const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '';
     const notifRoutes = {
         incident: "{{ route('energy-incidents.index') }}",
         maintenance: "{{ route('modules.maintenance.index') }}",
@@ -2329,7 +2331,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const keepAliveUrl = @json(route('session.keep-alive'));
     const logoutUrl = @json(route('logout'));
     const expiredLoginUrl = @json(route('login')) + '?session=expired';
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     let sessionTimer = null;
     let lastKeepAliveAt = Date.now();
     let lastActivityHandledAt = 0;

@@ -6,9 +6,60 @@ use App\Models\Setting;
 use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SettingsController extends Controller
 {
+    private function resolveWebPublicRoot(): string
+    {
+        $configured = trim((string) config('filesystems.public_upload_root', ''));
+        if ($configured !== '' && is_dir($configured)) {
+            return rtrim($configured, '/\\');
+        }
+
+        $cpanelPublicHtml = dirname(base_path()).DIRECTORY_SEPARATOR.'public_html';
+        if (is_dir($cpanelPublicHtml)) {
+            return rtrim($cpanelPublicHtml, '/\\');
+        }
+
+        return public_path();
+    }
+
+    private function storeBrandingFileToPublic(Request $request, string $field): ?string
+    {
+        if (! $request->hasFile($field)) {
+            return null;
+        }
+
+        $file = $request->file($field);
+        $directory = $this->resolveWebPublicRoot()
+            .DIRECTORY_SEPARATOR.'uploads'
+            .DIRECTORY_SEPARATOR.'settings';
+
+        try {
+            if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                throw new \RuntimeException('Unable to create the branding upload directory.');
+            }
+
+            if (! is_writable($directory)) {
+                throw new \RuntimeException('The branding upload directory is not writable.');
+            }
+
+            $extension = strtolower($file->extension() ?: $file->getClientOriginalExtension());
+            $filename = $field.'_'.Str::uuid().'.'.$extension;
+            $file->move($directory, $filename);
+        } catch (\Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages([
+                $field => 'Unable to upload this file. Check the public uploads directory permissions.',
+            ]);
+        }
+
+        return 'uploads/settings/'.$filename;
+    }
+
     /**
      * Only super admin can access settings page.
      */
@@ -160,14 +211,14 @@ class SettingsController extends Controller
             }
         }
 
-        if ($request->hasFile('system_logo')) {
-            $validated['system_logo'] = $request->file('system_logo')->store('settings', 'public');
+        if ($path = $this->storeBrandingFileToPublic($request, 'system_logo')) {
+            $validated['system_logo'] = $path;
         } else {
             unset($validated['system_logo']);
         }
 
-        if ($request->hasFile('favicon')) {
-            $validated['favicon'] = $request->file('favicon')->store('settings', 'public');
+        if ($path = $this->storeBrandingFileToPublic($request, 'favicon')) {
+            $validated['favicon'] = $path;
         } else {
             unset($validated['favicon']);
         }

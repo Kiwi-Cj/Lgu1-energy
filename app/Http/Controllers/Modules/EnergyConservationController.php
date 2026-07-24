@@ -10,12 +10,14 @@ use App\Models\DailyEnergyChecklistTask;
 use App\Models\EnergyRecord;
 use App\Models\EnergySavingRecommendation;
 use App\Models\Facility;
+use App\Models\User;
 use App\Support\EnergyCost;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EnergyConservationController extends Controller
 {
@@ -40,6 +42,9 @@ class EnergyConservationController extends Controller
         $dailyChecklist = collect();
         $conservationGoals = collect();
         $checklistDate = (string) $request->query('date', now()->toDateString());
+        $selectedRecordContext = null;
+        $recommendationAssignees = collect();
+        $manualRecommendations = collect();
 
         if ($feature === 'conservation-goals') {
             $allowedFacilityIds = $overview['facilities']->pluck('id');
@@ -52,14 +57,70 @@ class EnergyConservationController extends Controller
         }
 
         if ($feature === 'energy-saving-tips') {
+            if (! $selectedFacility) {
+                $selectedFacility = $overview['facilities']->first();
+                $selectedFacilityId = (int) ($selectedFacility?->id ?? 0);
+            }
+
+            $selectedRecordId = (int) $request->query('record_id', 0);
+            if ($selectedRecordId > 0 && $selectedFacilityId > 0) {
+                [$selectedYear, $selectedMonthNumber] = array_map('intval', explode('-', $overview['selectedMonth']));
+                $selectedRecord = EnergyRecord::query()
+                    ->with('meter:id,facility_id,meter_name,meter_type')
+                    ->whereKey($selectedRecordId)
+                    ->where('facility_id', $selectedFacilityId)
+                    ->where('year', $selectedYear)
+                    ->where('month', $selectedMonthNumber)
+                    ->first();
+
+                if ($selectedRecord) {
+                    $recordDay = is_numeric($selectedRecord->day) ? (int) $selectedRecord->day : null;
+                    $periodDate = Carbon::create($selectedYear, $selectedMonthNumber, 1);
+                    $recordDateLabel = 'Day not specified';
+                    if ($recordDay !== null && $recordDay >= 1 && $recordDay <= $periodDate->daysInMonth) {
+                        $recordDateLabel = $periodDate->copy()->day($recordDay)->format('F j, Y');
+                    }
+
+                    $selectedRecordContext = [
+                        'record_id' => (int) $selectedRecord->id,
+                        'facility_name' => (string) ($selectedFacility?->name ?? 'Facility #'.$selectedFacilityId),
+                        'facility_type' => (string) ($selectedFacility?->type ?? ''),
+                        'period_label' => $periodDate->format('F Y'),
+                        'record_date_label' => $recordDateLabel,
+                        'meter_name' => (string) ($selectedRecord->meter?->meter_name ?? 'Main Meter'),
+                        'monthly_records_url' => route('facilities.monthly-records', [
+                            'facility' => $selectedFacilityId,
+                            'year' => $selectedYear,
+                            'table_month' => $selectedMonthNumber,
+                        ]),
+                    ];
+                }
+            }
+
             $energyTips = $this->energySavingTips($overview['rows'], $selectedFacilityId, $overview['periodLabel']);
+            $recommendationAssignees = User::query()
+                ->where('status', 'active')
+                ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['staff'])
+                ->whereHas('facilities', fn ($query) => $query->whereKey($selectedFacilityId))
+                ->orderByRaw("COALESCE(NULLIF(full_name, ''), username)")
+                ->get(['id', 'full_name', 'username', 'role']);
             [$tipYear, $tipMonth] = array_map('intval', explode('-', $overview['selectedMonth']));
+            $manualRecommendations = EnergySavingRecommendation::query()
+                ->with(['reviewer:id,username', 'assignee:id,full_name,username,profile_photo_path', 'verifier:id,full_name,username'])
+                ->where('facility_id', $selectedFacilityId)
+                ->where('year', $tipYear)
+                ->where('month', $tipMonth)
+                ->when(! $canReviewTips, fn ($query) => $query->where('status', 'approved'))
+                ->latest('id')
+                ->get();
             $reviews = EnergySavingRecommendation::query()
-                ->with('reviewer:id,username')
+                ->with(['reviewer:id,username', 'assignee:id,full_name,username,profile_photo_path', 'verifier:id,full_name,username'])
                 ->where('year', $tipYear)
                 ->where('month', $tipMonth)
                 ->whereIn('facility_id', $energyTips->pluck('facility_id')->filter())
+                ->latest('id')
                 ->get()
+                ->unique('facility_id')
                 ->keyBy('facility_id');
 
             $energyTips = $energyTips
@@ -103,8 +164,11 @@ class EnergyConservationController extends Controller
             'overview' => $overview,
             'selectedFacility' => $selectedFacility,
             'selectedFacilityId' => $selectedFacilityId,
+            'selectedRecordContext' => $selectedRecordContext,
             'energyTips' => $energyTips,
             'canReviewTips' => $canReviewTips,
+            'recommendationAssignees' => $recommendationAssignees,
+            'manualRecommendations' => $manualRecommendations,
             'dailyChecklist' => $dailyChecklist,
             'conservationGoals' => $conservationGoals,
             'canManageGoals' => $this->canManageChecklistTasks($request),
@@ -362,32 +426,127 @@ class EnergyConservationController extends Controller
             'engineer_recommendation' => ['nullable', 'string', 'max:3000', 'required_if:status,approved'],
             'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'target_date' => ['nullable', 'date'],
+            'record_id' => ['nullable', 'integer'],
+            'assigned_to' => ['nullable', 'required_if:status,approved', 'integer', 'exists:users,id'],
+            'implementation_status' => ['nullable', 'in:pending,in_progress,implemented,verified'],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
         ]);
 
         $request->merge(['month' => $validated['period'], 'facility_id' => $validated['facility_id']]);
+        if (! empty($validated['assigned_to'])) {
+            $isAssignedFacilityStaff = User::query()
+                ->whereKey($validated['assigned_to'])
+                ->where('status', 'active')
+                ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['staff'])
+                ->whereHas('facilities', fn ($query) => $query->whereKey($validated['facility_id']))
+                ->exists();
+
+            if (! $isAssignedFacilityStaff) {
+                throw ValidationException::withMessages([
+                    'assigned_to' => 'Select an active staff member assigned to this facility.',
+                ]);
+            }
+        }
+
         $overview = $this->buildOverviewData($request);
         $tip = $this->energySavingTips($overview['rows'], (int) $validated['facility_id'], $overview['periodLabel'])->first();
         abort_unless($tip && ! empty($tip['facility_id']), 422, 'No monthly energy data is available for this facility.');
         [$year, $month] = array_map('intval', explode('-', $validated['period']));
+        $implementationStatus = $validated['implementation_status'] ?? 'pending';
+        $isImplemented = in_array($implementationStatus, ['implemented', 'verified'], true);
+        $isVerified = $implementationStatus === 'verified';
 
-        EnergySavingRecommendation::updateOrCreate(
-            ['facility_id' => $validated['facility_id'], 'year' => $year, 'month' => $month],
-            [
-                'generated_message' => $tip['message'],
-                'engineer_recommendation' => $validated['engineer_recommendation'],
-                'status' => $validated['status'],
-                'expected_savings_kwh' => $validated['expected_savings_kwh'] ?? null,
-                'target_date' => $validated['target_date'] ?? null,
-                'reviewed_by' => $request->user()->id,
-                'reviewed_at' => now(),
-            ]
-        );
+        EnergySavingRecommendation::create([
+            'facility_id' => $validated['facility_id'],
+            'year' => $year,
+            'month' => $month,
+            'generated_message' => $tip['message'],
+            'engineer_recommendation' => $validated['engineer_recommendation'],
+            'status' => $validated['status'],
+            'expected_savings_kwh' => $validated['expected_savings_kwh'] ?? null,
+            'target_date' => $validated['target_date'] ?? null,
+            'assigned_to' => $validated['assigned_to'] ?? null,
+            'implementation_status' => $implementationStatus,
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $validated['implementation_notes'] ?? null,
+            'implemented_at' => $isImplemented ? now() : null,
+            'verified_by' => $isVerified ? $request->user()->id : null,
+            'verified_at' => $isVerified ? now() : null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
 
-        return redirect()->route('modules.energy-conservation.feature', [
+        return redirect()->route('modules.energy-conservation.feature', array_filter([
             'feature' => 'energy-saving-tips',
             'month' => $validated['period'],
             'facility_id' => $validated['facility_id'],
-        ])->with('success', 'Energy-saving recommendation updated.');
+            'record_id' => $validated['record_id'] ?? null,
+        ], fn ($value) => $value !== null))->with('success', 'Recommendation added successfully.');
+    }
+
+    public function updateEnergyTip(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        if (! RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer'])) {
+            abort(403, 'Only Engineering, Energy Officers, or administrators can update recommendations.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:for_review,approved,dismissed'],
+            'engineer_recommendation' => ['required', 'string', 'max:3000'],
+            'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'target_date' => ['nullable', 'date'],
+            'assigned_to' => ['nullable', 'required_if:status,approved', 'integer', 'exists:users,id'],
+            'implementation_status' => ['required', 'in:pending,in_progress,implemented,verified'],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        if (! empty($validated['assigned_to'])) {
+            $isAssignedFacilityStaff = User::query()
+                ->whereKey($validated['assigned_to'])
+                ->where('status', 'active')
+                ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['staff'])
+                ->whereHas('facilities', fn ($query) => $query->whereKey($recommendation->facility_id))
+                ->exists();
+
+            if (! $isAssignedFacilityStaff) {
+                throw ValidationException::withMessages([
+                    'assigned_to' => 'Select an active staff member assigned to this facility.',
+                ]);
+            }
+        }
+
+        $isImplemented = in_array($validated['implementation_status'], ['implemented', 'verified'], true);
+        $isVerified = $validated['implementation_status'] === 'verified';
+        $recommendation->update([
+            'engineer_recommendation' => $validated['engineer_recommendation'],
+            'status' => $validated['status'],
+            'expected_savings_kwh' => $validated['expected_savings_kwh'] ?? null,
+            'target_date' => $validated['target_date'] ?? null,
+            'assigned_to' => $validated['assigned_to'] ?? null,
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $validated['implementation_notes'] ?? null,
+            'implemented_at' => $isImplemented ? ($recommendation->implemented_at ?? now()) : null,
+            'verified_by' => $isVerified ? $request->user()->id : null,
+            'verified_at' => $isVerified ? ($recommendation->verified_at ?? now()) : null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Recommendation updated successfully.');
+    }
+
+    public function destroyEnergyTip(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        if (! RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer'])) {
+            abort(403, 'Only Engineering, Energy Officers, or administrators can delete recommendations.');
+        }
+
+        $recommendation->delete();
+
+        return back()->with('success', 'Recommendation deleted successfully.');
     }
 
     private function renderOverview(Request $request)

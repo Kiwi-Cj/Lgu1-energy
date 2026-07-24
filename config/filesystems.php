@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public Web Root
+    |--------------------------------------------------------------------------
+    |
+    | Shared hosting may keep the Laravel application beside public_html.
+    | Branding uploads use this path so they remain directly web-accessible.
+    |
+    */
+
+    'public_upload_root' => env('PUBLIC_UPLOAD_ROOT'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Filesystem Disk
     |--------------------------------------------------------------------------
     |
