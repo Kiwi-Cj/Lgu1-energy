@@ -82,6 +82,9 @@ require __DIR__ . '/energy.php';
 // SSO — receives signed tokens from Main LGU (infragovservices.com hub)
 Route::get('/sso/consume', [\App\Http\Controllers\SsoConsumeController::class, 'consume'])->name('sso.consume');
 
+// Read-only headline metric for the Main LGU SSO hub dashboard
+Route::get('/api/stats', [\App\Http\Controllers\StatsController::class, 'index'])->name('api.stats');
+
 // Public welcome page route
 Route::get('/modules/dashboard/index', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
 Route::get('/dashboard', function () {
