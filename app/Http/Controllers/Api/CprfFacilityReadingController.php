@@ -55,8 +55,16 @@ class CprfFacilityReadingController extends Controller
             'baseline_kwh' => $baseline,
             'deviation' => $deviation,
             'alert' => $alert,
-            'energy_cost' => $validated['energy_cost'] ?? null,
-            'rate_per_kwh' => $validated['rate_per_kwh'] ?? null,
+            // 0, not null: both columns are declared nullable() in the
+            // migrations, but production's actual columns enforce NOT NULL
+            // (same drift class as recorded_by below) — energy_cost already
+            // confirmed live, rate_per_kwh presumed guilty by association
+            // (added in the same migration wave, same manual-entry form).
+            // CPRF often has no cost/rate to report; 0 reads as "no cost
+            // data" and satisfies either schema, so this doesn't depend on
+            // production's column nullability matching the migrations.
+            'energy_cost' => $validated['energy_cost'] ?? 0,
+            'rate_per_kwh' => $validated['rate_per_kwh'] ?? 0,
             'input_source' => 'cprf',
             // Explicit, not omitted: a CPRF-pushed reading has no energy-app
             // user to attribute it to. Leaving this out of the insert made
