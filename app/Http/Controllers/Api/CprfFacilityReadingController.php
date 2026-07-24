@@ -58,6 +58,11 @@ class CprfFacilityReadingController extends Controller
             'energy_cost' => $validated['energy_cost'] ?? null,
             'rate_per_kwh' => $validated['rate_per_kwh'] ?? null,
             'input_source' => 'cprf',
+            // Explicit, not omitted: a CPRF-pushed reading has no energy-app
+            // user to attribute it to. Leaving this out of the insert made
+            // MySQL strict mode reject the row ("doesn't have a default
+            // value") whenever recorded_by has no column default.
+            'recorded_by' => null,
         ];
 
         try {
