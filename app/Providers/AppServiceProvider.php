@@ -15,6 +15,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\View;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -109,5 +110,30 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             // Keep default session config when DB/settings table is not yet ready.
         }
+
+        $branding = [
+            'system_logo' => null,
+            'favicon' => null,
+        ];
+
+        try {
+            if (Schema::hasTable('settings')) {
+                $branding = Setting::getMany(array_keys($branding), $branding);
+            }
+        } catch (\Throwable $e) {
+            // Keep the bundled branding while the database is unavailable.
+        }
+
+        $logoPath = trim((string) ($branding['system_logo'] ?? ''), '/');
+        $faviconPath = trim((string) ($branding['favicon'] ?? ''), '/');
+
+        View::share([
+            'systemLogoUrl' => $logoPath !== ''
+                ? asset('storage/' . $logoPath)
+                : asset('img/logocityhall.jpg'),
+            'systemFaviconUrl' => $faviconPath !== ''
+                ? asset('storage/' . $faviconPath)
+                : asset('img/logocityhall.jpg'),
+        ]);
     }
 }

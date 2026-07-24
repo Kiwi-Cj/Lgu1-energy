@@ -498,9 +498,6 @@ window.addEventListener('DOMContentLoaded', function() {
                             <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="action-icon records" title="Monthly Records" style="background:#fef2f2; color:#e11d48;">
                                 <i class="fas fa-file-lines"></i>
                             </a>
-                            <a href="{{ route('modules.facilities.equipment-inventory', $facility->id) }}" class="action-icon inventory" title="Equipment Inventory">
-                                <i class="fas fa-cubes"></i>
-                            </a>
                             <div style="margin-left:auto; display:flex; align-items:center;">
                                 <a href="{{ route('modules.facilities.show', $facility->id) }}" style="font-size:0.95rem; font-weight:700; color:#2563eb; text-transform:none; text-decoration:none; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px; transition:color 0.18s;" onmouseover="this.style.color='#1d4ed8'" onmouseout="this.style.color='#2563eb'">
                                     View Details <i class="fas fa-arrow-right"></i>

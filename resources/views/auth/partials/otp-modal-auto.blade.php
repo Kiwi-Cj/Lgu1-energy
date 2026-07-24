@@ -5,7 +5,7 @@
         <button class="otp-close" onclick="closeOtpModalAuto()" aria-label="Close">
             <span aria-hidden="true">&times;</span>
         </button>
-        <img src="{{ asset('img/logocityhall.jpg') }}" class="otp-logo" alt="LGU Logo">
+        <img src="{{ $systemLogoUrl }}" class="otp-logo" alt="LGU Logo">
         <h2 class="otp-title">Verify Your Identity</h2>
         <div id="otpTimer" class="otp-timer">{{ str_pad((string) max(1, (int) config('otp.expire_minutes', 5)), 2, '0', STR_PAD_LEFT) }}:00</div>
         <p class="otp-desc">Enter the One-Time Password (OTP) sent to your email.</p>

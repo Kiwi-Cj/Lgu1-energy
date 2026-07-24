@@ -16,7 +16,7 @@
 </script>
 
 <title>@yield('title','LGU Employee Portal')</title>
- <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" />
+ <link rel="icon" href="{{ $systemFaviconUrl }}" />
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
@@ -1670,7 +1670,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
         <div class="site-logo">
-            <img src="/img/logocityhall.jpg" alt="Logo" style="border-radius:50%;object-fit:cover;width:60px;height:60px;box-shadow:0 2px 8px rgba(49,46,129,0.10);">
+            <img src="{{ $systemLogoUrl }}" alt="Logo" style="border-radius:50%;object-fit:cover;width:60px;height:60px;box-shadow:0 2px 8px rgba(49,46,129,0.10);">
         </div>
         <div class="sidebar-divider"></div>
 
@@ -2323,25 +2323,94 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 5. Session Timeout Logic
-    var timeoutMinutes = {{ (int) config('session.lifetime', 20) }};
-    var timeoutMs = timeoutMinutes * 60 * 1000;
-    var timeoutModal = document.getElementById('sessionTimeoutModal');
-    var timer = null;
+    const timeoutMinutes = {{ max(1, (int) config('session.lifetime', 60)) }};
+    const timeoutMs = timeoutMinutes * 60 * 1000;
+    const keepAliveIntervalMs = 60 * 1000;
+    const keepAliveUrl = @json(route('session.keep-alive'));
+    const logoutUrl = @json(route('logout'));
+    const expiredLoginUrl = @json(route('login')) + '?session=expired';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    let sessionTimer = null;
+    let lastKeepAliveAt = Date.now();
+    let lastActivityHandledAt = 0;
+    let keepAlivePending = false;
+    let logoutStarted = false;
 
-    var resetSessionTimer = () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            if (timeoutModal) {
-                timeoutModal.style.display = 'flex';
-            }
-        }, timeoutMs);
+    const redirectToExpiredLogin = () => {
+        window.location.replace(expiredLoginUrl);
     };
 
-    resetSessionTimer();
+    const endIdleSession = async () => {
+        if (logoutStarted) return;
+        logoutStarted = true;
+        clearTimeout(sessionTimer);
 
-    // Track more real user activity to avoid false timeout while actively using the app.
-    ['click', 'mousemove', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'].forEach(evt => {
-        window.addEventListener(evt, resetSessionTimer, { passive: true });
+        try {
+            await fetch(logoutUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reason: 'idle' }),
+            });
+        } catch (error) {
+            // The server session may already be expired or the network may be unavailable.
+        } finally {
+            redirectToExpiredLogin();
+        }
+    };
+
+    const scheduleIdleLogout = () => {
+        if (logoutStarted) return;
+        clearTimeout(sessionTimer);
+        sessionTimer = setTimeout(endIdleSession, timeoutMs);
+    };
+
+    const renewServerSession = async () => {
+        if (keepAlivePending || logoutStarted || !csrfToken) return;
+        keepAlivePending = true;
+        lastKeepAliveAt = Date.now();
+
+        try {
+            const response = await fetch(keepAliveUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.status === 401 || response.status === 419 || response.redirected) {
+                logoutStarted = true;
+                redirectToExpiredLogin();
+            }
+        } catch (error) {
+            // Do not interrupt active work for a temporary network failure.
+        } finally {
+            keepAlivePending = false;
+        }
+    };
+
+    const recordUserActivity = () => {
+        if (logoutStarted) return;
+        const now = Date.now();
+        if (now - lastActivityHandledAt < 1000) return;
+        lastActivityHandledAt = now;
+        scheduleIdleLogout();
+
+        if (now - lastKeepAliveAt >= keepAliveIntervalMs) {
+            renewServerSession();
+        }
+    };
+
+    scheduleIdleLogout();
+
+    ['click', 'mousemove', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'].forEach((eventName) => {
+        window.addEventListener(eventName, recordUserActivity, { passive: true });
     });
 });
 

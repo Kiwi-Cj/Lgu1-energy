@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>LGU | Energy Efficiency System</title>
-     <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" />
+     <link rel="icon" href="{{ $systemFaviconUrl }}" />
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -356,7 +356,7 @@
 
 <header class="nav">
     <a href="/" class="nav-logo">
-        <img src="{{ asset('img/logocityhall.jpg') }}" alt="Logo">
+        <img src="{{ $systemLogoUrl }}" alt="Logo">
         <span>Energy System Portal</span>
     </a>
     <div class="nav-links">
@@ -367,7 +367,7 @@
 <div class="wrapper">
     <div class="card">
         <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 8px;">
-            <img src="{{ asset('img/logocityhall.jpg') }}" class="icon-top" alt="LGU Logo" style="box-shadow:0 4px 16px rgba(37,99,235,0.10);">
+            <img src="{{ $systemLogoUrl }}" class="icon-top" alt="LGU Logo" style="box-shadow:0 4px 16px rgba(37,99,235,0.10);">
         </div>
       
         <div class="subtitle">Sign in to your LGU Energy Efficiency System account</div>
@@ -514,7 +514,8 @@
         if (otpModal) otpModal.style.display = 'none';
 
         const sessionEndedModal = document.getElementById('sessionEndedModal');
-        const showSessionEndedModal = @json((bool) session('session_ended_modal'));
+        const showSessionEndedModal = @json((bool) session('session_ended_modal'))
+            || new URLSearchParams(window.location.search).get('session') === 'expired';
         if (sessionEndedModal && showSessionEndedModal) {
             sessionEndedModal.style.display = 'flex';
         }
