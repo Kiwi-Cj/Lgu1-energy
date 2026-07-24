@@ -76,6 +76,20 @@ return [
         'token' => env('CIMM_MAINTENANCE_SYNC_TOKEN', 'CIMM_ENERGY_SHARED_KEY_2026'),
     ],
 
+    // CPRF (facilities reservation) <-> Energy integration. Same isolation
+    // rationale as cimm_maintenance_sync above: CPRF gets its own token so it
+    // can be set or rotated independently of the generic integration_api
+    // token. Deliberately NO default here: this token gates a WRITE endpoint
+    // (facility readings), so an unset env must disable the API rather than
+    // fall back to a shared secret (the middleware returns 503 when unset).
+    'cprf_integration' => [
+        'token' => env('CPRF_INTEGRATION_TOKEN'),
+        // Full URL of CPRF's facilities feed, e.g.
+        // https://cprf.infragovservices.com/public/api/energy-facilities-feed.php
+        // Pulled by energy:sync-cprf-facilities using the same token above.
+        'facilities_feed_url' => env('CPRF_FACILITIES_FEED_URL'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),

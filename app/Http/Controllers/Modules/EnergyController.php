@@ -310,16 +310,7 @@ class EnergyController extends Controller
             return (float) $baselineInput;
         }
 
-        $profile = $facility?->energyProfiles()->latest()->first();
-        if ($profile && $profile->baseline_kwh !== null) {
-            return (float) $profile->baseline_kwh;
-        }
-
-        if ($facility && isset($facility->baseline_kwh) && $facility->baseline_kwh !== null) {
-            return (float) $facility->baseline_kwh;
-        }
-
-        return null;
+        return $facility?->resolveBaselineKwh();
     }
 
     private function resolveAlertLevel(?float $baseline, ?float $deviation): string

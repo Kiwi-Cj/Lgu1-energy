@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/facilities', [FacilityController::class, 'index'])->name('facilities.index');
     Route::redirect('/facilities/create', '/facilities')->name('facilities.create');
     Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
+    Route::post('/facilities/sync-cprf', [FacilityController::class, 'syncCprf'])->name('facilities.sync-cprf');
     Route::get('/facilities/{id}', [FacilityController::class, 'show'])->name('facilities.show');
     Route::get('/facilities/{id}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
     Route::put('/facilities/{id}', [FacilityController::class, 'update'])->name('facilities.update');

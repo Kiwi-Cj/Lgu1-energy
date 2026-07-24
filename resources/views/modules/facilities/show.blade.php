@@ -416,7 +416,12 @@ $primaryMainMeter = ($profile?->primaryMeter && !empty($profile->primaryMeter->a
 <div class="facility-subtitle">
 	{{ $facility->type }} &bull; {{ $facility->department }}
 </div>
-@if(\App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
+@if($facility->isCprfManaged())
+<span title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
+	  style="display:inline-flex; align-items:center; gap:6px; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; border-radius:999px; padding:4px 12px; font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; margin-top:6px;">
+	<i class="fas fa-link"></i> Public Facility — managed by CPRF
+</span>
+@elseif(\App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
 <button type="button" onclick="openEditFacilityModal()" class="facility-edit-btn">
 	<i class="fa fa-edit" style="margin-right:6px;"></i> Edit Facility
 </button>
@@ -564,7 +569,7 @@ if ($baselineForSize !== null) {
 	<a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="facility-action-link profile">
 		<i class="fa fa-bolt" style="margin-right:6px;"></i> Energy Profile
 	</a>
-	@if(!in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
+	@if(!$facility->isCprfManaged() && !in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
 	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" class="facility-action-btn archive"><i class="fa fa-box-archive" style="margin-right:6px;"></i> Delete</button>
 	@endif
 </div>

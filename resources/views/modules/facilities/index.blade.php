@@ -421,6 +421,35 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
 
+        @php $sourceTab = $sourceTab ?? 'all'; @endphp
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:1.25rem;">
+            @foreach ([
+                'all' => 'All Facilities',
+                'local' => 'LGU Facilities (' . ($localFacilitiesCount ?? 0) . ')',
+                'cprf' => 'Public Facilities — Brgy. Culiat (' . ($publicFacilitiesCount ?? 0) . ')',
+            ] as $tabKey => $tabLabel)
+                <a href="{{ route('facilities.index', $tabKey === 'all' ? [] : ['source' => $tabKey]) }}"
+                   style="padding:8px 16px; border-radius:999px; font-size:0.85rem; font-weight:800; text-decoration:none; border:1.5px solid {{ $sourceTab === $tabKey ? '#2563eb' : '#e2e8f0' }}; background:{{ $sourceTab === $tabKey ? '#eff6ff' : '#fff' }}; color:{{ $sourceTab === $tabKey ? '#1d4ed8' : '#64748b' }};">
+                    {{ $tabLabel }}
+                </a>
+            @endforeach
+            @if($sourceTab === 'cprf' && ($canSyncCprf ?? false))
+                <form method="POST" action="{{ route('facilities.sync-cprf') }}" style="margin-left:auto;">
+                    @csrf
+                    <button type="submit" class="btn-gradient" style="padding:8px 18px; border-radius:999px; font-size:0.85rem; font-weight:800;">
+                        <i class="fas fa-rotate"></i> Sync from CPRF now
+                    </button>
+                </form>
+            @endif
+        </div>
+        @if($sourceTab === 'cprf')
+            <div style="background:#f5f3ff; border:1px solid #ddd6fe; color:#5b21b6; border-radius:12px; padding:10px 16px; font-size:0.85rem; font-weight:600; margin-bottom:1.25rem;">
+                <i class="fas fa-circle-info"></i>
+                These public facilities are synced automatically from the Barangay Culiat Facilities Reservation System (CPRF).
+                Their names, addresses, and details are managed by CPRF and are read-only here — energy profiles, meters, and readings remain fully manageable.
+            </div>
+        @endif
+
         <div class="facility-search-wrap">
             <label for="facilityLiveSearch" class="facility-search-label">Live Search</label>
             <div class="facility-search-input-wrap">
@@ -469,6 +498,12 @@ window.addEventListener('DOMContentLoaded', function() {
 
                     <div class="content-padding">
                         <span class="type-badge" data-search-text>{{ $facility->type ?? 'General' }}</span>
+                        @if(method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged())
+                            <span title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
+                                  style="display:inline-flex; align-items:center; gap:5px; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; border-radius:999px; padding:3px 10px; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; margin-left:6px;">
+                                <i class="fas fa-link"></i> CPRF
+                            </span>
+                        @endif
                         <h3 data-search-text style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0 0 8px 0; line-height:1.2;">{{ $facility->name }}</h3>
                         <p style="font-size:0.88rem; color:#64748b; display:flex; align-items:flex-start; gap:6px; margin-bottom:12px;">
                             <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i>

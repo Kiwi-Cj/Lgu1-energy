@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'download.confirmed' => \App\Http\Middleware\RequireDownloadAuthorization::class,
             'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
             'cimm.maintenance.sync' => \App\Http\Middleware\AuthenticateCimmMaintenanceSync::class,
+            'cprf.integration' => \App\Http\Middleware\AuthenticateCprfIntegration::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

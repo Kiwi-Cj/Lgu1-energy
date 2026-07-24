@@ -95,3 +95,50 @@ Set `CIMM_MAINTENANCE_SYNC_TOKEN` in `.env` to a long random secret shared
 with the CIMM install (see `config/services.php`); it falls back to a shared
 dev default if left unset, matching how CIMM's own CPRF/RGMAP integrations
 default to a shared key on local dev.
+
+## CPRF (Facilities Reservation) Integration
+
+CPRF pushes manual facility meter readings in and pulls facilities and
+engineer-approved recommendations out. Auth: `Authorization: Bearer
+{CPRF_INTEGRATION_TOKEN}` (defaults to the shared dev key
+`CPRF_ENERGY_SHARED_KEY_2026`; override in production). Rate limit: 60
+requests/minute.
+
+### POST /api/v1/cprf/facility-readings
+
+Upserts the facility-level monthly `energy_records` row (one per facility +
+year + month, `meter_id` NULL, `input_source=cprf`). Baseline, deviation, and
+alert are computed exactly as for manually encoded records.
+
+Request body:
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| facility_id | integer | yes | must exist in `facilities` |
+| year | integer | yes | 2000–2100 |
+| month | integer | yes | 1–12 |
+| previous_reading_kwh | number | yes | >= 0 |
+| current_reading_kwh | number | yes | >= previous_reading_kwh |
+| reading_date | date | yes | e.g. `2026-07-21` |
+| energy_cost | number | no | |
+| rate_per_kwh | number | no | |
+| notes | string | no | logged only, not stored |
+| external_ref | string | no | CPRF's local reading id, logged only |
+| recorded_by_name | string | no | logged only |
+
+Responses: `201` created / `200` updated with `{message, record{id, facility_id,
+period{year,month}, actual_kwh, baseline_kwh, deviation_percent, alert,
+input_source}}`; `422` validation error; `401`/`503` auth.
+
+### GET /api/v1/cprf/facilities
+
+Same response shape and filters as `GET /api/v1/facilities` (status, search,
+page, per_page) — only the auth token differs.
+
+### GET /api/v1/cprf/recommendations
+
+Rows from `energy_saving_recommendations`. Filters: `facility_id`, `year`,
+`month`, `status` (default `approved`; pass `all` to lift), `updated_since`,
+`page`, `per_page` (max 100). Row shape: `id, facility{id,name}, year, month,
+generated_message, engineer_recommendation, status, expected_savings_kwh,
+target_date, reviewed_at, updated_at`.

@@ -45,7 +45,19 @@ class Facility extends Model
         'engineer_approved', // <-- Added for engineer approval
         'deleted_by',
         'archive_reason',
+        'source',       // 'local' (created here) | 'cprf' (mirrored from CPRF)
+        'external_ref', // CPRF facility id when source='cprf'
     ];
+
+    /**
+     * Mirrored from the CPRF facilities reservation system: identity fields
+     * (name, address, details, status) are managed by the sync and read-only
+     * here; energy data (profiles, meters, readings) stays fully editable.
+     */
+    public function isCprfManaged(): bool
+    {
+        return ($this->source ?? 'local') === 'cprf';
+    }
 
     /* =======================
      | RELATIONSHIPS
@@ -94,6 +106,22 @@ class Facility extends Model
     public function auditLogs()
     {
         return $this->hasMany(FacilityAuditLog::class);
+    }
+
+    /**
+     * Baseline used for deviation/alert computation on new energy records:
+     * latest energy profile baseline first, then the facility's own column.
+     * Shared by the Energy Monitoring UI and the CPRF integration endpoint
+     * so both compute deviations identically.
+     */
+    public function resolveBaselineKwh(): ?float
+    {
+        $profile = $this->energyProfiles()->latest()->first();
+        if ($profile && $profile->baseline_kwh !== null) {
+            return (float) $profile->baseline_kwh;
+        }
+
+        return $this->baseline_kwh !== null ? (float) $this->baseline_kwh : null;
     }
 
     /* =======================

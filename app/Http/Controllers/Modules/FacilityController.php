@@ -14,6 +14,7 @@ use App\Models\FacilityAuditLog;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
 use App\Services\ArchivePruneService;
+use App\Services\CprfFacilitySyncService;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -64,6 +65,23 @@ class FacilityController extends Controller
     public function update(Request $request, $id)
     {
         $facility = Facility::findOrFail($id);
+
+        // Facilities mirrored from CPRF: identity fields are managed by the
+        // CPRF sync and stay read-only here. Only the photo may be changed
+        // locally; energy data (profiles, meters, baselines) lives in its
+        // own controllers and is unaffected.
+        if ($facility->isCprfManaged()) {
+            $request->validate([
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            ]);
+            if ($path = $this->storeFacilityImageToPublic($request)) {
+                $facility->update(['image_path' => $path]);
+                return redirect()->route('facilities.show', $facility->id)->with('success', 'Facility photo updated.');
+            }
+            return redirect()->route('facilities.show', $facility->id)
+                ->with('error', 'This is a public facility managed by the CPRF Facilities Reservation system — its details are synced automatically and cannot be edited here.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
@@ -121,6 +139,33 @@ class FacilityController extends Controller
 
         return redirect()->route('facilities.index')->with('success', 'Facility added successfully.');
     }
+    /**
+     * Manual "Sync now" for the Public Facilities (CPRF) tab: runs the same
+     * service as the scheduled energy:sync-cprf-facilities command.
+     */
+    public function syncCprf(CprfFacilitySyncService $service)
+    {
+        if (! $this->isSuperAdmin() && ! $this->isArchiveAdmin()) {
+            return redirect()->route('facilities.index', ['source' => 'cprf'])
+                ->with('error', 'You do not have permission to run the CPRF facilities sync.');
+        }
+
+        $result = $service->sync();
+
+        if (! $result['success']) {
+            return redirect()->route('facilities.index', ['source' => 'cprf'])
+                ->with('error', 'CPRF sync failed: ' . ($result['error'] ?? 'unknown error'));
+        }
+
+        return redirect()->route('facilities.index', ['source' => 'cprf'])->with('success', sprintf(
+            'Public facilities synced from CPRF: %d added, %d updated, %d deactivated, %d unchanged.',
+            $result['created'],
+            $result['updated'],
+            $result['deactivated'],
+            $result['unchanged']
+        ));
+    }
+
     /**
      * Show the form for editing the specified facility.
      */
@@ -200,6 +245,20 @@ class FacilityController extends Controller
             $facilities = Facility::with($facilityRelations)->get();
         }
 
+        // Source tabs: LGU-owned facilities vs public facilities mirrored
+        // from the CPRF facilities reservation system.
+        $sourceTab = (string) request()->query('source', 'all');
+        if (! in_array($sourceTab, ['all', 'local', 'cprf'], true)) {
+            $sourceTab = 'all';
+        }
+        $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
+        $localFacilitiesCount = $facilities->count() - $publicFacilitiesCount;
+        if ($sourceTab !== 'all') {
+            $facilities = $facilities
+                ->filter(fn ($f) => (($f->source ?? 'local') === 'cprf') === ($sourceTab === 'cprf'))
+                ->values();
+        }
+
         // Compute dynamic facility size from total approved MAIN meter baseline.
         $facilitiesWithAvg = $facilities->map(function($facility) {
             $baselineKwh = null;
@@ -255,6 +314,10 @@ class FacilityController extends Controller
             'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
             'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
+            'sourceTab' => $sourceTab,
+            'localFacilitiesCount' => $localFacilitiesCount,
+            'publicFacilitiesCount' => $publicFacilitiesCount,
+            'canSyncCprf' => $this->isSuperAdmin() || $this->isArchiveAdmin(),
         ]);
     }
 
@@ -525,6 +588,17 @@ class FacilityController extends Controller
         }
 
         $facility = Facility::findOrFail($id);
+
+        // CPRF-managed rows are deactivated automatically by the sync when
+        // removed on the CPRF side; archiving them here would just be
+        // undone (restored) by the next sync run.
+        if ($facility->isCprfManaged()) {
+            $message = 'This public facility is managed by the CPRF Facilities Reservation system and cannot be archived here — it deactivates automatically when removed on CPRF.';
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
         $facility->deleted_by = auth()->id();
         $facility->archive_reason = $archiveReason;
         $facility->saveQuietly();

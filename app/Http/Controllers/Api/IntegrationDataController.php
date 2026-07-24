@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\EnergyIncident;
 use App\Models\EnergyRecord;
+use App\Models\EnergySavingRecommendation;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\Maintenance;
@@ -73,6 +74,11 @@ class IntegrationDataController extends Controller
             'meters_count' => $facility->meters_count,
             'submeters_count' => $facility->submeters_count,
             'energy_records_count' => $facility->energy_records_count,
+            // 'cprf'-sourced rows are mirrored from the CPRF system;
+            // external_ref is the CPRF facility id, letting CPRF auto-map
+            // facilities by id instead of fuzzy name matching.
+            'source' => $facility->source ?? 'local',
+            'external_ref' => $facility->external_ref !== null ? (int) $facility->external_ref : null,
             'updated_at' => $facility->updated_at?->toIso8601String(),
         ]);
     }
@@ -285,6 +291,49 @@ class IntegrationDataController extends Controller
                 'assigned_to' => $record->assigned_to,
                 'completed_date' => $record->completed_date,
             ],
+        ]);
+    }
+
+    /**
+     * Engineer-reviewed energy-saving recommendations for CPRF. Defaults to
+     * status=approved so the reservation system only surfaces vetted advice;
+     * pass status=all to lift the filter.
+     */
+    public function recommendations(Request $request): JsonResponse
+    {
+        $request->validate([
+            'facility_id' => ['nullable', 'integer', 'min:1'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'status' => ['nullable', 'string', 'max:20'],
+            'updated_since' => ['nullable', 'date'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $status = $request->filled('status') ? $request->string('status')->toString() : 'approved';
+
+        $query = EnergySavingRecommendation::query()
+            ->with('facility:id,name')
+            ->when($status !== 'all', fn (Builder $q) => $q->where('status', $status))
+            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
+            ->when($request->filled('month'), fn (Builder $q) => $q->where('month', $request->integer('month')))
+            ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
+            ->orderByDesc('year')->orderByDesc('month')->orderByDesc('id');
+
+        return $this->paginated($query, $request, fn (EnergySavingRecommendation $reco) => [
+            'id' => $reco->id,
+            'facility' => ['id' => $reco->facility_id, 'name' => $reco->facility?->name],
+            'year' => $reco->year,
+            'month' => $reco->month,
+            'generated_message' => $reco->generated_message,
+            'engineer_recommendation' => $reco->engineer_recommendation,
+            'status' => $reco->status,
+            'expected_savings_kwh' => $this->number($reco->expected_savings_kwh),
+            'target_date' => $reco->target_date?->toDateString(),
+            'reviewed_at' => $reco->reviewed_at?->toIso8601String(),
+            'updated_at' => $reco->updated_at?->toIso8601String(),
         ]);
     }
 
