@@ -211,6 +211,7 @@ trait MaintenanceSyncHelpers
                 'facility_id' => $maintenance->facility_id,
                 'issue_type' => $maintenance->issue_type,
                 'trigger_month' => $maintenance->trigger_month,
+                'trigger_date' => $maintenance->created_at?->toDateString(),
                 'trend' => $resolvedTrend,
                 'efficiency_rating' => $this->resolveEfficiencyRating(
                     $maintenance->issue_type,

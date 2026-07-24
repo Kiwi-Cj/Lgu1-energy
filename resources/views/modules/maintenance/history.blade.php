@@ -93,13 +93,13 @@
                         <th>ID</th>
                         <th>Facility</th>
                         <th>Issue Type</th>
-                        <th>Trigger</th>
+                        <th>Trigger Date</th>
                         <th>Trend</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Scheduled</th>
+                        <th>Scheduled Date</th>
                         <th>Assigned</th>
-                        <th>Completed</th>
+                        <th>Completed Date</th>
                         <th>Remarks</th>
                         @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                         <th>Action</th>
@@ -115,11 +115,13 @@
                                 $row['id'] ?? '',
                                 $row['facility'] ?? '',
                                 $row['issue_type'] ?? '',
-                                $row['trigger_month'] ?? '',
+                                $row['trigger_date'] ?? $row['trigger_month'] ?? '',
                                 $row['trend'] ?? '',
                                 $row['maintenance_type'] ?? '',
                                 $row['maintenance_status'] ?? '',
+                                $row['scheduled_date'] ?? '',
                                 $row['assigned_to'] ?? '',
+                                $row['completed_date'] ?? '',
                                 $row['remarks'] ?? '',
                             ]));
                         @endphp
@@ -127,7 +129,7 @@
                             <td>{{ $row['id'] }}</td>
                             <td class="facility-cell">{{ $row['facility'] }}</td>
                             <td>{{ $row['issue_type'] }}</td>
-                            <td>{{ $row['trigger_month'] }}</td>
+                            <td>{{ $row['trigger_date'] ?? $row['trigger_month'] }}</td>
                             <td>{{ $row['trend'] }}</td>
                             <td>{{ $row['maintenance_type'] }}</td>
                             <td><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>

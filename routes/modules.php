@@ -41,8 +41,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('modules.facilities.show', compact('facility', 'showAvg', 'avgKwh'));
     })->name('modules.facilities.show');
     Route::get('/modules/facilities/{id}/edit', fn($id) => redirect()->route('modules.facilities.show', ['id' => $id]))->name('modules.facilities.edit');
-    Route::get('/modules/facilities/{facility}/equipment-inventory', [FacilityController::class, 'equipmentInventory'])->name('modules.facilities.equipment-inventory');
-
     // Facility Meters (Main/Sub-meter master data)
     Route::get('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'index'])->name('modules.facilities.meters.index');
     Route::post('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'store'])->name('modules.facilities.meters.store');

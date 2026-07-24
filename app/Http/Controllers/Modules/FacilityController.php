@@ -8,14 +8,11 @@ use App\Models\EnergyIncident;
 use App\Models\EnergyIncidentHistory;
 use App\Models\EnergyProfile;
 use App\Models\EnergyRecord;
-use App\Models\FacilityMeter;
 use Illuminate\Http\Request;
 use App\Models\Facility;
 use App\Models\FacilityAuditLog;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
-use App\Models\Submeter;
-use App\Models\SubmeterEquipment;
 use App\Services\ArchivePruneService;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\DB;
@@ -258,143 +255,6 @@ class FacilityController extends Controller
             'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
             'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
-        ]);
-    }
-
-    public function equipmentInventory(Request $request, Facility $facility)
-    {
-        $user = $request->user();
-        $canViewInventory = RoleAccess::can($user, 'view_facilities');
-        $canManageInventory = RoleAccess::can($user, 'manage_facility_master');
-
-        if (! $canViewInventory) {
-            return redirect()->route('modules.facilities.index')
-                ->with('error', 'You do not have permission to view equipment inventory.');
-        }
-
-        if ($this->isStaff()) {
-            $assignedFacilityIds = $user->facilities()
-                ->pluck('facilities.id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
-
-            if (! in_array((int) $facility->id, $assignedFacilityIds, true)) {
-                return redirect()->route('modules.facilities.index')
-                    ->with('error', 'You can only view equipment inventory for your assigned facility.');
-            }
-        }
-
-        $selectedMeterScope = strtolower(trim((string) $request->query('meter_scope', 'all')));
-        $selectedSubmeter = $request->filled('submeter_id') ? (int) $request->query('submeter_id') : null;
-        $selectedMainMeter = $request->filled('main_meter_id') ? (int) $request->query('main_meter_id') : null;
-
-        if (! in_array($selectedMeterScope, ['all', 'sub', 'main'], true)) {
-            $selectedMeterScope = 'all';
-        }
-
-        if ($selectedMeterScope === 'sub') {
-            $selectedMainMeter = null;
-        } elseif ($selectedMeterScope === 'main') {
-            $selectedSubmeter = null;
-        } elseif ($selectedSubmeter && $selectedMainMeter) {
-            // Avoid conflicting filters when scope is "all".
-            $selectedMainMeter = null;
-        }
-
-        $submeters = Submeter::query()
-            ->where('facility_id', (int) $facility->id)
-            ->where('status', 'active')
-            ->orderBy('submeter_name')
-            ->get(['id', 'facility_id', 'submeter_name', 'status']);
-
-        $mainMeters = FacilityMeter::query()
-            ->where('facility_id', (int) $facility->id)
-            ->where('meter_type', 'main')
-            ->where('status', 'active')
-            ->whereNotNull('approved_at')
-            ->orderBy('meter_name')
-            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'status', 'approved_at']);
-
-        if ($selectedSubmeter && ! $submeters->contains(fn (Submeter $submeter) => (int) $submeter->id === $selectedSubmeter)) {
-            $selectedSubmeter = null;
-        }
-
-        if ($selectedMainMeter && ! $mainMeters->contains(fn (FacilityMeter $meter) => (int) $meter->id === $selectedMainMeter)) {
-            $selectedMainMeter = null;
-        }
-
-        $equipmentQuery = SubmeterEquipment::query()
-            ->with([
-                'submeter:id,facility_id,submeter_name,status',
-                'mainMeter:id,facility_id,meter_name,meter_number,meter_type,status,approved_at',
-            ])
-            ->where(function ($query) use ($facility) {
-                $query->where(function ($subQuery) use ($facility) {
-                    $subQuery->where('meter_scope', 'sub')
-                        ->whereHas('submeter', function ($meterQuery) use ($facility) {
-                            $meterQuery->where('facility_id', (int) $facility->id)
-                                ->where('status', 'active');
-                        });
-                })->orWhere(function ($mainQuery) use ($facility) {
-                    $mainQuery->where('meter_scope', 'main')
-                        ->whereHas('mainMeter', function ($meterQuery) use ($facility) {
-                            $meterQuery->where('facility_id', (int) $facility->id)
-                                ->where('meter_type', 'main')
-                                ->where('status', 'active')
-                                ->whereNotNull('approved_at');
-                        });
-                });
-            });
-
-        if ($selectedMeterScope === 'sub') {
-            $equipmentQuery->where('meter_scope', 'sub');
-            if ($selectedSubmeter) {
-                $equipmentQuery->where('submeter_id', $selectedSubmeter);
-            }
-        } elseif ($selectedMeterScope === 'main') {
-            $equipmentQuery->where('meter_scope', 'main');
-            if ($selectedMainMeter) {
-                $equipmentQuery->where('facility_meter_id', $selectedMainMeter);
-            }
-        } else {
-            if ($selectedSubmeter) {
-                $equipmentQuery->where('meter_scope', 'sub')
-                    ->where('submeter_id', $selectedSubmeter);
-            } elseif ($selectedMainMeter) {
-                $equipmentQuery->where('meter_scope', 'main')
-                    ->where('facility_meter_id', $selectedMainMeter);
-            }
-        }
-
-        $summaryRows = (clone $equipmentQuery)
-            ->setEagerLoads([])
-            ->get(['id', 'quantity', 'rated_watts', 'estimated_kwh']);
-        $totals = [
-            'items' => (int) $summaryRows->count(),
-            'total_watts' => (float) $summaryRows->sum(function ($equipment) {
-                $quantity = (int) ($equipment->quantity ?? 0);
-                $watts = (float) ($equipment->rated_watts ?? 0);
-                return $quantity * $watts;
-            }),
-            'estimated_kwh' => (float) $summaryRows->sum(fn ($equipment) => (float) ($equipment->estimated_kwh ?? 0)),
-        ];
-
-        $equipmentRows = $equipmentQuery
-            ->orderByDesc('estimated_kwh')
-            ->orderBy('equipment_name')
-            ->paginate(25)
-            ->withQueryString();
-
-        return view('modules.facilities.equipment-inventory', [
-            'facility' => $facility,
-            'submeters' => $submeters,
-            'mainMeters' => $mainMeters,
-            'selectedMeterScope' => $selectedMeterScope,
-            'selectedSubmeter' => $selectedSubmeter,
-            'selectedMainMeter' => $selectedMainMeter,
-            'equipmentRows' => $equipmentRows,
-            'totals' => $totals,
-            'canManageInventory' => $canManageInventory,
         ]);
     }
 

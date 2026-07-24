@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Contact | Energy System Portal</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" />
+    <link rel="icon" href="{{ $systemFaviconUrl }}" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -28,7 +28,7 @@
 <nav class="navbar navbar-expand-lg navbar-light sticky-top">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-            <img src="{{ asset('img/logocityhall.jpg') }}" alt="Logo">
+            <img src="{{ $systemLogoUrl }}" alt="Logo">
             <span class="fw-bold" style="font-size:1.1rem;">Energy System Portal</span>
         </a>
         <div class="d-flex gap-2">
