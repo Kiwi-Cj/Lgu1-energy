@@ -74,6 +74,11 @@ class IntegrationDataController extends Controller
             'meters_count' => $facility->meters_count,
             'submeters_count' => $facility->submeters_count,
             'energy_records_count' => $facility->energy_records_count,
+            // 'cprf'-sourced rows are mirrored from the CPRF system;
+            // external_ref is the CPRF facility id, letting CPRF auto-map
+            // facilities by id instead of fuzzy name matching.
+            'source' => $facility->source ?? 'local',
+            'external_ref' => $facility->external_ref !== null ? (int) $facility->external_ref : null,
             'updated_at' => $facility->updated_at?->toIso8601String(),
         ]);
     }

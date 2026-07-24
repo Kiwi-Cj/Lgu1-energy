@@ -79,6 +79,10 @@ return [
     // fall back to a shared secret (the middleware returns 503 when unset).
     'cprf_integration' => [
         'token' => env('CPRF_INTEGRATION_TOKEN'),
+        // Full URL of CPRF's facilities feed, e.g.
+        // https://cprf.infragovservices.com/public/api/energy-facilities-feed.php
+        // Pulled by energy:sync-cprf-facilities using the same token above.
+        'facilities_feed_url' => env('CPRF_FACILITIES_FEED_URL'),
     ],
 
     'mqtt' => [

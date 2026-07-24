@@ -82,6 +82,13 @@ Schedule::command('archive:prune-expired --days=30')
     ->dailyAt('01:30')
     ->withoutOverlapping();
 
+// Mirror CPRF (facilities reservation) public facilities hourly. Manual
+// "Sync now" button on the Facilities page's Public Facilities tab runs
+// the same service on demand.
+Schedule::command('energy:sync-cprf-facilities')
+    ->hourly()
+    ->withoutOverlapping();
+
 Artisan::command('main-meter:backfill-from-energy-records
     {--dry-run : Preview records to be migrated}
     {--approve : Mark migrated records as approved and recompute baseline/alerts}

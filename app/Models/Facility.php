@@ -45,7 +45,19 @@ class Facility extends Model
         'engineer_approved', // <-- Added for engineer approval
         'deleted_by',
         'archive_reason',
+        'source',       // 'local' (created here) | 'cprf' (mirrored from CPRF)
+        'external_ref', // CPRF facility id when source='cprf'
     ];
+
+    /**
+     * Mirrored from the CPRF facilities reservation system: identity fields
+     * (name, address, details, status) are managed by the sync and read-only
+     * here; energy data (profiles, meters, readings) stays fully editable.
+     */
+    public function isCprfManaged(): bool
+    {
+        return ($this->source ?? 'local') === 'cprf';
+    }
 
     /* =======================
      | RELATIONSHIPS
