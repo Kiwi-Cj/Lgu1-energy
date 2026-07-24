@@ -335,6 +335,44 @@ window.addEventListener('DOMContentLoaded', function() {
         color: #0f172a;
     }
 
+    .cprf-integration-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        margin-top: 8px;
+        padding: 6px 10px;
+        border: 1px solid;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .cprf-integration-badge.is-active {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #047857;
+    }
+
+    .cprf-integration-badge.is-inactive {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #64748b;
+    }
+
+    .cprf-integration-badge .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .cprf-integration-badge.is-inactive .status-dot {
+        box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.12);
+    }
+
     body.dark-mode .facilities-page [style*="background:#fff"],
     body.dark-mode .facilities-page [style*="background: #fff"],
     body.dark-mode .facilities-page [style*="background:#ffffff"],
@@ -382,6 +420,14 @@ window.addEventListener('DOMContentLoaded', function() {
             <div>
                 <h2 style="font-size:1.8rem; font-weight:800; color:#3762c8; margin:0; letter-spacing:-0.5px;">📘 Facilities Management</h2>
                 <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
+                <div class="cprf-integration-badge {{ ($cprfIntegrationActive ?? false) ? 'is-active' : 'is-inactive' }}"
+                     title="{{ ($cprfIntegrationActive ?? false) ? 'CPRF feed is configured and public facilities have been mirrored.' : 'CPRF feed is not configured or has not completed its first mirror.' }}">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span>CPRF Integration</span>
+                    <span aria-label="Status: {{ ($cprfIntegrationActive ?? false) ? 'Active' : 'Inactive' }}">
+                        {{ ($cprfIntegrationActive ?? false) ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
             </div>
             <div class="dashboard-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
                 <a href="{{ route('modules.facilities.archive') }}"

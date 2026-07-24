@@ -253,6 +253,9 @@ class FacilityController extends Controller
         }
         $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
         $localFacilitiesCount = $facilities->count() - $publicFacilitiesCount;
+        $cprfIntegrationActive = filled(config('services.cprf_integration.facilities_feed_url'))
+            && filled(config('services.cprf_integration.token'))
+            && Facility::query()->where('source', 'cprf')->exists();
         if ($sourceTab !== 'all') {
             $facilities = $facilities
                 ->filter(fn ($f) => (($f->source ?? 'local') === 'cprf') === ($sourceTab === 'cprf'))
@@ -317,6 +320,7 @@ class FacilityController extends Controller
             'sourceTab' => $sourceTab,
             'localFacilitiesCount' => $localFacilitiesCount,
             'publicFacilitiesCount' => $publicFacilitiesCount,
+            'cprfIntegrationActive' => $cprfIntegrationActive,
             'canSyncCprf' => $this->isSuperAdmin() || $this->isArchiveAdmin(),
         ]);
     }
