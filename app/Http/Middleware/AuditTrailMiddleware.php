@@ -162,7 +162,7 @@ class AuditTrailMiddleware
             return true;
         }
 
-        if ($request->routeIs('notifications.markAllRead', 'notifications.markRead')) {
+        if ($request->routeIs('notifications.markAllRead', 'notifications.markRead', 'session.keep-alive')) {
             return true;
         }
 

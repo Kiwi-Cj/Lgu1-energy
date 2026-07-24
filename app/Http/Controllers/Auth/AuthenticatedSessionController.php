@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -76,18 +77,48 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
+     * Renew an authenticated session after real user activity.
+     */
+    public function keepAlive(Request $request): JsonResponse
+    {
+        $request->session()->put('last_user_activity_at', now()->timestamp);
+
+        return response()->json([
+            'ok' => true,
+            'expires_in_seconds' => max(1, (int) config('session.lifetime', 60)) * 60,
+        ]);
+    }
+
+    /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): RedirectResponse|JsonResponse
     {
+        $timedOut = strtolower(trim((string) $request->input('reason', ''))) === 'idle';
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')
-            ->with('session_ended_modal', true)
-            ->with('status', 'You have been logged out successfully.');
+        $message = $timedOut
+            ? 'Your session expired due to inactivity. Please sign in again.'
+            : 'You have been logged out successfully.';
+
+        if ($timedOut) {
+            $request->session()->flash('session_ended_modal', true);
+        }
+        $request->session()->flash('status', $message);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect' => route('login'),
+                'reason' => $timedOut ? 'idle' : 'manual',
+            ]);
+        }
+
+        return redirect()->route('login');
     }
 }

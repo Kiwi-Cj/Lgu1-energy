@@ -202,6 +202,8 @@ class MaintenanceController extends Controller
 
 public function index()
 {
+    $this->archiveCompletedMaintenanceRows();
+
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
@@ -309,6 +311,21 @@ private function ensureMaintenanceActionAccess(?Request $request = null)
     }
 
     return redirect()->back()->with('error', 'Staff accounts are not allowed to perform maintenance actions.');
+}
+
+private function archiveCompletedMaintenanceRows(): void
+{
+    \App\Models\Maintenance::query()
+        ->whereRaw('LOWER(TRIM(maintenance_status)) = ?', ['completed'])
+        ->orderBy('id')
+        ->get()
+        ->each(function (\App\Models\Maintenance $maintenance) {
+            $maintenance->maintenance_status = 'Completed';
+            $maintenance->completed_date ??= $maintenance->updated_at?->toDateString() ?? now()->toDateString();
+            $maintenance->save();
+
+            $this->applyMaintenancePostSaveEffects($maintenance, 'Completed');
+        });
 }
 
 private function ensureMaintenanceCompletionAccess(?Request $request = null)

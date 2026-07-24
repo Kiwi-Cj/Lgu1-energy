@@ -53,6 +53,10 @@ Route::middleware('auth')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
+    Route::post('session/keep-alive', [AuthenticatedSessionController::class, 'keepAlive'])
+        ->middleware('throttle:12,1')
+        ->name('session.keep-alive');
+
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });

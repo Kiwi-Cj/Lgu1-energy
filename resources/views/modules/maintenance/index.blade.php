@@ -36,6 +36,42 @@
         letter-spacing: -0.5px;
     }
     .page-header h2 span { color: #2563eb; }
+    .page-title-group {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .cimm-integration-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 11px;
+        border: 1px solid #a7f3d0;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .02em;
+        white-space: nowrap;
+    }
+    .cimm-integration-badge.is-disabled {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+    .cimm-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, .14);
+    }
+    .cimm-integration-badge.is-disabled .cimm-status-dot {
+        background: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
+    }
     .header-actions {
         display: flex;
         gap: 10px;
@@ -395,6 +431,16 @@
     body.dark-mode .maintenance-page .maintenance-modal-title {
         color: #e2e8f0;
     }
+    body.dark-mode .maintenance-page .cimm-integration-badge {
+        background: rgba(6, 78, 59, .35);
+        border-color: #047857;
+        color: #a7f3d0;
+    }
+    body.dark-mode .maintenance-page .cimm-integration-badge.is-disabled {
+        background: rgba(127, 29, 29, .3);
+        border-color: #b91c1c;
+        color: #fecaca;
+    }
     body.dark-mode .maintenance-page .filter-group label,
     body.dark-mode .maintenance-page .result-count,
     body.dark-mode .maintenance-page .maintenance-form .field-label,
@@ -619,7 +665,19 @@
 <div class="maintenance-page">
 <div class="report-card">
     <div class="page-header">
-        <h2>Facilities Needing <span>Maintenance</span></h2>
+        @php
+            $cimmIntegrationEnabled = trim((string) config('services.cimm_maintenance_sync.token', '')) !== '';
+        @endphp
+        <div class="page-title-group">
+            <h2>Facilities Needing <span>Maintenance</span></h2>
+            <span
+                class="cimm-integration-badge{{ $cimmIntegrationEnabled ? '' : ' is-disabled' }}"
+                title="CIMM maintenance synchronization API {{ $cimmIntegrationEnabled ? 'is configured' : 'is not configured' }}"
+            >
+                <span class="cimm-status-dot" aria-hidden="true"></span>
+                CIMM Integration · {{ $cimmIntegrationEnabled ? 'Active' : 'Not Configured' }}
+            </span>
+        </div>
         <div class="header-actions">
              <button id="addMaintenanceBtn" class="btn btn-primary quick-add-btn">
                 <i class="fa fa-plus"></i> Add Manual
