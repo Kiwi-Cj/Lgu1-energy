@@ -79,6 +79,9 @@ require __DIR__ . '/profile.php';
 require __DIR__ . '/facilities.php';
 require __DIR__ . '/energy.php';
 
+// SSO — receives signed tokens from Main LGU (infragovservices.com hub)
+Route::get('/sso/consume', [\App\Http\Controllers\SsoConsumeController::class, 'consume'])->name('sso.consume');
+
 // Public welcome page route
 Route::get('/modules/dashboard/index', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
 Route::get('/dashboard', function () {
