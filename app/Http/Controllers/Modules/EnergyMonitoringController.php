@@ -62,7 +62,9 @@ class EnergyMonitoringController extends Controller
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             })
             ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
             ->sum('energy_cost');
@@ -72,7 +74,9 @@ class EnergyMonitoringController extends Controller
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             })
             ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
             ->sum('actual_kwh');
@@ -289,7 +293,9 @@ class EnergyMonitoringController extends Controller
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             })
             ->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$startYm, $currentYm])
             ->orderBy('year')

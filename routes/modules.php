@@ -128,7 +128,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             })
             ->orderByDesc('year')
             ->orderByDesc('month')

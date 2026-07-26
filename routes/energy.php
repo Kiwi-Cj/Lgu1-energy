@@ -30,7 +30,9 @@ Route::get('/modules/energy/trend', function (Request $request) {
         ->where(function ($q) {
             $q->whereHas('meter', function ($meterQuery) {
                 $meterQuery->where('meter_type', 'main');
-            })->orWhere('input_source', 'cprf');
+            })->orWhere(function ($q2) {
+                $q2->whereNull('meter_id')->where('input_source', 'cprf');
+            });
         })
         ->when(!empty($scopeFacilityIds), fn($q) => $q->whereIn('facility_id', $scopeFacilityIds))
         ->select('year')
@@ -61,7 +63,9 @@ Route::get('/modules/energy/trend', function (Request $request) {
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
 
         if (!empty($selectedMonth)) {
@@ -185,7 +189,9 @@ Route::get('/modules/energy/export-excel', function (Request $request) {
         ->where(function ($q) {
             $q->whereHas('meter', function ($meterQuery) {
                 $meterQuery->where('meter_type', 'main');
-            })->orWhere('input_source', 'cprf');
+            })->orWhere(function ($q2) {
+                $q2->whereNull('meter_id')->where('input_source', 'cprf');
+            });
         });
     if ($request->filled('facility_id')) {
         $query->where('facility_id', $request->facility_id);
@@ -242,7 +248,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);
@@ -348,7 +356,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
                     $meterQuery->where('meter_type', 'main');
-                })->orWhere('input_source', 'cprf');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);
