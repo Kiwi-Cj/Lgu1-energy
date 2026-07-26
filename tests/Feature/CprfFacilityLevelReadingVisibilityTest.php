@@ -23,3 +23,25 @@ test('cprf facility-level readings appear in monthly records with a distinct bad
     $response->assertSee('Facility-Level (CPRF)');
     $response->assertSee('7,820.00');
 });
+
+test('cprf facility-level readings are included in dashboard consumption totals', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create();
+    $currentYear = (int) date('Y');
+    $currentMonth = (int) date('n');
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => $currentYear,
+        'month' => $currentMonth,
+        'actual_kwh' => 500,
+        'energy_cost' => 100,
+        'input_source' => 'cprf',
+    ]);
+
+    $response = $this->actingAs($admin)->get('/modules/energy-monitoring');
+
+    $response->assertOk();
+    $response->assertViewHas('totalConsumptionKwh', fn ($total) => $total >= 500);
+});
