@@ -1432,10 +1432,13 @@
                             $rate = \App\Support\EnergyCost::ratePerKwh($record);
                             $cost = \App\Support\EnergyCost::cost($record, $rate);
 
-                            $scopeLabelRow = 'MAIN';
-                            $scopeNameRow = (string) ($record->meter->meter_name ?? 'Main Meter');
-                            $scopeBg = '#eff6ff';
-                            $scopeColor = '#1d4ed8';
+                            $isCprfFacilityLevel = $record->meter_id === null && ($record->input_source ?? null) === 'cprf';
+                            $scopeLabelRow = $isCprfFacilityLevel ? 'CPRF' : 'MAIN';
+                            $scopeNameRow = $isCprfFacilityLevel
+                                ? 'Facility-Level (CPRF)'
+                                : (string) ($record->meter->meter_name ?? 'Main Meter');
+                            $scopeBg = $isCprfFacilityLevel ? '#f3e8ff' : '#eff6ff';
+                            $scopeColor = $isCprfFacilityLevel ? '#7c3aed' : '#1d4ed8';
 
                             $actualRow = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
                             $baselineRow = ($record->meter && is_numeric($record->meter->baseline_kwh))
