@@ -106,8 +106,10 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:230px;">
                 <label style="font-size:.8rem;color:#475569;font-weight:700;">Main Meter</label>
-                <select name="main_meter_id" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
-                    <option value="0" @selected($selectedMainMeterId === 0)>All Main Meters</option>
+                <select name="main_meter_id" required style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                    @if($mainMeterOptions->count() > 1)
+                        <option value="" disabled @selected($selectedMainMeterId === 0)>Select Main Meter</option>
+                    @endif
                     @foreach($mainMeterOptions as $mainMeter)
                         <option value="{{ $mainMeter->id }}" @selected($selectedMainMeterId === (int) $mainMeter->id)>{{ $mainMeter->meter_name }}</option>
                     @endforeach
@@ -115,8 +117,12 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;min-width:250px;flex:1;">
                 <label style="font-size:.8rem;color:#475569;font-weight:700;">Sub-meter</label>
-                <select name="meter_id" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
-                    <option value="0" @selected((int) $selectedMeterId === 0)>All Sub-meters</option>
+                <select name="meter_id" @disabled($selectedMainMeterId === 0) style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
+                    @if($selectedMainMeterId === 0)
+                        <option value="">Select a Main Meter first</option>
+                    @else
+                        <option value="0" @selected((int) $selectedMeterId === 0)>All Sub-meters</option>
+                    @endif
                     @foreach($subMeterOptions as $meter)
                         <option value="{{ $meter->id }}" @selected((int) $selectedMeterId === (int) $meter->id)>{{ $meter->meter_name }}</option>
                     @endforeach
@@ -127,6 +133,12 @@
                 <a href="{{ route('facilities.monthly-records.submeters', ['facility' => $facility->id]) }}" style="text-decoration:none;background:#f1f5f9;color:#334155;border-radius:10px;padding:10px 14px;font-weight:700;">Reset</a>
             </div>
         </form>
+
+        @if($mainMeterOptions->count() > 1 && $selectedMainMeterId === 0)
+            <div style="margin:12px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:11px 14px;font-size:.86rem;font-weight:700;">
+                Select a Main Meter first to view its Sub-meter records.
+            </div>
+        @endif
 
         <div style="overflow-x:auto;">
             <table style="width:100%;min-width:980px;border-collapse:collapse;">

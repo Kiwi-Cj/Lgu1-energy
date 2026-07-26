@@ -565,7 +565,6 @@
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
                     <a href="{{ route('modules.facilities.index') }}" class="quick-action-btn"><i class="fa-solid fa-building"></i> Facilities</a>
                     <a href="{{ route('energy.dashboard') }}" class="quick-action-btn"><i class="fa-solid fa-bolt"></i> Energy Monitoring</a>
-                    <a href="{{ route('modules.energy.annual') }}" class="quick-action-btn"><i class="fa-solid fa-calendar-days"></i> Annual Monitoring</a>
                     <a href="{{ route('energy-incidents.index') }}" class="quick-action-btn"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a>
                 </div>
             </div>

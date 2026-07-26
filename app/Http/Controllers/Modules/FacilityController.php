@@ -145,7 +145,7 @@ class FacilityController extends Controller
      */
     public function syncCprf(CprfFacilitySyncService $service)
     {
-        if (! $this->isSuperAdmin() && ! $this->isArchiveAdmin()) {
+        if (! $this->canManageCprf()) {
             return redirect()->route('facilities.index', ['source' => 'cprf'])
                 ->with('error', 'You do not have permission to run the CPRF facilities sync.');
         }
@@ -209,6 +209,11 @@ class FacilityController extends Controller
         return RoleAccess::can(auth()->user(), 'manage_facility_master');
     }
 
+    private function canManageCprf(): bool
+    {
+        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+    }
+
     private function logFacilityAudit(Facility $facility, string $action, ?string $reason = null): void
     {
         try {
@@ -249,6 +254,10 @@ class FacilityController extends Controller
         // from the CPRF facilities reservation system.
         $sourceTab = (string) request()->query('source', 'all');
         if (! in_array($sourceTab, ['all', 'local', 'cprf'], true)) {
+            $sourceTab = 'all';
+        }
+        $canManageCprf = $this->canManageCprf();
+        if ($sourceTab === 'cprf' && ! $canManageCprf) {
             $sourceTab = 'all';
         }
         $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
@@ -321,7 +330,8 @@ class FacilityController extends Controller
             'localFacilitiesCount' => $localFacilitiesCount,
             'publicFacilitiesCount' => $publicFacilitiesCount,
             'cprfIntegrationActive' => $cprfIntegrationActive,
-            'canSyncCprf' => $this->isSuperAdmin() || $this->isArchiveAdmin(),
+            'canManageCprf' => $canManageCprf,
+            'canSyncCprf' => $canManageCprf,
         ]);
     }
 

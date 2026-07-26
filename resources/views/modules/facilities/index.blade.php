@@ -491,13 +491,18 @@ window.addEventListener('DOMContentLoaded', function() {
             </button>
         </div>
 
-        @php $sourceTab = $sourceTab ?? 'all'; @endphp
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:1.25rem;">
-            @foreach ([
+        @php
+            $sourceTab = $sourceTab ?? 'all';
+            $sourceTabs = [
                 'all' => 'All Facilities',
                 'local' => 'LGU Facilities (' . ($localFacilitiesCount ?? 0) . ')',
-                'cprf' => 'Public Facilities — Brgy. Culiat (' . ($publicFacilitiesCount ?? 0) . ')',
-            ] as $tabKey => $tabLabel)
+            ];
+            if ($canManageCprf ?? false) {
+                $sourceTabs['cprf'] = 'Public Facilities — Brgy. Culiat (' . ($publicFacilitiesCount ?? 0) . ')';
+            }
+        @endphp
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:1.25rem;">
+            @foreach ($sourceTabs as $tabKey => $tabLabel)
                 <a href="{{ route('facilities.index', $tabKey === 'all' ? [] : ['source' => $tabKey]) }}"
                    style="padding:8px 16px; border-radius:999px; font-size:0.85rem; font-weight:800; text-decoration:none; border:1.5px solid {{ $sourceTab === $tabKey ? '#2563eb' : '#e2e8f0' }}; background:{{ $sourceTab === $tabKey ? '#eff6ff' : '#fff' }}; color:{{ $sourceTab === $tabKey ? '#1d4ed8' : '#64748b' }};">
                     {{ $tabLabel }}
@@ -512,7 +517,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 </form>
             @endif
         </div>
-        @if($sourceTab === 'cprf')
+        @if($sourceTab === 'cprf' && ($canManageCprf ?? false))
             <div style="background:#f5f3ff; border:1px solid #ddd6fe; color:#5b21b6; border-radius:12px; padding:10px 16px; font-size:0.85rem; font-weight:600; margin-bottom:1.25rem;">
                 <i class="fas fa-circle-info"></i>
                 These public facilities are synced automatically from the Barangay Culiat Facilities Reservation System (CPRF).

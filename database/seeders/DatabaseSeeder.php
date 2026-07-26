@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             FiveFacilitiesEnergySeeder::class,
             DualMainWithSubMonthlySeeder::class,
             TenFacilitiesMultiMeterMonthlySeeder::class,
+            CprfPublicFacilitiesEnergyProfileSeeder::class,
         ]);
     }
 }

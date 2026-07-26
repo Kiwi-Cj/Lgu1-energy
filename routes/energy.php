@@ -223,8 +223,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/energy/annual/export-excel', function (Request $request) {
         if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()
-                ->route('modules.energy.annual', array_filter($request->query()))
-                ->with('error', 'Excel export is not available for staff accounts.');
+                ->route('energy.dashboard')
+                ->with('error', 'Annual Energy Monitoring is no longer available.');
         }
 
         $years = range(date('Y'), date('Y') - 10);

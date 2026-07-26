@@ -169,6 +169,167 @@
         font-weight: 800;
     }
 
+    .monthly-overview-chart-wrap {
+        overflow-x: auto;
+        padding: 12px 4px 2px;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .monthly-overview-chart {
+        min-width: 840px;
+        height: 300px;
+        display: grid;
+        grid-template-columns: repeat(12, minmax(58px, 1fr));
+        align-items: end;
+        gap: 12px;
+        padding: 18px 10px 0;
+        border-bottom: 1px solid #cbd5e1;
+        background:
+            repeating-linear-gradient(
+                to top,
+                transparent 0,
+                transparent 59px,
+                #eef2f7 60px
+            );
+    }
+
+    .monthly-overview-bar-column {
+        height: 100%;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto auto;
+        align-items: end;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .monthly-overview-bar-area {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 5px;
+        min-height: 0;
+    }
+
+    .monthly-overview-bar-value {
+        color: #334155;
+        font-size: .72rem;
+        line-height: 1;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .monthly-overview-bar {
+        width: min(42px, 72%);
+        min-height: 3px;
+        border-radius: 9px 9px 3px 3px;
+        background: linear-gradient(180deg, #3b82f6 0%, #2563eb 55%, #4f46e5 100%);
+        box-shadow: 0 7px 14px rgba(37, 99, 235, .2);
+        transition: filter .15s ease, transform .15s ease;
+    }
+
+    .monthly-overview-bar-column:hover .monthly-overview-bar,
+    .monthly-overview-bar-column:focus .monthly-overview-bar {
+        filter: brightness(1.08);
+        transform: scaleX(1.06);
+    }
+
+    .monthly-overview-bar-column.is-empty .monthly-overview-bar {
+        background: #cbd5e1;
+        box-shadow: none;
+    }
+
+    .monthly-overview-month {
+        color: #0f172a;
+        font-size: .78rem;
+        font-weight: 900;
+        text-align: center;
+    }
+
+    .monthly-overview-cost {
+        min-height: 28px;
+        color: #15803d;
+        font-size: .67rem;
+        line-height: 1.15;
+        font-weight: 800;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .monthly-overview-cost span {
+        display: block;
+        color: #64748b;
+        font-size: .61rem;
+        font-weight: 700;
+    }
+
+    .monthly-overview-meter-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 14px;
+    }
+
+    .monthly-overview-meter {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 9px;
+        border: 1px solid #dbeafe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .monthly-overview-meter-dot {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 8px;
+        border-radius: 50%;
+        background: #2563eb;
+    }
+
+    .monthly-overview-toggle {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #475569;
+        cursor: pointer;
+        transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+
+    .monthly-overview-toggle:hover {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .monthly-overview-toggle i {
+        transition: transform .2s ease;
+    }
+
+    .monthly-overview-toggle[aria-expanded="false"] i {
+        transform: rotate(180deg);
+    }
+
+    .monthly-overview-content.is-collapsed {
+        display: none;
+    }
+
+    @media (max-width: 760px) {
+        .monthly-overview-chart {
+            height: 260px;
+        }
+    }
+
     .monthly-filters-head {
         display: flex;
         justify-content: space-between;
@@ -1329,6 +1490,51 @@
     body.dark-mode .monthly-modal-subtitle {
         color: #94a3b8;
     }
+
+    body.dark-mode .monthly-overview-chart {
+        border-bottom-color: #475569;
+        background:
+            repeating-linear-gradient(
+                to top,
+                transparent 0,
+                transparent 59px,
+                #1e293b 60px
+            );
+    }
+
+    body.dark-mode .monthly-overview-bar-value,
+    body.dark-mode .monthly-overview-month {
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .monthly-overview-cost {
+        color: #86efac;
+    }
+
+    body.dark-mode .monthly-overview-cost span {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .monthly-overview-bar-column.is-empty .monthly-overview-bar {
+        background: #475569;
+    }
+
+    body.dark-mode .monthly-overview-meter {
+        border-color: #1e3a8a;
+        background: #172554;
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .monthly-overview-toggle {
+        border-color: #475569;
+        background: #111827;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .monthly-overview-toggle:hover {
+        background: #172554;
+        color: #bfdbfe;
+    }
 </style>
 
 @php
@@ -1370,6 +1576,20 @@
     $monthMeterBreakdown = collect($monthMeterBreakdown ?? []);
     $mainMeterOrganization = collect($mainMeterOrganization ?? []);
     $mainSubMonthlyComparison = collect($mainSubMonthlyComparison ?? []);
+    $monthlyOverviewChart = collect(range(1, 12))->map(function ($monthNumber) use ($recordsForYear, $monthLabels) {
+        $monthRecords = $recordsForYear
+            ->filter(fn ($record) => (int) ($record->month ?? 0) === (int) $monthNumber);
+
+        return [
+            'month' => (int) $monthNumber,
+            'label' => $monthLabels[(int) $monthNumber] ?? ('Month ' . (int) $monthNumber),
+            'kwh' => round((float) $monthRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2),
+            'cost' => round((float) $monthRecords->sum(fn ($record) => \App\Support\EnergyCost::cost($record)), 2),
+            'record_count' => (int) $monthRecords->count(),
+        ];
+    });
+    $monthlyOverviewMaxKwh = max(1, (float) $monthlyOverviewChart->max('kwh'));
+    $monthlyOverviewTotalCost = round((float) $monthlyOverviewChart->sum('cost'), 2);
 
     $mainMeterRecordCount = (int) ($mainMeterRecordCount ?? 0);
     $selectedRecordCount = (int) ($selectedRecordCount ?? $recordsForYear->count());
@@ -1391,15 +1611,12 @@
         $tableFilterMeterId = 0;
     }
 
-    $tableMeterOptions = $recordsForYear
-        ->groupBy(fn ($record) => (int) ($record->meter_id ?? 0))
-        ->map(function ($group, $meterId) {
-            $first = $group->first();
-
+    $tableMeterOptions = $meterOptions
+        ->map(function ($meter) {
             return [
-                'id' => (int) $meterId,
-                'meter_name' => (string) ($first->meter->meter_name ?? ('Main Meter #' . (int) $meterId)),
-                'meter_number' => (string) ($first->meter->meter_number ?? ''),
+                'id' => (int) ($meter->id ?? 0),
+                'meter_name' => (string) ($meter->meter_name ?? ('Main Meter #' . (int) ($meter->id ?? 0))),
+                'meter_number' => (string) ($meter->meter_number ?? ''),
             ];
         })
         ->filter(fn ($row) => (int) ($row['id'] ?? 0) > 0)
@@ -1409,9 +1626,16 @@
     if ($tableFilterMeterId > 0 && ! $tableMeterOptions->contains(fn ($row) => (int) ($row['id'] ?? 0) === $tableFilterMeterId)) {
         $tableFilterMeterId = 0;
     }
+    if ($tableMeterOptions->count() === 1) {
+        $tableFilterMeterId = (int) ($tableMeterOptions->first()['id'] ?? 0);
+    }
+    $tableMainMeterSelectionRequired = $tableMeterOptions->count() > 1 && $tableFilterMeterId === 0;
 
     $tableRecords = $recordsForYear
-        ->filter(function ($record) use ($tableFilterMonth, $tableFilterMeterId) {
+        ->filter(function ($record) use ($tableFilterMonth, $tableFilterMeterId, $tableMainMeterSelectionRequired) {
+            if ($tableMainMeterSelectionRequired) {
+                return false;
+            }
             if ($tableFilterMonth > 0 && (int) ($record->month ?? 0) !== $tableFilterMonth) {
                 return false;
             }
@@ -1502,41 +1726,78 @@
                     </div>
                 </div>
                 @if($hasApprovedMainMeter)
-                    <span class="monthly-chip">Total Usage: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
+                    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                        <span class="monthly-chip">Total Usage: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
+                        <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($monthlyOverviewTotalCost, 2) }}</span>
+                        <button type="button"
+                                id="monthlyOverviewToggle"
+                                class="monthly-overview-toggle"
+                                aria-expanded="false"
+                                aria-controls="monthlyOverviewContent"
+                                title="Expand Main Meter Overview">
+                            <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                            <span class="sr-only">Expand Main Meter Overview</span>
+                        </button>
+                    </div>
                 @endif
             </div>
 
+            <div id="monthlyOverviewContent" class="monthly-overview-content is-collapsed">
             @if($mainMeterOrganization->isEmpty())
                 <div class="monthly-org-empty">
                     <div class="monthly-org-empty-title">{{ $mainMeterNoticeTitle }}</div>
                     <div style="font-size:.86rem;line-height:1.4;">{{ $mainMeterNoticeText }}</div>
                 </div>
             @else
-                <div class="monthly-summary">
+                <div class="monthly-overview-chart-wrap" aria-label="Monthly energy usage chart for {{ $selectedYear }}">
+                    <div class="monthly-overview-chart">
+                        @foreach($monthlyOverviewChart as $chartMonth)
+                            @php
+                                $chartKwh = (float) ($chartMonth['kwh'] ?? 0);
+                                $chartCost = (float) ($chartMonth['cost'] ?? 0);
+                                $chartHeight = $chartKwh > 0
+                                    ? max(4, round(($chartKwh / $monthlyOverviewMaxKwh) * 100, 2))
+                                    : 1;
+                                $chartDescription = ($chartMonth['label'] ?? '') . ' ' . $selectedYear
+                                    . ': ' . number_format($chartKwh, 2) . ' kWh, PHP '
+                                    . number_format($chartCost, 2) . ', '
+                                    . number_format((int) ($chartMonth['record_count'] ?? 0)) . ' record(s)';
+                            @endphp
+                            <div class="monthly-overview-bar-column {{ $chartKwh <= 0 ? 'is-empty' : '' }}"
+                                 tabindex="0"
+                                 title="{{ $chartDescription }}"
+                                 aria-label="{{ $chartDescription }}">
+                                <div class="monthly-overview-bar-area">
+                                    <div class="monthly-overview-bar-value">{{ number_format($chartKwh, 2) }}</div>
+                                    <div class="monthly-overview-bar" style="height: {{ $chartHeight }}%;"></div>
+                                </div>
+                                <div class="monthly-overview-month">{{ $chartMonth['label'] }}</div>
+                                <div class="monthly-overview-cost">
+                                    PHP {{ number_format($chartCost, 2) }}
+                                    <span>{{ number_format((int) ($chartMonth['record_count'] ?? 0)) }} record(s)</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="monthly-overview-meter-list">
                     @foreach($mainMeterOrganization as $mainItem)
                         @php
                             $mainSourceLabel = (string) ($mainItem['source_label'] ?? 'No Data');
-                            $meterSummary = $meterSummaryCards->firstWhere('meter_id', (int) ($mainItem['main_id'] ?? 0));
-                            $meterRecordCount = (int) ($meterSummary['record_count'] ?? 0);
-                            $meterTotalCost = (float) ($meterSummary['total_cost'] ?? 0);
                         @endphp
-                        <div class="item">
-                            <div class="label">{{ $mainItem['main_name'] }}</div>
-                            <div class="meta">
-                                @if($mainItem['main_number'] !== '')
-                                    {{ $mainItem['main_number'] }} &middot;
-                                @endif
-                                {{ number_format($meterRecordCount) }} record(s)
-                            </div>
-                            <div class="value">{{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh</div>
-                            <div class="meta">PHP {{ number_format($meterTotalCost, 2) }} &middot; Reading Source: {{ $mainSourceLabel }}</div>
-                            @if($mainSourceLabel === 'Sensor' && (float) ($mainItem['manual_total_kwh'] ?? 0) > 0)
-                                <div class="meta">Manual fallback available</div>
+                        <div class="monthly-overview-meter">
+                            <span class="monthly-overview-meter-dot"></span>
+                            {{ $mainItem['main_name'] }}
+                            @if($mainItem['main_number'] !== '')
+                                ({{ $mainItem['main_number'] }})
                             @endif
+                            &middot; {{ $mainSourceLabel }}
                         </div>
                     @endforeach
                 </div>
             @endif
+            </div>
         </div>
     </div>
 
@@ -1582,8 +1843,10 @@
 
                 <div class="monthly-field">
                     <label for="table_meter_filter">Main Meter</label>
-                    <select id="table_meter_filter" name="table_meter_id">
-                        <option value="0" @selected($tableFilterMeterId === 0)>All Main Meters</option>
+                    <select id="table_meter_filter" name="table_meter_id" required>
+                        @if($tableMeterOptions->count() > 1)
+                            <option value="" disabled @selected($tableFilterMeterId === 0)>Select Main Meter</option>
+                        @endif
                         @foreach($tableMeterOptions as $meterOption)
                             <option value="{{ (int) ($meterOption['id'] ?? 0) }}" @selected($tableFilterMeterId === (int) ($meterOption['id'] ?? 0))>
                                 {{ $meterOption['meter_name'] }}@if(($meterOption['meter_number'] ?? '') !== '') ({{ $meterOption['meter_number'] }}) @endif
@@ -1789,7 +2052,9 @@
                     @empty
                         <tr>
                             <td colspan="11" style="padding:16px;color:#64748b;font-weight:700;">
-                                @if($tableFilterApplied)
+                                @if($tableMainMeterSelectionRequired)
+                                    Select a Main Meter first to view its monthly records.
+                                @elseif($tableFilterApplied)
                                     No records found for the selected table filters.
                                 @else
                                     No records found for the selected scope and year.
@@ -1990,6 +2255,30 @@ window.addEventListener('DOMContentLoaded', function () {
     const summaryModeSelect = document.getElementById('summary_mode');
     const summaryMonthSelect = document.getElementById('summary_month');
     const addMonthlyRecordForm = document.getElementById('addMonthlyRecordForm');
+    const overviewToggle = document.getElementById('monthlyOverviewToggle');
+    const overviewContent = document.getElementById('monthlyOverviewContent');
+
+    function setOverviewCollapsed(collapsed) {
+        if (!overviewToggle || !overviewContent) return;
+
+        overviewContent.classList.toggle('is-collapsed', collapsed);
+        overviewToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        overviewToggle.setAttribute('title', collapsed ? 'Expand Main Meter Overview' : 'Collapse Main Meter Overview');
+
+        const assistiveText = overviewToggle.querySelector('.sr-only');
+        if (assistiveText) {
+            assistiveText.textContent = collapsed ? 'Expand Main Meter Overview' : 'Collapse Main Meter Overview';
+        }
+    }
+
+    if (overviewToggle && overviewContent) {
+        setOverviewCollapsed(true);
+
+        overviewToggle.addEventListener('click', function () {
+            const collapsed = !overviewContent.classList.contains('is-collapsed');
+            setOverviewCollapsed(collapsed);
+        });
+    }
 
     if (addModal) {
         addModal.addEventListener('click', function (event) {

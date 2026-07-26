@@ -603,7 +603,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         $selectedMainMeterId = (int) ($request->query('main_meter_id') ?: 0);
-        if ($selectedMainMeterId > 0 && ! $mainMeterOptions->contains(fn ($meter) => (int) $meter->id === $selectedMainMeterId)) {
+        if ($mainMeterOptions->count() === 1) {
+            $selectedMainMeterId = (int) $mainMeterOptions->first()->id;
+        } elseif ($selectedMainMeterId <= 0
+            || ! $mainMeterOptions->contains(fn ($meter) => (int) $meter->id === $selectedMainMeterId)) {
             $selectedMainMeterId = 0;
         }
 
@@ -613,9 +616,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderBy('meter_name')
             ->get();
 
-        $subMeterOptions = $allSubMeterOptions
-            ->when($selectedMainMeterId > 0, fn ($collection) => $collection->filter(fn ($meter) => (int) ($meter->parent_meter_id ?? 0) === $selectedMainMeterId))
-            ->values();
+        $subMeterOptions = $selectedMainMeterId > 0
+            ? $allSubMeterOptions
+                ->filter(fn ($meter) => (int) ($meter->parent_meter_id ?? 0) === $selectedMainMeterId)
+                ->values()
+            : collect();
 
         $normalizeSubmeterName = static fn (string $name): string => preg_replace('/\s+/', ' ', strtolower(trim($name))) ?? '';
         $submeterNameToIdMap = \App\Models\Submeter::where('facility_id', $facilityId)
@@ -686,6 +691,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $q->where('meter_type', 'sub');
                 if ($selectedMainMeterId > 0) {
                     $q->where('parent_meter_id', $selectedMainMeterId);
+                } else {
+                    $q->where('parent_meter_id', -1);
                 }
             });
 
@@ -901,112 +908,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/contact-messages/{contactMessage}/mark-unread', [ContactInboxController::class, 'markUnread'])->name('modules.contact-messages.mark-unread');
     Route::post('/modules/contact-messages/{contactMessage}/reply', [ContactInboxController::class, 'reply'])->name('modules.contact-messages.reply');
 
-    Route::get('/modules/energy/annual', function () {
-        $years = range(date('Y'), date('Y') - 10);
-        $selectedYear = request('year', date('Y'));
-        $facilities = \App\Models\Facility::all();
-        $selectedFacility = request('facility_id', '');
-
-        $query = \App\Models\EnergyRecord::with('facility')
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
-            });
-        if ($selectedFacility) {
-            $query->where('facility_id', $selectedFacility);
-        }
-        $query->where('year', $selectedYear);
-        $records = $query->get();
-
-        $getAlertBySize = function ($deviation, $baselineKwh) {
-            if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
-                return '-';
-            }
-
-            if ($baselineKwh <= 1000) {
-                $size = 'Small';
-            } elseif ($baselineKwh <= 3000) {
-                $size = 'Medium';
-            } elseif ($baselineKwh <= 10000) {
-                $size = 'Large';
-            } else {
-                $size = 'Extra Large';
-            }
-
-            $thresholds = [
-                'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-                'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-                'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-                'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-            ];
-            $t = $thresholds[$size];
-
-            if ($deviation > $t['level5']) return 'Critical';
-            if ($deviation > $t['level4']) return 'Very High';
-            if ($deviation > $t['level3']) return 'High';
-            if ($deviation > $t['level2']) return 'Warning';
-            return 'Normal';
-        };
-
-        $getHighestAlert = function ($alerts) {
-            $priority = [
-                'Critical' => 5,
-                'Very High' => 4,
-                'High' => 3,
-                'Warning' => 2,
-                'Normal' => 1,
-                '-' => 0,
-            ];
-            $best = '-';
-            $bestScore = 0;
-            foreach ($alerts as $alert) {
-                $score = $priority[$alert] ?? 0;
-                if ($score > $bestScore) {
-                    $best = $alert;
-                    $bestScore = $score;
-                }
-            }
-            return $best;
-        };
-
-        $monthlyBreakdown = [];
-        $totalActualKwh = 0;
-        $annualBaseline = 0;
-        foreach (range(1, 12) as $m) {
-            $monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
-            $actual = $monthRecords->sum('actual_kwh');
-            $baseline = 0;
-            $monthAlerts = [];
-            foreach ($monthRecords as $record) {
-                $recordBaseline = $record->baseline_kwh;
-                if ($recordBaseline === null || $recordBaseline <= 0) {
-                    $profile = $record->facility ? $record->facility->energyProfiles()->latest()->first() : null;
-                    $recordBaseline = $profile ? (float) $profile->baseline_kwh : 0;
-                }
-                $baseline += (float) $recordBaseline;
-                $deviation = $recordBaseline > 0
-                    ? ((float)$record->actual_kwh - (float)$recordBaseline) / (float)$recordBaseline * 100
-                    : null;
-                $monthAlerts[] = $getAlertBySize($deviation, $recordBaseline);
-            }
-            $diff = $actual - $baseline;
-            $status = $getHighestAlert($monthAlerts);
-            $monthlyBreakdown[] = [
-                'label' => date('M', mktime(0, 0, 0, $m, 1)),
-                'actual' => $actual,
-                'baseline' => $baseline,
-                'diff' => $diff,
-                'status' => $status,
-            ];
-            $totalActualKwh += $actual;
-            $annualBaseline += $baseline;
-        }
-        $annualDifference = $totalActualKwh - $annualBaseline;
-        $annualStatus = $getHighestAlert(array_column($monthlyBreakdown, 'status'));
-        $user = auth()->user();
-        $role = strtolower($user->role ?? '');
-
-        return view('modules.energy-monitoring.annual', compact('years', 'selectedYear', 'facilities', 'selectedFacility', 'totalActualKwh', 'annualBaseline', 'annualDifference', 'annualStatus', 'monthlyBreakdown', 'role', 'user'));
-    })->name('modules.energy.annual');
 });
 
 // =====================
