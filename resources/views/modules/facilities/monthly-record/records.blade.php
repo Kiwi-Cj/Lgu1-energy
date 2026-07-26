@@ -1502,7 +1502,7 @@
                     </div>
                 </div>
                 @if($hasApprovedMainMeter)
-                    <span class="monthly-chip">Total Usage: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
+                    <span class="monthly-chip">Main Meter Total: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
                 @endif
             </div>
 
@@ -1552,7 +1552,7 @@
                 </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <span class="monthly-chip">Total kWh: {{ number_format($tableActualKwhTotal, 2) }}</span>
+                <span class="monthly-chip">Total kWh (incl. Facility-Level (CPRF)): {{ number_format($tableActualKwhTotal, 2) }}</span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
                 <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}"
                    style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:0.875rem;font-weight:700;transition:all 0.2s;"
@@ -1622,10 +1622,13 @@
                             $rate = \App\Support\EnergyCost::ratePerKwh($record);
                             $cost = \App\Support\EnergyCost::cost($record, $rate);
 
-                            $scopeLabelRow = 'MAIN';
-                            $scopeNameRow = (string) ($record->meter->meter_name ?? 'Main Meter');
-                            $scopeBg = '#eff6ff';
-                            $scopeColor = '#1d4ed8';
+                            $isCprfFacilityLevel = $record->meter_id === null && ($record->input_source ?? null) === 'cprf';
+                            $scopeLabelRow = $isCprfFacilityLevel ? 'CPRF' : 'MAIN';
+                            $scopeNameRow = $isCprfFacilityLevel
+                                ? 'Facility-Level (CPRF)'
+                                : (string) ($record->meter->meter_name ?? 'Main Meter');
+                            $scopeBg = $isCprfFacilityLevel ? '#f3e8ff' : '#eff6ff';
+                            $scopeColor = $isCprfFacilityLevel ? '#7c3aed' : '#1d4ed8';
 
                             $actualRow = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
                             $baselineRow = ($record->meter && is_numeric($record->meter->baseline_kwh))

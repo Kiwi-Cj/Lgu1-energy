@@ -142,3 +142,31 @@ Rows from `energy_saving_recommendations`. Filters: `facility_id`, `year`,
 `page`, `per_page` (max 100). Row shape: `id, facility{id,name}, year, month,
 generated_message, engineer_recommendation, status, expected_savings_kwh,
 target_date, reviewed_at, updated_at`.
+
+### `GET /api/v1/cprf/facility-profiles`
+
+Auth: same `cprf.integration` bearer token as the rest of this section.
+
+Query params: `updated_since` (ISO 8601, optional), `page`, `per_page` (default 25, max 100).
+
+Returns only facilities where `source = 'cprf'`, `external_ref` is set, and an `EnergyProfile` exists. Facilities without a profile yet are omitted, not errored.
+
+Sample row:
+```json
+{
+    "facility_external_ref": 501,
+    "energy_facility_id": 14,
+    "electric_meter_no": "MTR-0042",
+    "utility_provider": "Meralco",
+    "contract_account_no": "1234-5678",
+    "main_energy_source": "Grid",
+    "backup_power": "Generator",
+    "transformer_capacity": "75 kVA",
+    "number_of_meters": 3,
+    "baseline_kwh": 7820.00,
+    "engineer_approved": true,
+    "baseline_locked": true,
+    "baseline_source": "Manual entry",
+    "updated_at": "2026-07-26T08:00:00+00:00"
+}
+```
