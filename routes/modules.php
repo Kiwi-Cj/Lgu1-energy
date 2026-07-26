@@ -126,8 +126,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         $allRecords = \App\Models\EnergyRecord::with('meter')
             ->where('facility_id', $facilityId)
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
+            ->where(function ($q) {
+                $q->whereHas('meter', function ($meterQuery) {
+                    $meterQuery->where('meter_type', 'main');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             })
             ->orderByDesc('year')
             ->orderByDesc('month')
