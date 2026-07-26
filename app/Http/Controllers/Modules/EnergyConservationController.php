@@ -11,6 +11,7 @@ use App\Models\EnergyRecord;
 use App\Models\EnergySavingRecommendation;
 use App\Models\Facility;
 use App\Models\User;
+use App\Services\RecommendationNotificationService;
 use App\Support\EnergyCost;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
@@ -32,6 +33,16 @@ class EnergyConservationController extends Controller
         $selected = $features[$feature] ?? null;
         if (! $selected) {
             return redirect()->route('modules.energy-conservation.index')->with('error', 'Feature not found.');
+        }
+
+        $recommendationNotificationId = (int) $request->query('recommendation_notification_id', 0);
+        if ($feature === 'energy-saving-tips' && $recommendationNotificationId > 0) {
+            $request->user()
+                ->notifications()
+                ->whereKey($recommendationNotificationId)
+                ->where('type', RecommendationNotificationService::TYPE)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
         }
 
         $overview = $this->buildOverviewData($request);
@@ -118,6 +129,7 @@ class EnergyConservationController extends Controller
                 ->where('year', $tipYear)
                 ->where('month', $tipMonth)
                 ->whereIn('facility_id', $energyTips->pluck('facility_id')->filter())
+                ->when(! $canReviewTips, fn ($query) => $query->where('status', 'approved'))
                 ->latest('id')
                 ->get()
                 ->unique('facility_id')
@@ -128,9 +140,6 @@ class EnergyConservationController extends Controller
                     $tip['review'] = $reviews->get($tip['facility_id'] ?? 0);
                     return $tip;
                 })
-                ->when(! $canReviewTips, fn (Collection $tips) => $tips->filter(
-                    fn (array $tip) => ($tip['review']?->status ?? null) === 'approved' || empty($tip['facility_id'])
-                ))
                 ->values();
         }
 
@@ -457,7 +466,7 @@ class EnergyConservationController extends Controller
         $isImplemented = in_array($implementationStatus, ['implemented', 'verified'], true);
         $isVerified = $implementationStatus === 'verified';
 
-        EnergySavingRecommendation::create([
+        $recommendation = EnergySavingRecommendation::create([
             'facility_id' => $validated['facility_id'],
             'year' => $year,
             'month' => $month,
@@ -476,6 +485,12 @@ class EnergyConservationController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
+
+        try {
+            app(RecommendationNotificationService::class)->notifyManualRecommendation($recommendation);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('modules.energy-conservation.feature', array_filter([
             'feature' => 'energy-saving-tips',
@@ -519,6 +534,13 @@ class EnergyConservationController extends Controller
 
         $isImplemented = in_array($validated['implementation_status'], ['implemented', 'verified'], true);
         $isVerified = $validated['implementation_status'] === 'verified';
+        $shouldNotifyAssignedStaff = $validated['status'] === 'approved'
+            && ! empty($validated['assigned_to'])
+            && (
+                $recommendation->status !== 'approved'
+                || (int) $recommendation->assigned_to !== (int) $validated['assigned_to']
+                || (string) $recommendation->engineer_recommendation !== (string) $validated['engineer_recommendation']
+            );
         $recommendation->update([
             'engineer_recommendation' => $validated['engineer_recommendation'],
             'status' => $validated['status'],
@@ -535,7 +557,61 @@ class EnergyConservationController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        if ($shouldNotifyAssignedStaff) {
+            try {
+                app(RecommendationNotificationService::class)->notifyManualRecommendation($recommendation->fresh());
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         return back()->with('success', 'Recommendation updated successfully.');
+    }
+
+    public function updateEnergyTipProgress(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        abort_unless(
+            RoleAccess::is($request->user(), 'staff'),
+            403,
+            'Only the assigned staff member can update implementation progress.'
+        );
+        abort_unless(
+            (int) $recommendation->assigned_to === (int) $request->user()->id,
+            403,
+            'This recommendation is assigned to another staff member.'
+        );
+        abort_unless(
+            $recommendation->status === 'approved',
+            403,
+            'Only approved recommendations can be implemented.'
+        );
+        abort_if(
+            $recommendation->implementation_status === 'verified',
+            403,
+            'Verified recommendations are locked.'
+        );
+
+        $hasFacilityAccess = $request->user()
+            ->facilities()
+            ->whereKey((int) $recommendation->facility_id)
+            ->exists();
+        abort_unless($hasFacilityAccess, 403, 'You do not have access to this facility.');
+
+        $validated = $request->validate([
+            'implementation_status' => ['required', 'in:pending,in_progress,implemented'],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $isImplemented = $validated['implementation_status'] === 'implemented';
+        $recommendation->update([
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $validated['implementation_notes'] ?? null,
+            'implemented_at' => $isImplemented ? ($recommendation->implemented_at ?? now()) : null,
+        ]);
+
+        return back()->with('success', 'Implementation progress updated successfully.');
     }
 
     public function destroyEnergyTip(Request $request, EnergySavingRecommendation $recommendation)

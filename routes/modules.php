@@ -72,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
     Route::post('/modules/energy-conservation/energy-saving-tips/review', [EnergyConservationController::class, 'reviewEnergyTip'])->name('modules.energy-conservation.tips.review');
     Route::put('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'updateEnergyTip'])->name('modules.energy-conservation.tips.update');
+    Route::patch('/modules/energy-conservation/energy-saving-tips/{recommendation}/progress', [EnergyConservationController::class, 'updateEnergyTipProgress'])->name('modules.energy-conservation.tips.progress');
     Route::delete('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'destroyEnergyTip'])->name('modules.energy-conservation.tips.destroy');
 
     // Monthly Records per Facility
@@ -229,12 +230,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->filter(fn ($record) => (int) ($record->year ?? 0) === $selectedYear)
             ->values();
 
-        $recommendationsByPeriod = \App\Models\EnergySavingRecommendation::query()
-            ->with('assignee:id,full_name,username,profile_photo_path')
-            ->where('facility_id', $facilityId)
-            ->where('year', $selectedYear)
-            ->get()
-            ->keyBy(fn ($recommendation) => (int) $recommendation->year.'-'.(int) $recommendation->month);
+        $recommendationNotificationsByRecordId = collect();
+        if (\App\Support\RoleAccess::is(auth()->user(), 'staff')) {
+            $recommendationNotificationService = app(\App\Services\RecommendationNotificationService::class);
+            $recommendationNotificationsByRecordId = $recordsForYear
+                ->mapWithKeys(function ($record) use ($recommendationNotificationService) {
+                    $notification = $recommendationNotificationService->ensureForUser(auth()->user(), $record);
+
+                    return $notification ? [(int) $record->id => $notification] : [];
+                });
+        }
 
         $allMainRecordsForSummary = $allRecordsForYear->filter(function ($record) use ($effectiveSummaryMonth) {
             if ($effectiveSummaryMonth === null) {
@@ -532,7 +537,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'mainSubScope',
             'mainSubScopeLabel',
             'recordsForYear',
-            'recommendationsByPeriod',
+            'recommendationNotificationsByRecordId',
             'mainRecordIndex',
             'years',
             'selectedYear',

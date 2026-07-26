@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Log;
  *
  * CPRF is the system of record for these facilities: identity fields
  * (name, address, details, status) are overwritten on every sync and are
- * read-only in this app's UI. Energy-side data (energy profiles, meters,
- * baselines, readings) is never touched by the sync.
+ * read-only in this app's UI. Every mirrored facility gets an editable local
+ * energy-profile shell, while existing profiles, meters, baselines, and
+ * readings are never overwritten by the sync.
  *
  * Rows previously mirrored but no longer present in the feed are marked
  * status='inactive' (never deleted) so their reading history is preserved.
@@ -84,10 +85,11 @@ class CprfFacilitySyncService
             ];
 
             if ($facility === null) {
-                Facility::create($identity + [
+                $facility = Facility::create($identity + [
                     'source' => 'cprf',
                     'external_ref' => $externalRef,
                 ]);
+                $this->ensureLocalEnergyProfile($facility);
                 $summary['created']++;
                 continue;
             }
@@ -103,6 +105,8 @@ class CprfFacilitySyncService
             } else {
                 $summary['unchanged']++;
             }
+
+            $this->ensureLocalEnergyProfile($facility);
         }
 
         // Mirrored rows missing from the feed: deactivate, never delete.
@@ -120,5 +124,25 @@ class CprfFacilitySyncService
         Log::info('CPRF facility sync completed', $summary);
 
         return $summary;
+    }
+
+    /**
+     * Create only the empty local shell needed to manage energy data.
+     * CPRF does not currently provide billing, meter, or baseline fields, so
+     * placeholders remain editable and an existing profile is left untouched.
+     */
+    private function ensureLocalEnergyProfile(Facility $facility): void
+    {
+        $facility->energyProfiles()->firstOrCreate([], [
+            'electric_meter_no' => 'N/A',
+            'utility_provider' => 'Other',
+            'contract_account_no' => 'N/A',
+            'baseline_kwh' => 0,
+            'main_energy_source' => 'Other',
+            'backup_power' => 'Other',
+            'transformer_capacity' => null,
+            'number_of_meters' => 0,
+            'baseline_source' => 'other',
+        ]);
     }
 }

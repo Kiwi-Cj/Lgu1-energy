@@ -7,6 +7,7 @@ use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\User;
+use App\Services\RecommendationNotificationService;
 use App\Support\RoleAccess;
 use Illuminate\Support\Facades\Schema;
 
@@ -52,6 +53,12 @@ class EnergyRecordObserver
 
         if ($updates !== []) {
             $record->forceFill($updates)->saveQuietly();
+        }
+
+        try {
+            app(RecommendationNotificationService::class)->notifySystemRecommendation($record);
+        } catch (\Throwable $e) {
+            // Recommendation notifications must not block monthly record persistence.
         }
 
         $this->notifyRecipientsOfAlert($record, $facility, $deviation, $alert);

@@ -701,6 +701,19 @@
         color: #0f172a;
     }
     .recommendation-modal textarea { min-height: 90px; resize: vertical; }
+    .recommendation-readonly-value {
+        min-height: 38px;
+        padding: 9px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: .78rem;
+        font-weight: 700;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+    .recommendation-readonly-value.is-long { min-height: 72px; }
     .recommendation-delete-form { padding: 0 18px 16px; }
     .recommendation-section-heading {
         display: flex;
@@ -737,6 +750,189 @@
     .tip-action.save { background: #e2e8f0; color: #334155; }
     .tip-action.approve { background: #16a34a; color: #fff; }
     .tip-action.dismiss { background: #fee2e2; color: #b91c1c; }
+
+    /* Recommendation modal follows the shared Poppins/blue system theme. */
+    .recommendation-modal {
+        width: min(720px, calc(100vw - 32px));
+        max-height: min(760px, calc(100dvh - 40px));
+        border-radius: 20px;
+        background: #ffffff;
+        color: #1e293b;
+        font-family: 'Poppins', sans-serif;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, .32);
+    }
+    .recommendation-modal,
+    .recommendation-modal button,
+    .recommendation-modal input,
+    .recommendation-modal select,
+    .recommendation-modal textarea {
+        font-family: 'Poppins', sans-serif;
+    }
+    .recommendation-modal::backdrop {
+        background: rgba(15, 23, 42, .64);
+        backdrop-filter: blur(3px);
+    }
+    .recommendation-modal-head {
+        padding: 18px 22px;
+        background: #ffffff;
+    }
+    .recommendation-modal-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+    .recommendation-modal-heading-icon {
+        display: inline-flex;
+        flex: 0 0 38px;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: .92rem;
+    }
+    .recommendation-modal-title {
+        color: #0f172a;
+        font-size: 1.02rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    .recommendation-modal-head .recommendation-row-meta {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: .7rem;
+        font-weight: 500;
+    }
+    .recommendation-modal-head .recommendation-modal-close {
+        display: inline-flex;
+        flex: 0 0 34px;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: .82rem;
+        transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+    }
+    .recommendation-modal-head .recommendation-modal-close:hover {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .recommendation-modal-body {
+        gap: 16px;
+        padding: 20px 22px;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+    .recommendation-modal .tip-review-grid {
+        gap: 13px;
+    }
+    .recommendation-modal .tip-review-field label {
+        margin-bottom: 7px;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .035em;
+    }
+    .recommendation-modal input,
+    .recommendation-modal select,
+    .recommendation-modal textarea,
+    .recommendation-modal .recommendation-readonly-value {
+        border: 1px solid #dbe3ee;
+        border-radius: 11px;
+        font-size: .8rem;
+        line-height: 1.45;
+    }
+    .recommendation-modal input,
+    .recommendation-modal select {
+        min-height: 44px;
+        padding: 9px 12px;
+        font-weight: 500;
+    }
+    .recommendation-modal textarea {
+        min-height: 104px;
+        padding: 11px 12px;
+        font-weight: 400;
+    }
+    .recommendation-modal input:focus,
+    .recommendation-modal select:focus,
+    .recommendation-modal textarea:focus {
+        border-color: #60a5fa;
+        outline: 0;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+    .recommendation-modal .recommendation-readonly-value {
+        min-height: 44px;
+        padding: 10px 12px;
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 500;
+    }
+    .recommendation-modal .recommendation-readonly-value.is-long {
+        min-height: 76px;
+        border-left: 3px solid #60a5fa;
+        background: #f8fbff;
+    }
+    .recommendation-progress-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid #dbeafe;
+        border-radius: 10px;
+        background: #eff6ff;
+        color: #475569;
+        font-size: .69rem;
+        font-weight: 500;
+        line-height: 1.45;
+    }
+    .recommendation-progress-note i {
+        margin-top: 2px;
+        color: #2563eb;
+    }
+    .recommendation-modal-footer {
+        padding: 14px 22px;
+        background: #f8fafc;
+    }
+    .recommendation-modal .tip-action {
+        display: inline-flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 10px;
+        padding: 9px 14px;
+        font-size: .75rem;
+        font-weight: 600;
+        transition: transform .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    .recommendation-modal .tip-action.save {
+        border: 1px solid #dbe3ee;
+        background: #ffffff;
+        color: #475569;
+    }
+    .recommendation-modal .tip-action.approve {
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 7px 16px rgba(37, 99, 235, .2);
+    }
+    .recommendation-modal .tip-action:hover {
+        transform: translateY(-1px);
+    }
+    .recommendation-modal .tip-action.save:hover {
+        background: #f1f5f9;
+    }
+    .recommendation-modal .tip-action.approve:hover {
+        background: #1d4ed8;
+        box-shadow: 0 9px 20px rgba(37, 99, 235, .26);
+    }
     .tip-implementation-meta {
         display: flex;
         flex-wrap: wrap;
@@ -920,6 +1116,57 @@
     body.dark-mode .added-recommendation-title { color: #f8fafc; }
     body.dark-mode .added-recommendation-text,
     body.dark-mode .added-recommendation-meta { color: #cbd5e1; }
+    body.dark-mode .recommendation-readonly-value {
+        border-color: #334155;
+        background: #111827;
+        color: #e2e8f0;
+    }
+    body.dark-mode .recommendation-modal,
+    body.dark-mode .recommendation-modal-head {
+        border-color: #334155;
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+    body.dark-mode .recommendation-modal-title { color: #f8fafc; }
+    body.dark-mode .recommendation-modal-heading-icon {
+        background: #172554;
+        color: #93c5fd;
+    }
+    body.dark-mode .recommendation-modal-head .recommendation-modal-close {
+        border-color: #334155;
+        background: #111827;
+        color: #94a3b8;
+    }
+    body.dark-mode .recommendation-modal input,
+    body.dark-mode .recommendation-modal select,
+    body.dark-mode .recommendation-modal textarea {
+        border-color: #334155;
+        background: #0b1220;
+        color: #e2e8f0;
+    }
+    body.dark-mode .recommendation-modal .recommendation-readonly-value {
+        border-color: #334155;
+        background: #111827;
+        color: #e2e8f0;
+    }
+    body.dark-mode .recommendation-modal .recommendation-readonly-value.is-long {
+        border-left-color: #60a5fa;
+        background: #101b31;
+    }
+    body.dark-mode .recommendation-progress-note {
+        border-color: #1e3a8a;
+        background: #172554;
+        color: #cbd5e1;
+    }
+    body.dark-mode .recommendation-modal-footer {
+        border-color: #334155;
+        background: #111827;
+    }
+    body.dark-mode .recommendation-modal .tip-action.save {
+        border-color: #334155;
+        background: #0f172a;
+        color: #cbd5e1;
+    }
     body.dark-mode .tip-form-section { background: rgba(15, 23, 42, .75); border-color: #334155; }
     body.dark-mode .tip-form-section-title { color: #93c5fd; }
     body.dark-mode .tip-implementation-meta { color: #cbd5e1; }
@@ -974,6 +1221,16 @@
         .checklist-filter { grid-template-columns: 1fr; }
         .goal-metrics { grid-template-columns: 1fr; }
         .goal-create-grid { grid-template-columns: 1fr; }
+        .recommendation-modal {
+            width: calc(100vw - 16px);
+            max-height: calc(100dvh - 16px);
+            border-radius: 16px;
+        }
+        .recommendation-modal-head { padding: 15px 16px; }
+        .recommendation-modal-heading-icon { display: none; }
+        .recommendation-modal-body { padding: 16px; }
+        .recommendation-modal-footer { padding: 12px 16px; }
+        .recommendation-modal .tip-action { min-height: 38px; }
     }
 
     @media (max-width: 560px) {
@@ -1337,6 +1594,7 @@
                         </div>
                     @endif
 
+                    @if(! ($featureSlug === 'energy-saving-tips' && $selectedRecordContext))
                     <form class="form-grid{{ in_array($featureSlug, ['energy-saving-tips', 'conservation-goals'], true) ? ' tip-filter-card' : '' }}" method="GET" action="{{ route('modules.energy-conservation.feature', ['feature' => $featureSlug]) }}">
                         <div class="field">
                             <label>Select Facility</label>
@@ -1371,6 +1629,7 @@
                             <a class="btn-main btn-secondary" href="{{ route('modules.energy-conservation.feature', ['feature' => $featureSlug]) }}"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                         </div>
                     </form>
+                    @endif
 
                     @if($featureSlug === 'energy-saving-tips')
                         @php
@@ -1450,10 +1709,11 @@
                             </details>
                         @endif
 
-                        <div class="recommendation-section-heading">
-                            <i class="fa-solid fa-list-check"></i> Added Recommendations
-                        </div>
-                        <div class="added-recommendation-list">
+                        @if($canReviewTips || $manualRecommendations->isNotEmpty())
+                            <div class="recommendation-section-heading">
+                                <i class="fa-solid fa-list-check"></i> Added Recommendations
+                            </div>
+                            <div class="added-recommendation-list">
                             @forelse($manualRecommendations as $recommendation)
                                 @php
                                     $progressClass = match ($recommendation->implementation_status ?? 'pending') {
@@ -1509,17 +1769,33 @@
                             @empty
                                 <div class="recommendation-empty">No added recommendations for this facility and month yet.</div>
                             @endforelse
-                        </div>
+                            </div>
+                        @endif
 
                         @foreach($manualRecommendations as $recommendation)
+                            @php
+                                $canUpdateRecommendationProgress =
+                                    \App\Support\RoleAccess::is(auth()->user(), 'staff')
+                                    && (int) $recommendation->assigned_to === (int) auth()->id()
+                                    && $recommendation->status === 'approved'
+                                    && ($recommendation->implementation_status ?? 'pending') !== 'verified';
+                            @endphp
                             <dialog id="recommendationModal{{ $recommendation->id }}" class="recommendation-modal">
                                 <div class="recommendation-modal-head">
-                                    <div>
-                                        <div class="recommendation-modal-title">Recommendation Details</div>
-                                        <div class="recommendation-row-meta">{{ $selectedFacility?->name }} · {{ $selectedMonth }}</div>
+                                    <div class="recommendation-modal-heading">
+                                        <span class="recommendation-modal-heading-icon" aria-hidden="true">
+                                            <i class="fa-solid fa-lightbulb"></i>
+                                        </span>
+                                        <div>
+                                            <div class="recommendation-modal-title">Recommendation Details</div>
+                                            <div class="recommendation-row-meta">{{ $selectedFacility?->name }} &middot; {{ $selectedMonth }}</div>
+                                        </div>
                                     </div>
-                                    <button type="button" class="recommendation-modal-close" aria-label="Close">&times;</button>
+                                    <button type="button" class="recommendation-modal-close" aria-label="Close">
+                                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                                    </button>
                                 </div>
+                                @if($canReviewTips)
                                 <form method="POST" action="{{ route('modules.energy-conservation.tips.update', $recommendation) }}">
                                     @csrf
                                     @method('PUT')
@@ -1583,6 +1859,115 @@
                                         <button type="submit" class="tip-action approve">Update Recommendation</button>
                                     </div>
                                 </form>
+                                @elseif($canUpdateRecommendationProgress)
+                                    <form method="POST" action="{{ route('modules.energy-conservation.tips.progress', $recommendation) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <div class="recommendation-modal-body">
+                                            <div class="tip-review-field">
+                                                <label>Recommendation</label>
+                                                <div class="recommendation-readonly-value is-long">{{ $recommendation->engineer_recommendation }}</div>
+                                            </div>
+                                            <div class="tip-review-grid">
+                                                <div class="tip-review-field">
+                                                    <label>Assigned To</label>
+                                                    <div class="recommendation-readonly-value">
+                                                        {{ $recommendation->assignee?->full_name ?: ($recommendation->assignee?->username ?? 'Unassigned') }}
+                                                    </div>
+                                                </div>
+                                                <div class="tip-review-field">
+                                                    <label for="staffProgressStatus{{ $recommendation->id }}">Progress Status</label>
+                                                    <select id="staffProgressStatus{{ $recommendation->id }}" name="implementation_status" required>
+                                                        @foreach(['pending' => 'Pending', 'in_progress' => 'In Progress', 'implemented' => 'Implemented'] as $value => $label)
+                                                            <option value="{{ $value }}" @selected(($recommendation->implementation_status ?? 'pending') === $value)>{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="tip-review-field">
+                                                    <label>Target Date</label>
+                                                    <div class="recommendation-readonly-value">
+                                                        {{ $recommendation->target_date?->format('M d, Y') ?? 'Not set' }}
+                                                    </div>
+                                                </div>
+                                                <div class="tip-review-field">
+                                                    <label>Expected Savings</label>
+                                                    <div class="recommendation-readonly-value">
+                                                        {{ $recommendation->expected_savings_kwh !== null ? number_format((float) $recommendation->expected_savings_kwh, 2).' kWh' : 'Not set' }}
+                                                    </div>
+                                                </div>
+                                                <div class="tip-review-field">
+                                                    <label for="staffActualSavings{{ $recommendation->id }}">Actual Savings (kWh)</label>
+                                                    <input id="staffActualSavings{{ $recommendation->id }}"
+                                                           type="number"
+                                                           name="actual_savings_kwh"
+                                                           min="0"
+                                                           step="0.01"
+                                                           value="{{ $recommendation->actual_savings_kwh }}">
+                                                </div>
+                                            </div>
+                                            <div class="tip-review-field">
+                                                <label for="staffImplementationNotes{{ $recommendation->id }}">Implementation Notes</label>
+                                                <textarea id="staffImplementationNotes{{ $recommendation->id }}"
+                                                          name="implementation_notes"
+                                                          placeholder="Describe the action completed, observations, or issues encountered.">{{ $recommendation->implementation_notes }}</textarea>
+                                            </div>
+                                            <div class="recommendation-progress-note">
+                                                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                                <span>Update only the implementation progress. Final verification is completed by the assigned reviewer.</span>
+                                            </div>
+                                        </div>
+                                        <div class="recommendation-modal-footer">
+                                            <button type="button" class="tip-action save recommendation-modal-close">Cancel</button>
+                                            <button type="submit" class="tip-action approve">
+                                                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                                                Save Progress
+                                            </button>
+                                        </div>
+                                    </form>
+                                @else
+                                    <div class="recommendation-modal-body">
+                                        <div class="tip-review-field">
+                                            <label>Recommendation</label>
+                                            <div class="recommendation-readonly-value is-long">{{ $recommendation->engineer_recommendation }}</div>
+                                        </div>
+                                        <div class="tip-review-grid">
+                                            <div class="tip-review-field">
+                                                <label>Assigned To</label>
+                                                <div class="recommendation-readonly-value">
+                                                    {{ $recommendation->assignee?->full_name ?: ($recommendation->assignee?->username ?? 'Unassigned') }}
+                                                </div>
+                                            </div>
+                                            <div class="tip-review-field">
+                                                <label>Progress Status</label>
+                                                <div class="recommendation-readonly-value">
+                                                    {{ ucwords(str_replace('_', ' ', $recommendation->implementation_status ?? 'pending')) }}
+                                                </div>
+                                            </div>
+                                            <div class="tip-review-field">
+                                                <label>Target Date</label>
+                                                <div class="recommendation-readonly-value">
+                                                    {{ $recommendation->target_date?->format('M d, Y') ?? 'Not set' }}
+                                                </div>
+                                            </div>
+                                            <div class="tip-review-field">
+                                                <label>Expected Savings</label>
+                                                <div class="recommendation-readonly-value">
+                                                    {{ $recommendation->expected_savings_kwh !== null ? number_format((float) $recommendation->expected_savings_kwh, 2).' kWh' : 'Not set' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if(filled($recommendation->implementation_notes))
+                                            <div class="tip-review-field">
+                                                <label>Implementation Notes</label>
+                                                <div class="recommendation-readonly-value is-long">{{ $recommendation->implementation_notes }}</div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="recommendation-modal-footer">
+                                        <span class="recommendation-row-meta">Approved recommendation</span>
+                                        <button type="button" class="tip-action save recommendation-modal-close">Close</button>
+                                    </div>
+                                @endif
                                 @if($canReviewTips)
                                     <form method="POST" action="{{ route('modules.energy-conservation.tips.destroy', $recommendation) }}" class="recommendation-delete-form">
                                         @csrf
@@ -1629,7 +2014,7 @@
                             @empty
                                 <div class="feature-point">
                                     <i class="fa-solid fa-clock"></i>
-                                    <span>No Engineering-approved energy tip is available for the selected facility and month yet.</span>
+                                    <span>No monthly energy data is available for a system-generated recommendation.</span>
                                 </div>
                             @endforelse
                         </div>

@@ -395,7 +395,7 @@
 
     .monthly-table {
         width: 100%;
-        min-width: 1320px;
+        min-width: 1210px;
         border-collapse: separate;
         border-spacing: 0;
         table-layout: fixed;
@@ -496,7 +496,8 @@
 
     .monthly-table th:nth-child(9),
     .monthly-table td:nth-child(9) {
-        width: 220px;
+        width: 110px;
+        text-align: center;
     }
 
     .monthly-table th:nth-child(10),
@@ -654,66 +655,41 @@
 
     .monthly-recommendation-cell {
         display: grid;
-        gap: 5px;
+        gap: 6px;
         min-width: 0;
         text-align: left;
     }
 
-    .monthly-recommendation-status {
+    .monthly-recommendation-cell.is-action-only {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+    }
+
+    .monthly-recommendation-action-wrap {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .monthly-recommendation-unread {
+        position: absolute;
+        top: -7px;
+        right: -8px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: max-content;
-        max-width: 100%;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #ffffff;
         border-radius: 999px;
-        padding: 3px 7px;
-        font-size: .64rem;
+        background: #e11d48;
+        color: #ffffff;
+        font-size: .58rem;
         font-weight: 900;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-    }
-
-    .monthly-recommendation-status.is-approved {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .monthly-recommendation-status.is-review {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .monthly-recommendation-status.is-dismissed {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .monthly-recommendation-status.is-empty {
-        background: #f1f5f9;
-        color: #64748b;
-    }
-
-    .monthly-recommendation-copy {
-        color: #475569;
-        font-size: .7rem;
-        font-weight: 700;
-        line-height: 1.4;
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 1;
-    }
-
-    .monthly-recommendation-progress {
-        color: #64748b;
-        font-size: .66rem;
-        font-weight: 800;
-        line-height: 1.35;
-    }
-
-    .monthly-recommendation-progress i {
-        width: 13px;
-        color: #2563eb;
+        line-height: 1;
+        box-shadow: 0 3px 8px rgba(225, 29, 72, .28);
+        pointer-events: none;
     }
 
     .monthly-action-group {
@@ -729,12 +705,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        width: 100%;
-        min-height: 30px;
-        padding: 5px 7px;
+        gap: 5px;
+        flex: 0 0 auto;
+        min-height: 28px;
+        padding: 5px 9px;
         border: 1px solid #bfdbfe;
-        border-radius: 10px;
+        border-radius: 8px;
         background: #eff6ff;
         color: #1d4ed8;
         text-decoration: none;
@@ -742,14 +718,19 @@
         font-weight: 900;
         line-height: 1.15;
         text-align: center;
-        white-space: normal;
-        transition: transform .15s ease, background-color .15s ease;
+        white-space: nowrap;
+        transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
     }
 
     .monthly-recommendation-btn:hover {
         transform: translateY(-1px);
         background: #dbeafe;
+        border-color: #93c5fd;
         color: #1e40af;
+    }
+
+    .monthly-recommendation-btn i {
+        font-size: .62rem;
     }
 
     .monthly-chip.is-success {
@@ -1319,19 +1300,6 @@
         box-shadow: 0 6px 14px rgba(2, 6, 23, .45);
     }
 
-    body.dark-mode .monthly-recommendation-copy {
-        color: #cbd5e1;
-    }
-
-    body.dark-mode .monthly-recommendation-progress {
-        color: #94a3b8;
-    }
-
-    body.dark-mode .monthly-recommendation-status.is-empty {
-        background: #1e293b;
-        color: #cbd5e1;
-    }
-
     body.dark-mode .monthly-recommendation-btn {
         border-color: #1d4ed8;
         background: #172554;
@@ -1341,6 +1309,12 @@
     body.dark-mode .monthly-recommendation-btn:hover {
         background: #1e3a8a;
         color: #eff6ff;
+    }
+
+    body.dark-mode .monthly-recommendation-unread {
+        border-color: #0f172a;
+        background: #fb7185;
+        color: #4c0519;
     }
 
     body.dark-mode .monthly-modal-card {
@@ -1717,37 +1691,9 @@
                                     : null;
                             }
 
-                            $recommendationKey = (int) ($record->year ?? 0).'-'.(int) ($record->month ?? 0);
-                            $recommendation = $recommendationsByPeriod->get($recommendationKey);
-                            $recommendationStatus = strtolower((string) ($recommendation?->status ?? ''));
-                            $recommendationStatusLabel = match ($recommendationStatus) {
-                                'approved' => 'Approved',
-                                'for_review' => 'For Review',
-                                'dismissed' => 'Dismissed',
-                                default => 'Not Reviewed',
-                            };
-                            $recommendationStatusClass = match ($recommendationStatus) {
-                                'approved' => 'is-approved',
-                                'for_review' => 'is-review',
-                                'dismissed' => 'is-dismissed',
-                                default => 'is-empty',
-                            };
-                            $recommendationText = trim((string) (
-                                $recommendation?->engineer_recommendation
-                                ?: $recommendation?->generated_message
-                                ?: 'Open the recommendation page to review or add an engineering action.'
-                            ));
-                            $implementationStatus = strtolower((string) ($recommendation?->implementation_status ?? ''));
-                            $implementationLabel = match ($implementationStatus) {
-                                'in_progress' => 'In Progress',
-                                'implemented' => 'Implemented',
-                                'verified' => 'Verified',
-                                default => 'Pending',
-                            };
-                            $assigneeName = $recommendation?->assignee
-                                ? ($recommendation->assignee->full_name ?: $recommendation->assignee->username)
-                                : null;
-                            $recommendationUrl = route('modules.energy-conservation.feature', [
+                            $recommendationNotification = $recommendationNotificationsByRecordId->get((int) $record->id);
+                            $hasUnreadRecommendation = $recommendationNotification && $recommendationNotification->read_at === null;
+                            $recommendationRouteParameters = [
                                 'feature' => 'energy-saving-tips',
                                 'facility_id' => $facility->id,
                                 'record_id' => $record->id,
@@ -1756,7 +1702,11 @@
                                     (int) ($record->year ?? $selectedYear),
                                     (int) ($record->month ?? 1)
                                 ),
-                            ]);
+                            ];
+                            if ($recommendationNotification) {
+                                $recommendationRouteParameters['recommendation_notification_id'] = $recommendationNotification->id;
+                            }
+                            $recommendationUrl = route('modules.energy-conservation.feature', $recommendationRouteParameters);
                         @endphp
                         <tr>
                             <td>{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }}</td>
@@ -1788,25 +1738,20 @@
                             <td class="monthly-muted-number">{{ number_format($rate, 2) }}</td>
                             <td class="monthly-cost">{{ number_format($cost, 2) }}</td>
                             <td>
-                                <div class="monthly-recommendation-cell">
-                                    <span class="monthly-recommendation-status {{ $recommendationStatusClass }}">
-                                        {{ $recommendationStatusLabel }}
+                                <div class="monthly-recommendation-cell is-action-only">
+                                    <span class="monthly-recommendation-action-wrap">
+                                        <a href="{{ $recommendationUrl }}"
+                                           class="monthly-recommendation-btn"
+                                           title="View recommendation">
+                                            <span>View</span>
+                                            <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                                        </a>
+                                        @if($hasUnreadRecommendation)
+                                            <span class="monthly-recommendation-unread"
+                                                  title="1 unread recommendation"
+                                                  aria-label="1 unread recommendation">1</span>
+                                        @endif
                                     </span>
-                                    <span class="monthly-recommendation-copy" title="{{ $recommendationText }}">
-                                        {{ $recommendationText }}
-                                    </span>
-                                    @if($recommendation)
-                                        <span class="monthly-recommendation-progress">
-                                            <i class="fa fa-list-check"></i> {{ $implementationLabel }}
-                                            @if($assigneeName) · {{ $assigneeName }} @endif
-                                        </span>
-                                    @endif
-                                    <a href="{{ $recommendationUrl }}"
-                                       class="monthly-recommendation-btn"
-                                       title="View or update the recommendation for this month">
-                                        <i class="fa fa-lightbulb"></i>
-                                        <span>View Recommendation</span>
-                                    </a>
                                 </div>
                             </td>
                             <td>

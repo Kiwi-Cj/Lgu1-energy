@@ -67,6 +67,25 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     .stat-card:hover { transform: translateY(-5px); }
 
+    button.stat-card {
+        appearance: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .stat-card.is-selected {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        transform: translateY(-3px);
+    }
+
+    .stat-card:focus-visible {
+        outline: 3px solid rgba(37, 99, 235, 0.3);
+        outline-offset: 3px;
+    }
+
     .card-icon-box {
         width: 40px; height: 40px;
         border-radius: 10px;
@@ -449,22 +468,27 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
 
-        <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:2rem;">
-            <div class="stat-card">
+        <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:2rem;" aria-label="Filter facilities by status">
+            <button type="button" class="stat-card is-selected" data-status-filter="all" aria-pressed="true">
                 <div class="card-icon-box" style="background:#eff6ff; color:#3b82f6;"><i class="fa fa-building"></i></div>
                 <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Total</div>
                 <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $totalFacilities ?? 0 }}</div>
-            </div>
-            <div class="stat-card">
+            </button>
+            <button type="button" class="stat-card" data-status-filter="active" aria-pressed="false">
                 <div class="card-icon-box" style="background:#f0fdf4; color:#22c55e;"><i class="fa fa-check-circle"></i></div>
                 <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Active</div>
                 <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $activeFacilities ?? 0 }}</div>
-            </div>
-            <div class="stat-card">
+            </button>
+            <button type="button" class="stat-card" data-status-filter="maintenance" aria-pressed="false">
                 <div class="card-icon-box" style="background:#fffbeb; color:#f59e0b;"><i class="fa fa-wrench"></i></div>
                 <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Maintenance</div>
                 <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $maintenanceFacilities ?? 0 }}</div>
-            </div>
+            </button>
+            <button type="button" class="stat-card" data-status-filter="inactive" aria-pressed="false">
+                <div class="card-icon-box" style="background:#fef2f2; color:#ef4444;"><i class="fa fa-ban"></i></div>
+                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Inactive</div>
+                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $inactiveFacilities ?? 0 }}</div>
+            </button>
         </div>
 
         @php $sourceTab = $sourceTab ?? 'all'; @endphp
@@ -527,7 +551,10 @@ window.addEventListener('DOMContentLoaded', function() {
                         (string) ($facility->barangay ?? ''),
                     ])));
                 @endphp
-                <div class="facility-card" data-facility-card data-search="{{ $searchIndex }}">
+                <div class="facility-card"
+                     data-facility-card
+                     data-search="{{ $searchIndex }}"
+                     data-status="{{ Str::lower((string) ($facility->status ?? 'inactive')) }}">
                     <div class="image-wrapper">
                         @php
                             $imageUrl = $facility->resolved_image_url;
@@ -643,6 +670,8 @@ window.addEventListener('DOMContentLoaded', function() {
         const visibleCountEl = document.getElementById('facilitySearchVisibleCount');
         const totalCountEl = document.getElementById('facilitySearchTotalCount');
         const searchableTexts = Array.from(document.querySelectorAll('[data-search-text]'));
+        const statusFilterButtons = Array.from(document.querySelectorAll('[data-status-filter]'));
+        let activeStatus = 'all';
 
         if (totalCountEl) {
             totalCountEl.textContent = String(cards.length);
@@ -702,6 +731,20 @@ window.addEventListener('DOMContentLoaded', function() {
             searchInput.focus();
         };
 
+        const resetFilters = () => {
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            activeStatus = 'all';
+            statusFilterButtons.forEach((button) => {
+                const isSelected = button.getAttribute('data-status-filter') === activeStatus;
+                button.classList.toggle('is-selected', isSelected);
+                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+            applyFacilitySearch();
+            searchInput?.focus();
+        };
+
         const applyFacilitySearch = () => {
             if (!cards.length) {
                 if (emptyState) emptyState.style.display = 'none';
@@ -720,7 +763,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
             cards.forEach((card) => {
                 const haystack = ((card.getAttribute('data-search')) || '').toLowerCase();
-                const isMatch = tokens.every((token) => haystack.includes(token));
+                const cardStatus = ((card.getAttribute('data-status')) || '').toLowerCase();
+                const matchesSearch = tokens.every((token) => haystack.includes(token));
+                const matchesStatus = activeStatus === 'all' || cardStatus === activeStatus;
+                const isMatch = matchesSearch && matchesStatus;
                 card.style.display = isMatch ? '' : 'none';
                 const cardSearchTexts = Array.from(card.querySelectorAll('[data-search-text]'));
                 cardSearchTexts.forEach((element) => highlightElement(element, isMatch ? tokens : []));
@@ -737,8 +783,20 @@ window.addEventListener('DOMContentLoaded', function() {
         };
 
         clearButton?.addEventListener('click', clearSearch);
-        resetButton?.addEventListener('click', clearSearch);
+        resetButton?.addEventListener('click', resetFilters);
         searchInput?.addEventListener('input', applyFacilitySearch);
-        applyFacilityS    });
+        statusFilterButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                activeStatus = button.getAttribute('data-status-filter') || 'all';
+                statusFilterButtons.forEach((candidate) => {
+                    const isSelected = candidate === button;
+                    candidate.classList.toggle('is-selected', isSelected);
+                    candidate.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+                });
+                applyFacilitySearch();
+            });
+        });
+        applyFacilitySearch();
+    });
 </script>
 @endsection
