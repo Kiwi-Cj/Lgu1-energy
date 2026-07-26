@@ -71,6 +71,11 @@ class CprfFacilityReadingController extends Controller
             // MySQL strict mode reject the row ("doesn't have a default
             // value") whenever recorded_by has no column default.
             'recorded_by' => null,
+            // The actual staff/admin who recorded this reading on CPRF's
+            // side — recorded_by can't hold this (it's an FK to THIS app's
+            // own users table, not a name), so it's kept here as real
+            // attribution instead of being logged and discarded.
+            'recorded_by_name' => $validated['recorded_by_name'] ?? null,
         ];
 
         try {

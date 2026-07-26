@@ -13,12 +13,18 @@ use Illuminate\Support\Facades\DB;
  * (doctrine/dbal isn't installed, so this uses a raw ALTER instead of
  * Schema::table()->change()). No-op on SQLite, which already allows NULL
  * here and has no equivalent MODIFY statement.
+ *
+ * Checks for both 'mysql' and 'mariadb': Laravel 11+ registers MariaDB as
+ * its own distinct driver name (see config/database.php's separate
+ * 'mariadb' connection) — a production .env with DB_CONNECTION=mariadb
+ * would make a mysql-only check silently skip this ALTER even though
+ * `php artisan migrate` reports success.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        if (DB::connection()->getDriverName() !== 'mysql') {
+        if (!in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true)) {
             return;
         }
 
