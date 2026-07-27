@@ -1903,7 +1903,7 @@
                             $actualRow = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
                             $baselineRow = ($record->meter && is_numeric($record->meter->baseline_kwh))
                                 ? (float) $record->meter->baseline_kwh
-                                : null;
+                                : (is_numeric($record->baseline_kwh) ? (float) $record->baseline_kwh : null);
 
                             $deviationRow = null;
                             if (is_numeric($record->deviation)) {
