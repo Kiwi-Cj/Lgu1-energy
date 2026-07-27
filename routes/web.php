@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Modules\EnergyMonitoringController;
+use App\Http\Controllers\Modules\IntegrationController;
 use App\Http\Controllers\Modules\MaintenanceController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DownloadAuthorizationController;
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // System Settings route for dashboard shortcut - Super Admin only
     Route::get('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/modules/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
 });
 
 require __DIR__ . '/modules.php';

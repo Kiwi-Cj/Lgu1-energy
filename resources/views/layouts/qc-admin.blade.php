@@ -1755,6 +1755,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 @endif
                 @endif
                 @if($canAccessSettings)
+                <li><a href="{{ route('integrations.index') }}" class="nav-link{{ request()->routeIs('integrations.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Integrations</a></li>
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
