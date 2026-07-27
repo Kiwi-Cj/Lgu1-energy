@@ -13,8 +13,17 @@ class CprfFacilityProfileController extends Controller
     /**
      * Energy profiles for CPRF-mapped facilities, keyed by CPRF's own
      * facility id (external_ref) so CPRF can resolve rows directly without
-     * a name-matching step. Facilities with no energy profile set yet are
-     * omitted from the response, not returned as an error.
+     * a name-matching step. Facilities with neither a profile nor a main
+     * meter are omitted from the response, not returned as an error.
+     *
+     * "engineer_approved" and "baseline_kwh" are sourced from the
+     * facility's main meter, NOT the EnergyProfile record — the
+     * EnergyProfile approval/edit UI has no reachable entry point in this
+     * app (its modal exists but nothing opens it), so it can never
+     * reflect real engineer sign-off. Meter approval is the workflow this
+     * team actually uses, so CPRF reflects that instead. The remaining
+     * fields (utility provider, contract account, energy source, etc.)
+     * have no meter equivalent and still come from EnergyProfile as-is.
      */
     public function index(Request $request): JsonResponse
     {
@@ -27,21 +36,24 @@ class CprfFacilityProfileController extends Controller
         $query = Facility::query()
             ->where('source', 'cprf')
             ->whereNotNull('external_ref')
-            ->whereHas('energyProfiles')
+            ->where(function (Builder $q) {
+                $q->whereHas('meters', fn (Builder $mq) => $mq->where('meter_type', 'main'))
+                    ->orWhereHas('energyProfiles');
+            })
             ->when($request->filled('updated_since'), function (Builder $q) use ($request) {
-                $q->whereHas('energyProfiles', function (Builder $pq) use ($request) {
-                    $pq->where('updated_at', '>=', $request->date('updated_since'));
+                $since = $request->date('updated_since');
+                $q->where(function (Builder $inner) use ($since) {
+                    $inner->whereHas('meters', function (Builder $mq) use ($since) {
+                        $mq->where('meter_type', 'main')->where('updated_at', '>=', $since);
+                    })->orWhereHas('energyProfiles', function (Builder $pq) use ($since) {
+                        $pq->where('updated_at', '>=', $since);
+                    });
                 });
             })
-            // Prefer the approved profile when one exists, over "whichever
-            // was created most recently" — facilities can accumulate
-            // multiple profile rows (the Add-Profile form always inserts a
-            // new row rather than updating), and approval is applied to one
-            // specific row by id. Without this, a newer unapproved edit
-            // could shadow an older approved profile, showing CPRF stale
-            // "pending" status and mismatched fields even though the
-            // engineer already approved a different, still-current row.
-            ->with(['energyProfiles' => fn ($q) => $q->orderByDesc('engineer_approved')->latest()])
+            ->with([
+                'meters' => fn ($q) => $q->where('meter_type', 'main'),
+                'energyProfiles' => fn ($q) => $q->latest(),
+            ])
             ->orderBy('external_ref');
 
         $perPage = min(max($request->integer('per_page', 25), 1), 100);
@@ -49,6 +61,23 @@ class CprfFacilityProfileController extends Controller
 
         $paginator->getCollection()->transform(function (Facility $facility) {
             $profile = $facility->energyProfiles->first();
+            $mainMeters = $facility->meters;
+
+            // Prefer the profile's designated primary meter if it's an
+            // approved main meter; otherwise the first approved main
+            // meter; otherwise just the first main meter (so baseline
+            // still shows something even before any approval happens).
+            $primaryMeter = $profile && $profile->primary_meter_id
+                ? $mainMeters->firstWhere('id', $profile->primary_meter_id)
+                : null;
+            $meter = ($primaryMeter && $primaryMeter->approved_at !== null)
+                ? $primaryMeter
+                : ($mainMeters->first(fn ($m) => $m->approved_at !== null) ?? $mainMeters->first());
+
+            $meterUpdatedAt = $mainMeters->max('updated_at');
+            $latestUpdatedAt = $profile?->updated_at && $meterUpdatedAt
+                ? ($profile->updated_at->greaterThan($meterUpdatedAt) ? $profile->updated_at : $meterUpdatedAt)
+                : ($profile?->updated_at ?? $meterUpdatedAt);
 
             return [
                 'facility_external_ref' => (int) $facility->external_ref,
@@ -60,11 +89,11 @@ class CprfFacilityProfileController extends Controller
                 'backup_power' => $profile->backup_power ?? null,
                 'transformer_capacity' => $profile->transformer_capacity ?? null,
                 'number_of_meters' => $profile->number_of_meters ?? null,
-                'baseline_kwh' => $profile && $profile->baseline_kwh !== null ? (float) $profile->baseline_kwh : null,
-                'engineer_approved' => (bool) ($profile->engineer_approved ?? false),
+                'baseline_kwh' => $meter && $meter->baseline_kwh !== null ? (float) $meter->baseline_kwh : null,
+                'engineer_approved' => $meter !== null && $meter->approved_at !== null,
                 'baseline_locked' => (bool) ($profile->baseline_locked ?? false),
                 'baseline_source' => $profile->baseline_source ?? null,
-                'updated_at' => $profile?->updated_at?->toIso8601String(),
+                'updated_at' => $latestUpdatedAt?->toIso8601String(),
             ];
         });
 
