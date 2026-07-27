@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
+use App\Mail\UserWelcome;
 use App\Models\Facility;
 use App\Models\User;
 use App\Models\UserRole;
@@ -10,6 +11,7 @@ use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
@@ -89,7 +91,7 @@ class UsersController extends Controller
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('createUser', [
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'username' => 'nullable|string|max:255|unique:users,username',
@@ -118,6 +120,8 @@ class UsersController extends Controller
         }
 
         $facilityIds = $request->input('facility_id', []);
+        $temporaryPassword = $validated['password'];
+        $validated['name'] = $validated['full_name'];
         $validated['password'] = Hash::make($validated['password']);
         unset($validated['facility_id']);
 
@@ -126,8 +130,24 @@ class UsersController extends Controller
             $user->facilities()->sync($facilityIds);
         }
 
+        try {
+            Mail::to($user->email)->send(new UserWelcome(
+                recipientName: (string) $user->full_name,
+                recipientEmail: (string) $user->email,
+                role: (string) $user->role,
+                temporaryPassword: $temporaryPassword,
+                loginUrl: route('login'),
+            ));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('users.index')
+                ->with('success', 'User created successfully!')
+                ->with('error', 'The account was created, but the welcome email could not be sent. Check the mail settings and reset the password before sharing it manually.');
+        }
+
         return redirect()->route('users.index')
-            ->with('success', 'User created successfully!');
+            ->with('success', 'User created successfully! A welcome email was sent to the user.');
     }
 
     public function update(Request $request, $id)
@@ -146,7 +166,7 @@ class UsersController extends Controller
                 ->with('error', 'Only Super Admin can edit Admin or Super Admin accounts.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('editUser', [
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'username' => 'nullable|string|max:255|unique:users,username,' . $id,
@@ -173,6 +193,7 @@ class UsersController extends Controller
         }
 
         $facilityIds = $request->input('facility_id', []);
+        $validated['name'] = $validated['full_name'];
         unset($validated['facility_id']);
 
         if ($request->filled('password')) {

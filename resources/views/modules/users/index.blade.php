@@ -567,6 +567,31 @@
 			   <form id="userModalForm" method="POST" action="{{ route('users.store') }}" class="uv-modal-form">
 				   @csrf
 				   <input type="hidden" id="userModalMethod" name="_method" value="">
+				   <input type="hidden" id="um_editing_user_id" name="editing_user_id" value="">
+				   @if($errors->createUser->any())
+					   <div id="createUserValidationErrors"
+					        role="alert"
+					        style="margin:0 38px 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;">
+						   <div style="font-weight:800;margin-bottom:6px;">Please correct the following:</div>
+						   <ul style="margin:0;padding-left:20px;">
+							   @foreach($errors->createUser->all() as $message)
+								   <li>{{ $message }}</li>
+							   @endforeach
+						   </ul>
+					   </div>
+				   @endif
+				   @if($errors->editUser->any())
+					   <div id="editUserValidationErrors"
+					        role="alert"
+					        style="margin:0 38px 16px;padding:13px 15px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;">
+						   <div style="font-weight:800;margin-bottom:6px;">Please correct the following:</div>
+						   <ul style="margin:0;padding-left:20px;">
+							   @foreach($errors->editUser->all() as $message)
+								   <li>{{ $message }}</li>
+							   @endforeach
+						   </ul>
+					   </div>
+				   @endif
 				   <div class="uv-form-grid">
 					   <div class="uv-form-field">
 						   <label for="um_full_name">Full Name *</label>
@@ -1197,6 +1222,7 @@
 		document.getElementById('um_contact_number').value = '';
 		document.getElementById('um_password').value = '';
 		document.getElementById('um_password_confirmation').value = '';
+		document.getElementById('um_editing_user_id').value = '';
 		resetUserModalPasswordUi();
 		toggleUserModalFacility();
 	}
@@ -1210,6 +1236,7 @@
 		const form = document.getElementById('userModalForm');
 		form.action = "{{ route('users.store') }}";
 		document.getElementById('userModalMethod').value = '';
+		document.getElementById('um_editing_user_id').value = '';
 
 		// Password required on create
 		document.getElementById('um_password_block').style.display = 'block';
@@ -1270,6 +1297,7 @@
 		const form = document.getElementById('userModalForm');
 		form.action = "{{ url('modules/users') }}/" + userId;
 		document.getElementById('userModalMethod').value = 'PUT';
+		document.getElementById('um_editing_user_id').value = userId;
 
 		// Password is optional on edit
 		document.getElementById('um_password_block').style.display = 'block';
@@ -1327,6 +1355,49 @@
 		if (autoToggle) {
 			autoToggle.addEventListener('change', handleUserModalAutoPasswordToggle);
 		}
+
+		@if($errors->createUser->any())
+			openUserModalCreate();
+
+			document.getElementById('um_full_name').value = @json(old('full_name', ''));
+			document.getElementById('um_email').value = @json(old('email', ''));
+			document.getElementById('um_username').value = @json(old('username', ''));
+			document.getElementById('um_role').value = @json(old('role', ''));
+			document.getElementById('um_status').value = @json(old('status', 'active'));
+			document.getElementById('um_department').value = @json(old('department', ''));
+			document.getElementById('um_contact_number').value = @json(old('contact_number', ''));
+
+			var selectedFacilityIds = @json(
+				is_array(old('facility_id'))
+					? array_map('strval', old('facility_id'))
+					: []
+			);
+			document.querySelectorAll('input[name="facility_id[]"]').forEach(function (checkbox) {
+				checkbox.checked = selectedFacilityIds.includes(checkbox.value);
+			});
+			toggleUserModalFacility();
+		@endif
+
+		@if($errors->editUser->any() && old('editing_user_id'))
+			var failedEditTrigger = document.createElement('button');
+			failedEditTrigger.setAttribute('data-user-id', @json((string) old('editing_user_id')));
+			failedEditTrigger.setAttribute('data-user', JSON.stringify({
+				id: @json((string) old('editing_user_id')),
+				full_name: @json(old('full_name', '')),
+				email: @json(old('email', '')),
+				username: @json(old('username', '')),
+				role: @json(old('role', '')),
+				status: @json(old('status', 'active')),
+				facility_ids: @json(
+					is_array(old('facility_id'))
+						? array_map('strval', old('facility_id'))
+						: []
+				),
+				department: @json(old('department', '')),
+				contact_number: @json(old('contact_number', ''))
+			}));
+			openUserModalEdit(failedEditTrigger);
+		@endif
 	});
 
 	</script>
