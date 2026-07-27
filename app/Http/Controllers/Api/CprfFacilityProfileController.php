@@ -89,6 +89,7 @@ class CprfFacilityProfileController extends Controller
                 'backup_power' => $profile->backup_power ?? null,
                 'transformer_capacity' => $profile->transformer_capacity ?? null,
                 'number_of_meters' => $profile->number_of_meters ?? null,
+                'main_meter_name' => $meter?->meter_name,
                 'baseline_kwh' => $meter && $meter->baseline_kwh !== null ? (float) $meter->baseline_kwh : null,
                 'engineer_approved' => $meter !== null && $meter->approved_at !== null,
                 'baseline_locked' => (bool) ($profile->baseline_locked ?? false),

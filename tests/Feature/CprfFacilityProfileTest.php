@@ -33,6 +33,7 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
 
     $facility = makeCprfMappedFacility(['external_ref' => 501]);
     makeMainMeter($facility, [
+        'meter_name' => 'Bernardo Court Main Meter',
         'baseline_kwh' => 4200,
         'approved_at' => now(),
         'approved_by_user_id' => null,
@@ -54,6 +55,7 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
         ->and($response->json('data.0.facility_external_ref'))->toBe(501)
         ->and($response->json('data.0.utility_provider'))->toBe('Meralco') // still from profile
         ->and($response->json('data.0.contract_account_no'))->toBe('1234-5678') // still from profile
+        ->and($response->json('data.0.main_meter_name'))->toBe('Bernardo Court Main Meter')
         ->and($response->json('data.0.baseline_kwh'))->toBe(4200.0) // from the meter, not the profile's 1200
         ->and($response->json('data.0.engineer_approved'))->toBeTrue(); // from the meter's approved_at
 });
@@ -75,14 +77,23 @@ test('facility-profiles prefers an approved main meter over a newer unapproved o
     config(['services.cprf_integration.token' => 'test-token']);
 
     $facility = makeCprfMappedFacility(['external_ref' => 501]);
-    makeMainMeter($facility, ['baseline_kwh' => 1200, 'approved_at' => now()->subDay()]);
+    makeMainMeter($facility, [
+        'meter_name' => 'Approved Main Meter',
+        'baseline_kwh' => 1200,
+        'approved_at' => now()->subDay(),
+    ]);
     // Added after the approved one (e.g. a duplicate created during testing)
     // — should not shadow the approved meter's figures.
-    makeMainMeter($facility, ['baseline_kwh' => 4200, 'approved_at' => null]);
+    makeMainMeter($facility, [
+        'meter_name' => 'Newer Pending Main Meter',
+        'baseline_kwh' => 4200,
+        'approved_at' => null,
+    ]);
 
     $response = $this->withToken('test-token')->getJson('/api/v1/cprf/facility-profiles');
 
     expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.main_meter_name'))->toBe('Approved Main Meter')
         ->and($response->json('data.0.baseline_kwh'))->toBe(1200.0)
         ->and($response->json('data.0.engineer_approved'))->toBeTrue();
 });
