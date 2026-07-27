@@ -53,11 +53,24 @@ class SsoConsumeController extends Controller
 
         $user = User::where('email', $email)->first();
         if (!$user) {
+            // The admin layout's topbar/welcome banner displays `username`
+            // before falling back to `name` — a hash-based username (the
+            // old 'sso_'.md5(...) value) showed up there instead of the
+            // person's actual name. Using the full name as the username
+            // (falling back to a numbered suffix only on a collision)
+            // keeps it unique while displaying correctly everywhere.
+            $username = $fullName;
+            $suffix = 2;
+            while (User::where('username', $username)->exists()) {
+                $username = $fullName . ' ' . $suffix;
+                $suffix++;
+            }
+
             $user = User::create([
                 'full_name' => $fullName,
                 'name' => $fullName,
                 'email' => $email,
-                'username' => 'sso_' . substr(md5($email), 0, 10),
+                'username' => $username,
                 'password' => Hash::make(Str::random(32)),
                 'role' => 'admin',
                 'status' => 'active',
