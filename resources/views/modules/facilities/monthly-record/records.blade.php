@@ -596,7 +596,8 @@
 
     .monthly-table th:nth-child(1),
     .monthly-table td:nth-child(1) {
-        width: 62px;
+        width: 76px;
+        padding-left: 18px;
     }
 
     .monthly-table th:nth-child(2),
@@ -689,7 +690,7 @@
 
     .monthly-table th:nth-child(2),
     .monthly-table td:nth-child(2) {
-        left: 62px;
+        left: 76px;
         z-index: 3;
         box-shadow: 10px 0 16px -16px rgba(15, 23, 42, .7);
     }

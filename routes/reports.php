@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('/modules/reports/index', '/modules/reports/energy')->name('reports.index');
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('reports.energy');
+    Route::get('/modules/reports/energy/{facility}/{year}/annual-export', [EnergyController::class, 'exportAnnualSummary'])
+        ->whereNumber('facility')
+        ->whereNumber('year')
+        ->middleware('download.confirmed')
+        ->name('reports.energy-annual-export');
     Route::get('/modules/reports/efficiency-summary', [\App\Http\Controllers\Reports\EfficiencySummaryReportController::class, 'show'])->name('reports.efficiency-summary');
     Route::redirect('/modules/reports/facilities', '/modules/reports/energy')->name('reports.facilities');
     // Monthly report route for dashboard shortcut
