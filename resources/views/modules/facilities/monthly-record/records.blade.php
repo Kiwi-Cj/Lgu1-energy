@@ -1227,7 +1227,13 @@
                 return false;
             }
 
-            if ($tableFilterMeterId > 0 && (int) ($record->meter_id ?? 0) !== $tableFilterMeterId) {
+            // CPRF facility-level rows (meter_id NULL) aren't tied to any
+            // physical meter, so they always show regardless of which
+            // specific meter is selected here — hiding them behind a
+            // meter filter would mean CPRF-pushed readings are invisible
+            // unless "All Main Meters" is explicitly chosen every time.
+            $isCprfFacilityLevel = $record->meter_id === null && ($record->input_source ?? null) === 'cprf';
+            if (!$isCprfFacilityLevel && $tableFilterMeterId > 0 && (int) ($record->meter_id ?? 0) !== $tableFilterMeterId) {
                 return false;
             }
 
