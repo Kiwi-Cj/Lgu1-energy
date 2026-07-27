@@ -63,6 +63,37 @@ test('cprf facility-level readings still appear when the table is filtered to on
     $response->assertSee('7,820.00');
 });
 
+test('cprf facility-level readings show their stored baseline and default rate, not zeros', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create();
+
+    // Mirrors exactly what CprfFacilityReadingController::store() persists
+    // when CPRF doesn't report a rate/cost: baseline_kwh computed from the
+    // facility's resolved baseline, rate_per_kwh/energy_cost defaulted to 0
+    // (not null) as a sentinel for "not provided".
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 9,
+        'actual_kwh' => 10000,
+        'baseline_kwh' => 1200,
+        'deviation' => 733.33,
+        'alert' => 'Critical',
+        'rate_per_kwh' => 0,
+        'energy_cost' => 0,
+        'input_source' => 'cprf',
+    ]);
+
+    $response = $this->actingAs($admin)->get("/modules/facilities/{$facility->id}/monthly-records");
+
+    $response->assertOk();
+    $response->assertSee('1,200.00'); // baseline now shown, not "-"
+    $response->assertDontSee('No baseline');
+    $response->assertSee(number_format(\App\Support\EnergyCost::DEFAULT_RATE_PER_KWH, 2)); // rate falls back, not 0.00
+    $response->assertSee(number_format(10000 * \App\Support\EnergyCost::DEFAULT_RATE_PER_KWH, 2)); // cost uses the fallback rate
+});
+
 test('cprf facility-level readings are included in dashboard consumption totals', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create();
