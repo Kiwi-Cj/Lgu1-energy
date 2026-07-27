@@ -323,3 +323,57 @@ test('monthly records show recommendation status and the matching recommendation
         'id' => $addedRecommendation->id,
     ]);
 });
+
+test('a cprf facility-level monthly record can generate and save a recommendation', function () {
+    $admin = User::factory()->create(['role' => 'super_admin']);
+    $facility = Facility::create([
+        'name' => 'CPRF Recommendation Facility',
+        'type' => 'Public Facility',
+        'floor_area' => 800,
+        'status' => 'active',
+        'source' => 'cprf',
+        'external_ref' => 501,
+    ]);
+    $record = EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'day' => 22,
+        'actual_kwh' => 4800,
+        'baseline_kwh' => 4000,
+        'rate_per_kwh' => 12.50,
+        'input_source' => 'cprf',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('modules.energy-conservation.feature', [
+            'feature' => 'energy-saving-tips',
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'month' => '2026-07',
+        ]))
+        ->assertOk()
+        ->assertSee('Selected monthly record context')
+        ->assertSee('Facility-Level (CPRF)')
+        ->assertSee('Use as Action Recommendation')
+        ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
+
+    $this->actingAs($admin)
+        ->post(route('modules.energy-conservation.tips.review'), [
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'period' => '2026-07',
+            'status' => 'for_review',
+            'engineer_recommendation' => 'Review CPRF facility operating schedules.',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('energy_saving_recommendations', [
+        'facility_id' => $facility->id,
+        'year' => 2026,
+        'month' => 7,
+        'engineer_recommendation' => 'Review CPRF facility operating schedules.',
+        'status' => 'for_review',
+    ]);
+});

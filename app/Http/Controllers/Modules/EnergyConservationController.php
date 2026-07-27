@@ -85,6 +85,8 @@ class EnergyConservationController extends Controller
                     ->first();
 
                 if ($selectedRecord) {
+                    $isCprfFacilityLevel = $selectedRecord->meter_id === null
+                        && strtolower((string) ($selectedRecord->input_source ?? '')) === 'cprf';
                     $recordDay = is_numeric($selectedRecord->day) ? (int) $selectedRecord->day : null;
                     $periodDate = Carbon::create($selectedYear, $selectedMonthNumber, 1);
                     $recordDateLabel = 'Day not specified';
@@ -98,7 +100,9 @@ class EnergyConservationController extends Controller
                         'facility_type' => (string) ($selectedFacility?->type ?? ''),
                         'period_label' => $periodDate->format('F Y'),
                         'record_date_label' => $recordDateLabel,
-                        'meter_name' => (string) ($selectedRecord->meter?->meter_name ?? 'Main Meter'),
+                        'meter_name' => $isCprfFacilityLevel
+                            ? 'Facility-Level (CPRF)'
+                            : (string) ($selectedRecord->meter?->meter_name ?? 'Main Meter'),
                         'monthly_records_url' => route('facilities.monthly-records', [
                             'facility' => $selectedFacilityId,
                             'year' => $selectedYear,
@@ -663,8 +667,16 @@ class EnergyConservationController extends Controller
             ->whereIn('facility_id', $facilityIds)
             ->where('year', $year)
             ->where('month', $month)
-            ->whereHas('meter', fn ($query) => $query->where('meter_type', 'main'))
-            ->get(['id', 'facility_id', 'meter_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'energy_cost', 'rate_per_kwh']);
+            ->where(function ($query) {
+                $query
+                    ->whereHas('meter', fn ($meterQuery) => $meterQuery->where('meter_type', 'main'))
+                    ->orWhere(function ($cprfQuery) {
+                        $cprfQuery
+                            ->whereNull('meter_id')
+                            ->where('input_source', 'cprf');
+                    });
+            })
+            ->get(['id', 'facility_id', 'meter_id', 'input_source', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'energy_cost', 'rate_per_kwh']);
 
         $rows = $records
             ->groupBy('facility_id')
