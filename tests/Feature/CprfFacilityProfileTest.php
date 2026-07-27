@@ -59,6 +59,35 @@ test('facility-profiles omits facilities with no external_ref even if source is 
     expect($response->json('data'))->toHaveCount(0);
 });
 
+test('facility-profiles prefers the approved profile over a newer unapproved one', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+
+    $facility = makeCprfMappedFacility(['external_ref' => 501]);
+
+    $approved = EnergyProfile::create([
+        'facility_id' => $facility->id,
+        'utility_provider' => 'Meralco',
+        'baseline_kwh' => 1200,
+    ]);
+    $approved->engineer_approved = true;
+    $approved->save();
+
+    // Created after the approved one, but never approved — this should NOT
+    // shadow the approved row, even though it's the "latest" by created_at.
+    EnergyProfile::create([
+        'facility_id' => $facility->id,
+        'utility_provider' => 'Different Provider Draft',
+        'baseline_kwh' => 999,
+    ]);
+
+    $response = $this->withToken('test-token')->getJson('/api/v1/cprf/facility-profiles');
+
+    expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.utility_provider'))->toBe('Meralco')
+        ->and($response->json('data.0.baseline_kwh'))->toBe(1200.0)
+        ->and($response->json('data.0.engineer_approved'))->toBeTrue();
+});
+
 test('facility-profiles can be filtered by updated_since', function () {
     config(['services.cprf_integration.token' => 'test-token']);
 

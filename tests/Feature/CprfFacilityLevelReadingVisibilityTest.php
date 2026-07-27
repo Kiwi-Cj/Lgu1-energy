@@ -2,6 +2,7 @@
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\User;
 
 test('cprf facility-level readings appear in monthly records with a distinct badge', function () {
@@ -18,6 +19,44 @@ test('cprf facility-level readings appear in monthly records with a distinct bad
     ]);
 
     $response = $this->actingAs($admin)->get("/modules/facilities/{$facility->id}/monthly-records");
+
+    $response->assertOk();
+    $response->assertSee('Facility-Level (CPRF)');
+    $response->assertSee('7,820.00');
+});
+
+test('cprf facility-level readings still appear when the table is filtered to one specific meter', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create();
+
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'Main Meter',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'multiplier' => 1,
+        'approved_at' => now(),
+    ]);
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => $meter->id,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 300,
+    ]);
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 7820,
+        'input_source' => 'cprf',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get("/modules/facilities/{$facility->id}/monthly-records?table_meter_id={$meter->id}");
 
     $response->assertOk();
     $response->assertSee('Facility-Level (CPRF)');
