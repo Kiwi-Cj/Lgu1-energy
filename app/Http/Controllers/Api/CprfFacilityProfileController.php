@@ -33,7 +33,15 @@ class CprfFacilityProfileController extends Controller
                     $pq->where('updated_at', '>=', $request->date('updated_since'));
                 });
             })
-            ->with(['energyProfiles' => fn ($q) => $q->latest()])
+            // Prefer the approved profile when one exists, over "whichever
+            // was created most recently" — facilities can accumulate
+            // multiple profile rows (the Add-Profile form always inserts a
+            // new row rather than updating), and approval is applied to one
+            // specific row by id. Without this, a newer unapproved edit
+            // could shadow an older approved profile, showing CPRF stale
+            // "pending" status and mismatched fields even though the
+            // engineer already approved a different, still-current row.
+            ->with(['energyProfiles' => fn ($q) => $q->orderByDesc('engineer_approved')->latest()])
             ->orderBy('external_ref');
 
         $perPage = min(max($request->integer('per_page', 25), 1), 100);
