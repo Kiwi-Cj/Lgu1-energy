@@ -54,6 +54,8 @@ class EnergyConservationController extends Controller
         $conservationGoals = collect();
         $checklistDate = (string) $request->query('date', now()->toDateString());
         $selectedRecordContext = null;
+        $selectedRecordForAssignment = null;
+        $defaultRecommendationAssigneeId = null;
         $recommendationAssignees = collect();
         $manualRecommendations = collect();
 
@@ -85,6 +87,7 @@ class EnergyConservationController extends Controller
                     ->first();
 
                 if ($selectedRecord) {
+                    $selectedRecordForAssignment = $selectedRecord;
                     $isCprfFacilityLevel = $selectedRecord->meter_id === null
                         && strtolower((string) ($selectedRecord->input_source ?? '')) === 'cprf';
                     $recordDay = is_numeric($selectedRecord->day) ? (int) $selectedRecord->day : null;
@@ -118,7 +121,11 @@ class EnergyConservationController extends Controller
                 ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['staff'])
                 ->whereHas('facilities', fn ($query) => $query->whereKey($selectedFacilityId))
                 ->orderByRaw("COALESCE(NULLIF(full_name, ''), username)")
-                ->get(['id', 'full_name', 'username', 'role']);
+                ->get(['id', 'full_name', 'name', 'username', 'role']);
+            $defaultRecommendationAssigneeId = $this->resolveRecommendationDefaultAssignee(
+                $selectedRecordForAssignment,
+                $recommendationAssignees,
+            );
             [$tipYear, $tipMonth] = array_map('intval', explode('-', $overview['selectedMonth']));
             $manualRecommendations = EnergySavingRecommendation::query()
                 ->with(['reviewer:id,username', 'assignee:id,full_name,username,profile_photo_path', 'verifier:id,full_name,username'])
@@ -181,6 +188,7 @@ class EnergyConservationController extends Controller
             'energyTips' => $energyTips,
             'canReviewTips' => $canReviewTips,
             'recommendationAssignees' => $recommendationAssignees,
+            'defaultRecommendationAssigneeId' => $defaultRecommendationAssigneeId,
             'manualRecommendations' => $manualRecommendations,
             'dailyChecklist' => $dailyChecklist,
             'conservationGoals' => $conservationGoals,
@@ -419,6 +427,38 @@ class EnergyConservationController extends Controller
                 'id' => $task->id, 'key' => $task->task_key, 'period' => $task->period,
                 'label' => $task->task_label, 'is_custom' => $task->facility_id !== null,
             ]);
+    }
+
+    private function resolveRecommendationDefaultAssignee(?EnergyRecord $record, Collection $assignees): ?int
+    {
+        if (! $record) {
+            return null;
+        }
+
+        if ($record->recorded_by !== null) {
+            $matchedById = $assignees->firstWhere('id', (int) $record->recorded_by);
+            if ($matchedById) {
+                return (int) $matchedById->id;
+            }
+        }
+
+        $sourceName = preg_replace('/\s+/', ' ', mb_strtolower(trim((string) $record->recorded_by_name))) ?? '';
+        if ($sourceName === '') {
+            return null;
+        }
+
+        $matchedByName = $assignees->first(function (User $assignee) use ($sourceName): bool {
+            foreach ([$assignee->full_name, $assignee->name, $assignee->username] as $candidate) {
+                $normalized = preg_replace('/\s+/', ' ', mb_strtolower(trim((string) $candidate))) ?? '';
+                if ($normalized !== '' && $normalized === $sourceName) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $matchedByName ? (int) $matchedByName->id : null;
     }
 
     private function canManageChecklistTasks(Request $request): bool

@@ -1673,7 +1673,7 @@
                                                 <select name="assigned_to">
                                                     <option value="">Select assigned staff</option>
                                                     @forelse($recommendationAssignees as $assignee)
-                                                        <option value="{{ $assignee->id }}" @selected((int) old('assigned_to') === (int) $assignee->id)>
+                                                        <option value="{{ $assignee->id }}" @selected((int) old('assigned_to', $defaultRecommendationAssigneeId) === (int) $assignee->id)>
                                                             {{ $assignee->full_name ?: $assignee->username }}
                                                         </option>
                                                     @empty

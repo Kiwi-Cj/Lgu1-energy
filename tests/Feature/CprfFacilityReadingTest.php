@@ -2,6 +2,7 @@
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\User;
 use Illuminate\Database\QueryException;
 
 function validReadingPayload(Facility $facility, array $overrides = []): array
@@ -54,6 +55,32 @@ test('a valid reading stores a cprf-sourced energy record with computed kwh', fu
         'input_source' => 'cprf',
     ]);
     expect((float) EnergyRecord::first()->actual_kwh)->toBe(120.0);
+});
+
+test('a cprf recorder is resolved to active staff assigned to the facility', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create();
+    $staff = User::factory()->create([
+        'role' => 'staff',
+        'status' => 'active',
+        'email' => 'recorder@example.test',
+        'full_name' => 'Facility Recorder',
+    ]);
+    $staff->facilities()->attach($facility->id);
+
+    $this->withToken('test-token')
+        ->postJson('/api/v1/cprf/facility-readings', validReadingPayload($facility, [
+            'recorded_by_name' => 'Facility Recorder',
+            'recorded_by_email' => 'RECORDER@example.test',
+        ]))
+        ->assertCreated()
+        ->assertJsonPath('record.recorded_by', $staff->id);
+
+    $this->assertDatabaseHas('energy_records', [
+        'facility_id' => $facility->id,
+        'recorded_by' => $staff->id,
+        'recorded_by_name' => 'Facility Recorder',
+    ]);
 });
 
 test('pushing the same period twice updates instead of duplicating', function () {

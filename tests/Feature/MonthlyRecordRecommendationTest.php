@@ -326,6 +326,11 @@ test('monthly records show recommendation status and the matching recommendation
 
 test('a cprf facility-level monthly record can generate and save a recommendation', function () {
     $admin = User::factory()->create(['role' => 'super_admin']);
+    $recorder = User::factory()->create([
+        'role' => 'staff',
+        'status' => 'active',
+        'full_name' => 'CPRF Meter Recorder',
+    ]);
     $facility = Facility::create([
         'name' => 'CPRF Recommendation Facility',
         'type' => 'Public Facility',
@@ -334,6 +339,7 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         'source' => 'cprf',
         'external_ref' => 501,
     ]);
+    $recorder->facilities()->attach($facility->id);
     $record = EnergyRecord::create([
         'facility_id' => $facility->id,
         'meter_id' => null,
@@ -344,6 +350,8 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         'baseline_kwh' => 4000,
         'rate_per_kwh' => 12.50,
         'input_source' => 'cprf',
+        'recorded_by' => $recorder->id,
+        'recorded_by_name' => 'CPRF Meter Recorder',
     ]);
 
     $this->actingAs($admin)
@@ -356,6 +364,7 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         ->assertOk()
         ->assertSee('Selected monthly record context')
         ->assertSee('Facility-Level (CPRF)')
+        ->assertSee('value="'.$recorder->id.'" selected', escape: false)
         ->assertSee('Use as Action Recommendation')
         ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
 

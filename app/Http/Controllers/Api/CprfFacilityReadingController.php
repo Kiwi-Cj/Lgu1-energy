@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -34,10 +35,16 @@ class CprfFacilityReadingController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
             'external_ref' => ['nullable', 'string', 'max:100'],
             'recorded_by_name' => ['nullable', 'string', 'max:255'],
+            'recorded_by_email' => ['nullable', 'email', 'max:255'],
         ]);
 
         /** @var Facility $facility */
         $facility = Facility::query()->findOrFail((int) $validated['facility_id']);
+        $recordedBy = $this->resolveRecordedByUser(
+            $facility,
+            $validated['recorded_by_email'] ?? null,
+            $validated['recorded_by_name'] ?? null,
+        );
 
         $actualKwh = round((float) $validated['current_reading_kwh'] - (float) $validated['previous_reading_kwh'], 2);
         $baseline = $facility->resolveBaselineKwh();
@@ -66,15 +73,12 @@ class CprfFacilityReadingController extends Controller
             'energy_cost' => $validated['energy_cost'] ?? 0,
             'rate_per_kwh' => $validated['rate_per_kwh'] ?? 0,
             'input_source' => 'cprf',
-            // Explicit, not omitted: a CPRF-pushed reading has no energy-app
-            // user to attribute it to. Leaving this out of the insert made
-            // MySQL strict mode reject the row ("doesn't have a default
-            // value") whenever recorded_by has no column default.
-            'recorded_by' => null,
-            // The actual staff/admin who recorded this reading on CPRF's
-            // side — recorded_by can't hold this (it's an FK to THIS app's
-            // own users table, not a name), so it's kept here as real
-            // attribution instead of being logged and discarded.
+            // Resolve the CPRF recorder to the matching active Energy staff
+            // account assigned to this facility. This lets downstream
+            // recommendations default their implementation owner correctly.
+            'recorded_by' => $recordedBy?->id,
+            // Keep the source display name even when no matching local Energy
+            // account exists, so attribution is never discarded.
             'recorded_by_name' => $validated['recorded_by_name'] ?? null,
         ];
 
@@ -92,8 +96,8 @@ class CprfFacilityReadingController extends Controller
             [$record, $wasExisting] = $this->upsertFacilityPeriod($attributes, $fill);
         }
 
-        // notes / external_ref / recorded_by_name have no energy_records
-        // columns; keep them in the log for traceability.
+        // notes and external_ref have no energy_records columns; include them
+        // with the source recorder metadata in the integration log.
         Log::info('CPRF facility reading received', [
             'energy_record_id' => $record->id,
             'external_ref' => $validated['external_ref'] ?? null,
@@ -112,6 +116,7 @@ class CprfFacilityReadingController extends Controller
                 'deviation_percent' => $record->deviation,
                 'alert' => $record->alert,
                 'input_source' => $record->input_source,
+                'recorded_by' => $record->recorded_by,
             ],
         ], $wasExisting ? 200 : 201, [], JSON_PRESERVE_ZERO_FRACTION);
     }
@@ -131,6 +136,46 @@ class CprfFacilityReadingController extends Controller
         $record->save();
 
         return [$record, $wasExisting];
+    }
+
+    private function resolveRecordedByUser(Facility $facility, ?string $email, ?string $name): ?User
+    {
+        $eligibleStaff = User::query()
+            ->where('status', 'active')
+            ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['staff'])
+            ->whereHas('facilities', fn ($query) => $query->whereKey($facility->id));
+
+        $normalizedEmail = mb_strtolower(trim((string) $email));
+        if ($normalizedEmail !== '') {
+            $matchedByEmail = (clone $eligibleStaff)
+                ->whereRaw('LOWER(email) = ?', [$normalizedEmail])
+                ->first();
+            if ($matchedByEmail) {
+                return $matchedByEmail;
+            }
+        }
+
+        $normalizedName = $this->normalizePersonName($name);
+        if ($normalizedName === '') {
+            return null;
+        }
+
+        return $eligibleStaff
+            ->get(['id', 'full_name', 'name', 'username'])
+            ->first(function (User $user) use ($normalizedName): bool {
+                foreach ([$user->full_name, $user->name, $user->username] as $candidate) {
+                    if ($this->normalizePersonName($candidate) === $normalizedName) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+    }
+
+    private function normalizePersonName(mixed $value): string
+    {
+        return preg_replace('/\s+/', ' ', mb_strtolower(trim((string) $value))) ?? '';
     }
 
     /**
