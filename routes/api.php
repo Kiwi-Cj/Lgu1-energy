@@ -63,6 +63,7 @@ Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 
 Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->group(function () {
     Route::get('/facilities', [IntegrationDataController::class, 'facilities']);
     Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
+    Route::patch('/recommendations/{recommendation}/implementation', [IntegrationDataController::class, 'updateRecommendationImplementation']);
     Route::post('/facility-readings', [CprfFacilityReadingController::class, 'store']);
     Route::get('/facility-profiles', [CprfFacilityProfileController::class, 'index']);
 });

@@ -34,6 +34,58 @@ test('recommendations default to approved status only', function () {
         ->and($response->json('data.0.facility.id'))->toBe($facility->id);
 });
 
+test('cprf can update implementation progress but cannot verify recommendations', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create();
+    \App\Models\EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => 6,
+        'day' => 28,
+        'actual_kwh' => 1200,
+        'input_source' => 'cprf',
+    ]);
+    $recommendation = makeRecommendation($facility, [
+        'implementation_status' => 'pending',
+    ]);
+
+    $this->withToken('test-token')
+        ->patchJson("/api/v1/cprf/recommendations/{$recommendation->id}/implementation", [
+            'implementation_status' => 'implemented',
+            'actual_savings_kwh' => 84.5,
+            'implementation_notes' => 'Lighting schedule was corrected.',
+        ])
+        ->assertOk()
+        ->assertJsonPath('recommendation.implementation_status', 'implemented')
+        ->assertJsonPath('recommendation.actual_savings_kwh', 84.5);
+
+    $this->assertDatabaseHas('energy_saving_recommendations', [
+        'id' => $recommendation->id,
+        'implementation_status' => 'implemented',
+        'actual_savings_kwh' => 84.5,
+        'implementation_notes' => 'Lighting schedule was corrected.',
+    ]);
+
+    $this->withToken('test-token')
+        ->patchJson("/api/v1/cprf/recommendations/{$recommendation->id}/implementation", [
+            'implementation_status' => 'verified',
+        ])
+        ->assertUnprocessable();
+});
+
+test('cprf cannot update a recommendation that did not come from a cprf reading', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create();
+    $recommendation = makeRecommendation($facility);
+
+    $this->withToken('test-token')
+        ->patchJson("/api/v1/cprf/recommendations/{$recommendation->id}/implementation", [
+            'implementation_status' => 'in_progress',
+        ])
+        ->assertStatus(409);
+});
+
 test('recommendations can be filtered by facility, period, status and updated_since', function () {
     config(['services.cprf_integration.token' => 'test-token']);
     $facilityA = Facility::factory()->create();

@@ -332,8 +332,76 @@ class IntegrationDataController extends Controller
             'status' => $reco->status,
             'expected_savings_kwh' => $this->number($reco->expected_savings_kwh),
             'target_date' => $reco->target_date?->toDateString(),
+            'implementation_status' => $reco->implementation_status ?? 'pending',
+            'actual_savings_kwh' => $this->number($reco->actual_savings_kwh),
+            'implementation_notes' => $reco->implementation_notes,
+            'implemented_at' => $reco->implemented_at?->toIso8601String(),
+            'verified_at' => $reco->verified_at?->toIso8601String(),
             'reviewed_at' => $reco->reviewed_at?->toIso8601String(),
             'updated_at' => $reco->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Receive implementation progress from the Facilities Reservation system.
+     * Final verification deliberately remains an Energy-side responsibility.
+     */
+    public function updateRecommendationImplementation(
+        Request $request,
+        EnergySavingRecommendation $recommendation
+    ): JsonResponse {
+        $validated = $request->validate([
+            'implementation_status' => ['required', Rule::in(['pending', 'in_progress', 'implemented'])],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $isCprfRecommendation = EnergyRecord::query()
+            ->where('facility_id', $recommendation->facility_id)
+            ->where('year', $recommendation->year)
+            ->where('month', $recommendation->month)
+            ->where('input_source', 'cprf')
+            ->whereNull('meter_id')
+            ->exists();
+
+        if (! $isCprfRecommendation) {
+            return response()->json([
+                'message' => 'Only recommendations created from CPRF readings can be managed by Facilities.',
+            ], 409);
+        }
+
+        if ($recommendation->status !== 'approved') {
+            return response()->json([
+                'message' => 'Only approved recommendations can be implemented by Facilities.',
+            ], 409);
+        }
+
+        if (($recommendation->implementation_status ?? 'pending') === 'verified') {
+            return response()->json([
+                'message' => 'This recommendation is already verified and can no longer be changed by Facilities.',
+            ], 409);
+        }
+
+        $implemented = $validated['implementation_status'] === 'implemented';
+        $recommendation->update([
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $validated['implementation_notes'] ?? null,
+            'implemented_at' => $implemented ? ($recommendation->implemented_at ?? now()) : null,
+            'verified_by' => null,
+            'verified_at' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Recommendation implementation progress updated.',
+            'recommendation' => [
+                'id' => $recommendation->id,
+                'implementation_status' => $recommendation->implementation_status,
+                'actual_savings_kwh' => $this->number($recommendation->actual_savings_kwh),
+                'implementation_notes' => $recommendation->implementation_notes,
+                'implemented_at' => $recommendation->implemented_at?->toIso8601String(),
+                'updated_at' => $recommendation->updated_at?->toIso8601String(),
+            ],
         ]);
     }
 
