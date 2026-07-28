@@ -82,6 +82,7 @@ class CprfFacilityProfileController extends Controller
             return [
                 'facility_external_ref' => (int) $facility->external_ref,
                 'energy_facility_id' => $facility->id,
+                'main_meter_name' => $meter->meter_name ?? null,
                 'electric_meter_no' => $profile->electric_meter_no ?? null,
                 'utility_provider' => $profile->utility_provider ?? null,
                 'contract_account_no' => $profile->contract_account_no ?? null,

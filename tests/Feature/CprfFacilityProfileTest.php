@@ -55,7 +55,8 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
         ->and($response->json('data.0.utility_provider'))->toBe('Meralco') // still from profile
         ->and($response->json('data.0.contract_account_no'))->toBe('1234-5678') // still from profile
         ->and($response->json('data.0.baseline_kwh'))->toBe(4200.0) // from the meter, not the profile's 1200
-        ->and($response->json('data.0.engineer_approved'))->toBeTrue(); // from the meter's approved_at
+        ->and($response->json('data.0.engineer_approved'))->toBeTrue() // from the meter's approved_at
+        ->and($response->json('data.0.main_meter_name'))->toBe('Main Meter'); // the resolved meter's own name
 });
 
 test('facility-profiles shows engineer_approved false when the main meter is not yet approved', function () {
