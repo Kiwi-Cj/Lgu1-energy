@@ -56,6 +56,7 @@ class EnergyConservationController extends Controller
         $selectedRecordContext = null;
         $selectedRecordForAssignment = null;
         $defaultRecommendationAssigneeId = null;
+        $isCprfIntegrationPeriod = false;
         $recommendationAssignees = collect();
         $manualRecommendations = collect();
 
@@ -127,6 +128,15 @@ class EnergyConservationController extends Controller
                 $recommendationAssignees,
             );
             [$tipYear, $tipMonth] = array_map('intval', explode('-', $overview['selectedMonth']));
+            $isCprfIntegrationPeriod = $this->isCprfIntegrationPeriod(
+                $selectedFacilityId,
+                $tipYear,
+                $tipMonth,
+                $selectedRecordForAssignment?->id,
+            );
+            if ($isCprfIntegrationPeriod) {
+                $defaultRecommendationAssigneeId = null;
+            }
             $manualRecommendations = EnergySavingRecommendation::query()
                 ->with(['reviewer:id,username', 'assignee:id,full_name,username,profile_photo_path', 'verifier:id,full_name,username'])
                 ->where('facility_id', $selectedFacilityId)
@@ -189,6 +199,7 @@ class EnergyConservationController extends Controller
             'canReviewTips' => $canReviewTips,
             'recommendationAssignees' => $recommendationAssignees,
             'defaultRecommendationAssigneeId' => $defaultRecommendationAssigneeId,
+            'isCprfIntegrationPeriod' => $isCprfIntegrationPeriod,
             'manualRecommendations' => $manualRecommendations,
             'dailyChecklist' => $dailyChecklist,
             'conservationGoals' => $conservationGoals,
@@ -461,6 +472,23 @@ class EnergyConservationController extends Controller
         return $matchedByName ? (int) $matchedByName->id : null;
     }
 
+    private function isCprfIntegrationPeriod(int $facilityId, int $year, int $month, ?int $recordId = null): bool
+    {
+        $query = EnergyRecord::query()
+            ->where('facility_id', $facilityId)
+            ->where('year', $year)
+            ->where('month', $month);
+
+        if ($recordId !== null && $recordId > 0) {
+            $query->whereKey($recordId);
+        }
+
+        return $query
+            ->whereNull('meter_id')
+            ->whereRaw('LOWER(input_source) = ?', ['cprf'])
+            ->exists();
+    }
+
     private function canManageChecklistTasks(Request $request): bool
     {
         return RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer']);
@@ -480,11 +508,26 @@ class EnergyConservationController extends Controller
             'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'target_date' => ['nullable', 'date'],
             'record_id' => ['nullable', 'integer'],
-            'assigned_to' => ['nullable', 'required_if:status,approved', 'integer', 'exists:users,id'],
+            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'implementation_status' => ['nullable', 'in:pending,in_progress,implemented,verified'],
             'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'implementation_notes' => ['nullable', 'string', 'max:3000'],
         ]);
+
+        [$year, $month] = array_map('intval', explode('-', $validated['period']));
+        $isCprfIntegrationPeriod = $this->isCprfIntegrationPeriod(
+            (int) $validated['facility_id'],
+            $year,
+            $month,
+            isset($validated['record_id']) ? (int) $validated['record_id'] : null,
+        );
+        if ($isCprfIntegrationPeriod) {
+            $validated['assigned_to'] = null;
+        } elseif ($validated['status'] === 'approved' && empty($validated['assigned_to'])) {
+            throw ValidationException::withMessages([
+                'assigned_to' => 'Select an active staff member assigned to this facility.',
+            ]);
+        }
 
         $request->merge(['month' => $validated['period'], 'facility_id' => $validated['facility_id']]);
         if (! empty($validated['assigned_to'])) {
@@ -505,7 +548,6 @@ class EnergyConservationController extends Controller
         $overview = $this->buildOverviewData($request);
         $tip = $this->energySavingTips($overview['rows'], (int) $validated['facility_id'], $overview['periodLabel'])->first();
         abort_unless($tip && ! empty($tip['facility_id']), 422, 'No monthly energy data is available for this facility.');
-        [$year, $month] = array_map('intval', explode('-', $validated['period']));
         $implementationStatus = $validated['implementation_status'] ?? 'pending';
         $isImplemented = in_array($implementationStatus, ['implemented', 'verified'], true);
         $isVerified = $implementationStatus === 'verified';
@@ -555,11 +597,24 @@ class EnergyConservationController extends Controller
             'engineer_recommendation' => ['required', 'string', 'max:3000'],
             'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'target_date' => ['nullable', 'date'],
-            'assigned_to' => ['nullable', 'required_if:status,approved', 'integer', 'exists:users,id'],
+            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'implementation_status' => ['required', 'in:pending,in_progress,implemented,verified'],
             'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'implementation_notes' => ['nullable', 'string', 'max:3000'],
         ]);
+
+        $isCprfIntegrationPeriod = $this->isCprfIntegrationPeriod(
+            (int) $recommendation->facility_id,
+            (int) $recommendation->year,
+            (int) $recommendation->month,
+        );
+        if ($isCprfIntegrationPeriod) {
+            $validated['assigned_to'] = null;
+        } elseif ($validated['status'] === 'approved' && empty($validated['assigned_to'])) {
+            throw ValidationException::withMessages([
+                'assigned_to' => 'Select an active staff member assigned to this facility.',
+            ]);
+        }
 
         if (! empty($validated['assigned_to'])) {
             $isAssignedFacilityStaff = User::query()

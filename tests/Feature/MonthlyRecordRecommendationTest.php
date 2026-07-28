@@ -255,6 +255,17 @@ test('monthly records show recommendation status and the matching recommendation
             'facility_id' => $facility->id,
             'period' => '2026-07',
             'status' => 'approved',
+            'engineer_recommendation' => 'A native Energy recommendation still requires an owner.',
+            'implementation_status' => 'pending',
+        ])
+        ->assertSessionHasErrors('assigned_to');
+
+    $this->actingAs($admin)
+        ->from(route('modules.energy-conservation.feature', ['feature' => 'energy-saving-tips']))
+        ->post(route('modules.energy-conservation.tips.review'), [
+            'facility_id' => $facility->id,
+            'period' => '2026-07',
+            'status' => 'approved',
             'engineer_recommendation' => 'This should not be assigned to an administrator.',
             'assigned_to' => $admin->id,
             'implementation_status' => 'pending',
@@ -364,7 +375,8 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         ->assertOk()
         ->assertSee('Selected monthly record context')
         ->assertSee('Facility-Level (CPRF)')
-        ->assertSee('value="'.$recorder->id.'" selected', escape: false)
+        ->assertSee('Managed in the Facilities Reservation system for this integrated reading.')
+        ->assertDontSee('<label>Assigned To</label>', escape: false)
         ->assertSee('Use as Action Recommendation')
         ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
 
@@ -373,16 +385,19 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
             'facility_id' => $facility->id,
             'record_id' => $record->id,
             'period' => '2026-07',
-            'status' => 'for_review',
+            'status' => 'approved',
             'engineer_recommendation' => 'Review CPRF facility operating schedules.',
+            'implementation_status' => 'pending',
         ])
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('energy_saving_recommendations', [
         'facility_id' => $facility->id,
         'year' => 2026,
         'month' => 7,
         'engineer_recommendation' => 'Review CPRF facility operating schedules.',
-        'status' => 'for_review',
+        'status' => 'approved',
+        'assigned_to' => null,
     ]);
 });

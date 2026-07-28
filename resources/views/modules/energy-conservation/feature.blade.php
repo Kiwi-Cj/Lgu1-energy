@@ -1668,6 +1668,12 @@
                                     <div class="tip-form-section">
                                         <div class="tip-form-section-title">2. Implementation Tracking</div>
                                         <div class="tip-review-grid">
+                                            @if($isCprfIntegrationPeriod)
+                                            <div class="tip-review-field">
+                                                <label>Implementation Owner</label>
+                                                <div class="tip-field-help">Managed in the Facilities Reservation system for this integrated reading.</div>
+                                            </div>
+                                            @else
                                             <div class="tip-review-field">
                                                 <label>Assigned To</label>
                                                 <select name="assigned_to">
@@ -1683,6 +1689,7 @@
                                                 <div class="tip-field-help">Only active staff assigned to the selected facility are listed.</div>
                                                 @error('assigned_to')<div class="tip-field-error">{{ $message }}</div>@enderror
                                             </div>
+                                            @endif
                                             <div class="tip-review-field">
                                                 <label>Progress Status</label>
                                                 <select name="implementation_status">
@@ -1805,6 +1812,12 @@
                                             <textarea name="engineer_recommendation" required>{{ $recommendation->engineer_recommendation }}</textarea>
                                         </div>
                                         <div class="tip-review-grid">
+                                            @if($isCprfIntegrationPeriod)
+                                            <div class="tip-review-field">
+                                                <label>Implementation Owner</label>
+                                                <div class="tip-field-help">Managed in the Facilities Reservation system for this integrated reading.</div>
+                                            </div>
+                                            @else
                                             <div class="tip-review-field">
                                                 <label>Assigned To</label>
                                                 <select name="assigned_to">
@@ -1816,6 +1829,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
+                                            @endif
                                             <div class="tip-review-field">
                                                 <label>Approval Status</label>
                                                 <select name="status">
