@@ -176,8 +176,9 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertSee('Health Office Main Meter')
         ->assertSee('Back to Monthly Records')
         ->assertSee('Add Recommendation')
-        ->assertSee('Use as Action Recommendation')
         ->assertSee('Manual Recommendation')
+        ->assertSee('Review for Approval')
+        ->assertSee('Preview only. This will not be published to Facilities until you select Approve', escape: false)
         ->assertSee('System-Generated Recommendation')
         ->assertSee('Added Recommendations')
         ->assertSee('Recommendation Details')
@@ -377,7 +378,8 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         ->assertSee('Facility-Level (CPRF)')
         ->assertSee('Managed in the Facilities Reservation system for this integrated reading.')
         ->assertDontSee('<label>Assigned To</label>', escape: false)
-        ->assertSee('Use as Action Recommendation')
+        ->assertSee('Review for Approval')
+        ->assertSee('System-Generated Recommendation')
         ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
 
     $this->actingAs($admin)

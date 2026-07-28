@@ -1262,7 +1262,7 @@
                 <div>
                     <h2 class="panel-title">{{ $featureSlug === 'energy-saving-tips' ? 'Facility Recommendations' : ($featureSlug === 'daily-checklist' ? 'Checklist' : ($featureSlug === 'conservation-goals' ? 'Goal Planning' : 'Main Content')) }}</h2>
                     @if(!in_array($featureSlug, ['daily-checklist', 'conservation-goals'], true))
-                        <div class="panel-note">{{ $featureSlug === 'energy-saving-tips' ? 'Generated from monthly consumption, baseline, and deviation data.' : 'Actual content and forms tied to current app data.' }}</div>
+                        <div class="panel-note">{{ $featureSlug === 'energy-saving-tips' ? 'System suggestions require approval before publishing to Facilities.' : 'Actual content and forms tied to current app data.' }}</div>
                     @endif
                 </div>
                 @if(!in_array($featureSlug, ['daily-checklist', 'conservation-goals'], true))
@@ -2014,13 +2014,16 @@
                                         @endif
                                         @if($canReviewTips && !empty($tip['facility_id']))
                                             <button type="button" class="system-adopt-btn" data-system-recommendation="{{ $tip['message'] }}">
-                                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Use as Action Recommendation
+                                                <i class="fa-solid fa-clipboard-check"></i> Review for Approval
                                             </button>
+                                            <div class="tip-field-help">
+                                                Preview only. This will not be published to Facilities until you select Approve &amp; Publish.
+                                            </div>
                                         @endif
                                         @if($review)
                                             <div class="tip-review-status">
                                                 Recommendation: {{ strtoupper(str_replace('_', ' ', $reviewStatus)) }}
-                                                @if($review->reviewer) · Reviewed by {{ $review->reviewer->username }} @endif
+                                                @if($review->reviewer) &middot; Reviewed by {{ $review->reviewer->username }} @endif
                                             </div>
                                         @endif
                                     </div>
@@ -2149,7 +2152,7 @@
         const panel = document.getElementById('recommendationActionPanel');
         const recommendationInput = document.getElementById('manualRecommendationText');
 
-        document.querySelectorAll('.system-adopt-btn').forEach((button) => {
+        document.querySelectorAll('[data-system-recommendation]').forEach((button) => {
             button.addEventListener('click', () => {
                 if (!panel || !recommendationInput) return;
 
