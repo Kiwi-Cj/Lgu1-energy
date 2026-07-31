@@ -7,22 +7,23 @@
     $canExportReports = \App\Support\RoleAccess::can($user, 'export_reports');
 
     $rows = collect($energyRows ?? []);
+    $recordRows = $rows->filter(fn ($row) => ($row['has_reading'] ?? true) === true);
     $toNumber = function ($value) {
         $clean = preg_replace('/[^0-9.\-]/', '', (string) $value);
         return is_numeric($clean) ? (float) $clean : null;
     };
 
-    $totalActual = $rows->sum(function ($row) use ($toNumber) {
+    $totalActual = $recordRows->sum(function ($row) use ($toNumber) {
         return $toNumber($row['actual_kwh'] ?? 0) ?? 0;
     });
-    $totalBaseline = $rows->sum(function ($row) use ($toNumber) {
+    $totalBaseline = $recordRows->sum(function ($row) use ($toNumber) {
         return $toNumber($row['baseline_kwh'] ?? 0) ?? 0;
     });
-    $totalVariance = $rows->sum(function ($row) use ($toNumber) {
+    $totalVariance = $recordRows->sum(function ($row) use ($toNumber) {
         return $toNumber($row['variance'] ?? 0) ?? 0;
     });
-    $increasingCount = $rows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'up'))->count();
-    $decreasingCount = $rows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'down'))->count();
+    $increasingCount = $recordRows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'up'))->count();
+    $decreasingCount = $recordRows->filter(fn ($row) => str_starts_with((string) ($row['trend'] ?? ''), 'down'))->count();
     $selectedMonthValue = isset($selectedMonth)
         ? (string) $selectedMonth
         : (request()->has('month') ? (string) request('month') : (string) date('n'));
@@ -365,6 +366,33 @@
     background: linear-gradient(135deg, #2563eb, #0ea5e9);
 }
 
+.facility-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border: 1px solid #99f6e4;
+    border-radius: 999px;
+    background: #f0fdfa;
+    color: #0f766e;
+    font-size: 0.65rem;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.energy-row.is-awaiting {
+    cursor: default;
+    background: #fcfdff;
+}
+
+.energy-row.is-awaiting:hover,
+.energy-row.is-awaiting:focus-visible {
+    background: #fcfdff;
+    box-shadow: none;
+}
+
 .energy-table th.num,
 .energy-table td.num {
     text-align: right;
@@ -398,6 +426,7 @@
 
 .trend-up { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .trend-down { background: #dcfce7; color: #166534; border-color: #86efac; }
+.trend-awaiting { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
 .trend-stable { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
 
 .empty-row {
@@ -838,7 +867,7 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
         <div class="energy-kpis">
             <div class="kpi-card kpi-total">
                 <span class="kpi-label"><i class="fa fa-table"></i> Rows</span>
-                <div class="kpi-value">{{ $rows->count() }}</div>
+                <div class="kpi-value">{{ $recordRows->count() }}</div>
                 <span class="kpi-note">records loaded</span>
             </div>
             <div class="kpi-card kpi-actual">
@@ -935,28 +964,36 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
                     @forelse($energyRows ?? [] as $row)
                         @php
                             $trend = (string) ($row['trend'] ?? 'stable');
-                            $trendBase = str_starts_with($trend, 'up') ? 'up' : (str_starts_with($trend, 'down') ? 'down' : (str_starts_with($trend, 'insufficient') ? 'insufficient' : 'stable'));
-                            $trendClass = $trendBase === 'up' ? 'trend-up' : ($trendBase === 'down' ? 'trend-down' : 'trend-stable');
-                            $trendLabel = $trendBase === 'up' ? 'Increasing' : ($trendBase === 'down' ? 'Decreasing' : ($trendBase === 'insufficient' ? 'Insufficient Data' : 'Stable'));
-                            $trendIcon = $trendBase === 'up' ? 'fa-arrow-up' : ($trendBase === 'down' ? 'fa-arrow-down' : ($trendBase === 'insufficient' ? 'fa-circle-question' : 'fa-minus'));
+                            $hasReading = (bool) ($row['has_reading'] ?? true);
+                            $trendBase = $trend === 'awaiting' ? 'awaiting' : (str_starts_with($trend, 'up') ? 'up' : (str_starts_with($trend, 'down') ? 'down' : (str_starts_with($trend, 'insufficient') ? 'insufficient' : 'stable')));
+                            $trendClass = $trendBase === 'awaiting' ? 'trend-awaiting' : ($trendBase === 'up' ? 'trend-up' : ($trendBase === 'down' ? 'trend-down' : 'trend-stable'));
+                            $trendLabel = $trendBase === 'awaiting' ? 'Awaiting Reading' : ($trendBase === 'up' ? 'Increasing' : ($trendBase === 'down' ? 'Decreasing' : ($trendBase === 'insufficient' ? 'Insufficient Data' : 'Stable')));
+                            $trendIcon = $trendBase === 'awaiting' ? 'fa-clock' : ($trendBase === 'up' ? 'fa-arrow-up' : ($trendBase === 'down' ? 'fa-arrow-down' : ($trendBase === 'insufficient' ? 'fa-circle-question' : 'fa-minus')));
                             $trendSpike = str_contains($trend, '3-Month Spike');
                         @endphp
-                        <tr class="energy-row"
-                            data-search="{{ strtolower((string)($row['facility'] ?? '')) }}"
+                        <tr class="energy-row {{ $hasReading ? '' : 'is-awaiting' }}"
+                            data-search="{{ strtolower(trim((string)($row['facility'] ?? '') . ' ' . (string)($row['source'] ?? ''))) }}"
                             data-summary-key="{{ $row['summary_key'] ?? '' }}"
-                            tabindex="0"
-                            role="button"
-                            aria-label="View {{ $row['facility'] }} annual energy summary for {{ substr((string) ($row['month'] ?? ''), -4) }}">
+                            @if($hasReading)
+                                tabindex="0"
+                                role="button"
+                                aria-label="View {{ $row['facility'] }} annual energy summary for {{ substr((string) ($row['month'] ?? ''), -4) }}"
+                            @endif>
                             <td>
                                 <div class="facility-cell">
                                     <span class="facility-dot"></span>
                                     <span>{{ $row['facility'] }}</span>
+                                    @if(($row['source'] ?? 'local') === 'cprf')
+                                        <span class="facility-source-badge" title="Mirrored from CPRF facility {{ $row['external_ref'] ?? '' }}">
+                                            <i class="fa fa-link"></i> CPRF Integrated
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                             <td>{{ $row['month'] }}</td>
-                            <td class="num">{{ $row['actual_kwh'] }}</td>
-                            <td class="num">{{ $row['baseline_kwh'] }}</td>
-                            <td class="num">{{ $row['variance'] }}</td>
+                            <td class="num">{{ $row['actual_kwh'] !== '' ? $row['actual_kwh'] : '—' }}</td>
+                            <td class="num">{{ $row['baseline_kwh'] !== '' ? $row['baseline_kwh'] : '—' }}</td>
+                            <td class="num">{{ $row['variance'] !== '' ? $row['variance'] : '—' }}</td>
                             <td class="trend-col">
                                 <span class="trend-pill {{ $trendClass }}">
                                     <i class="fa {{ $trendIcon }}"></i> {{ $trendLabel }}

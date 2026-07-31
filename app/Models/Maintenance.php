@@ -12,6 +12,8 @@ class Maintenance extends Model
     protected $table = 'maintenance';
     protected $fillable = [
         'facility_id',
+        'energy_record_id',
+        'energy_incident_id',
         'issue_type',
         'trigger_month',
         'trend',

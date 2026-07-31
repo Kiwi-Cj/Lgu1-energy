@@ -183,6 +183,7 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (Maintenance $maintenance) => [
             'id' => $maintenance->id,
+            'energy_incident_id' => $maintenance->energy_incident_id,
             'source' => 'active',
             'facility' => [
                 'id' => $maintenance->facility_id,
@@ -288,6 +289,7 @@ class IntegrationDataController extends Controller
             'archived' => $effects['archived'],
             'maintenance' => [
                 'id' => $effects['archived'] ? null : $record->id,
+                'energy_incident_id' => $record->energy_incident_id ?? null,
                 'facility_id' => $record->facility_id,
                 'status' => $record->maintenance_status,
                 'scheduled_date' => $record->scheduled_date,

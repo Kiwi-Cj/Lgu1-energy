@@ -245,10 +245,15 @@ trait MaintenanceSyncHelpers
             return;
         }
 
-        $baseQuery = \App\Models\EnergyIncident::query()
-            ->where('facility_id', $maintenance->facility_id)
-            ->where('month', $triggerMonthNum)
-            ->where('year', $triggerYearNum);
+        $baseQuery = \App\Models\EnergyIncident::query();
+        if (! empty($maintenance->energy_incident_id)) {
+            $baseQuery->whereKey($maintenance->energy_incident_id);
+        } else {
+            $baseQuery
+                ->where('facility_id', $maintenance->facility_id)
+                ->where('month', $triggerMonthNum)
+                ->where('year', $triggerYearNum);
+        }
 
         if ($statusText === 'ongoing') {
             $incident = (clone $baseQuery)

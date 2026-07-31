@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Facility;
+use App\Models\EnergyIncident;
 use App\Models\Maintenance;
 use App\Models\User;
 
@@ -13,8 +14,18 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'location' => 'Test Location',
         'status' => 'active',
     ]);
+    $incident = EnergyIncident::query()->create([
+        'facility_id' => $facility->id,
+        'month' => 7,
+        'year' => 2026,
+        'deviation_percent' => 45,
+        'description' => 'Incident owned by the CIMM maintenance workflow.',
+        'status' => 'Open',
+        'date_detected' => '2026-07-20',
+    ]);
     $maintenance = Maintenance::query()->create([
         'facility_id' => $facility->id,
+        'energy_incident_id' => $incident->id,
         'issue_type' => 'General - Preventive Check',
         'trigger_month' => 'Jul 2026',
         'trend' => 'Stable',
@@ -46,6 +57,11 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'photo_requirement' => 'Required',
         'proof_photo_path' => 'maintenance-proofs/existing-proof.jpg',
     ]);
+    $this->assertDatabaseHas('energy_incidents', [
+        'id' => $incident->id,
+        'status' => 'Resolved',
+    ]);
+    expect($incident->fresh()->resolved_at)->not->toBeNull();
 });
 
 test('maintenance page reconciles stale completed rows into history', function () {

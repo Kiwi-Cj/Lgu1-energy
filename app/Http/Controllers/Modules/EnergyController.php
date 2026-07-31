@@ -122,10 +122,12 @@ class EnergyController extends Controller
 
     public function energyReport(Request $request)
     {
-        // Get all energy records with facility relationships
         $facilityId = $request->input('facility_id');
         $year = $request->input('year');
         $month = $request->has('month') ? $request->input('month') : date('n');
+        $reportYear = (int) ($year ?: date('Y'));
+        $facilities = Facility::query()->orderBy('name')->get();
+
         $query = EnergyRecord::with('facility');
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
@@ -164,19 +166,58 @@ class EnergyController extends Controller
 
             $energyRows[] = [
                 'facility' => $facility ? $facility->name : 'N/A',
+                'facility_id' => (int) $record->facility_id,
+                'source' => strtolower((string) ($facility?->source ?? 'local')),
+                'external_ref' => $facility?->external_ref,
                 'month' => $monthYear,
                 'actual_kwh' => number_format($actualKwh, 2),
                 'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : '',
                 'variance' => $variance !== null ? number_format($variance, 2) : '',
                 'trend' => $trend,
+                'has_reading' => true,
                 'summary_key' => (int) $record->facility_id . ':' . (int) $record->year,
             ];
         }
 
+        // CPRF facilities exist locally as mirrored facility records before their
+        // first reading arrives. Keep them visible in the report without
+        // fabricating consumption or including placeholders in KPI totals.
+        $representedFacilityIds = $records
+            ->pluck('facility_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+        $placeholderPeriod = $month
+            ? date('M Y', mktime(0, 0, 0, (int) $month, 1, $reportYear))
+            : (string) $reportYear;
+
+        $facilities
+            ->filter(fn (Facility $facility) => $facility->isCprfManaged())
+            ->when($facilityId, fn ($rows) => $rows->where('id', (int) $facilityId))
+            ->reject(fn (Facility $facility) => $representedFacilityIds->contains((int) $facility->id))
+            ->each(function (Facility $facility) use (&$energyRows, $placeholderPeriod) {
+                $baseline = $facility->resolveBaselineKwh();
+
+                $energyRows[] = [
+                    'facility' => $facility->name,
+                    'facility_id' => (int) $facility->id,
+                    'source' => 'cprf',
+                    'external_ref' => $facility->external_ref,
+                    'month' => $placeholderPeriod,
+                    'actual_kwh' => '',
+                    'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : '',
+                    'variance' => '',
+                    'trend' => 'awaiting',
+                    'has_reading' => false,
+                    'summary_key' => '',
+                ];
+            });
+
         $annualSummaries = $this->buildAnnualReportSummaries($records);
-        
-        $facilities = Facility::all();
-        $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year');
+        $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year')
+            ->push($reportYear)
+            ->unique()
+            ->sortDesc()
+            ->values();
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
         $selectedMonth = (string) $month;

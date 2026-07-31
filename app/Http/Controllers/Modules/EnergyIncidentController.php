@@ -4,12 +4,19 @@ namespace App\Http\Controllers\Modules;
 use App\Exports\EnergyIncidentReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\EnergyIncident;
+use App\Models\Facility;
+use App\Models\Maintenance;
 use App\Services\IncidentNotificationService;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class EnergyIncidentController extends Controller
 {
@@ -18,9 +25,10 @@ class EnergyIncidentController extends Controller
         [$incidentQuery, $filters, $role, $user] = $this->buildActiveIncidentQuery($request);
 
         $incidents = $incidentQuery
+            ->orderByRaw("CASE severity_key WHEN 'critical' THEN 1 WHEN 'very-high' THEN 2 WHEN 'high' THEN 3 WHEN 'warning' THEN 4 ELSE 5 END")
+            ->orderBy('energy_incidents.date_detected')
             ->orderByDesc('energy_incidents.year')
             ->orderByDesc('energy_incidents.month')
-            ->orderByDesc('energy_incidents.date_detected')
             ->orderByDesc('energy_incidents.created_at')
             ->paginate(20)
             ->withQueryString();
@@ -28,13 +36,21 @@ class EnergyIncidentController extends Controller
         $incidents->setCollection($this->withSeverityLabels($incidents->getCollection()));
         $this->syncIncidentNotifications($incidents->getCollection());
         $yearOptions = $this->incidentYearOptions($role, $user);
+        $reportFacilities = $role === 'staff'
+            ? $user->facilities()->orderBy('name')->get(['facilities.id', 'facilities.name'])
+            : Facility::query()->orderBy('name')->get(['id', 'name']);
+        $manualIncidentCategories = collect($this->manualIncidentCategories())
+            ->map(fn (array $category, string $key) => ['key' => $key, 'label' => $category['label']])
+            ->values();
 
         return view('modules.energy-incident.incidents', compact(
             'incidents',
             'role',
             'user',
             'filters',
-            'yearOptions'
+            'yearOptions',
+            'reportFacilities',
+            'manualIncidentCategories'
         ));
     }
 
@@ -60,6 +76,46 @@ class EnergyIncidentController extends Controller
         return Excel::download(new EnergyIncidentReportExport($incidentRows), $filename);
     }
 
+    public function download(Request $request, EnergyIncident $energyIncident)
+    {
+        abort_unless(RoleAccess::can($request->user(), 'export_reports'), 403);
+
+        $energyIncident->load([
+            'facility:id,name,baseline_kwh,source,external_ref',
+            'energyRecord:id,facility_id,actual_kwh,baseline_kwh,input_source,alert',
+            'maintenance:id,energy_incident_id,maintenance_status,scheduled_date,assigned_to,completed_date,remarks',
+            'creator:id,full_name,name,username',
+        ]);
+
+        $baseline = $energyIncident->energyRecord?->baseline_kwh ?? $energyIncident->facility?->baseline_kwh;
+        $actual = $energyIncident->energyRecord?->actual_kwh;
+        $category = $this->manualIncidentCategories()[$energyIncident->category ?? ''] ?? null;
+        $detectedAt = $energyIncident->detected_at ?? $energyIncident->date_detected ?? $energyIncident->created_at;
+        $sourceLabel = $this->incidentSourceLabel($energyIncident);
+        $status = str_contains(strtolower((string) $energyIncident->status), 'pending')
+            ? 'Open'
+            : ($energyIncident->status ?: 'Open');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('modules.energy-incident.incident-pdf', [
+            'incident' => $energyIncident,
+            'facilityName' => $energyIncident->facility?->name ?? 'Unknown Facility',
+            'categoryLabel' => $category['label'] ?? ($energyIncident->category ? Str::headline($energyIncident->category) : 'Energy Anomaly'),
+            'sourceLabel' => $sourceLabel,
+            'statusLabel' => $status,
+            'severityLabel' => $energyIncident->severity_label,
+            'actualKwh' => is_numeric($actual) ? (float) $actual : null,
+            'baselineKwh' => is_numeric($baseline) ? (float) $baseline : null,
+            'detectedAt' => $detectedAt ? Carbon::parse($detectedAt) : null,
+            'preparedBy' => $request->user()?->full_name ?? $request->user()?->name ?? $request->user()?->username ?? 'System User',
+            'generatedAt' => now(),
+        ])->setPaper('a4');
+
+        $filename = Str::slug($energyIncident->facility?->name ?? 'facility')
+            . '-incident-' . $energyIncident->id . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     public function create()
     {
         return redirect()->route('energy-incidents.index');
@@ -67,21 +123,94 @@ class EnergyIncidentController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(RoleAccess::can($request->user(), 'manage_energy_incidents'), 403);
+
         $validated = $request->validate([
             'facility_id' => 'required|exists:facilities,id',
-            'energy_record_id' => 'nullable|exists:energy_records,id',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2000|max:2100',
-            'deviation_percent' => 'nullable|numeric',
-            'description' => 'required|string|max:1000',
-            'status' => 'required|string|max:50',
-            'date_detected' => 'required|date',
+            'category' => ['required', 'string', Rule::in(array_keys($this->manualIncidentCategories()))],
+            'description' => 'required|string|max:2000',
+            'detected_at' => 'required|date|before_or_equal:now',
+            'affected_asset' => 'nullable|string|max:255',
+            'evidence' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        $validated['created_by'] = auth()->id();
-        EnergyIncident::create($validated);
+        $detectedAt = Carbon::parse($validated['detected_at']);
+        $duplicate = EnergyIncident::query()
+            ->where('facility_id', $validated['facility_id'])
+            ->where('category', $validated['category'])
+            ->where(function ($query) {
+                $query->where('status', 'not like', '%resolved%')
+                    ->where('status', 'not like', '%closed%')
+                    ->where('status', 'not like', '%dismissed%');
+            })
+            ->whereDate('date_detected', '>=', $detectedAt->copy()->subDays(7)->toDateString())
+            ->latest('id')
+            ->first();
 
-        return redirect()->route('energy-incidents.index')->with('success', 'Incident created!');
+        if ($duplicate) {
+            throw ValidationException::withMessages([
+                'category' => "A similar active incident (#{$duplicate->id}) was already reported for this facility within the last 7 days.",
+            ]);
+        }
+
+        $category = $this->manualIncidentCategories()[$validated['category']];
+        $evidencePath = $request->hasFile('evidence')
+            ? $request->file('evidence')->store('incident-evidence', 'public')
+            : null;
+
+        try {
+            DB::transaction(function () use ($validated, $detectedAt, $category, $evidencePath, $request) {
+                $incident = EnergyIncident::create([
+                    'facility_id' => $validated['facility_id'],
+                    'category' => $validated['category'],
+                    'source' => 'manual',
+                    'affected_asset' => $validated['affected_asset'] ?? null,
+                    'evidence_path' => $evidencePath,
+                    'detected_at' => $detectedAt,
+                    'month' => (int) $detectedAt->month,
+                    'year' => (int) $detectedAt->year,
+                    'description' => $validated['description'],
+                    'severity' => $category['severity'],
+                    'status' => 'Open',
+                    'date_detected' => $detectedAt->toDateString(),
+                    'created_by' => $request->user()->id,
+                ]);
+
+                $asset = trim((string) ($validated['affected_asset'] ?? ''));
+                $remarks = "Manual incident #{$incident->id}: {$validated['description']}";
+                if ($asset !== '') {
+                    $remarks .= " Affected meter/equipment: {$asset}.";
+                }
+                if ($evidencePath) {
+                    $remarks .= " Evidence: {$evidencePath}.";
+                }
+
+                Maintenance::create([
+                    'facility_id' => $validated['facility_id'],
+                    'energy_incident_id' => $incident->id,
+                    'issue_type' => $category['maintenance_issue'],
+                    'trigger_month' => $detectedAt->format('M Y'),
+                    'trend' => 'Reported',
+                    'maintenance_type' => 'Corrective',
+                    'maintenance_status' => 'Pending',
+                    'scheduled_date' => null,
+                    'assigned_to' => null,
+                    'completed_date' => null,
+                    'photo_requirement' => 'Optional',
+                    'remarks' => $remarks,
+                ]);
+            });
+        } catch (\Throwable $e) {
+            if ($evidencePath) {
+                Storage::disk('public')->delete($evidencePath);
+            }
+            throw $e;
+        }
+
+        return redirect()->route('energy-incidents.index')->with(
+            'success',
+            'Incident reported and forwarded to CIMM for maintenance action.'
+        );
     }
 
     public function show(EnergyIncident $energyIncident)
@@ -96,37 +225,40 @@ class EnergyIncidentController extends Controller
 
     public function update(Request $request, EnergyIncident $energyIncident)
     {
-        $validated = $request->validate([
-            'status' => 'required|string|max:50',
-            'description' => 'nullable|string|max:1000',
-            'date_detected' => 'nullable|date',
-            'resolved_at' => 'nullable|date',
-        ]);
-
-        $energyIncident->update($validated);
-
-        return redirect()->route('energy-incidents.index')->with('success', 'Incident updated!');
+        return redirect()->route('energy-incidents.index')->with(
+            'error',
+            'Incident status is managed by CIMM. Update the linked maintenance action in CIMM instead.'
+        );
     }
 
-    public function history()
+    public function history(Request $request)
     {
-        $histories = EnergyIncident::with([
-                'facility:id,name,baseline_kwh',
-                'energyRecord:id,facility_id,baseline_kwh,alert',
+        $user = $request->user();
+        $role = RoleAccess::normalize($user);
+        $historiesQuery = EnergyIncident::with([
+                'facility:id,name,baseline_kwh,source,external_ref',
+                'energyRecord:id,facility_id,baseline_kwh,actual_kwh,alert,input_source',
             ])
             ->where(function ($query) {
                 $query->where('status', 'like', '%resolved%')
-                    ->orWhere('status', 'like', '%closed%');
-            })
+                    ->orWhere('status', 'like', '%closed%')
+                    ->orWhere('status', 'like', '%dismissed%');
+            });
+
+        if ($role === 'staff') {
+            $facilityIds = $user?->facilities()->pluck('facilities.id')->all() ?? [];
+            $facilityIds !== []
+                ? $historiesQuery->whereIn('facility_id', $facilityIds)
+                : $historiesQuery->whereRaw('1 = 0');
+        }
+
+        $histories = $historiesQuery
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->orderByDesc('resolved_at')
             ->orderByDesc('date_detected')
             ->orderByDesc('created_at')
             ->get();
-
-        $user = auth()->user();
-        $role = RoleAccess::normalize($user);
 
         return view('modules.energy-incident.history', compact('histories', 'role', 'user'));
     }
@@ -135,6 +267,10 @@ class EnergyIncidentController extends Controller
     {
         return "
             CASE
+                WHEN LOWER(COALESCE(energy_incidents.severity, '')) = 'critical' THEN 'critical'
+                WHEN LOWER(COALESCE(energy_incidents.severity, '')) IN ('very-high', 'very high') THEN 'very-high'
+                WHEN LOWER(COALESCE(energy_incidents.severity, '')) = 'high' THEN 'high'
+                WHEN LOWER(COALESCE(energy_incidents.severity, '')) = 'warning' THEN 'warning'
                 WHEN {$baselineExpr} <= 0 AND {$deviationExpr} > 60 THEN 'critical'
                 WHEN {$baselineExpr} <= 0 AND {$deviationExpr} > 40 THEN 'very-high'
                 WHEN {$baselineExpr} <= 0 AND {$deviationExpr} > 20 THEN 'high'
@@ -192,8 +328,8 @@ class EnergyIncidentController extends Controller
             ->select('energy_incidents.*')
             ->selectRaw("{$severityExpr} as severity_key")
             ->with([
-                'facility:id,name,baseline_kwh',
-                'energyRecord:id,facility_id,baseline_kwh,alert',
+                'facility:id,name,baseline_kwh,source,external_ref',
+                'energyRecord:id,facility_id,baseline_kwh,actual_kwh,alert,input_source',
             ]);
 
         if ($role === 'staff') {
@@ -206,7 +342,8 @@ class EnergyIncidentController extends Controller
 
         $incidentQuery->where(function ($query) {
             $query->where('energy_incidents.status', 'not like', '%resolved%')
-                ->where('energy_incidents.status', 'not like', '%closed%');
+                ->where('energy_incidents.status', 'not like', '%closed%')
+                ->where('energy_incidents.status', 'not like', '%dismissed%');
         });
 
         if ($filters['year'] > 0) {
@@ -239,15 +376,30 @@ class EnergyIncidentController extends Controller
         if ($filters['status'] !== 'all') {
             if ($filters['status'] === 'ongoing') {
                 $incidentQuery->where('energy_incidents.status', 'like', '%ongoing%');
-            } elseif ($filters['status'] === 'pending') {
-                $incidentQuery->where('energy_incidents.status', 'like', '%pending%');
             } elseif ($filters['status'] === 'open') {
-                $incidentQuery->where('energy_incidents.status', 'like', '%open%');
+                $incidentQuery->where(function ($query) {
+                    $query->where('energy_incidents.status', 'like', '%open%')
+                        ->orWhere('energy_incidents.status', 'like', '%pending%');
+                });
             }
         }
 
-        if (in_array($filters['severity'], ['critical', 'very-high'], true)) {
+        if (in_array($filters['severity'], ['critical', 'very-high', 'high', 'warning'], true)) {
             $incidentQuery->whereRaw("{$severityExpr} = ?", [$filters['severity']]);
+        }
+
+        if ($filters['source'] === 'manual') {
+            $incidentQuery->whereRaw("LOWER(COALESCE(energy_incidents.source, 'auto')) = 'manual'");
+        } elseif ($filters['source'] === 'cprf') {
+            $incidentQuery->where(function ($query) {
+                $query->whereRaw('LOWER(COALESCE(er.input_source, ?)) = ?', ['', 'cprf'])
+                    ->orWhereRaw('LOWER(COALESCE(f.source, ?)) = ?', ['', 'cprf']);
+            })->whereRaw("LOWER(COALESCE(energy_incidents.source, 'auto')) <> 'manual'");
+        } elseif ($filters['source'] === 'auto') {
+            $incidentQuery
+                ->whereRaw('LOWER(COALESCE(er.input_source, ?)) <> ?', ['local', 'cprf'])
+                ->whereRaw('LOWER(COALESCE(f.source, ?)) <> ?', ['local', 'cprf'])
+                ->whereRaw("LOWER(COALESCE(energy_incidents.source, 'auto')) <> 'manual'");
         }
 
         return [$incidentQuery, $filters, $role, $user];
@@ -260,13 +412,21 @@ class EnergyIncidentController extends Controller
         $year = (int) $request->query('year', 0);
         $month = (int) $request->query('month', 0);
         $dateDetected = trim((string) $request->query('date_detected', ''));
+        $source = strtolower((string) $request->query('source', 'all'));
 
-        if (! in_array($status, ['all', 'open', 'pending', 'ongoing'], true)) {
+        if ($status === 'pending') {
+            $status = 'open';
+        }
+        if (! in_array($status, ['all', 'open', 'ongoing'], true)) {
             $status = 'all';
         }
 
-        if (! in_array($severity, ['all', 'critical', 'very-high'], true)) {
+        if (! in_array($severity, ['all', 'critical', 'very-high', 'high', 'warning'], true)) {
             $severity = 'all';
+        }
+
+        if (! in_array($source, ['all', 'auto', 'manual', 'cprf'], true)) {
+            $source = 'all';
         }
 
         if ($year < 2000 || $year > 2100) {
@@ -292,6 +452,7 @@ class EnergyIncidentController extends Controller
             'year' => $year,
             'month' => $month,
             'date_detected' => $dateDetected,
+            'source' => $source,
         ];
     }
 
@@ -351,7 +512,8 @@ class EnergyIncidentController extends Controller
             ->whereNotNull('year')
             ->where(function ($query) {
                 $query->where('status', 'not like', '%resolved%')
-                    ->where('status', 'not like', '%closed%');
+                    ->where('status', 'not like', '%closed%')
+                    ->where('status', 'not like', '%dismissed%');
             });
 
         if ($role === 'staff') {
@@ -386,6 +548,7 @@ class EnergyIncidentController extends Controller
 
         return [
             'facility' => $incident->facility->name ?? 'Unknown Facility',
+            'source' => $this->incidentSourceLabel($incident),
             'period' => $period,
             'date_detected' => $incident->date_detected ? $incident->date_detected->format('M d, Y') : '',
             'status' => $incident->status ?? 'Open',
@@ -398,6 +561,36 @@ class EnergyIncidentController extends Controller
             'immediate_action' => (string) ($incident->immediate_action ?? ''),
             'resolution' => (string) ($incident->resolution_summary ?? ''),
             'preventive_recommendation' => (string) ($incident->preventive_recommendation ?? ''),
+        ];
+    }
+
+    private function incidentSourceLabel(EnergyIncident $incident): string
+    {
+        if (strtolower((string) ($incident->source ?? '')) === 'manual') {
+            return 'Manual Report';
+        }
+
+        if (
+            strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
+            || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf'
+        ) {
+            return 'CPRF Integrated';
+        }
+
+        return 'Auto Detected';
+    }
+
+    private function manualIncidentCategories(): array
+    {
+        return [
+            'power_outage' => ['label' => 'Power Outage', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Power Outage'],
+            'circuit_overload' => ['label' => 'Circuit Overload', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Circuit Overload'],
+            'smoke_or_burning_smell' => ['label' => 'Smoke or Burning Smell', 'severity' => 'critical', 'maintenance_issue' => 'General - Other'],
+            'equipment_overheating' => ['label' => 'Equipment Overheating', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
+            'damaged_equipment' => ['label' => 'Damaged Equipment', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
+            'meter_issue' => ['label' => 'Meter Issue', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
+            'unusual_noise_or_smell' => ['label' => 'Unusual Noise or Smell', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
+            'other' => ['label' => 'Other', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
         ];
     }
 }

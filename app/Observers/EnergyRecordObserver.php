@@ -275,10 +275,15 @@ class EnergyRecordObserver
         $legacyDescriptions = [
             'High energy consumption detected for this billing period.',
             'System detected unusually high energy consumption for this period. Please review and validate.',
+            'Critical energy spike detected for this billing period and queued for urgent review.',
+            'Very high energy deviation detected for this billing period and queued for validation.',
+            'High energy deviation detected for this billing period and queued for validation.',
         ];
 
         $payload = [
             'energy_record_id' => $record->id,
+            'category' => 'energy_anomaly',
+            'source' => strtolower(trim((string) ($record->input_source ?? ''))) === 'cprf' ? 'cprf' : 'auto',
             'month' => $month,
             'year' => $year,
             'deviation_percent' => $deviation,
@@ -294,27 +299,28 @@ class EnergyRecordObserver
 
         if (! $incident) {
             $payload['facility_id'] = $facility->id;
-            $payload['status'] = 'Pending';
+            $payload['status'] = 'Open';
             $payload['date_detected'] = now()->toDateString();
             $payload['created_by'] = $record->recorded_by ?? null;
-            EnergyIncident::create($payload);
+            $incident = EnergyIncident::create($payload);
         } else {
             $incident->fill($payload);
             if (! $incident->date_detected) {
                 $incident->date_detected = now()->toDateString();
             }
             if (! $incident->status) {
-                $incident->status = 'Pending';
+                $incident->status = 'Open';
             }
             $incident->save();
         }
 
-        $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $severityKey);
+        $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $incident, $severityKey);
     }
 
     private function upsertMaintenanceFromIncidentSeverity(
         Facility $facility,
         EnergyRecord $record,
+        EnergyIncident $incident,
         string $severityKey
     ): void {
         if (! Schema::hasTable('maintenance')) {
@@ -331,6 +337,7 @@ class EnergyRecordObserver
         $hasCompletedDate = Schema::hasColumn('maintenance', 'completed_date');
         $hasRemarks = Schema::hasColumn('maintenance', 'remarks');
         $hasDescription = Schema::hasColumn('maintenance', 'description');
+        $hasEnergyIncidentId = Schema::hasColumn('maintenance', 'energy_incident_id');
 
         $triggerMonth = date('M Y', mktime(0, 0, 0, (int) $record->month, 1, (int) $record->year));
 
@@ -393,6 +400,10 @@ class EnergyRecordObserver
                 'facility_id' => $facility->id,
             ];
 
+            if ($hasEnergyIncidentId) {
+                $payload['energy_incident_id'] = $incident->id;
+            }
+
             if ($hasIssueType) {
                 $payload['issue_type'] = $issueType;
             }
@@ -437,6 +448,9 @@ class EnergyRecordObserver
         if ($hasIssueType) {
             $maintenance->issue_type = $issueType;
         }
+        if ($hasEnergyIncidentId && ! $maintenance->energy_incident_id) {
+            $maintenance->energy_incident_id = $incident->id;
+        }
         if ($hasTrend) {
             $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
         }
@@ -460,7 +474,7 @@ class EnergyRecordObserver
             return 'open';
         }
 
-        return 'pending';
+        return 'open';
     }
 
     private function buildIncidentDescription(string $severityKey, string $statusKey): string
@@ -475,17 +489,17 @@ class EnergyRecordObserver
 
         if ($statusKey === 'open') {
             return match ($severityKey) {
-                'critical' => 'Critical energy spike is active and requires immediate intervention.',
-                'very-high' => 'Very high energy deviation is active and under close monitoring.',
-                default => 'High energy deviation is active and under monitoring.',
+                'critical' => 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.',
+                'very-high' => 'Very high energy deviation detected and forwarded to CIMM for maintenance action.',
+                default => 'High energy deviation detected and forwarded to CIMM for maintenance assessment.',
             };
         }
 
         return $severityKey === 'critical'
-            ? 'Critical energy spike detected for this billing period and queued for urgent review.'
+            ? 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.'
             : ($severityKey === 'very-high'
-                ? 'Very high energy deviation detected for this billing period and queued for validation.'
-                : 'High energy deviation detected for this billing period and queued for validation.');
+                ? 'Very high energy deviation detected and forwarded to CIMM for maintenance action.'
+                : 'High energy deviation detected and forwarded to CIMM for maintenance assessment.');
     }
 
     private function isSubMeterRecord(EnergyRecord $record): bool

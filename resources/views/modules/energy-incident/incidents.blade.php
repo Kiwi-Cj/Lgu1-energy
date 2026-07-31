@@ -3,14 +3,16 @@
 
 @php
     $user = auth()->user();
+    $canReportIncidents = \App\Support\RoleAccess::can($user, 'manage_energy_incidents');
+    $canExportReports = \App\Support\RoleAccess::can($user, 'export_reports');
+    $categoryLabels = collect($manualIncidentCategories ?? [])->pluck('label', 'key');
+    $incidentFormErrors = isset($errors) ? $errors->all() : [];
 
     $incidentRows = collect(method_exists($incidents, 'items') ? $incidents->items() : $incidents);
     $totalOnPage = $incidentRows->count();
     $openCount = $incidentRows->filter(function ($incident) {
-        return str_contains(strtolower((string) ($incident->status ?? 'open')), 'open');
-    })->count();
-    $pendingCount = $incidentRows->filter(function ($incident) {
-        return str_contains(strtolower((string) ($incident->status ?? '')), 'pending');
+        $status = strtolower((string) ($incident->status ?? 'open'));
+        return str_contains($status, 'open') || str_contains($status, 'pending');
     })->count();
     $ongoingCount = $incidentRows->filter(function ($incident) {
         return str_contains(strtolower((string) ($incident->status ?? '')), 'ongoing');
@@ -47,6 +49,11 @@
                 <p>Track active energy anomalies and inspect details for immediate action.</p>
             </div>
             <div class="header-actions">
+                @if($canReportIncidents)
+                <button type="button" class="report-btn" id="openReportIncident">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Report Incident
+                </button>
+                @endif
                 <a href="{{ route('energy-incidents.export', $exportQuery) }}" class="download-btn" data-secure-download>
                     <i class="fa-solid fa-download"></i> Download
                 </a>
@@ -69,10 +76,6 @@
                 <span class="metric-label">Open</span>
                 <strong class="metric-value">{{ $openCount }}</strong>
             </div>
-            <div class="metric-card pending">
-                <span class="metric-label">Pending</span>
-                <strong class="metric-value">{{ $pendingCount }}</strong>
-            </div>
             <div class="metric-card ongoing">
                 <span class="metric-label">Ongoing</span>
                 <strong class="metric-value">{{ $ongoingCount }}</strong>
@@ -84,13 +87,20 @@
             <select name="status" id="incidentStatusFilter">
                 <option value="all" {{ ($filters['status'] ?? 'all') === 'all' ? 'selected' : '' }}>All Status</option>
                 <option value="open" {{ ($filters['status'] ?? 'all') === 'open' ? 'selected' : '' }}>Open</option>
-                <option value="pending" {{ ($filters['status'] ?? 'all') === 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="ongoing" {{ ($filters['status'] ?? 'all') === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
             </select>
             <select name="severity" id="incidentSeverityFilter">
                 <option value="all" {{ ($filters['severity'] ?? 'all') === 'all' ? 'selected' : '' }}>All Severity</option>
                 <option value="critical" {{ ($filters['severity'] ?? 'all') === 'critical' ? 'selected' : '' }}>Critical</option>
                 <option value="very-high" {{ ($filters['severity'] ?? 'all') === 'very-high' ? 'selected' : '' }}>Very High</option>
+                <option value="high" {{ ($filters['severity'] ?? 'all') === 'high' ? 'selected' : '' }}>High</option>
+                <option value="warning" {{ ($filters['severity'] ?? 'all') === 'warning' ? 'selected' : '' }}>Warning</option>
+            </select>
+            <select name="source" id="incidentSourceFilter">
+                <option value="all" {{ ($filters['source'] ?? 'all') === 'all' ? 'selected' : '' }}>All Sources</option>
+                <option value="auto" {{ ($filters['source'] ?? 'all') === 'auto' ? 'selected' : '' }}>Auto Detected</option>
+                <option value="manual" {{ ($filters['source'] ?? 'all') === 'manual' ? 'selected' : '' }}>Manual Report</option>
+                <option value="cprf" {{ ($filters['source'] ?? 'all') === 'cprf' ? 'selected' : '' }}>CPRF Integrated</option>
             </select>
             <select name="year" id="incidentYearFilter">
                 <option value="">All Years</option>
@@ -119,9 +129,17 @@
                     $yearNum = $incident->year ?? null;
                     $monthLabel = $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum - 1] : '-';
                     $facilityName = $incident->facility->name ?? 'Unknown Facility';
+                    $isManual = strtolower((string) ($incident->source ?? '')) === 'manual';
+                    $isCprf = !$isManual && (strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
+                        || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf');
+                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'CPRF Integrated' : 'Auto Detected');
+                    $sourceClass = $isManual ? 'manual' : ($isCprf ? 'cprf' : 'auto');
+                    $categoryLabel = $categoryLabels->get((string) ($incident->category ?? ''), $isManual ? 'Other' : 'Energy Anomaly');
                     $deviation = $incident->deviation_percent;
                     $deviationText = $deviation !== null ? number_format((float) $deviation, 2) . '%' : 'N/A';
-                    $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : 'N/A');
+                    $dateDetected = $incident->detected_at
+                        ? \Carbon\Carbon::parse($incident->detected_at)->format('M d, Y h:i A')
+                        : ($incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : 'N/A'));
 
                     $levelKey = strtolower((string) ($incident->severity_key ?? 'normal'));
                     if (!in_array($levelKey, ['critical', 'very-high', 'high', 'warning', 'normal'], true)) {
@@ -146,9 +164,6 @@
                     } elseif (str_contains($statusRaw, 'ongoing')) {
                         $statusKey = 'ongoing';
                         $statusLabel = 'Ongoing';
-                    } elseif (str_contains($statusRaw, 'pending')) {
-                        $statusKey = 'pending';
-                        $statusLabel = 'Pending';
                     }
 
                     $defaultDescription = match ($statusKey) {
@@ -156,25 +171,25 @@
                             ? 'Critical energy spike for this billing period was resolved after corrective action.'
                             : 'Very high energy deviation for this billing period has been resolved and stabilized.',
                         'ongoing' => $levelKey === 'critical'
-                            ? 'Critical energy spike is under active mitigation and continuous monitoring.'
-                            : 'Very high energy deviation is undergoing corrective action and close monitoring.',
-                        'pending' => $levelKey === 'critical'
-                            ? 'Critical energy spike detected for this billing period and queued for urgent review.'
-                            : 'Very high energy deviation detected for this billing period and queued for validation.',
+                            ? 'CIMM is actively handling the critical energy spike and corrective maintenance is in progress.'
+                            : 'CIMM corrective maintenance is in progress for this energy deviation.',
                         default => $levelKey === 'critical'
-                            ? 'Critical energy spike is active and requires immediate intervention.'
-                            : 'Very high energy deviation is active and under close monitoring.',
+                            ? 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.'
+                            : 'Energy deviation detected and forwarded to CIMM for maintenance assessment.',
                     };
                     $legacyDescriptions = [
                         'High energy consumption detected for this billing period.',
                         'System detected unusually high energy consumption for this period. Please review and validate.',
+                        'Critical energy spike detected for this billing period and queued for urgent review.',
+                        'Very high energy deviation detected for this billing period and queued for validation.',
+                        'High energy deviation detected for this billing period and queued for validation.',
                     ];
                     $descriptionText = trim((string) ($incident->description ?? ''));
                     if ($descriptionText === '' || in_array($descriptionText, $legacyDescriptions, true)) {
                         $descriptionText = $defaultDescription;
                     }
                     $descriptionPreview = \Illuminate\Support\Str::limit($descriptionText, 140);
-                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $descriptionText);
+                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $sourceLabel . ' ' . $descriptionText);
 
                     $probableCause = $incident->probable_cause;
                     if (is_array($probableCause)) {
@@ -182,8 +197,8 @@
                     }
                     $probableCause = $probableCause ?: 'Automated system analysis: Abnormal usage pattern detected based on recent records.';
 
-                    $immediateAction = $incident->immediate_action ?: 'Incident flagged for LGU review and action.';
-                    $resolutionSummary = $incident->resolution_summary ?: 'Pending review by LGU energy officer or facility manager.';
+                    $immediateAction = $incident->immediate_action ?: 'Incident forwarded to CIMM for maintenance assessment and action.';
+                    $resolutionSummary = $incident->resolution_summary ?: 'Awaiting maintenance status and resolution updates from CIMM.';
                     $defaultRecommendation = match ($statusKey) {
                         'resolved' => $levelKey === 'critical'
                             ? 'Keep weekly load audits and retain corrective controls to prevent another critical spike.'
@@ -191,17 +206,21 @@
                         'ongoing' => $levelKey === 'critical'
                             ? 'Continue technical mitigation, monitor demand in near-real time, and verify equipment stability daily.'
                             : 'Continue corrective maintenance and validate consumption trend every operating shift.',
-                        'pending' => $levelKey === 'critical'
-                            ? 'Dispatch urgent technical inspection, isolate suspect equipment, and validate meter data immediately.'
-                            : 'Prioritize equipment checks, verify operating schedules, and monitor peak-hour consumption.',
                         default => $levelKey === 'critical'
-                            ? 'Apply immediate load-shedding controls and assign a response owner for 24-hour follow-up.'
-                            : 'Implement short-term consumption controls and track daily usage until variance drops.',
+                            ? 'CIMM should prioritize urgent inspection and apply temporary load controls while investigating the cause.'
+                            : 'CIMM should validate equipment operation and apply corrective controls until consumption stabilizes.',
                     };
                     $preventiveRecommendation = trim((string) ($incident->preventive_recommendation ?? ''));
                     if ($preventiveRecommendation === '') {
                         $preventiveRecommendation = $defaultRecommendation;
                     }
+                    $actualKwh = is_numeric($incident->energyRecord?->actual_kwh)
+                        ? number_format((float) $incident->energyRecord->actual_kwh, 2) . ' kWh'
+                        : 'N/A';
+                    $baselineValue = $incident->energyRecord?->baseline_kwh ?? $incident->facility?->baseline_kwh;
+                    $baselineKwh = is_numeric($baselineValue)
+                        ? number_format((float) $baselineValue, 2) . ' kWh'
+                        : 'N/A';
 
                     $attachments = [];
                     if (is_array($incident->attachments)) {
@@ -224,7 +243,12 @@
                     onclick="openIncidentModal({{ $incident->id }})">
                     <div class="row-main">
                         <div class="facility-col">
-                            <div class="facility-name">{{ $facilityName }}</div>
+                            <div class="facility-heading">
+                                <div class="facility-name">{{ $facilityName }}</div>
+                                <span class="source-chip {{ $sourceClass }}">
+                                    <i class="fa-solid {{ $isManual ? 'fa-user-pen' : ($isCprf ? 'fa-link' : 'fa-bolt') }}"></i> {{ $sourceLabel }}
+                                </span>
+                            </div>
                             <div class="facility-desc">{{ $descriptionPreview }}</div>
                         </div>
                         <div class="meta-col">
@@ -256,6 +280,11 @@
                             <div class="modal-chip-group">
                                 <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
                                 <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
+                                @if($canExportReports)
+                                    <a href="{{ route('energy-incidents.download', $incident) }}" class="incident-pdf-btn" data-secure-download onclick="event.stopPropagation()">
+                                        <i class="fa-solid fa-file-pdf"></i> Download PDF
+                                    </a>
+                                @endif
                             </div>
                         </div>
 
@@ -264,6 +293,12 @@
                             <div class="detail-item"><span>Month/Year</span><strong>{{ $monthLabel }}/{{ $yearNum ?? '-' }}</strong></div>
                             <div class="detail-item"><span>Deviation</span><strong>{{ $deviationText }}</strong></div>
                             <div class="detail-item"><span>Date Detected</span><strong>{{ $dateDetected }}</strong></div>
+                            <div class="detail-item"><span>Actual Reading</span><strong>{{ $actualKwh }}</strong></div>
+                            <div class="detail-item"><span>Baseline</span><strong>{{ $baselineKwh }}</strong></div>
+                            <div class="detail-item"><span>Data Source</span><strong>{{ $sourceLabel }}</strong></div>
+                            <div class="detail-item"><span>Action Owner</span><strong>CIMM Maintenance Integration</strong></div>
+                            <div class="detail-item"><span>Category</span><strong>{{ $categoryLabel }}</strong></div>
+                            <div class="detail-item"><span>Affected Asset</span><strong>{{ $incident->affected_asset ?: 'Not specified' }}</strong></div>
                         </div>
 
                         <div class="detail-block"><span>Description</span><p>{{ $descriptionText }}</p></div>
@@ -271,6 +306,13 @@
                         <div class="detail-block"><span>Immediate Action</span><p>{{ $immediateAction }}</p></div>
                         <div class="detail-block"><span>Resolution</span><p>{{ $resolutionSummary }}</p></div>
                         <div class="detail-block"><span>Preventive Recommendation</span><p>{{ $preventiveRecommendation }}</p></div>
+
+                        @if($incident->evidence_path)
+                            <div class="detail-block">
+                                <span>Reporter Evidence</span>
+                                <p><a href="{{ asset('storage/' . ltrim($incident->evidence_path, '/')) }}" target="_blank" rel="noopener">View attached photo</a></p>
+                            </div>
+                        @endif
 
                         @if(count($attachments))
                             <div class="detail-block">
@@ -291,8 +333,12 @@
 
                         <div class="modal-actions">
                             <a href="{{ route('modules.maintenance.index') }}?facility_id={{ $incident->facility->id ?? '' }}" class="maintenance-btn">
-                                <i class="fa-solid fa-screwdriver-wrench"></i> Open Maintenance
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> View CIMM Maintenance
                             </a>
+                            <div class="cimm-managed-note">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                                Status updates automatically from CIMM
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -309,6 +355,70 @@
         @endif
     </div>
 </div>
+
+@if($canReportIncidents)
+<div id="reportIncidentModal" class="report-modal" hidden aria-hidden="true">
+    <div class="report-modal-content" role="dialog" aria-modal="true" aria-labelledby="reportIncidentTitle">
+        <button type="button" class="incident-modal-close" id="closeReportIncident" aria-label="Close report form">&times;</button>
+        <div class="report-modal-heading">
+            <div>
+                <h3 id="reportIncidentTitle">Report Incident</h3>
+                <p>This creates an Open incident and forwards a Pending corrective-maintenance request to CIMM.</p>
+            </div>
+            <span class="cimm-owner-badge"><i class="fa-solid fa-arrows-rotate"></i> CIMM Managed</span>
+        </div>
+
+        @if(count($incidentFormErrors))
+            <div class="report-errors">
+                @foreach($incidentFormErrors as $error)<div>{{ $error }}</div>@endforeach
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('energy-incidents.store') }}" enctype="multipart/form-data" class="report-form">
+            @csrf
+            <div class="report-field">
+                <label for="report_facility_id">Facility *</label>
+                <select id="report_facility_id" name="facility_id" required>
+                    <option value="">Select facility</option>
+                    @foreach($reportFacilities ?? [] as $facility)
+                        <option value="{{ $facility->id }}" @selected((string) old('facility_id') === (string) $facility->id)>{{ $facility->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="report-field">
+                <label for="report_category">Incident Category *</label>
+                <select id="report_category" name="category" required>
+                    <option value="">Select category</option>
+                    @foreach($manualIncidentCategories ?? [] as $category)
+                        <option value="{{ $category['key'] }}" @selected(old('category') === $category['key'])>{{ $category['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="report-field">
+                <label for="report_detected_at">Date and Time Detected *</label>
+                <input id="report_detected_at" type="datetime-local" name="detected_at" value="{{ old('detected_at', now()->format('Y-m-d\TH:i')) }}" max="{{ now()->format('Y-m-d\TH:i') }}" required>
+            </div>
+            <div class="report-field">
+                <label for="report_affected_asset">Affected Meter/Equipment</label>
+                <input id="report_affected_asset" type="text" name="affected_asset" value="{{ old('affected_asset') }}" maxlength="255" placeholder="e.g. Main panel, AHU-02, Main meter">
+            </div>
+            <div class="report-field full">
+                <label for="report_description">Observed Problem *</label>
+                <textarea id="report_description" name="description" rows="4" maxlength="2000" required placeholder="Describe what happened, where it was observed, and any immediate safety concern.">{{ old('description') }}</textarea>
+            </div>
+            <div class="report-field full">
+                <label for="report_evidence">Photo Evidence <span>(optional, max 5 MB)</span></label>
+                <input id="report_evidence" type="file" name="evidence" accept="image/jpeg,image/png,image/webp">
+            </div>
+            <div class="report-form-note"><i class="fa-solid fa-circle-info"></i> CIMM will own scheduling, assignment, action, and completion.</div>
+            <div class="report-form-actions">
+                <button type="button" class="report-cancel" id="cancelReportIncident">Cancel</button>
+                <button type="submit" class="report-submit"><i class="fa-solid fa-paper-plane"></i> Submit to CIMM</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 <script>
 function openIncidentModal(id) {
@@ -329,6 +439,23 @@ function closeIncidentModal(id) {
 
 document.addEventListener('DOMContentLoaded', function () {
     const rows = Array.from(document.querySelectorAll('.incident-list-row'));
+    const reportModal = document.getElementById('reportIncidentModal');
+    const openReportButton = document.getElementById('openReportIncident');
+    const closeReportButton = document.getElementById('closeReportIncident');
+    const cancelReportButton = document.getElementById('cancelReportIncident');
+    const toggleReportModal = (show) => {
+        if (!reportModal) return;
+        reportModal.hidden = !show;
+        reportModal.setAttribute('aria-hidden', show ? 'false' : 'true');
+        document.body.style.overflow = show ? 'hidden' : '';
+    };
+    openReportButton?.addEventListener('click', () => toggleReportModal(true));
+    closeReportButton?.addEventListener('click', () => toggleReportModal(false));
+    cancelReportButton?.addEventListener('click', () => toggleReportModal(false));
+    reportModal?.addEventListener('click', (event) => {
+        if (event.target === reportModal) toggleReportModal(false);
+    });
+    @if(count($incidentFormErrors)) toggleReportModal(true); @endif
 
     rows.forEach((row) => {
         row.addEventListener('keydown', function (e) {
@@ -342,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
+        toggleReportModal(false);
         document.querySelectorAll('.incident-modal').forEach((modal) => {
             if (modal.style.display === 'flex') {
                 modal.style.display = 'none';
@@ -430,13 +558,135 @@ document.addEventListener('DOMContentLoaded', function () {
     white-space: nowrap;
 }
 
+.report-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #b91c1c;
+    border-radius: 10px;
+    background: #dc2626;
+    color: #fff;
+    padding: 10px 14px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.report-btn:hover { background: #b91c1c; }
+
+.report-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.report-modal[hidden] { display: none; }
+
+.report-modal-content {
+    position: relative;
+    width: min(760px, 96vw);
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+    padding: 22px;
+}
+
+.report-modal-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-right: 30px;
+    margin-bottom: 18px;
+}
+
+.report-modal-heading h3 { margin: 0; color: #0f172a; font-size: 1.3rem; font-weight: 900; }
+.report-modal-heading p { margin: 5px 0 0; color: #64748b; font-size: 0.88rem; line-height: 1.4; }
+
+.cimm-owner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #99f6e4;
+    border-radius: 999px;
+    background: #f0fdfa;
+    color: #0f766e;
+    padding: 6px 9px;
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.report-errors {
+    margin-bottom: 14px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.report-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.report-field { display: flex; flex-direction: column; gap: 6px; }
+.report-field.full, .report-form-note, .report-form-actions { grid-column: 1 / -1; }
+.report-field label { color: #334155; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+.report-field label span { color: #94a3b8; font-weight: 700; text-transform: none; }
+.report-field input, .report-field select, .report-field textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #1e293b;
+    padding: 10px 11px;
+    font: inherit;
+}
+.report-field textarea { resize: vertical; min-height: 105px; }
+.report-field input:focus, .report-field select:focus, .report-field textarea:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+}
+
+.report-form-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.report-form-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.report-form-actions button { border-radius: 10px; padding: 10px 14px; font-weight: 800; cursor: pointer; }
+.report-cancel { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+.report-submit { border: 1px solid #1d4ed8; background: #2563eb; color: #fff; }
+.report-submit:hover { background: #1d4ed8; }
+
 .download-btn:hover {
     background: #0d9488;
 }
 
 .incident-metrics {
     display: grid;
-    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
     gap: 10px;
     margin-bottom: 14px;
 }
@@ -470,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .incident-filters {
     display: grid;
-    grid-template-columns: minmax(170px, 1.6fr) minmax(120px, 0.8fr) minmax(130px, 0.8fr) minmax(110px, 0.7fr) minmax(120px, 0.7fr) minmax(145px, 0.8fr) auto;
+    grid-template-columns: minmax(170px, 1.5fr) repeat(3, minmax(115px, 0.75fr)) minmax(100px, 0.65fr) minmax(110px, 0.65fr) minmax(145px, 0.8fr) auto;
     gap: 10px;
     margin-bottom: 14px;
 }
@@ -569,6 +819,31 @@ document.addEventListener('DOMContentLoaded', function () {
     font-weight: 800;
     color: #0f172a;
 }
+
+.facility-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.source-chip.cprf { background: #f0fdfa; border-color: #99f6e4; color: #0f766e; }
+.source-chip.auto { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.source-chip.manual { background: #faf5ff; border-color: #d8b4fe; color: #7e22ce; }
 
 .facility-desc {
     margin-top: 4px;
@@ -713,6 +988,21 @@ document.addEventListener('DOMContentLoaded', function () {
     flex-wrap: wrap;
 }
 
+.incident-pdf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    background: #fff1f2;
+    color: #be123c;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -779,7 +1069,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .modal-actions {
     margin-top: 16px;
-    text-align: right;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cimm-managed-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #99f6e4;
+    border-radius: 10px;
+    background: #f0fdfa;
+    color: #0f766e;
+    padding: 9px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 .maintenance-btn {
@@ -955,6 +1262,29 @@ body.dark-mode .incident-page .detail-item {
 body.dark-mode .incident-page .attachment-list a {
     color: #93c5fd;
 }
+body.dark-mode .report-modal-content {
+    background: #111827;
+    border: 1px solid #334155;
+}
+body.dark-mode .report-modal-heading h3,
+body.dark-mode .report-field label {
+    color: #e2e8f0;
+}
+body.dark-mode .report-modal-heading p {
+    color: #94a3b8;
+}
+body.dark-mode .report-field input,
+body.dark-mode .report-field select,
+body.dark-mode .report-field textarea {
+    background: #0b1220;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .report-cancel {
+    background: #1f2937;
+    border-color: #475569;
+    color: #e2e8f0;
+}
 
 @media (max-width: 1024px) {
     .incident-metrics {
@@ -983,6 +1313,22 @@ body.dark-mode .incident-page .attachment-list a {
     .header-actions a {
         flex: 1;
         justify-content: center;
+    }
+    .report-btn {
+        flex: 1 0 100%;
+        justify-content: center;
+    }
+    .report-form {
+        grid-template-columns: 1fr;
+    }
+    .report-field,
+    .report-field.full,
+    .report-form-note,
+    .report-form-actions {
+        grid-column: 1;
+    }
+    .report-modal-heading {
+        flex-direction: column;
     }
     .history-btn {
         justify-content: center;
