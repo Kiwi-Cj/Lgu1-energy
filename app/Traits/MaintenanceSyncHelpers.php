@@ -223,6 +223,8 @@ trait MaintenanceSyncHelpers
                 'scheduled_date' => $maintenance->scheduled_date,
                 'assigned_to' => $maintenance->assigned_to,
                 'completed_date' => $maintenance->completed_date,
+                'proof_photo_path' => $maintenance->proof_photo_path,
+                'photo_requirement' => $maintenance->photo_requirement ?? 'Optional',
                 'remarks' => $maintenance->remarks,
             ]);
             $maintenance->delete();

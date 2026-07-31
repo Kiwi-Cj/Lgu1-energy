@@ -3,6 +3,7 @@
 use App\Http\Controllers\Modules\EnergyMonitoringController;
 use App\Http\Controllers\Modules\IntegrationController;
 use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\Modules\MonthlyRecordActivityController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DownloadAuthorizationController;
 use App\Http\Controllers\NotificationController;
@@ -25,13 +26,6 @@ Route::get('/modules/settings/index', function () {
 
 // Restored for sidebar compatibility: energy.dashboard now points to energy-monitoring index (controller, so $facilities is set)
 Route::get('/modules/energy-monitoring/index', [EnergyMonitoringController::class, 'index'])->name('energy.dashboard');
-
-// OTP routes (should NOT be inside auth middleware)
-Route::get('/otp/request', [\App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
-Route::post('/otp/send', [\App\Http\Controllers\OtpController::class, 'sendOtp'])->name('otp.send');
-Route::get('/otp/verify', [\App\Http\Controllers\OtpController::class, 'showVerifyForm'])->name('otp.verify');
-Route::post('/otp/verify', [\App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify.submit');
-Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendOtp'])->name('otp.resend');
 
 // Users & Roles Management - Admin/Energy Officer only
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -65,9 +59,11 @@ Route::view('/about', 'pages.about')->name('about.index');
 Route::view('/faqs', 'pages.faqs')->name('faqs.index');
 Route::view('/privacy', 'pages.privacy')->name('privacy.index');
 
-// Maintenance History Route
-Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
-Route::delete('/modules/maintenance/history/{id}', [MaintenanceController::class, 'destroyHistory'])->name('modules.maintenance.history.destroy');
+// Maintenance history contains operational details and must not be public.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
+    Route::delete('/modules/maintenance/history/{id}', [MaintenanceController::class, 'destroyHistory'])->name('modules.maintenance.history.destroy');
+});
 
 // Include authentication routes (login, register, etc.)
 require __DIR__ . '/auth.php';
@@ -99,6 +95,11 @@ Route::get('/modules/energy-monitoring/{facility}/ai-recommendation', [EnergyMon
     ->name('modules.energy-monitoring.ai-recommendation');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/modules/monthly-record-activity', [MonthlyRecordActivityController::class, 'index'])
+        ->name('monthly-record-activity.index');
+    Route::patch('/modules/monthly-record-activity/{record}/review', [MonthlyRecordActivityController::class, 'review'])
+        ->name('monthly-record-activity.review');
+
     // System Settings route for dashboard shortcut - Super Admin only
     Route::get('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');

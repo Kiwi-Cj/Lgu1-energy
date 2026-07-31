@@ -73,6 +73,10 @@ class CprfFacilityReadingController extends Controller
             'energy_cost' => $validated['energy_cost'] ?? 0,
             'rate_per_kwh' => $validated['rate_per_kwh'] ?? 0,
             'input_source' => 'cprf',
+            'review_status' => 'for_review',
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'review_remarks' => null,
             // Resolve the CPRF recorder to the matching active Energy staff
             // account assigned to this facility. This lets downstream
             // recommendations default their implementation owner correctly.
@@ -117,6 +121,7 @@ class CprfFacilityReadingController extends Controller
                 'alert' => $record->alert,
                 'input_source' => $record->input_source,
                 'recorded_by' => $record->recorded_by,
+                'review_status' => $record->review_status ?? 'for_review',
             ],
         ], $wasExisting ? 200 : 201, [], JSON_PRESERVE_ZERO_FRACTION);
     }

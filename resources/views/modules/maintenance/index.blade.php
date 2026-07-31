@@ -210,6 +210,12 @@
     .status-pill.pending { background: #fffbeb; color: #a16207; border-color: #fde68a; }
     .status-pill.ongoing { background: #ecfeff; color: #0e7490; border-color: #bae6fd; }
     .status-pill.completed { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .priority-pill { display:inline-flex; margin-top:5px; padding:3px 7px; border-radius:999px; font-size:.67rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .priority-pill.normal { background:#f1f5f9; color:#475569; }
+    .priority-pill.high { background:#fff7ed; color:#c2410c; }
+    .priority-pill.critical { background:#fee2e2; color:#b91c1c; }
+    .overdue-label { display:block; margin-top:4px; color:#dc2626; font-size:.7rem; font-weight:800; white-space:nowrap; }
+    .proof-link { display:inline-flex; align-items:center; gap:5px; margin-top:5px; color:#2563eb; font-size:.72rem; font-weight:800; text-decoration:none; }
     .remarks-cell {
         color: #64748b;
         max-width: 300px;
@@ -675,7 +681,7 @@
                 title="CIMM maintenance synchronization API {{ $cimmIntegrationEnabled ? 'is configured' : 'is not configured' }}"
             >
                 <span class="cimm-status-dot" aria-hidden="true"></span>
-                CIMM Integration · {{ $cimmIntegrationEnabled ? 'Active' : 'Not Configured' }}
+                CIMM Integration &middot; {{ $cimmIntegrationEnabled ? 'Active' : 'Not Configured' }}
             </span>
         </div>
         <div class="header-actions">
@@ -690,19 +696,19 @@
 
     <div class="stats-grid">
         <div class="stat-box stat-needing">
-            <div class="stat-label">🔴 Needing Maint.</div>
+            <div class="stat-label"><i class="fa fa-triangle-exclamation"></i> Needing Maint.</div>
             <div class="stat-value">{{ $needingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-pending">
-            <div class="stat-label">🟡 Pending</div>
+            <div class="stat-label"><i class="fa fa-clock"></i> Pending</div>
             <div class="stat-value">{{ $pendingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-ongoing">
-            <div class="stat-label">🔧 Ongoing</div>
+            <div class="stat-label"><i class="fa fa-screwdriver-wrench"></i> Ongoing</div>
             <div class="stat-value">{{ $ongoingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-completed">
-            <div class="stat-label">✅ Completed</div>
+            <div class="stat-label"><i class="fa fa-circle-check"></i> Completed</div>
             <div class="stat-value">{{ $completedCount ?? 0 }}</div>
         </div>
     </div>
@@ -801,7 +807,9 @@
                     data-maintenance_type="{{ $row['maintenance_type'] ?? '' }}" 
                     data-scheduled_date="{{ $row['scheduled_date'] ?? '' }}" 
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
-                    data-completed_date="{{ $row['completed_date'] ?? '' }}">
+                    data-completed_date="{{ $row['completed_date'] ?? '' }}"
+                    data-photo_requirement="{{ $row['photo_requirement'] ?? 'Optional' }}"
+                    data-proof_photo_url="{{ $row['proof_photo_url'] ?? '' }}">
                     <td class="facility-cell">
                         <div class="facility-identity">
                             @if(!empty($row['facility_image_url']))
@@ -833,13 +841,24 @@
                             <span>Details</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
                         </button>
                     </td>
-                    <td data-label="Issue Type">{{ $row['issue_type'] }}</td>
+                    <td data-label="Issue Type">
+                        <div>{{ $row['issue_type'] }}</div>
+                        <span class="priority-pill {{ strtolower($row['priority'] ?? 'Normal') }}">{{ $row['priority'] ?? 'Normal' }}</span>
+                    </td>
                     <td data-label="Trigger Date">{{ $row['trigger_date'] ?? $row['trigger_month'] }}</td>
                     <!-- Efficiency value removed -->
                     <td data-label="Status"><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
-                    <td data-label="Scheduled">{{ $row['scheduled_date'] }}</td>
+                    <td data-label="Scheduled">
+                        {{ $row['scheduled_date'] }}
+                        @if($row['is_overdue'] ?? false)
+                            <span class="overdue-label"><i class="fa fa-clock"></i> {{ $row['overdue_days'] }} day(s) overdue</span>
+                        @endif
+                    </td>
                     <td class="remarks-muted" data-label="Remarks">
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
+                        @if(!empty($row['proof_photo_url']))
+                            <a class="proof-link" href="{{ $row['proof_photo_url'] }}" target="_blank" rel="noopener"><i class="fa fa-image"></i> View proof</a>
+                        @endif
                     </td>
                     @if($userRole !== 'staff')
                     <td data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
@@ -849,7 +868,7 @@
                     <tr id="facility-issues-{{ $facilityId }}" class="facility-issues-row hidden-row">
                         <td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="facility-issues-cell">
                             <div class="facility-issues-panel">
-                                <div class="facility-issues-heading">All maintenance issues — latest first</div>
+                                <div class="facility-issues-heading">All maintenance issues &mdash; latest first</div>
                                 @foreach($facilityIssues as $issue)
                                     @php
                                         $issueStatusKey = strtolower((string) ($issue['maintenance_status'] ?? ''));
@@ -865,6 +884,8 @@
                                         data-scheduled_date="{{ $issue['scheduled_date'] ?? '' }}"
                                         data-assigned_to="{{ $issue['assigned_to'] ?? '' }}"
                                         data-completed_date="{{ $issue['completed_date'] ?? '' }}"
+                                        data-photo_requirement="{{ $issue['photo_requirement'] ?? 'Optional' }}"
+                                        data-proof_photo_url="{{ $issue['proof_photo_url'] ?? '' }}"
                                         data-remarks="{{ $issue['remarks'] ?? '' }}">
                                         <strong>{{ $issue['issue_type'] ?? '-' }}</strong>
                                         <span class="facility-issue-period">{{ $issue['trigger_date'] ?? $issue['trigger_month'] ?? '-' }}</span>
@@ -964,14 +985,47 @@
                     </div>
                 </div>
 
-                <div class="field-group">
-                    <label for="modalAssignedTo" class="field-label">Assigned To</label>
-                    <input type="text" id="modalAssignedTo" class="field-control" placeholder="e.g. Engr. Cruz">
+                <div class="maintenance-form-grid">
+                    <div class="field-group">
+                        <label for="modalAssigneeRole" class="field-label">Assignee Category</label>
+                        <select id="modalAssigneeRole" class="field-control">
+                            <option value="">Select category</option>
+                            <option value="engineer">Engineer</option>
+                            <option value="energy_officer">Energy Officer</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="modalAssignedTo" class="field-label">Assigned To</label>
+                        <select id="modalAssignedTo" class="field-control" disabled>
+                            <option value="">Select a category first</option>
+                            @foreach($assignableUsers ?? collect() as $assignableUser)
+                                <option value="{{ $assignableUser['name'] }}" data-role="{{ $assignableUser['role'] }}">
+                                    {{ $assignableUser['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <div class="field-group">
                     <label for="modalRemarks" class="field-label">Remarks</label>
                     <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
+                </div>
+
+                <div class="maintenance-form-grid">
+                    <div class="field-group">
+                        <label for="modalPhotoRequirement" class="field-label">Completion Photo</label>
+                        <select id="modalPhotoRequirement" class="field-control">
+                            <option value="Optional">Optional</option>
+                            <option value="Required">Required</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="modalProofPhoto" class="field-label">Proof Photo</label>
+                        <input type="file" id="modalProofPhoto" class="field-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <a id="modalExistingProof" class="proof-link" href="#" target="_blank" rel="noopener" style="display:none;"><i class="fa fa-image"></i> View existing proof</a>
+                    </div>
                 </div>
 
                 <div class="maintenance-form-grid">
@@ -1018,14 +1072,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalIssueType = document.getElementById('modalIssueType');
     const modalMaintType = document.getElementById('modalMaintType');
     const modalScheduleDate = document.getElementById('modalScheduleDate');
+    const modalAssigneeRole = document.getElementById('modalAssigneeRole');
     const modalAssignedTo = document.getElementById('modalAssignedTo');
     const modalRemarks = document.getElementById('modalRemarks');
+    const modalPhotoRequirement = document.getElementById('modalPhotoRequirement');
+    const modalProofPhoto = document.getElementById('modalProofPhoto');
+    const modalExistingProof = document.getElementById('modalExistingProof');
     const modalStatus = document.getElementById('modalStatus');
     const modalCompletedDate = document.getElementById('modalCompletedDate');
     const maintenanceSearch = document.getElementById('maintenanceSearch');
     const visibleCountEl = document.getElementById('maintenanceVisibleCount');
     const noMatchRow = document.getElementById('maintenanceNoMatchRow');
     const tableRows = Array.from(document.querySelectorAll('.maint-table tbody tr[data-search]'));
+    const assigneeOptions = modalAssignedTo
+        ? Array.from(modalAssignedTo.querySelectorAll('option[data-role]')).map((option) => ({
+            value: option.value,
+            label: option.textContent.trim(),
+            role: option.dataset.role || ''
+        }))
+        : [];
+
+    const filterAssignees = (role, selectedName = '') => {
+        if (!modalAssignedTo) return;
+
+        modalAssignedTo.replaceChildren();
+        const matchingUsers = assigneeOptions.filter((option) => option.role === role);
+        const placeholder = !role
+            ? 'Select a category first'
+            : (matchingUsers.length ? 'Select a name' : 'No active users in this category');
+        modalAssignedTo.add(new Option(placeholder, ''));
+
+        matchingUsers.forEach((option) => {
+            modalAssignedTo.add(new Option(option.label, option.value));
+        });
+
+        modalAssignedTo.disabled = !role || matchingUsers.length === 0;
+        modalAssignedTo.value = matchingUsers.some((option) => option.value === selectedName)
+            ? selectedName
+            : '';
+    };
+
+    if (modalAssigneeRole) {
+        modalAssigneeRole.addEventListener('change', () => {
+            filterAssignees(modalAssigneeRole.value);
+        });
+    }
+
+    filterAssignees('');
 
     const updateCompletedDateState = () => {
         if (!modalStatus || !modalCompletedDate) return;
@@ -1150,7 +1243,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (modalMaintType) modalMaintType.value = row.getAttribute('data-maintenance_type') || 'Preventive';
             if (modalScheduleDate) modalScheduleDate.value = row.getAttribute('data-scheduled_date') || '';
-            if (modalAssignedTo) modalAssignedTo.value = row.getAttribute('data-assigned_to') || '';
+            if (modalAssignedTo) {
+                const assignedTo = row.getAttribute('data-assigned_to') || '';
+                const matchingAssignee = assigneeOptions.find((option) => option.value === assignedTo);
+
+                if (modalAssigneeRole) {
+                    modalAssigneeRole.value = matchingAssignee?.role || '';
+                }
+                filterAssignees(matchingAssignee?.role || '', assignedTo);
+
+                if (assignedTo && !matchingAssignee) {
+                    modalAssignedTo.disabled = false;
+                    modalAssignedTo.add(new Option(`${assignedTo} · Existing assignment`, assignedTo));
+                    modalAssignedTo.value = assignedTo;
+                }
+            }
             if (modalRemarks) {
                 const remarksText = row.getAttribute('data-remarks') || '';
                 modalRemarks.value = remarksText === '-' ? '' : remarksText;
@@ -1161,6 +1268,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalStatus.value = canUseStatus ? statusText : 'Ongoing';
             }
             if (modalCompletedDate) modalCompletedDate.value = row.getAttribute('data-completed_date') || '';
+            if (modalPhotoRequirement) modalPhotoRequirement.value = row.getAttribute('data-photo_requirement') || 'Optional';
+            if (modalProofPhoto) modalProofPhoto.value = '';
+            if (modalExistingProof) {
+                const proofUrl = row.getAttribute('data-proof_photo_url') || '';
+                modalExistingProof.href = proofUrl || '#';
+                modalExistingProof.dataset.hasProof = proofUrl ? '1' : '0';
+                modalExistingProof.style.display = proofUrl ? 'inline-flex' : 'none';
+            }
             updateCompletedDateState();
             updateIssueTypeState();
             openScheduleModal();
@@ -1178,6 +1293,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTriggerMonth) modalTriggerMonth.disabled = false;
             if (modalTriggerYear) modalTriggerYear.disabled = false;
             if (modalStatus) modalStatus.value = 'Pending';
+            if (modalAssigneeRole) modalAssigneeRole.value = '';
+            filterAssignees('');
+            if (modalPhotoRequirement) modalPhotoRequirement.value = 'Optional';
+            if (modalProofPhoto) modalProofPhoto.value = '';
+            if (modalExistingProof) {
+                modalExistingProof.href = '#';
+                modalExistingProof.dataset.hasProof = '0';
+                modalExistingProof.style.display = 'none';
+            }
             updateCompletedDateState();
             updateIssueTypeState();
             openScheduleModal();
@@ -1198,6 +1322,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.alert('Completed Date is required!');
                 return false;
             }
+            const proofFile = modalProofPhoto?.files?.[0] || null;
+            const hasExistingProof = modalExistingProof?.dataset?.hasProof === '1';
+            if (status === 'Completed' && modalPhotoRequirement?.value === 'Required' && !proofFile && !hasExistingProof) {
+                window.alert('Please upload the required proof photo before completing this maintenance task.');
+                return false;
+            }
 
             const monthNum = modalTriggerMonth?.value;
             const yearVal = modalTriggerYear?.value;
@@ -1205,25 +1335,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? new Date(2000, parseInt(monthNum, 10) - 1, 1).toLocaleString('default', { month: 'long' })
                 : '';
             const triggerMonth = monthName && yearVal ? `${monthName} ${yearVal}` : '';
-            const payload = {
-                maintenance_id: modalMaintenanceId?.value || '',
-                facility_id: modalFacility?.value,
-                trigger_month: triggerMonth,
-                issue_type: modalIssueType?.value,
-                maintenance_type: modalMaintType?.value,
-                scheduled_date: modalScheduleDate?.value,
-                assigned_to: modalAssignedTo?.value,
-                remarks: modalRemarks?.value,
-                maintenance_status: status,
-                completed_date: completedDate,
-                _token: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-            };
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const payload = new FormData();
+            payload.append('maintenance_id', modalMaintenanceId?.value || '');
+            payload.append('facility_id', modalFacility?.value || '');
+            payload.append('trigger_month', triggerMonth);
+            payload.append('issue_type', modalIssueType?.value || '');
+            payload.append('maintenance_type', modalMaintType?.value || '');
+            payload.append('scheduled_date', modalScheduleDate?.value || '');
+            payload.append('assigned_to', modalAssignedTo?.value || '');
+            payload.append('remarks', modalRemarks?.value || '');
+            payload.append('maintenance_status', status || '');
+            payload.append('completed_date', completedDate || '');
+            payload.append('photo_requirement', modalPhotoRequirement?.value || 'Optional');
+            payload.append('_token', csrfToken);
+            if (proofFile) payload.append('proof_photo', proofFile);
 
             try {
                 const response = await fetch("{{ route('modules.maintenance.schedule') }}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': payload._token },
-                    body: JSON.stringify(payload),
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: payload,
                 });
                 const body = await response.json().catch(() => ({}));
                 if (!response.ok || !body.success) {

@@ -30,6 +30,10 @@ class EnergyRecord extends Model
         'recorded_by',
         'recorded_by_name',
         'input_source',
+        'review_status',
+        'reviewed_by',
+        'reviewed_at',
+        'review_remarks',
         'bill_image',
         'baseline_kwh',
         'deviation',
@@ -47,11 +51,17 @@ class EnergyRecord extends Model
         'rate_per_kwh' => 'decimal:2',
         'baseline_kwh' => 'decimal:2',
         'deviation' => 'decimal:2',
+        'reviewed_at' => 'datetime',
     ];
 
     public function recordedBy()
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     // Backward-compatible alias for older code paths.
@@ -247,4 +257,3 @@ class EnergyRecord extends Model
             : null;
     }
 }
-

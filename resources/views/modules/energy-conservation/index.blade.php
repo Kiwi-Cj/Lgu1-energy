@@ -4,9 +4,15 @@
 @section('content')
 @php
     $featureCatalog = $featureCatalog ?? [];
-    $activeFeatures = collect($featureCatalog)->filter(
-        fn (array $feature, string $slug) => ($feature['status'] ?? null) === 'enabled' && $slug !== 'ai-recommendations'
-    );
+    $overviewFeatureSlugs = [
+        'energy-saving-tips',
+        'conservation-goals',
+        'daily-checklist',
+        'estimated-savings',
+        'suggestions-box',
+        'conservation-reports',
+    ];
+    $overviewFeatures = collect($featureCatalog)->only($overviewFeatureSlugs);
 @endphp
 
 <style>
@@ -65,11 +71,36 @@
         box-shadow: 0 14px 30px rgba(15, 23, 42, .12);
         border-color: #c7d2fe;
     }
+    .feature-card.is-coming-soon {
+        cursor: not-allowed;
+        opacity: .78;
+        background: #f8fafc;
+        box-shadow: none;
+    }
+    .feature-card.is-coming-soon:hover {
+        transform: none;
+        border-color: #dbe4f0;
+        box-shadow: none;
+    }
     .feature-card-head {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
+    }
+    .feature-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: #9a3412;
+        background: #ffedd5;
+        border: 1px solid #fed7aa;
+        font-size: .7rem;
+        font-weight: 900;
+        letter-spacing: .03em;
+        text-transform: uppercase;
     }
     .feature-icon {
         width: 46px;
@@ -108,6 +139,9 @@
         background: #0f172a;
         border-color: #334155;
     }
+    body.dark-mode .feature-card.is-coming-soon {
+        background: #111827;
+    }
     body.dark-mode .conservation-title,
     body.dark-mode .feature-title {
         color: #f8fafc;
@@ -138,7 +172,24 @@
     </div>
 
     <div class="feature-grid">
-        @foreach($activeFeatures as $slug => $feature)
+        @foreach($overviewFeatures as $slug => $feature)
+            @php($isComingSoon = ($feature['status'] ?? null) !== 'enabled')
+            @if($isComingSoon)
+            <div class="feature-card is-coming-soon" aria-disabled="true">
+                <div class="feature-card-head">
+                    <div class="feature-icon"><i class="{{ $feature['icon'] }}"></i></div>
+                    <span class="feature-badge"><i class="fa-regular fa-clock"></i> Coming Soon</span>
+                </div>
+                <div>
+                    <h2 class="feature-title">{{ $feature['title'] }}</h2>
+                    <div class="feature-desc">{{ $feature['description'] }}</div>
+                </div>
+                <div class="feature-meta">
+                    <span>Feature in development</span>
+                    <span><i class="fa-solid fa-lock"></i></span>
+                </div>
+            </div>
+            @else
             <a class="feature-card" href="{{ route('modules.energy-conservation.feature', ['feature' => $slug, 'month' => $selectedMonth]) }}">
                 <div class="feature-card-head">
                     <div class="feature-icon"><i class="{{ $feature['icon'] }}"></i></div>
@@ -152,6 +203,7 @@
                     <span><i class="fa-solid fa-arrow-right"></i></span>
                 </div>
             </a>
+            @endif
         @endforeach
     </div>
 </div>

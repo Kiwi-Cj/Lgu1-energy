@@ -504,6 +504,10 @@ class EnergyController extends Controller
             'energy_cost' => $validated['energy_cost'] ?? null,
             'rate_per_kwh' => $validated['rate_per_kwh'] ?? null,
             'alert' => $validated['alert'] ?? $this->resolveAlertLevel($baseline, $deviation),
+            'review_status' => 'for_review',
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'review_remarks' => null,
         ];
 
         if ($creating) {

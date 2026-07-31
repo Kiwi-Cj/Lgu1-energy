@@ -4,10 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Otp;
+use App\Models\User;
+use App\Notifications\SendOtpNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -27,19 +33,24 @@ class AuthenticatedSessionController extends Controller
     {
         $request->ensureIsNotRateLimited();
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
         if (
             ! $user ||
-            ! \Illuminate\Support\Facades\Hash::check($request->password, $user->password) ||
+            ! Hash::check($request->password, $user->password) ||
             strtolower($user->status) !== 'active'
         ) {
-            \Illuminate\Support\Facades\RateLimiter::hit($request->throttleKey());
+            RateLimiter::hit($request->throttleKey());
 
-            session()->forget(['otp_user_id']);
+            $request->session()->forget([
+                'otp_user_id',
+                'otp_email',
+                'otp_expires_at',
+                'otp_resend_available_at',
+            ]);
 
             $errorMsg = ! $user ||
-                ! \Illuminate\Support\Facades\Hash::check($request->password, $user->password)
+                ! Hash::check($request->password, $user->password)
                     ? trans('auth.failed')
                     : 'Your account is inactive. Please contact the administrator.';
 
@@ -65,9 +76,7 @@ class AuthenticatedSessionController extends Controller
 
             $request->session()->regenerate();
 
-            \Illuminate\Support\Facades\RateLimiter::clear(
-                $request->throttleKey()
-            );
+            RateLimiter::clear($request->throttleKey());
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
@@ -79,34 +88,36 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard');
         }
 
-        session([
-            'otp_user_id' => $user->id,
-        ]);
-
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $expireMinutes = max(1, (int) config('otp.expire_minutes', 5));
         $expiresAt = now()->addMinutes($expireMinutes);
 
-        \App\Models\Otp::create([
+        $user->otps()->where('used', false)->update(['used' => true]);
+
+        Otp::create([
             'user_id' => $user->id,
             'code' => $otp,
             'expires_at' => $expiresAt,
         ]);
 
-        \Log::info('Sending OTP to: '.$user->email);
+        $request->session()->put([
+            'otp_user_id' => $user->id,
+            'otp_email' => $user->email,
+            'otp_expires_at' => $expiresAt->timestamp,
+            'otp_resend_available_at' => now()->addSeconds(30)->timestamp,
+        ]);
 
-        $user->notify(
-            new \App\Notifications\SendOtpNotification($otp)
-        );
+        Log::info('Sending OTP to: '.$user->email);
+        $user->notify(new SendOtpNotification((string) $otp));
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
-                'show_otp_modal' => true,
+                'redirect' => route('verify.otp.form'),
                 'otp_expire_minutes' => $expireMinutes,
             ]);
         }
 
-        return redirect()->back();
+        return redirect()->route('verify.otp.form');
     }
 
     /**

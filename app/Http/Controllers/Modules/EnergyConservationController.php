@@ -34,6 +34,10 @@ class EnergyConservationController extends Controller
         if (! $selected) {
             return redirect()->route('modules.energy-conservation.index')->with('error', 'Feature not found.');
         }
+        if (($selected['status'] ?? null) !== 'enabled') {
+            return redirect()->route('modules.energy-conservation.index')
+                ->with('error', $selected['title'].' is coming soon.');
+        }
 
         $recommendationNotificationId = (int) $request->query('recommendation_notification_id', 0);
         if ($feature === 'energy-saving-tips' && $recommendationNotificationId > 0) {
@@ -855,8 +859,8 @@ class EnergyConservationController extends Controller
             ],
             'conservation-goals' => [
                 'title' => 'Conservation Goals',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
                 'icon' => 'fa-solid fa-bullseye',
                 'description' => 'Set and monitor energy reduction targets.',
                 'details' => [
@@ -927,8 +931,8 @@ class EnergyConservationController extends Controller
             ],
             'estimated-savings' => [
                 'title' => 'Estimated Savings',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
                 'icon' => 'fa-solid fa-chart-line',
                 'description' => 'View estimated kWh, cost, and CO2 savings.',
                 'details' => [
@@ -939,8 +943,8 @@ class EnergyConservationController extends Controller
             ],
             'suggestions-box' => [
                 'title' => 'Suggestions Box',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
                 'icon' => 'fa-solid fa-inbox',
                 'description' => 'Collect energy-saving suggestions from users.',
                 'details' => [
@@ -951,8 +955,8 @@ class EnergyConservationController extends Controller
             ],
             'conservation-reports' => [
                 'title' => 'Conservation Reports',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
+                'badge' => 'Coming Soon',
+                'status' => 'coming-soon',
                 'icon' => 'fa-solid fa-file-lines',
                 'description' => 'Generate reports on energy conservation efforts.',
                 'details' => [

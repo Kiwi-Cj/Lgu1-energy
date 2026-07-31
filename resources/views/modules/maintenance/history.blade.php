@@ -100,6 +100,7 @@
                         <th>Scheduled Date</th>
                         <th>Assigned</th>
                         <th>Completed Date</th>
+                        <th>Proof</th>
                         <th>Remarks</th>
                         @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                         <th>Action</th>
@@ -136,6 +137,13 @@
                             <td>{{ $row['scheduled_date'] }}</td>
                             <td>{{ $row['assigned_to'] }}</td>
                             <td>{{ $row['completed_date'] }}</td>
+                            <td>
+                                @if(!empty($row['proof_photo_url']))
+                                    <a href="{{ $row['proof_photo_url'] }}" target="_blank" rel="noopener" style="color:#2563eb;font-weight:800;text-decoration:none;white-space:nowrap;"><i class="fa fa-image"></i> View</a>
+                                @else
+                                    <span style="color:#94a3b8;">—</span>
+                                @endif
+                            </td>
                             <td><div class="remarks-cell" title="{{ $row['remarks'] }}">{{ \Illuminate\Support\Str::limit((string) $row['remarks'], 90) }}</div></td>
                             @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                             <td>
@@ -151,11 +159,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No maintenance history found.</td>
+                            <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 12 : 13 }}" class="empty-cell">No maintenance history found.</td>
                         </tr>
                     @endforelse
                     <tr id="historyNoMatchRow" style="display:none;">
-                        <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No matching records found.</td>
+                        <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 12 : 13 }}" class="empty-cell">No matching records found.</td>
                     </tr>
                 </tbody>
             </table>

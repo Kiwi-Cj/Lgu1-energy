@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
 {
+    public function created(EnergyRecord $record): void
+    {
+        $this->notifyReviewersOfSubmission($record);
+    }
+
     public function deleted(EnergyRecord $record): void
     {
         // For soft deletes, keep related records so monthly entries can be restored from archive.
@@ -29,6 +34,22 @@ class EnergyRecordObserver
 
     public function saved(EnergyRecord $record): void
     {
+        if (! $record->wasRecentlyCreated
+            && strtolower(trim((string) $record->input_source)) === 'cprf'
+            && $record->wasChanged([
+                'actual_kwh',
+                'year',
+                'month',
+                'day',
+                'energy_cost',
+                'rate_per_kwh',
+                'recorded_by',
+                'recorded_by_name',
+            ])
+        ) {
+            $this->notifyReviewersOfSubmission($record, true);
+        }
+
         $record->loadMissing(['facility.energyProfiles', 'meter']);
         $facility = $record->facility;
         if (! $facility) {
@@ -137,6 +158,63 @@ class EnergyRecordObserver
                 });
         } catch (\Throwable $e) {
             // Notification failure must not block monthly record persistence.
+        }
+    }
+
+    private function notifyReviewersOfSubmission(EnergyRecord $record, bool $isUpdate = false): void
+    {
+        try {
+            if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $record->loadMissing(['facility:id,name', 'recordedBy:id,full_name,name,username']);
+            $facilityName = trim((string) ($record->facility?->name ?? 'Unknown Facility'));
+            $source = strtolower(trim((string) ($record->input_source ?? 'manual')));
+            $isIntegrated = $source === 'cprf';
+            $encoderName = trim((string) ($record->recorded_by_name ?? ''));
+
+            if ($encoderName === '') {
+                $encoderName = trim((string) (
+                    $record->recordedBy?->full_name
+                    ?? $record->recordedBy?->name
+                    ?? $record->recordedBy?->username
+                    ?? ''
+                ));
+            }
+            if ($encoderName === '') {
+                $encoderName = $isIntegrated ? 'CPRF Integration' : 'Unknown user';
+            }
+
+            $month = max(1, min(12, (int) ($record->month ?? now()->month)));
+            $year = (int) ($record->year ?? now()->year);
+            $periodLabel = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+            $sourceLabel = $isIntegrated ? 'CPRF Integration' : 'Manual Entry';
+            $action = $isUpdate ? 'updated' : 'submitted';
+            $message = "{$encoderName} {$action} the {$periodLabel} monthly record for {$facilityName} via {$sourceLabel}.";
+            $targetUrl = route('monthly-record-activity.index');
+
+            User::query()
+                ->get()
+                ->filter(fn (User $recipient) => RoleAccess::in($recipient, ['super_admin', 'admin', 'engineer']))
+                ->each(function (User $recipient) use ($record, $message, $targetUrl, $isUpdate) {
+                    if ((int) $recipient->id === (int) $record->recorded_by) {
+                        return;
+                    }
+
+                    $recipient->notifications()->firstOrCreate(
+                        [
+                            'type' => 'monthly_record_submission',
+                            'message' => $message,
+                        ],
+                        [
+                            'title' => $isUpdate ? 'Monthly Record Updated' : 'New Monthly Record',
+                            'target_url' => $targetUrl,
+                        ]
+                    );
+                });
+        } catch (\Throwable $e) {
+            // Activity notifications must not block monthly record persistence.
         }
     }
 

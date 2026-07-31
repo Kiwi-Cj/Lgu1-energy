@@ -128,6 +128,9 @@ class IntegrationDataController extends Controller
             'baseline_kwh' => $this->number($record->baseline_kwh),
             'deviation_percent' => $record->deviation,
             'alert' => $record->alert,
+            'review_status' => $record->review_status ?? 'for_review',
+            'reviewed_at' => $record->reviewed_at?->toIso8601String(),
+            'review_remarks' => $record->review_remarks,
             'created_at' => $record->created_at?->toIso8601String(),
             'updated_at' => $record->updated_at?->toIso8601String(),
         ]);
@@ -295,9 +298,9 @@ class IntegrationDataController extends Controller
     }
 
     /**
-     * Engineer-reviewed energy-saving recommendations for CPRF. Defaults to
-     * status=approved so the reservation system only surfaces vetted advice;
-     * pass status=all to lift the filter.
+     * Engineer-reviewed energy-saving recommendations for CPRF. The partner
+     * can only receive approved recommendations whose CPRF monthly source
+     * record has also passed this app's monthly-record review workflow.
      */
     public function recommendations(Request $request): JsonResponse
     {
@@ -315,6 +318,19 @@ class IntegrationDataController extends Controller
 
         $query = EnergySavingRecommendation::query()
             ->with('facility:id,name')
+            ->where('status', 'approved')
+            ->whereExists(function ($recordQuery) {
+                $recordQuery
+                    ->selectRaw('1')
+                    ->from('energy_records')
+                    ->whereColumn('energy_records.facility_id', 'energy_saving_recommendations.facility_id')
+                    ->whereColumn('energy_records.year', 'energy_saving_recommendations.year')
+                    ->whereColumn('energy_records.month', 'energy_saving_recommendations.month')
+                    ->where('energy_records.input_source', 'cprf')
+                    ->where('energy_records.review_status', 'approved')
+                    ->whereNull('energy_records.meter_id')
+                    ->whereNull('energy_records.deleted_at');
+            })
             ->when($status !== 'all', fn (Builder $q) => $q->where('status', $status))
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
@@ -361,12 +377,13 @@ class IntegrationDataController extends Controller
             ->where('year', $recommendation->year)
             ->where('month', $recommendation->month)
             ->where('input_source', 'cprf')
+            ->where('review_status', 'approved')
             ->whereNull('meter_id')
             ->exists();
 
         if (! $isCprfRecommendation) {
             return response()->json([
-                'message' => 'Only recommendations created from CPRF readings can be managed by Facilities.',
+                'message' => 'The CPRF monthly record must be approved before its recommendation can be managed by Facilities.',
             ], 409);
         }
 

@@ -31,7 +31,10 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 
     Route::get('verify-otp', [OtpVerificationController::class, 'show'])->name('verify.otp.form');
-    Route::post('verify-otp', [OtpVerificationController::class, 'verify'])->name('verify.otp.submit');
+    Route::post('verify-otp', [OtpVerificationController::class, 'verify'])
+        ->middleware('throttle:6,1')
+        ->name('verify.otp.submit');
+    Route::post('verify-otp/resend', [OtpVerificationController::class, 'resend'])->name('verify.otp.resend');
 });
 
 Route::middleware('auth')->group(function () {

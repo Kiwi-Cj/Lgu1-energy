@@ -21,10 +21,17 @@ class ShareLayoutData
             'role' => RoleAccess::normalize($user),
             'notifications' => collect(),
             'unreadNotifCount' => 0,
+            'unreadMonthlySubmissionCount' => 0,
         ];
 
         if ($user) {
             $shared = array_merge($shared, $user->notificationPanelData());
+            if (RoleAccess::can($user, 'view_monthly_record_activity')) {
+                $shared['unreadMonthlySubmissionCount'] = $user->notifications()
+                    ->where('type', 'monthly_record_submission')
+                    ->whereNull('read_at')
+                    ->count();
+            }
         }
 
         View::share($shared);

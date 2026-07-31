@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\EnergySavingRecommendation;
+use App\Models\EnergyRecord;
 use App\Models\Facility;
 
 function makeRecommendation(Facility $facility, array $overrides = []): EnergySavingRecommendation
@@ -14,6 +15,20 @@ function makeRecommendation(Facility $facility, array $overrides = []): EnergySa
     ], $overrides));
 }
 
+function makeCprfRecord(Facility $facility, int $month = 6, string $reviewStatus = 'approved'): EnergyRecord
+{
+    return EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => null,
+        'year' => 2026,
+        'month' => $month,
+        'day' => 28,
+        'actual_kwh' => 1200,
+        'input_source' => 'cprf',
+        'review_status' => $reviewStatus,
+    ]);
+}
+
 test('recommendations endpoint requires the cprf token', function () {
     config(['services.cprf_integration.token' => 'right-token']);
 
@@ -23,6 +38,8 @@ test('recommendations endpoint requires the cprf token', function () {
 test('recommendations default to approved status only', function () {
     config(['services.cprf_integration.token' => 'test-token']);
     $facility = Facility::factory()->create();
+    makeCprfRecord($facility, 6);
+    makeCprfRecord($facility, 7);
     makeRecommendation($facility);
     makeRecommendation($facility, ['month' => 7, 'status' => 'for_review']);
 
@@ -37,15 +54,7 @@ test('recommendations default to approved status only', function () {
 test('cprf can update implementation progress but cannot verify recommendations', function () {
     config(['services.cprf_integration.token' => 'test-token']);
     $facility = Facility::factory()->create();
-    \App\Models\EnergyRecord::create([
-        'facility_id' => $facility->id,
-        'meter_id' => null,
-        'year' => 2026,
-        'month' => 6,
-        'day' => 28,
-        'actual_kwh' => 1200,
-        'input_source' => 'cprf',
-    ]);
+    makeCprfRecord($facility);
     $recommendation = makeRecommendation($facility, [
         'implementation_status' => 'pending',
     ]);
@@ -86,10 +95,29 @@ test('cprf cannot update a recommendation that did not come from a cprf reading'
         ->assertStatus(409);
 });
 
+test('cprf cannot receive or manage recommendations while the monthly record is for review', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create();
+    makeCprfRecord($facility, 6, 'for_review');
+    $recommendation = makeRecommendation($facility);
+
+    $response = $this->withToken('test-token')->getJson('/api/v1/cprf/recommendations');
+    $response->assertOk();
+    expect($response->json('data'))->toHaveCount(0);
+
+    $this->withToken('test-token')
+        ->patchJson("/api/v1/cprf/recommendations/{$recommendation->id}/implementation", [
+            'implementation_status' => 'in_progress',
+        ])
+        ->assertStatus(409);
+});
+
 test('recommendations can be filtered by facility, period, status and updated_since', function () {
     config(['services.cprf_integration.token' => 'test-token']);
     $facilityA = Facility::factory()->create();
     $facilityB = Facility::factory()->create();
+    makeCprfRecord($facilityA, 6);
+    makeCprfRecord($facilityB, 5);
     makeRecommendation($facilityA);
     makeRecommendation($facilityB, ['month' => 5]);
 

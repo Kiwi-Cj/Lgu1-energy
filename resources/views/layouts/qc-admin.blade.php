@@ -1691,6 +1691,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('energy-incidents.*');
             $canViewFacilities = \App\Support\RoleAccess::can($user, 'view_facilities');
             $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
+            $canViewMonthlyActivity = \App\Support\RoleAccess::can($user, 'view_monthly_record_activity');
             $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
             $canViewSubmeters = \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
             $canViewMaintenance = \App\Support\RoleAccess::can($user, 'view_maintenance');
@@ -1706,6 +1707,19 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
                 @if($canViewFacilities)
                 <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                @endif
+                @if($canViewMonthlyActivity)
+                <li>
+                    <a href="{{ route('monthly-record-activity.index') }}" class="nav-link{{ request()->routeIs('monthly-record-activity.*') ? ' active' : '' }}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Monthly Record Activity
+                        @if(($unreadMonthlySubmissionCount ?? 0) > 0)
+                            <span style="margin-left:auto;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#e11d48;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;">
+                                {{ ($unreadMonthlySubmissionCount ?? 0) > 99 ? '99+' : $unreadMonthlySubmissionCount }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
                 @endif
                 @if($canViewEnergy || $canViewConservation || $canViewSubmeters)
                 <li class="nav-item-has-submenu">

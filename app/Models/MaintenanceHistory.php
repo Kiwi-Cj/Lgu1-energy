@@ -21,6 +21,8 @@ class MaintenanceHistory extends Model
         'scheduled_date',
         'assigned_to',
         'completed_date',
+        'proof_photo_path',
+        'photo_requirement',
         'remarks',
     ];
 

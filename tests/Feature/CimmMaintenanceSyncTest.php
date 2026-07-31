@@ -20,6 +20,8 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'trend' => 'Stable',
         'maintenance_type' => 'Corrective',
         'maintenance_status' => 'Pending',
+        'photo_requirement' => 'Required',
+        'proof_photo_path' => 'maintenance-proofs/existing-proof.jpg',
         'remarks' => 'Created for CIMM sync test.',
     ]);
 
@@ -41,6 +43,8 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'facility_id' => $facility->id,
         'maintenance_status' => 'Completed',
         'completed_date' => '2026-07-23 00:00:00',
+        'photo_requirement' => 'Required',
+        'proof_photo_path' => 'maintenance-proofs/existing-proof.jpg',
     ]);
 });
 

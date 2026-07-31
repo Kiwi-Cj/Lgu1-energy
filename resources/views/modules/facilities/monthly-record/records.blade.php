@@ -556,7 +556,7 @@
 
     .monthly-table {
         width: 100%;
-        min-width: 1210px;
+        min-width: 1460px;
         border-collapse: separate;
         border-spacing: 0;
         table-layout: fixed;
@@ -569,10 +569,12 @@
     .monthly-table th,
     .monthly-table td {
         border-bottom: 1px solid #eef2f7;
-        padding: 9px 8px;
+        padding: 11px 10px;
+        box-sizing: border-box;
     }
 
     .monthly-table th {
+        background: #f8fafc;
         color: #475569;
         font-size: .68rem;
         font-weight: 800;
@@ -597,17 +599,17 @@
     .monthly-table th:nth-child(1),
     .monthly-table td:nth-child(1) {
         width: 76px;
-        padding-left: 18px;
+        padding-left: 20px;
     }
 
     .monthly-table th:nth-child(2),
     .monthly-table td:nth-child(2) {
-        width: 190px;
+        width: 220px;
     }
 
     .monthly-table th:nth-child(3),
     .monthly-table td:nth-child(3) {
-        width: 105px;
+        width: 115px;
     }
 
     .monthly-table th:nth-child(3),
@@ -628,7 +630,9 @@
     .monthly-table th:nth-child(10),
     .monthly-table td:nth-child(10),
     .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
+    .monthly-table td:nth-child(11),
+    .monthly-table th:nth-child(12),
+    .monthly-table td:nth-child(12) {
         text-align: center;
     }
 
@@ -638,75 +642,43 @@
     .monthly-table td:nth-child(4),
     .monthly-table th:nth-child(7),
     .monthly-table td:nth-child(7) {
-        width: 105px;
+        width: 115px;
     }
 
     .monthly-table th:nth-child(5),
     .monthly-table td:nth-child(5) {
-        width: 125px;
+        width: 135px;
     }
 
     .monthly-table th:nth-child(6),
     .monthly-table td:nth-child(6) {
-        width: 105px;
+        width: 115px;
     }
 
     .monthly-table th:nth-child(8),
     .monthly-table td:nth-child(8) {
-        width: 125px;
+        width: 135px;
     }
 
     .monthly-table th:nth-child(9),
     .monthly-table td:nth-child(9) {
-        width: 110px;
+        width: 115px;
         text-align: center;
     }
 
     .monthly-table th:nth-child(10),
     .monthly-table td:nth-child(10) {
-        width: 70px;
+        width: 82px;
     }
 
     .monthly-table th:nth-child(11),
     .monthly-table td:nth-child(11) {
-        width: 62px;
+        width: 135px;
     }
 
-    .monthly-table th:nth-child(1),
-    .monthly-table td:nth-child(1),
-    .monthly-table th:nth-child(2),
-    .monthly-table td:nth-child(2),
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
-        position: sticky;
-        background: inherit;
-    }
-
-    .monthly-table th:nth-child(1),
-    .monthly-table td:nth-child(1) {
-        left: 0;
-        z-index: 3;
-    }
-
-    .monthly-table th:nth-child(2),
-    .monthly-table td:nth-child(2) {
-        left: 76px;
-        z-index: 3;
-        box-shadow: 10px 0 16px -16px rgba(15, 23, 42, .7);
-    }
-
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
-        right: 0;
-        z-index: 3;
-        box-shadow: -10px 0 16px -16px rgba(15, 23, 42, .7);
-    }
-
-    .monthly-table thead th:nth-child(1),
-    .monthly-table thead th:nth-child(2),
-    .monthly-table thead th:nth-child(11) {
-        z-index: 6;
-        background: #f8fafc;
+    .monthly-table th:nth-child(12),
+    .monthly-table td:nth-child(12) {
+        width: 78px;
     }
 
     .monthly-table tbody tr {
@@ -795,6 +767,43 @@
         line-height: 1.2;
     }
 
+    .monthly-review-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .monthly-review-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-width: 86px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: .68rem;
+        font-weight: 900;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+
+    .monthly-review-remark {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fff7f7;
+        color: #b91c1c;
+        font-size: .68rem;
+        font-weight: 700;
+        line-height: 1.3;
+        text-align: left;
+        overflow-wrap: anywhere;
+        box-sizing: border-box;
+    }
+
     .monthly-bill-thumb {
         display: inline-flex;
         border-radius: 10px;
@@ -813,6 +822,17 @@
     .monthly-empty-mark {
         color: #94a3b8;
         font-weight: 700;
+    }
+
+    .monthly-pending-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        color: #94a3b8;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
     }
 
     .monthly-recommendation-cell {
@@ -1416,14 +1436,9 @@
     }
 
     body.dark-mode .monthly-table th {
+        background: #111827;
         color: #94a3b8;
         box-shadow: inset 0 -1px 0 #334155;
-    }
-
-    body.dark-mode .monthly-table thead th:nth-child(1),
-    body.dark-mode .monthly-table thead th:nth-child(2),
-    body.dark-mode .monthly-table thead th:nth-child(11) {
-        background: #111827;
     }
 
     body.dark-mode .monthly-table-wrap {
@@ -1455,6 +1470,12 @@
 
     body.dark-mode .monthly-cost {
         color: #86efac;
+    }
+
+    body.dark-mode .monthly-review-remark {
+        border-color: #7f1d1d;
+        background: #2b1118;
+        color: #fda4af;
     }
 
     body.dark-mode .monthly-bill-thumb {
@@ -1658,6 +1679,9 @@
     $tableRecordCount = $tableRecords->count();
     $tableActualKwhTotal = round((float) $tableRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2);
     $tableCostTotal = round((float) $tableRecords->sum(fn ($record) => \App\Support\EnergyCost::cost($record)), 2);
+    $tableIncludesCprfFacilityLevel = $tableRecords->contains(
+        fn ($record) => $record->meter_id === null && strtolower((string) ($record->input_source ?? '')) === 'cprf'
+    );
     $tableFilterApplied = $tableFilterMonth > 0 || $tableFilterMeterId > 0;
     $baselineAlertThresholds = \App\Models\EnergyRecord::alertThresholdsBySize();
 
@@ -1820,7 +1844,10 @@
                 </div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <span class="monthly-chip">Total kWh (incl. Facility-Level (CPRF)): {{ number_format($tableActualKwhTotal, 2) }}</span>
+                <span class="monthly-chip">
+                    Total kWh{{ $tableIncludesCprfFacilityLevel ? ' (including CPRF facility-level records)' : '' }}:
+                    {{ number_format($tableActualKwhTotal, 2) }}
+                </span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
                 <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}"
                    style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:0.875rem;font-weight:700;transition:all 0.2s;"
@@ -1883,6 +1910,7 @@
                         <th>Energy Cost (PHP)</th>
                         <th>Recommendation</th>
                         <th>Bill Image</th>
+                        <th>Review</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -1980,6 +2008,14 @@
                                 $recommendationRouteParameters['recommendation_notification_id'] = $recommendationNotification->id;
                             }
                             $recommendationUrl = route('modules.energy-conservation.feature', $recommendationRouteParameters);
+
+                            $reviewStatus = (string) ($record->review_status ?: 'for_review');
+                            $reviewThemes = [
+                                'for_review' => ['label' => 'For Review', 'bg' => '#fff7ed', 'color' => '#c2410c'],
+                                'approved' => ['label' => 'Approved', 'bg' => '#dcfce7', 'color' => '#166534'],
+                                'returned' => ['label' => 'Returned', 'bg' => '#fee2e2', 'color' => '#b91c1c'],
+                            ];
+                            $reviewTheme = $reviewThemes[$reviewStatus] ?? $reviewThemes['for_review'];
                         @endphp
                         <tr>
                             <td>{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }}</td>
@@ -1992,20 +2028,32 @@
                             <td class="monthly-number">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2) : '-' }}</td>
                             <td class="monthly-muted-number">{{ $baselineRow !== null ? number_format($baselineRow, 2) : '-' }}</td>
                             <td>
-                                <span class="monthly-status-pill" style="background:{{ $changeBg }};color:{{ $changeColor }};">
-                                    {{ $changeLabel }}
-                                </span>
+                                @if($reviewStatus === 'approved')
+                                    <span class="monthly-status-pill" style="background:{{ $changeBg }};color:{{ $changeColor }};">
+                                        {{ $changeLabel }}
+                                    </span>
+                                @else
+                                    <span class="monthly-pending-mark" title="Change will be shown after this record is approved.">
+                                        <i class="fa-solid fa-minus"></i> Pending review
+                                    </span>
+                                @endif
                             </td>
                             <td>
-                                <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
-                                    {{ $baselineAlertLabel }}
-                                </span>
-                                @if(!empty($record->trend_spike_detected))
-                                    <div style="margin-top:6px;">
-                                        <span class="monthly-status-pill" style="background:#fee2e2;color:#991b1b;">
-                                            3-Month Spike
-                                        </span>
-                                    </div>
+                                @if($reviewStatus === 'approved')
+                                    <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
+                                        {{ $baselineAlertLabel }}
+                                    </span>
+                                    @if(!empty($record->trend_spike_detected))
+                                        <div style="margin-top:6px;">
+                                            <span class="monthly-status-pill" style="background:#fee2e2;color:#991b1b;">
+                                                3-Month Spike
+                                            </span>
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="monthly-pending-mark" title="Status will be shown after this record is approved.">
+                                        <i class="fa-solid fa-minus"></i> Pending review
+                                    </span>
                                 @endif
                             </td>
                             <td class="monthly-muted-number">{{ number_format($rate, 2) }}</td>
@@ -2037,6 +2085,19 @@
                                 @endif
                             </td>
                             <td>
+                                <div class="monthly-review-cell">
+                                    <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};">
+                                        <i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>
+                                        {{ $reviewTheme['label'] }}
+                                    </span>
+                                    @if($record->review_remarks)
+                                        <div class="monthly-review-remark" title="{{ $record->review_remarks }}">
+                                            {{ \Illuminate\Support\Str::limit($record->review_remarks, 55) }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
                                 <div class="monthly-action-group">
                                 @if(\App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings'))
                                 <form id="deleteMonthlyRecordForm-{{ $record->id }}"
@@ -2061,7 +2122,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" style="padding:16px;color:#64748b;font-weight:700;">
+                            <td colspan="12" style="padding:16px;color:#64748b;font-weight:700;">
                                 @if($tableMainMeterSelectionRequired)
                                     Select a Main Meter first to view its monthly records.
                                 @elseif($tableFilterApplied)

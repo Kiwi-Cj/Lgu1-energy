@@ -403,8 +403,6 @@
     </div>
 </div>
 
-@include('auth.partials.otp-modal-auto')
-
 <div id="sessionEndedModal" class="session-modal-backdrop" aria-hidden="true">
     <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionEndedTitle">
         <div class="session-modal-icon"><i class="fa fa-lock"></i></div>
@@ -489,9 +487,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    if (data.show_otp_modal) {
-                        openOtpModalAuto(email);
-                    } else if (data.redirect) {
+                    if (data.redirect) {
                         window.location.href = data.redirect;
                     } else {
                         window.location.reload();
@@ -510,29 +506,11 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        const otpModal = document.getElementById('otpModalAuto');
-        if (otpModal) otpModal.style.display = 'none';
-
         const sessionEndedModal = document.getElementById('sessionEndedModal');
         const showSessionEndedModal = @json((bool) session('session_ended_modal'))
             || new URLSearchParams(window.location.search).get('session') === 'expired';
         if (sessionEndedModal && showSessionEndedModal) {
             sessionEndedModal.style.display = 'flex';
-        }
-
-        // Patch: Reset login button if OTP modal is closed (user clicks back/close)
-        window.closeOtpModalAuto = function() {
-            document.getElementById('otpModalAuto').style.display = 'none';
-            if (window.otpInterval) clearInterval(window.otpInterval);
-            // Reset login button state
-            const btn = document.getElementById('loginBtn');
-            const btnText = document.getElementById('loginBtnText');
-            const btnLoading = document.getElementById('loginBtnLoading');
-            if (btn && btnText && btnLoading) {
-                btn.disabled = false;
-                btnText.style.display = '';
-                btnLoading.style.display = 'none';
-            }
         }
     });
 </script>
