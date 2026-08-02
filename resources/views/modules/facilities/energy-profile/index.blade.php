@@ -515,6 +515,71 @@
         width: min(520px, 95vw);
     }
 
+    .meter-modal-card.form-modal {
+        width: min(760px, calc(100vw - 24px));
+        max-height: calc(100vh - 24px);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #dbe5f2;
+        border-radius: 22px;
+        box-shadow: 0 28px 80px rgba(15,23,42,.30);
+    }
+
+    .meter-form-modal-header {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 22px 68px 20px 24px;
+        background: linear-gradient(135deg,#f8fbff 0%,#eef2ff 100%);
+        border-bottom: 1px solid #dbe5f2;
+    }
+
+    .meter-form-modal-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg,#2563eb,#6366f1);
+        color: #fff;
+        box-shadow: 0 9px 20px rgba(79,70,229,.20);
+    }
+
+    .meter-form-modal-header .meter-modal-title {
+        color: #0f172a;
+        font-size: 1.25rem;
+        letter-spacing: -.02em;
+    }
+
+    .meter-form-modal-header .meter-modal-subtitle {
+        margin: 4px 0 0;
+        font-size: .84rem;
+        line-height: 1.4;
+    }
+
+    .form-modal .meter-modal-close {
+        z-index: 5;
+        top: 18px;
+        right: 18px;
+        width: 38px;
+        height: 38px;
+        border: 1px solid #dbe5f2;
+        border-radius: 11px;
+        background: rgba(255,255,255,.9);
+        font-size: 1rem;
+    }
+
+    .form-modal .meter-modal-close:hover {
+        border-color: #fecdd3;
+        background: #fff1f2;
+        color: #e11d48;
+    }
+
     .meter-modal-close {
         position: absolute;
         top: 10px;
@@ -564,6 +629,29 @@
         gap: 12px 16px;
     }
 
+    .form-modal .meter-manage-form {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 20px 26px 0;
+        overflow-y: auto;
+        gap: 14px 16px;
+    }
+
+    .meter-form-section-title {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 5px 0 -2px;
+        color: #475569;
+        font-size: .73rem;
+        font-weight: 850;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .meter-form-section-title i { color: #2563eb; }
+
     .meter-form-field {
         min-width: 0;
     }
@@ -580,6 +668,10 @@
         margin-bottom: 6px;
     }
 
+    .form-modal .meter-form-label {
+        font-size: .78rem;
+    }
+
     .meter-required {
         color: #e11d48;
     }
@@ -593,6 +685,18 @@
         background: #fff;
         font-size: 1rem;
         transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .form-modal .meter-form-control {
+        min-height: 45px;
+        padding: 10px 12px;
+        border-radius: 11px;
+        font-size: .88rem;
+        box-sizing: border-box;
+    }
+
+    .form-modal .meter-form-textarea {
+        min-height: 84px;
     }
 
     .meter-form-control:focus {
@@ -624,6 +728,30 @@
         justify-content: flex-end;
         gap: 10px;
         margin-top: 6px;
+    }
+
+    .form-modal .meter-form-actions {
+        position: sticky;
+        z-index: 4;
+        bottom: 0;
+        margin: 20px -26px 0;
+        padding: 14px 26px;
+        flex-wrap: nowrap;
+        border-top: 1px solid #e2e8f0;
+        background: rgba(255,255,255,.97);
+        backdrop-filter: blur(8px);
+    }
+
+    .form-modal .meter-form-btn {
+        min-height: 44px;
+        padding: 10px 19px;
+        border-radius: 11px;
+        font-size: .86rem;
+    }
+
+    .form-modal .meter-form-btn.save {
+        flex: 1;
+        box-shadow: 0 7px 16px rgba(37,99,235,.20);
     }
 
     .meter-form-btn {
@@ -697,6 +825,21 @@
 
         .meter-form-btn {
             width: 100%;
+        }
+
+        .meter-modal-card.form-modal {
+            width: calc(100vw - 12px);
+            max-height: calc(100vh - 12px);
+            border-radius: 17px;
+        }
+
+        .meter-form-modal-header { padding: 17px 55px 16px 16px; }
+        .meter-form-modal-icon { width: 42px; height: 42px; flex-basis: 42px; border-radius: 12px; }
+        .form-modal .meter-manage-form { padding: 16px 16px 0; }
+        .form-modal .meter-form-actions {
+            margin: 18px -16px 0;
+            padding: 12px 16px;
+            flex-direction: row;
         }
 
         .meter-equip-grid {
@@ -889,6 +1032,24 @@
     body.dark-mode .energy-profile-page [style*="color:#64748b"],
     body.dark-mode .energy-profile-page [style*="color: #64748b"] {
         color: #93c5fd !important;
+    }
+
+    body.dark-mode .energy-profile-page .meter-form-modal-header {
+        background: linear-gradient(135deg,#111827,#172033) !important;
+        border-color: #2a3850 !important;
+    }
+
+    body.dark-mode .energy-profile-page .meter-form-modal-header .meter-modal-title {
+        color: #f8fafc !important;
+    }
+
+    body.dark-mode .energy-profile-page .meter-form-section-title {
+        color: #cbd5e1 !important;
+    }
+
+    body.dark-mode .energy-profile-page .form-modal .meter-form-actions {
+        background: rgba(15,23,42,.97) !important;
+        border-color: #334155 !important;
     }
 </style>
 
@@ -1160,35 +1321,45 @@
 
 @if($canManageMeters)
 <div id="addMeterProfileModal" class="meter-modal-overlay">
-    <div class="meter-modal-card">
-        <button type="button" onclick="closeAddMeterProfileModal()" class="meter-modal-close">&times;</button>
-        <h3 class="meter-modal-title">Add Meter</h3>
-        <p class="meter-modal-subtitle">Create the facility Main Meter using the Energy Profile details.</p>
+    <div class="meter-modal-card form-modal" role="dialog" aria-modal="true" aria-labelledby="addMeterProfileTitle" aria-describedby="addMeterProfileSubtitle">
+        <button type="button" onclick="closeAddMeterProfileModal()" class="meter-modal-close" aria-label="Close add meter form"><i class="fa-solid fa-xmark"></i></button>
+        <header class="meter-form-modal-header">
+            <div class="meter-form-modal-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <div>
+                <h3 id="addMeterProfileTitle" class="meter-modal-title">Add Main Meter</h3>
+                <p id="addMeterProfileSubtitle" class="meter-modal-subtitle">Create the facility’s primary meter and monitoring baseline.</p>
+            </div>
+        </header>
         <form method="POST" action="{{ route('modules.facilities.meters.store', $facilityModel->id) }}" class="meter-manage-form">
             @csrf
             <input type="hidden" name="_redirect_to" value="energy_profile">
-            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'add', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub, 'forceMeterType' => 'main'])
+            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'add', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub, 'forceMeterType' => 'main', 'showFormSections' => true])
             <div class="meter-form-actions">
                 <button type="button" onclick="closeAddMeterProfileModal()" class="meter-form-btn cancel">Cancel</button>
-                <button type="submit" class="meter-form-btn save">Save Meter</button>
+                <button type="submit" class="meter-form-btn save"><i class="fa-solid fa-floppy-disk"></i> Save Meter</button>
             </div>
         </form>
     </div>
 </div>
 
 <div id="editMeterProfileModal" class="meter-modal-overlay" style="z-index:10041;">
-    <div class="meter-modal-card">
-        <button type="button" onclick="closeEditMeterProfileModal()" class="meter-modal-close">&times;</button>
-        <h3 class="meter-modal-title">Edit Meter</h3>
-        <p class="meter-modal-subtitle">Update meter information and linkage details.</p>
+    <div class="meter-modal-card form-modal" role="dialog" aria-modal="true" aria-labelledby="editMeterProfileTitle" aria-describedby="editMeterProfileSubtitle">
+        <button type="button" onclick="closeEditMeterProfileModal()" class="meter-modal-close" aria-label="Close edit meter form"><i class="fa-solid fa-xmark"></i></button>
+        <header class="meter-form-modal-header">
+            <div class="meter-form-modal-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <div>
+                <h3 id="editMeterProfileTitle" class="meter-modal-title">Edit Meter</h3>
+                <p id="editMeterProfileSubtitle" class="meter-modal-subtitle">Update meter identity, configuration, and baseline.</p>
+            </div>
+        </header>
         <form id="editMeterProfileForm" method="POST" action="#" class="meter-manage-form">
             @csrf
             @method('PUT')
             <input type="hidden" name="_redirect_to" value="energy_profile">
-            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'edit', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub])
+            @include('modules.facilities.meters.partials.form-fields', ['mode' => 'edit', 'parentMeterOptions' => $parentMeterOptions, 'meter' => null, 'hasApprovedMainForSub' => $hasApprovedMainForSub, 'showFormSections' => true])
             <div class="meter-form-actions">
                 <button type="button" onclick="closeEditMeterProfileModal()" class="meter-form-btn cancel">Cancel</button>
-                <button type="submit" class="meter-form-btn save">Update Meter</button>
+                <button type="submit" class="meter-form-btn save"><i class="fa-solid fa-floppy-disk"></i> Update Meter</button>
             </div>
         </form>
     </div>
@@ -1305,9 +1476,30 @@
             });
         }
 
+        document.querySelectorAll('#addMeterProfileModal, #editMeterProfileModal, #archiveMeterProfileModal').forEach(function(modal) {
+            modal.addEventListener('click', function(event) {
+                if (event.target !== modal) return;
+                if (modal.id === 'addMeterProfileModal') closeAddMeterProfileModal();
+                if (modal.id === 'editMeterProfileModal') closeEditMeterProfileModal();
+                if (modal.id === 'archiveMeterProfileModal') closeArchiveMeterProfileModal();
+            });
+        });
+
+        document.querySelectorAll('.form-modal .meter-manage-form').forEach(function(form) {
+            form.addEventListener('submit', function() {
+                const submitButton = form.querySelector('.meter-form-btn.save');
+                if (!submitButton) return;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            });
+        });
+
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeMeterDetailModal();
+                closeAddMeterProfileModal();
+                closeEditMeterProfileModal();
+                closeArchiveMeterProfileModal();
             }
         });
     });
@@ -1380,6 +1572,7 @@
 
     function openAddMeterProfileModal(defaultType) {
         const modal = document.getElementById('addMeterProfileModal');
+        const form = modal?.querySelector('.meter-manage-form');
         if (!modal) return;
 
         if (defaultType === 'sub' && !meterProfileConfig.hasApprovedMainForSub) {
@@ -1393,6 +1586,10 @@
         }
         toggleMeterProfileParentSelect('add');
         modal.style.display = 'flex';
+        if (form) form.scrollTop = 0;
+        window.requestAnimationFrame(function() {
+            document.getElementById('add_meter_name')?.focus();
+        });
     }
 
     function closeAddMeterProfileModal() {
@@ -1458,6 +1655,10 @@
 
         toggleMeterProfileParentSelect('edit');
         modal.style.display = 'flex';
+        form.scrollTop = 0;
+        window.requestAnimationFrame(function() {
+            document.getElementById('edit_meter_name')?.focus();
+        });
     }
 
     function openEditMeterProfileModalFromButton(button, event) {

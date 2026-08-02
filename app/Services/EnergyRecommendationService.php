@@ -95,9 +95,12 @@ class EnergyRecommendationService
 
         $primary = match ($alertLevel) {
             'critical' => 'Critical overuse detected. Treat this as an immediate operating issue and validate the highest-load circuits today.',
+            'drop critical' => 'Critical consumption drop detected. Verify the meter, power availability, operating status, and possible unreported shutdown immediately.',
             'very high' => 'Very high energy use detected. Run a same-day load audit on the largest end uses before the next occupied shift.',
             'high' => 'Energy use is materially above expected levels. Confirm that operating schedules and major equipment runtime still match actual demand.',
+            'drop high' => 'Energy use is materially below the expected baseline. Check for meter faults, outages, closed areas, or equipment that stopped operating.',
             'warning' => 'Energy use is rising above normal variation. Tighten daily monitoring before the increase becomes a sustained cost issue.',
+            'drop warning' => 'Energy use has fallen beyond normal variation. Validate the reading and confirm whether the reduction is intentional before treating it as savings.',
             'normal' => 'Energy performance is currently within the expected range. Keep the present controls in place and watch for early drift.',
             default => 'Not enough historical data for a full trend recommendation. Add at least 3 consecutive monthly records for the same main meter.',
         };
@@ -122,7 +125,7 @@ class EnergyRecommendationService
             $trendLine = 'Recent trend is ' . ($trendPercent >= 0 ? '+' : '') . number_format($trendPercent, 2) . '%.';
         }
 
-        $meterPriorityLine = $this->buildMeterPriorityLine((array) ($context['meter_breakdown'] ?? []));
+        $meterPriorityLine = $this->buildMeterPriorityLine((array) ($context['meter_breakdown'] ?? []), $alertLevel);
         $facilityFocusLine = $this->buildFacilityFocusLine($facilityName, $facilityType, $alertLevel);
         $maintenanceLine = $this->buildMaintenanceLine($lastMaintenance, $nextMaintenance, $alertLevel);
 
@@ -161,7 +164,7 @@ class EnergyRecommendationService
 
         return 'Analyze this facility context and return JSON only with keys "alert_level" and "recommendation": '
             . json_encode($sanitized, JSON_UNESCAPED_SLASHES)
-            . '. Allowed alert levels: Critical, Very High, High, Warning, Normal, No Data.'
+            . '. Allowed alert levels: Critical, Very High, High, Warning, Drop Critical, Drop High, Drop Warning, Normal, No Data.'
             . ' Use this baseline only as a safety fallback, not as wording to copy: '
             . json_encode([
                 'alert_level' => $fallbackAlertLevel,
@@ -200,7 +203,7 @@ class EnergyRecommendationService
         return 'Priority field checks: ' . $checks[$first] . ' and ' . $checks[$second] . '.';
     }
 
-    private function buildMeterPriorityLine(array $meters): ?string
+    private function buildMeterPriorityLine(array $meters, string $alertLevel = ''): ?string
     {
         $ranked = collect($meters)
             ->map(function ($meter) {
@@ -215,7 +218,11 @@ class EnergyRecommendationService
                 ];
             })
             ->filter(fn ($meter) => $meter['actual'] !== null)
-            ->sortByDesc(fn ($meter) => $meter['variance'] ?? $meter['actual'])
+            ->when(
+                str_starts_with($alertLevel, 'drop'),
+                fn ($rows) => $rows->sortBy(fn ($meter) => $meter['variance'] ?? $meter['actual']),
+                fn ($rows) => $rows->sortByDesc(fn ($meter) => $meter['variance'] ?? $meter['actual'])
+            )
             ->values();
 
         $driver = $ranked->first();
@@ -317,6 +324,9 @@ class EnergyRecommendationService
     private function normalizeAlertLevel(?string $level): string
     {
         return match (strtolower(trim((string) $level))) {
+            'drop critical', 'drop_critical' => 'Drop Critical',
+            'drop high', 'drop_high' => 'Drop High',
+            'drop warning', 'drop_warning' => 'Drop Warning',
             'critical' => 'Critical',
             'very high', 'very_high' => 'Very High',
             'high' => 'High',

@@ -90,7 +90,9 @@ class AuthenticatedSessionController extends Controller
 
         $otp = random_int(100000, 999999);
         $expireMinutes = max(1, (int) config('otp.expire_minutes', 5));
+        $resendCooldown = max(1, (int) config('otp.resend_cooldown_seconds', 30));
         $expiresAt = now()->addMinutes($expireMinutes);
+        $resendAvailableAt = now()->addSeconds($resendCooldown);
 
         $user->otps()->where('used', false)->update(['used' => true]);
 
@@ -104,8 +106,12 @@ class AuthenticatedSessionController extends Controller
             'otp_user_id' => $user->id,
             'otp_email' => $user->email,
             'otp_expires_at' => $expiresAt->timestamp,
-            'otp_resend_available_at' => now()->addSeconds(30)->timestamp,
+            'otp_resend_available_at' => $resendAvailableAt->timestamp,
         ]);
+
+        $resendRateLimitKey = 'otp-resend-'.$user->id;
+        RateLimiter::clear($resendRateLimitKey);
+        RateLimiter::hit($resendRateLimitKey, $resendCooldown);
 
         Log::info('Sending OTP to: '.$user->email);
         $user->notify(new SendOtpNotification((string) $otp));

@@ -118,4 +118,19 @@ class EnergyRecommendationServiceTest extends TestCase
         $this->assertStringContainsString('Annex Cooling Meter is the first meter to investigate', $message);
         $this->assertStringContainsString('+450.00 kWh versus baseline', $message);
     }
+
+    public function test_it_preserves_drop_alerts_and_returns_drop_specific_guidance(): void
+    {
+        config(['services.ai_recommendations.enabled' => false]);
+
+        $insight = app(EnergyRecommendationService::class)->generateFacilityInsight([
+            'alert_level' => 'Drop High',
+            'actual_kwh' => 650,
+            'baseline_kwh' => 1000,
+        ], false);
+
+        $this->assertSame('Drop High', $insight['alert_level']);
+        $this->assertStringContainsString('below the expected baseline', $insight['recommendation']);
+        $this->assertStringContainsString('below baseline', $insight['recommendation']);
+    }
 }

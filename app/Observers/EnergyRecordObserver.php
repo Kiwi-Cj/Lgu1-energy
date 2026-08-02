@@ -9,6 +9,7 @@ use App\Models\Maintenance;
 use App\Models\User;
 use App\Services\RecommendationNotificationService;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
@@ -86,6 +87,10 @@ class EnergyRecordObserver
 
         // Legacy incident/maintenance automation is only for non-submeter streams.
         if ($this->isSubMeterRecord($record)) {
+            return;
+        }
+
+        if (! SystemSettings::enabled('auto_log_incident', true)) {
             return;
         }
 

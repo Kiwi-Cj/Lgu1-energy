@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\Modules\EnergyController;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -29,7 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $facilities = ($role === 'staff') ? $user->facilities : \App\Models\Facility::all();
         $selectedFacility = $request->input('facility_id');
         $selectedRating = $request->input('rating');
-        $exportFormat = strtolower(trim((string) $request->input('format', 'csv')));
+        $exportFormat = strtolower(trim((string) $request->input('format', SystemSettings::defaultExportFormat(['pdf', 'xlsx', 'csv']))));
         if (! in_array($exportFormat, ['csv', 'xlsx', 'pdf'], true)) {
             $exportFormat = 'csv';
         }
@@ -205,7 +206,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $facilityId = $request->input('facility_id');
         $year = $request->has('year') ? $request->input('year') : date('Y');
         $month = $request->has('month') ? $request->input('month') : date('n');
-        $exportFormat = strtolower(trim((string) $request->input('format', 'xlsx')));
+        $exportFormat = strtolower(trim((string) $request->input('format', SystemSettings::defaultExportFormat(['xlsx', 'csv']))));
         if (! in_array($exportFormat, ['xlsx', 'csv'], true)) {
             $exportFormat = 'xlsx';
         }

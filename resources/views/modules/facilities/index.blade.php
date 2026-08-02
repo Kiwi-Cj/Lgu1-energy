@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', function() {
         background: #fff; 
         border-radius: 18px; 
         box-shadow: 0 2px 12px rgba(31,38,135,0.06); 
-        padding: 30px;
+        padding: 28px;
         margin-bottom: 2rem;
         font-family: 'Inter', sans-serif;
     }
@@ -51,21 +51,33 @@ window.addEventListener('DOMContentLoaded', function() {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 24px;
         gap: 20px;
     }
 
     /* Modern KPI Cards */
+    .facility-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 2rem;
+    }
     .stat-card {
-        flex: 1;
-        min-width: 200px;
-        padding: 20px;
+        min-width: 0;
+        padding: 18px 20px;
         border-radius: 15px;
         background: #ffffff;
         border: 1px solid #f1f5f9;
-        transition: transform 0.3s ease;
+        border-top: 4px solid var(--stat-accent, #2563eb);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .045);
+        transition: transform .22s ease, box-shadow .22s ease;
     }
-    .stat-card:hover { transform: translateY(-5px); }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(15, 23, 42, .08); }
+
+    .stat-card.is-total { --stat-accent:#2563eb; --stat-soft:#eff6ff; }
+    .stat-card.is-active { --stat-accent:#16a34a; --stat-soft:#ecfdf3; }
+    .stat-card.is-maintenance { --stat-accent:#ea8a00; --stat-soft:#fff8e8; }
+    .stat-card.is-inactive { --stat-accent:#e11d48; --stat-soft:#fff1f2; }
 
     button.stat-card {
         appearance: none;
@@ -91,21 +103,83 @@ window.addEventListener('DOMContentLoaded', function() {
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
         margin-bottom: 12px; font-size: 1rem;
+        color: var(--stat-accent, #2563eb);
+        background: var(--stat-soft, #eff6ff);
+    }
+    .facility-stat-topline { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .facility-stat-hint { color:#94a3b8; font-size:.72rem; font-weight:700; }
+    .facility-stat-label {
+        color: #64748b;
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .045em;
+        text-transform: uppercase;
+    }
+    .facility-stat-value {
+        margin-top: 6px;
+        color: #0f172a;
+        font-size: 2.15rem;
+        font-weight: 850;
+        line-height: 1;
+        letter-spacing: -.035em;
+    }
+
+    @media (max-width: 900px) {
+        .facility-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+        .facility-stat-grid { grid-template-columns: 1fr; }
+        .facility-grid { grid-template-columns: minmax(0, 1fr); }
     }
 
     /* Facility Grid & Cards */
     .facility-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
         margin-top: 20px;
     }
 
+    @media (max-width: 1350px) {
+        .facility-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+        .facility-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+        .facility-grid { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .facility-heading { display:flex; align-items:flex-start; gap:14px; }
+    .facility-heading-icon {
+        width:52px; height:52px; flex:0 0 52px; display:inline-flex; align-items:center; justify-content:center;
+        border-radius:14px; color:#2563eb; background:linear-gradient(145deg,#eff6ff,#e0e7ff);
+        border:1px solid #dbeafe; font-size:1.25rem;
+    }
+    .facility-page-title { margin:0; color:#0f2450; font-size:clamp(1.65rem,2.2vw,2.15rem); font-weight:850; line-height:1.1; letter-spacing:-.035em; }
+    .facility-page-description { margin:6px 0 0; color:#64748b; font-weight:500; }
+
+    .facility-toolbar { margin:0 0 22px; padding:18px; border:1px solid #e2e8f0; border-radius:16px; background:#f8fafc; }
+    .facility-toolbar-top { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+    .facility-source-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .facility-source-tab {
+        padding:8px 14px; border-radius:999px; border:1px solid #dbe3ef; background:#fff; color:#64748b;
+        font-size:.82rem; font-weight:800; text-decoration:none; transition:.2s ease;
+    }
+    .facility-source-tab:hover { border-color:#93c5fd; color:#1d4ed8; }
+    .facility-source-tab.is-active { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
+    .facility-sort-wrap { display:flex; align-items:center; gap:8px; color:#475569; font-size:.8rem; font-weight:800; }
+    .facility-sort-select { min-height:40px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; color:#1e293b; padding:0 34px 0 11px; font:inherit; outline:none; }
+    .facility-sort-select:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+
     .facility-card {
         background: #ffffff;
-        border-radius: 20px;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border-radius: 17px;
+        border: 1px solid #cddcf1;
+        box-shadow: 0 5px 16px rgba(30, 64, 175, 0.055);
         transition: all 0.3s ease;
         overflow: hidden;
         display: flex;
@@ -114,18 +188,34 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 
     .facility-card:hover {
-        transform: translateY(-8px);
+        transform: translateY(-5px);
         box-shadow: 0 12px 30px rgba(37, 99, 235, 0.1);
-        border-color: #dbeafe;
+        border-color: #8fb4ee;
     }
 
     .image-wrapper {
         width: 100%;
-        height: 170px;
+        height: 120px;
         overflow: hidden;
         background: #f8fafc;
         position: relative;
+        border-bottom: 1px solid #e0e8f4;
     }
+
+    .facility-status-badge {
+        position:absolute; top:9px; right:9px; z-index:2; display:inline-flex; align-items:center; gap:5px;
+        border-radius:999px; padding:5px 8px; background:rgba(255,255,255,.94); box-shadow:0 4px 14px rgba(15,23,42,.12);
+        color:#475569; font-size:.62rem; font-weight:850; text-transform:uppercase; letter-spacing:.035em;
+    }
+    .facility-status-badge.active { color:#15803d; }
+    .facility-status-badge.maintenance { color:#b45309; }
+    .facility-status-badge.inactive { color:#be123c; }
+    .facility-status-badge i { font-size:.48rem; }
+
+    .facility-card-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:9px; }
+    .facility-card-meta-item { min-width:0; padding:6px 7px; border-radius:8px; background:#f8fafc; color:#64748b; font-size:.61rem; font-weight:700; }
+    .facility-card-meta-item span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .facility-card-meta-item strong { display:block; margin-top:1px; color:#1e293b; font-size:.76rem; }
 
     .image-wrapper img {
         width: 100%; height: 100%;
@@ -133,9 +223,25 @@ window.addEventListener('DOMContentLoaded', function() {
         transition: transform 0.5s ease;
     }
 
-    .facility-card:hover .image-wrapper img { transform: scale(1.1); }
+    .facility-card:hover .image-wrapper img { transform: scale(1.045); }
 
-    .content-padding { padding: 20px; flex-grow: 1; }
+    .facility-image-placeholder {
+        width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+        background:linear-gradient(145deg,#f8fafc,#eef4fb); color:#94a3b8;
+    }
+    .facility-image-placeholder-icon {
+        width:58px; height:58px; display:inline-flex; align-items:center; justify-content:center;
+        border-radius:16px; background:#fff; color:#94a3b8; border:1px solid #e2e8f0;
+        box-shadow:0 8px 18px rgba(15,23,42,.06); font-size:1.35rem;
+    }
+    .facility-image-placeholder span { font-size:.72rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+
+    .content-padding { padding:12px; flex-grow:1; display:flex; flex-direction:column; }
+    .facility-card h3 { font-size:.92rem !important; margin-bottom:5px !important; line-height:1.18 !important; }
+    .facility-card .content-padding > p { font-size:.7rem !important; margin-bottom:7px !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .facility-card .type-badge { margin-bottom:7px; padding:3px 8px; font-size:.58rem; }
+    .facility-card .content-padding > div[style*="margin-bottom:10px"] { gap:5px !important; margin-bottom:5px !important; }
+    .facility-card .content-padding > div[style*="margin-bottom:10px"] > span { font-size:.63rem !important; }
 
     .type-badge {
         font-size: 0.7rem;
@@ -166,12 +272,55 @@ window.addEventListener('DOMContentLoaded', function() {
     .btn-gradient:hover { opacity: 0.9; transform: translateY(-1px); }
 
     .card-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 15px;
-        padding-top: 15px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: auto;
+        padding-top: 10px;
         border-top: 1px solid #f1f5f9;
     }
+
+    .facility-action-button {
+        min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:5px;
+        border:1px solid #dbe3ef; border-radius:10px; background:#fff; color:#475569;
+        padding:7px 9px; font-size:.72rem; font-weight:800; text-decoration:none; transition:.18s ease;
+    }
+    .facility-action-button:hover { transform:translateY(-1px); border-color:#93c5fd; color:#1d4ed8; background:#f8fbff; }
+    .facility-action-button.energy i { color:#f59e0b; }
+    .facility-action-button.records i { color:#e11d48; }
+    .facility-action-button.primary {
+        grid-column:1 / -1; color:#fff; border-color:#2563eb; background:linear-gradient(135deg,#2563eb,#4f46e5);
+        box-shadow:0 5px 12px rgba(37,99,235,.18);
+    }
+    .facility-action-button.primary:hover { color:#fff; background:linear-gradient(135deg,#1d4ed8,#4338ca); }
+    .card-actions > .records:first-child { grid-column:1 / -1; }
+
+    /* Compact, readable card layout for four-to-five column grids. */
+    .facility-card-badges { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-height:24px; }
+    .facility-card-title {
+        display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+        min-height:2.2em; margin:7px 0 5px; color:#1e293b; font-size:.92rem; font-weight:850; line-height:1.1;
+    }
+    .facility-card-location { display:flex; align-items:center; gap:5px; min-width:0; margin:0 0 9px; color:#64748b; font-size:.72rem; }
+    .facility-card-location i { flex:0 0 auto; color:#94a3b8; }
+    .facility-card-location span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .facility-baseline-row {
+        display:flex; align-items:center; gap:7px; min-width:0; padding:7px 8px; border:1px solid #e5edf7;
+        border-radius:9px; background:#f8fbff; color:#64748b; font-size:.65rem; font-weight:700;
+    }
+    .facility-baseline-row i { color:#2563eb; }
+    .facility-baseline-row strong { margin-left:auto; overflow:hidden; color:#1e293b; font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
+    .facility-card .card-actions { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:center; }
+    .facility-card .card-actions.is-staff { grid-template-columns:minmax(0,1fr); }
+    .facility-card .facility-action-button { width:auto; padding:5px; }
+    .facility-card .facility-action-button.primary { grid-column:1 / -1; grid-row:2; justify-content:center; padding:7px 9px; }
+    .facility-card .facility-action-button.quick-action { width:auto; min-width:0; padding:7px 6px; font-size:.68rem; }
+    .facility-card .facility-action-button.quick-action span { position:static; width:auto; height:auto; overflow:visible; clip:auto; white-space:nowrap; }
+    .facility-card .card-actions > .records:first-child { grid-column:1 / -1; }
+
+    body.dark-mode .facility-baseline-row { background:#0f172a; border-color:#334155; }
+    body.dark-mode .facility-baseline-row strong,
+    body.dark-mode .facility-card-title { color:#e2e8f0; }
 
     .action-icon {
         width: 36px; height: 36px;
@@ -186,7 +335,7 @@ window.addEventListener('DOMContentLoaded', function() {
     .action-icon:hover { transform: scale(1.1); }
 
     .facility-search-wrap {
-        margin-bottom: 1.25rem;
+        margin-bottom: 0;
     }
 
     .facility-search-label {
@@ -349,6 +498,18 @@ window.addEventListener('DOMContentLoaded', function() {
         color: #fff;
     }
 
+    body.dark-mode .facilities-page .facility-toolbar,
+    body.dark-mode .facilities-page .facility-card-meta-item {
+        background:#111827;
+        border-color:#334155;
+    }
+    body.dark-mode .facilities-page .facility-source-tab,
+    body.dark-mode .facilities-page .facility-sort-select { background:#0f172a; border-color:#334155; color:#e2e8f0; }
+    body.dark-mode .facilities-page .facility-card-meta-item strong { color:#e2e8f0; }
+    body.dark-mode .facilities-page .facility-image-placeholder { background:linear-gradient(145deg,#111827,#172033); }
+    body.dark-mode .facilities-page .facility-image-placeholder-icon,
+    body.dark-mode .facilities-page .facility-action-button { background:#0f172a; border-color:#334155; color:#cbd5e1; }
+
     body.dark-mode .facilities-page .facility-match {
         background: #fde047;
         color: #0f172a;
@@ -429,6 +590,11 @@ window.addEventListener('DOMContentLoaded', function() {
             justify-content: center;
         }
         .facilities-page .archive-link .archive-label { display: none; }
+        .facility-heading { text-align:left; }
+        .facility-toolbar-top { align-items:stretch; }
+        .facility-sort-wrap { width:100%; }
+        .facility-sort-select { flex:1; }
+        .report-card-container { padding:18px; border-radius:16px; }
     }
 </style>
 
@@ -436,9 +602,11 @@ window.addEventListener('DOMContentLoaded', function() {
     <div class="report-card-container">
         
         <div class="dashboard-header">
-            <div>
-                <h2 style="font-size:1.8rem; font-weight:800; color:#3762c8; margin:0; letter-spacing:-0.5px;">📘 Facilities Management</h2>
-                <p style="color:#64748b; margin-top:4px; font-weight:500;">Manage and monitor LGU energy sectors.</p>
+            <div class="facility-heading">
+                <span class="facility-heading-icon" aria-hidden="true"><i class="fas fa-building"></i></span>
+                <div>
+                <h1 class="facility-page-title">Facilities Management</h1>
+                <p class="facility-page-description">Manage facility profiles, meters, records, and operational status.</p>
                 <div class="cprf-integration-badge {{ ($cprfIntegrationActive ?? false) ? 'is-active' : 'is-inactive' }}"
                      title="{{ ($cprfIntegrationActive ?? false) ? 'CPRF feed is configured and public facilities have been mirrored.' : 'CPRF feed is not configured or has not completed its first mirror.' }}">
                     <span class="status-dot" aria-hidden="true"></span>
@@ -446,6 +614,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     <span aria-label="Status: {{ ($cprfIntegrationActive ?? false) ? 'Active' : 'Inactive' }}">
                         {{ ($cprfIntegrationActive ?? false) ? 'Active' : 'Inactive' }}
                     </span>
+                </div>
                 </div>
             </div>
             <div class="dashboard-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
@@ -468,26 +637,26 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
 
-        <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:2rem;" aria-label="Filter facilities by status">
-            <button type="button" class="stat-card is-selected" data-status-filter="all" aria-pressed="true">
-                <div class="card-icon-box" style="background:#eff6ff; color:#3b82f6;"><i class="fa fa-building"></i></div>
-                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Total</div>
-                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $totalFacilities ?? 0 }}</div>
+		<div class="facility-stat-grid" aria-label="Filter facilities by status">
+            <button type="button" class="stat-card is-total is-selected" data-status-filter="all" aria-pressed="true">
+				<div class="card-icon-box"><i class="fa fa-building"></i></div>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Total</div><span class="facility-stat-hint">View all</span></div>
+				<div class="facility-stat-value">{{ $totalFacilities ?? 0 }}</div>
             </button>
-            <button type="button" class="stat-card" data-status-filter="active" aria-pressed="false">
-                <div class="card-icon-box" style="background:#f0fdf4; color:#22c55e;"><i class="fa fa-check-circle"></i></div>
-                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Active</div>
-                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $activeFacilities ?? 0 }}</div>
+            <button type="button" class="stat-card is-active" data-status-filter="active" aria-pressed="false">
+				<div class="card-icon-box"><i class="fa fa-check-circle"></i></div>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Active</div><span class="facility-stat-hint">Filter</span></div>
+				<div class="facility-stat-value">{{ $activeFacilities ?? 0 }}</div>
             </button>
-            <button type="button" class="stat-card" data-status-filter="maintenance" aria-pressed="false">
-                <div class="card-icon-box" style="background:#fffbeb; color:#f59e0b;"><i class="fa fa-wrench"></i></div>
-                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Maintenance</div>
-                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $maintenanceFacilities ?? 0 }}</div>
+            <button type="button" class="stat-card is-maintenance" data-status-filter="maintenance" aria-pressed="false">
+				<div class="card-icon-box"><i class="fa fa-wrench"></i></div>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Maintenance</div><span class="facility-stat-hint">Filter</span></div>
+				<div class="facility-stat-value">{{ $maintenanceFacilities ?? 0 }}</div>
             </button>
-            <button type="button" class="stat-card" data-status-filter="inactive" aria-pressed="false">
-                <div class="card-icon-box" style="background:#fef2f2; color:#ef4444;"><i class="fa fa-ban"></i></div>
-                <div style="color:#64748b; font-weight:700; font-size:0.75rem; text-transform:uppercase;">Inactive</div>
-                <div style="font-size:1.5rem; font-weight:800; color:#1e293b;">{{ $inactiveFacilities ?? 0 }}</div>
+            <button type="button" class="stat-card is-inactive" data-status-filter="inactive" aria-pressed="false">
+				<div class="card-icon-box"><i class="fa fa-ban"></i></div>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Inactive</div><span class="facility-stat-hint">Filter</span></div>
+				<div class="facility-stat-value">{{ $inactiveFacilities ?? 0 }}</div>
             </button>
         </div>
 
@@ -501,13 +670,25 @@ window.addEventListener('DOMContentLoaded', function() {
                 $sourceTabs['cprf'] = 'Public Facilities — Brgy. Culiat (' . ($publicFacilitiesCount ?? 0) . ')';
             }
         @endphp
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:1.25rem;">
+        <div class="facility-toolbar">
+        <div class="facility-toolbar-top">
+        <div class="facility-source-tabs" aria-label="Facility source filter">
             @foreach ($sourceTabs as $tabKey => $tabLabel)
                 <a href="{{ route('facilities.index', $tabKey === 'all' ? [] : ['source' => $tabKey]) }}"
-                   style="padding:8px 16px; border-radius:999px; font-size:0.85rem; font-weight:800; text-decoration:none; border:1.5px solid {{ $sourceTab === $tabKey ? '#2563eb' : '#e2e8f0' }}; background:{{ $sourceTab === $tabKey ? '#eff6ff' : '#fff' }}; color:{{ $sourceTab === $tabKey ? '#1d4ed8' : '#64748b' }};">
+                   class="facility-source-tab {{ $sourceTab === $tabKey ? 'is-active' : '' }}">
                     {{ $tabLabel }}
                 </a>
             @endforeach
+        </div>
+            <label class="facility-sort-wrap" for="facilitySort">
+                <span><i class="fas fa-sort-amount-down"></i> Sort by</span>
+                <select id="facilitySort" class="facility-sort-select">
+                    <option value="default">Default order</option>
+                    <option value="name-asc">Name (A–Z)</option>
+                    <option value="name-desc">Name (Z–A)</option>
+                    <option value="status">Status</option>
+                </select>
+            </label>
             @if($sourceTab === 'cprf' && ($canSyncCprf ?? false))
                 <form method="POST" action="{{ route('facilities.sync-cprf') }}" style="margin-left:auto;">
                     @csrf
@@ -542,11 +723,12 @@ window.addEventListener('DOMContentLoaded', function() {
                 Showing <span id="facilitySearchVisibleCount">{{ $facilities->count() }}</span> of <span id="facilitySearchTotalCount">{{ $facilities->count() }}</span> facilities
             </div>
             <div class="facility-search-meta">
-                Matches facility, type, and address/barangay.
+                Search includes facility, type, address, barangay, and meter names.
             </div>
         </div>
+        </div>
 
-        <div class="facility-grid">
+        <div class="facility-grid" id="facilityGrid">
             @forelse($facilities as $facility)
                 @php
                     $searchIndex = Str::lower(trim(implode(' ', [
@@ -554,27 +736,34 @@ window.addEventListener('DOMContentLoaded', function() {
                         (string) ($facility->type ?? ''),
                         (string) ($facility->address ?? ''),
                         (string) ($facility->barangay ?? ''),
+                        (string) ($facility->searchMeterNames ?? ''),
+                        (string) ($facility->searchSubmeterNames ?? ''),
                     ])));
+                    $normalizedStatus = Str::lower(trim((string) ($facility->status ?? 'inactive')));
                 @endphp
                 <div class="facility-card"
                      data-facility-card
                      data-search="{{ $searchIndex }}"
-                     data-status="{{ Str::lower((string) ($facility->status ?? 'inactive')) }}">
+                     data-name="{{ Str::lower((string) $facility->name) }}"
+                     data-status="{{ $normalizedStatus }}">
                     <div class="image-wrapper">
+                        <span class="facility-status-badge {{ $normalizedStatus }}"><i class="fas fa-circle"></i> {{ Str::headline($normalizedStatus) }}</span>
                         @php
                             $imageUrl = $facility->resolved_image_url;
                         @endphp
                         @if($imageUrl)
                             <img src="{{ $imageUrl }}" alt="{{ $facility->name }}">
                         @else
-                            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#cbd5e1;">
-                                <i class="fas fa-image fa-3x"></i>
+                            <div class="facility-image-placeholder" aria-label="No facility photo available">
+                                <span class="facility-image-placeholder-icon"><i class="fas fa-building"></i></span>
+                                <span>No facility photo</span>
                             </div>
                         @endif
-                        <a href="{{ route('modules.facilities.show', $facility->id) }}" style="position:absolute; inset:0; z-index:1;"></a>
+                        <a href="{{ route('modules.facilities.show', $facility->id) }}" aria-label="View {{ $facility->name }} details" style="position:absolute; inset:0; z-index:1;"></a>
                     </div>
 
                     <div class="content-padding">
+                        <div class="facility-card-badges">
                         <span class="type-badge" data-search-text>{{ $facility->type ?? 'General' }}</span>
                         @if(method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged())
                             <span title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
@@ -582,40 +771,37 @@ window.addEventListener('DOMContentLoaded', function() {
                                 <i class="fas fa-link"></i> CPRF
                             </span>
                         @endif
-                        <h3 data-search-text style="font-size:1.2rem; font-weight:800; color:#1e293b; margin:0 0 8px 0; line-height:1.2;">{{ $facility->name }}</h3>
-                        <p style="font-size:0.88rem; color:#64748b; display:flex; align-items:flex-start; gap:6px; margin-bottom:12px;">
-                            <i class="fas fa-location-dot" style="color:#94a3b8; margin-top:3px;"></i>
+                        </div>
+                        <h3 class="facility-card-title" data-search-text>{{ $facility->name }}</h3>
+                        <p class="facility-card-location" title="{{ $facility->address ?? 'No address provided' }}">
+                            <i class="fas fa-map-marker-alt"></i>
                             <span data-search-text>{{ Str::limit($facility->address ?? 'No address provided', 50) }}</span>
                         </p>
-                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-                            <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#475569; letter-spacing:.04em;">Facility Size</span>
-                            <span style="display:inline-flex; align-items:center; gap:6px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:999px; padding:4px 10px; font-size:0.78rem; font-weight:800;">
-                                <i class="fa fa-chart-bar"></i> {{ $facility->dynamicSize ?? ($facility->size ?? 'N/A') }}
-                            </span>
+                        <div class="facility-baseline-row" title="Source: {{ $facility->resolvedBaselineSourceLabel ?? 'No baseline configured' }}">
+                            <i class="fas fa-chart-line" aria-hidden="true"></i>
+                            <span>Baseline</span>
                             @if(isset($facility->resolvedBaselineKwh) && $facility->resolvedBaselineKwh !== null)
-                                <span style="font-size:0.78rem; color:#64748b; font-weight:600;">
-                                    Baseline: {{ number_format((float) $facility->resolvedBaselineKwh, 2) }} kWh
-                                    <i class="fa fa-info-circle"
-                                       title="Source: {{ $facility->resolvedBaselineSourceLabel ?? 'Unknown' }}"
-                                       style="margin-left:4px;color:#94a3b8;"></i>
-                                </span>
+                                <strong>{{ number_format((float) $facility->resolvedBaselineKwh, 0) }} kWh</strong>
+                            @else
+                                <strong>Not set</strong>
                             @endif
                         </div>
 
-                        <div class="card-actions" style="position:relative; z-index:2;">
-                            @if((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))) !== 'staff')
-                            <a href="{{ url('/modules/facilities/' . $facility->id . '/energy-profile') }}" class="action-icon energy" title="Energy Profile">
-                                <i class="fas fa-bolt"></i>
+                        @php
+                            $isStaffUser = (auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))) === 'staff';
+                        @endphp
+                        <div class="card-actions {{ $isStaffUser ? 'is-staff' : '' }}" style="position:relative; z-index:2;">
+                            <a href="{{ route('modules.facilities.show', $facility->id) }}" class="facility-action-button primary">
+                                View details <i class="fas fa-arrow-right"></i>
+                            </a>
+                            @if(!$isStaffUser)
+                            <a href="{{ url('/modules/facilities/' . $facility->id . '/energy-profile') }}" class="facility-action-button energy quick-action" title="Open Energy Profile" aria-label="Open Energy Profile">
+                                <i class="fas fa-bolt"></i><span>Energy Profile</span>
                             </a>
                             @endif
-                            <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="action-icon records" title="Monthly Records" style="background:#fef2f2; color:#e11d48;">
-                                <i class="fas fa-file-lines"></i>
+                            <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="facility-action-button records quick-action" title="Open Monthly Records" aria-label="Open Monthly Records">
+                                <i class="fas fa-file-alt"></i><span>Energy Records</span>
                             </a>
-                            <div style="margin-left:auto; display:flex; align-items:center;">
-                                <a href="{{ route('modules.facilities.show', $facility->id) }}" style="font-size:0.95rem; font-weight:700; color:#2563eb; text-transform:none; text-decoration:none; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:4px; transition:color 0.18s;" onmouseover="this.style.color='#1d4ed8'" onmouseout="this.style.color='#2563eb'">
-                                    View Details <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -634,29 +820,20 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-@if(!in_array(strtolower(Auth::user()->role ?? ''), ['energy_officer', 'staff'], true))
-    <button type="button" id="fabAddFacility" class="btn-gradient" style="position:fixed; bottom:40px; right:40px; width:60px; height:60px; border-radius:30px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; z-index:99; display:none;">
-        <i class="fas fa-plus"></i>
-    </button>
-@endif
-
 @include('modules.facilities.partials.modals')
 
 <script>
-    window.addEventListener('scroll', function() {
-        const fab = document.getElementById('fabAddFacility');
-        if (fab) {
-            if (window.scrollY > 200) fab.style.display = 'flex';
-            else fab.style.display = 'none';
-        }
-    });
-
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('addFacilityModal');
-        const openModal = () => { if(modal) modal.style.display = 'flex'; };
+        const openModal = () => {
+            if (typeof window.openAddFacilityModal === 'function') {
+                window.openAddFacilityModal();
+                return;
+            }
+            if (modal) modal.style.display = 'flex';
+        };
 
         document.getElementById('btnAddFacilityTop')?.addEventListener('click', openModal);
-        document.getElementById('fabAddFacility')?.addEventListener('click', openModal);
 
         document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -676,6 +853,8 @@ window.addEventListener('DOMContentLoaded', function() {
         const totalCountEl = document.getElementById('facilitySearchTotalCount');
         const searchableTexts = Array.from(document.querySelectorAll('[data-search-text]'));
         const statusFilterButtons = Array.from(document.querySelectorAll('[data-status-filter]'));
+        const facilityGrid = document.getElementById('facilityGrid');
+        const sortSelect = document.getElementById('facilitySort');
         let activeStatus = 'all';
 
         if (totalCountEl) {
@@ -787,9 +966,28 @@ window.addEventListener('DOMContentLoaded', function() {
             }
         };
 
+        const sortFacilityCards = () => {
+            if (!facilityGrid || !sortSelect) return;
+            const mode = sortSelect.value;
+            const orderedCards = [...cards].sort((left, right) => {
+                const originalLeft = cards.indexOf(left);
+                const originalRight = cards.indexOf(right);
+                if (mode === 'name-asc') return (left.dataset.name || '').localeCompare(right.dataset.name || '');
+                if (mode === 'name-desc') return (right.dataset.name || '').localeCompare(left.dataset.name || '');
+                if (mode === 'status') {
+                    const rank = { maintenance: 0, inactive: 1, active: 2 };
+                    return (rank[left.dataset.status] ?? 3) - (rank[right.dataset.status] ?? 3)
+                        || (left.dataset.name || '').localeCompare(right.dataset.name || '');
+                }
+                return originalLeft - originalRight;
+            });
+            orderedCards.forEach((card) => facilityGrid.appendChild(card));
+        };
+
         clearButton?.addEventListener('click', clearSearch);
         resetButton?.addEventListener('click', resetFilters);
         searchInput?.addEventListener('input', applyFacilitySearch);
+        sortSelect?.addEventListener('change', sortFacilityCards);
         statusFilterButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 activeStatus = button.getAttribute('data-status-filter') || 'all';

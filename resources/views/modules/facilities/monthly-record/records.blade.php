@@ -10,6 +10,21 @@
         padding-bottom: 6px;
     }
 
+    .report-card-container.monthly-report-card-container {
+        width: 100%;
+        padding: 26px;
+        border: 1px solid #dbe5f2;
+        border-radius: 26px;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbff 58%, #eef4ff 100%);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        box-sizing: border-box;
+    }
+
+    .report-card-container.monthly-report-card-container,
+    .report-card-container.monthly-report-card-container * {
+        box-sizing: border-box;
+    }
+
     .monthly-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -240,6 +255,25 @@
         background: #cbd5e1;
         box-shadow: none;
     }
+
+    .monthly-overview-bar-column.is-warning .monthly-overview-bar { background:linear-gradient(180deg,#fbbf24,#d97706); box-shadow:0 7px 14px rgba(217,119,6,.22); }
+    .monthly-overview-bar-column.is-high .monthly-overview-bar,
+    .monthly-overview-bar-column.is-very-high .monthly-overview-bar { background:linear-gradient(180deg,#fb923c,#ea580c); box-shadow:0 7px 14px rgba(234,88,12,.23); }
+    .monthly-overview-bar-column.is-critical .monthly-overview-bar { background:linear-gradient(180deg,#fb7185,#e11d48); box-shadow:0 7px 16px rgba(225,29,72,.25); }
+    .monthly-overview-bar-column.is-drop-warning .monthly-overview-bar,
+    .monthly-overview-bar-column.is-drop-high .monthly-overview-bar,
+    .monthly-overview-bar-column.is-drop-critical .monthly-overview-bar { background:linear-gradient(180deg,#818cf8,#4f46e5); box-shadow:0 7px 14px rgba(79,70,229,.22); }
+    .monthly-overview-no-record { min-height:18px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:.65rem; font-weight:800; }
+    .monthly-overview-alert { display:inline-flex; align-items:center; justify-content:center; min-height:18px; margin-top:2px; padding:2px 6px; border-radius:999px; color:#475569; background:#f1f5f9; font-size:.56rem; font-weight:900; white-space:nowrap; }
+    .monthly-overview-alert.critical { color:#991b1b; background:#fee2e2; }
+    .monthly-overview-alert.very-high,.monthly-overview-alert.high { color:#9a3412; background:#ffedd5; }
+    .monthly-overview-alert.warning { color:#92400e; background:#fef3c7; }
+    .monthly-overview-alert.drop-critical,.monthly-overview-alert.drop-high,.monthly-overview-alert.drop-warning { color:#4338ca; background:#e0e7ff; }
+    .monthly-overview-insights { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; margin:12px 4px 4px; }
+    .monthly-overview-insight { display:flex; align-items:center; gap:9px; min-width:0; padding:10px 11px; border:1px solid #e2e8f0; border-radius:11px; background:#f8fafc; }
+    .monthly-overview-insight i { color:#2563eb; }
+    .monthly-overview-insight-label { color:#64748b; font-size:.61rem; font-weight:800; text-transform:uppercase; }
+    .monthly-overview-insight-value { margin-top:2px; color:#1e293b; font-size:.76rem; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     .monthly-overview-month {
         color: #0f172a;
@@ -1210,6 +1244,184 @@
         position: relative;
     }
 
+    .monthly-modal-card.record-form {
+        width: min(700px, calc(100vw - 24px));
+        max-height: calc(100vh - 24px);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid #dbe5f2;
+        border-radius: 22px;
+        box-shadow: 0 28px 80px rgba(15,23,42,.30);
+    }
+
+    .monthly-record-modal-header {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 22px 68px 20px 24px;
+        background: linear-gradient(135deg,#f8fbff 0%,#eef2ff 100%);
+        border-bottom: 1px solid #dbe5f2;
+    }
+
+    .monthly-record-modal-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg,#2563eb,#6366f1);
+        color: #fff;
+        box-shadow: 0 9px 20px rgba(79,70,229,.20);
+    }
+
+    .monthly-record-modal-header .monthly-modal-title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 900;
+        letter-spacing: -.02em;
+    }
+
+    .monthly-record-modal-header .monthly-modal-subtitle {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .record-form .monthly-modal-close {
+        z-index: 5;
+        top: 18px;
+        right: 18px;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dbe5f2;
+        border-radius: 11px;
+        background: rgba(255,255,255,.9);
+        font-size: 1rem;
+    }
+
+    .record-form .monthly-modal-close:hover {
+        border-color: #fecdd3;
+        background: #fff1f2;
+        color: #e11d48;
+    }
+
+    #addMonthlyRecordForm {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        gap: 14px !important;
+        padding: 20px 26px 0;
+    }
+
+    .monthly-form-section-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 5px 0 -2px;
+        color: #475569;
+        font-size: .73rem;
+        font-weight: 850;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .monthly-form-section-title i { color: #2563eb; }
+
+    #addMonthlyRecordForm .monthly-field label {
+        color: #334155;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    #addMonthlyRecordForm .monthly-field input,
+    #addMonthlyRecordForm .monthly-field select {
+        min-height: 45px;
+        padding: 10px 12px;
+        border-radius: 11px;
+        background: #fff;
+    }
+
+    #addMonthlyRecordForm .monthly-field input:focus,
+    #addMonthlyRecordForm .monthly-field select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+
+    .monthly-meter-suggestion {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .monthly-computed-field { position: relative; }
+    .monthly-computed-field > i {
+        position: absolute;
+        left: 13px;
+        bottom: 14px;
+        color: #059669;
+    }
+    #addMonthlyRecordForm #add_energy_cost {
+        padding-left: 34px;
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+        font-weight: 850;
+    }
+
+    #addMonthlyRecordForm input[type="file"] {
+        min-height: auto;
+        background: #f8fafc;
+    }
+
+    .monthly-upload-help {
+        color: #64748b;
+        font-size: .75rem;
+        font-weight: 600;
+    }
+
+    .record-form .monthly-modal-actions {
+        position: sticky;
+        z-index: 4;
+        bottom: 0;
+        margin: 20px -26px 0;
+        padding: 14px 26px;
+        border-top: 1px solid #e2e8f0;
+        background: rgba(255,255,255,.97);
+        backdrop-filter: blur(8px);
+    }
+
+    .record-form .monthly-modal-btn {
+        min-height: 44px;
+        border-radius: 11px;
+        font-size: .86rem;
+    }
+
+    .record-form .monthly-modal-btn.primary {
+        order: 2;
+        box-shadow: 0 7px 16px rgba(37,99,235,.20);
+    }
+
+    .record-form .monthly-modal-btn.neutral { order: 1; }
+
     .monthly-modal-card.compact {
         width: min(400px, 92vw);
         background: #ffffff;
@@ -1311,6 +1523,21 @@
         .monthly-modal-actions {
             flex-direction: column-reverse;
         }
+
+        .monthly-modal-card.record-form {
+            width: calc(100vw - 12px);
+            max-height: calc(100vh - 12px);
+            border-radius: 17px;
+        }
+
+        .monthly-record-modal-header { padding: 17px 55px 16px 16px; }
+        .monthly-record-modal-icon { width: 42px; height: 42px; flex-basis: 42px; border-radius: 12px; }
+        #addMonthlyRecordForm { padding: 16px 16px 0; }
+        .record-form .monthly-modal-actions {
+            margin: 18px -16px 0;
+            padding: 12px 16px;
+            flex-direction: row;
+        }
     }
 
     @media (max-width: 900px) {
@@ -1325,6 +1552,12 @@
         background: #0f172a;
         border-color: #334155;
         box-shadow: 0 14px 28px rgba(2, 6, 23, 0.55);
+    }
+
+    body.dark-mode .monthly-report-card-container {
+        background: linear-gradient(145deg, #0f172a 0%, #111827 62%, #172033 100%);
+        border-color: #334155;
+        box-shadow: 0 18px 45px rgba(2, 6, 23, .45);
     }
 
     body.dark-mode .monthly-table-header {
@@ -1509,6 +1742,15 @@
         background: #111827;
     }
 
+    body.dark-mode .monthly-modal-card.record-form { background:#0f172a; border-color:#334155; }
+    body.dark-mode .monthly-record-modal-header { background:linear-gradient(135deg,#111827,#172033); border-color:#2a3850; }
+    body.dark-mode .monthly-record-modal-header .monthly-modal-title { color:#f8fafc; }
+    body.dark-mode .record-form .monthly-modal-close { background:#111827; border-color:#334155; color:#cbd5e1; }
+    body.dark-mode .monthly-form-section-title { color:#cbd5e1; }
+    body.dark-mode .monthly-meter-suggestion { background:#172554; color:#bfdbfe; }
+    body.dark-mode #addMonthlyRecordForm #add_energy_cost { background:#052e2b; border-color:#047857; color:#a7f3d0; }
+    body.dark-mode .record-form .monthly-modal-actions { background:rgba(15,23,42,.97); border-color:#334155; }
+
     body.dark-mode .monthly-modal-subtitle {
         color: #94a3b8;
     }
@@ -1541,6 +1783,9 @@
         background: #475569;
     }
 
+    body.dark-mode .monthly-overview-insight { background:#111827; border-color:#334155; }
+    body.dark-mode .monthly-overview-insight-value { color:#e2e8f0; }
+
     body.dark-mode .monthly-overview-meter {
         border-color: #1e3a8a;
         background: #172554;
@@ -1557,6 +1802,68 @@
         background: #172554;
         color: #bfdbfe;
     }
+
+    /* Enhanced records workflow and consolidated desktop table */
+    .monthly-header-identity { display:flex; align-items:flex-start; gap:14px; }
+    .monthly-header-icon { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:14px; color:#fff; background:linear-gradient(135deg,#2563eb,#6366f1); box-shadow:0 9px 20px rgba(37,99,235,.2); }
+    .monthly-header-context { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+    .monthly-context-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border:1px solid #dbe5f2; border-radius:999px; color:#475569; background:#fff; font-size:.68rem; font-weight:800; }
+    .monthly-performance-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .monthly-performance-card { position:relative; overflow:hidden; min-height:108px; padding:16px 17px; border:1px solid #dbe5f2; border-radius:16px; background:#fff; box-shadow:0 8px 20px rgba(15,23,42,.05); }
+    .monthly-performance-card::before { content:""; position:absolute; inset:0 0 auto; height:4px; background:var(--monthly-accent,#2563eb); }
+    .monthly-performance-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .monthly-performance-label { color:#64748b; font-size:.69rem; font-weight:850; text-transform:uppercase; letter-spacing:.045em; }
+    .monthly-performance-icon { width:33px; height:33px; display:grid; place-items:center; border-radius:10px; color:var(--monthly-accent,#2563eb); background:var(--monthly-soft,#eff6ff); }
+    .monthly-performance-value { margin-top:10px; color:#0f172a; font-size:1.42rem; line-height:1; font-weight:950; }
+    .monthly-performance-note { margin-top:6px; color:#64748b; font-size:.66rem; font-weight:650; }
+    .monthly-performance-card.records { --monthly-accent:#2563eb; --monthly-soft:#eff6ff; }
+    .monthly-performance-card.approved { --monthly-accent:#059669; --monthly-soft:#ecfdf5; }
+    .monthly-performance-card.pending { --monthly-accent:#f59e0b; --monthly-soft:#fffbeb; }
+    .monthly-performance-card.attention { --monthly-accent:#e11d48; --monthly-soft:#fff1f2; }
+    .monthly-workflow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; border-top:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; background:#f8fafc; }
+    .monthly-workflow-step { display:flex; align-items:center; gap:9px; min-height:62px; padding:11px 14px; border-right:1px solid #e2e8f0; }
+    .monthly-workflow-step:last-child { border-right:0; }
+    .monthly-workflow-number { width:28px; height:28px; flex:0 0 28px; display:grid; place-items:center; border-radius:9px; color:#1d4ed8; background:#dbeafe; font-size:.72rem; font-weight:950; }
+    .monthly-workflow-title { color:#334155; font-size:.72rem; font-weight:900; }
+    .monthly-workflow-text { margin-top:2px; color:#64748b; font-size:.61rem; line-height:1.3; font-weight:650; }
+    .monthly-record-comparison { display:grid; gap:5px; }
+    .monthly-record-metric { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .monthly-record-metric span:first-child { color:#94a3b8; font-size:.61rem; font-weight:800; text-transform:uppercase; }
+    .monthly-performance-cell { display:grid; justify-items:start; gap:6px; }
+    .monthly-billing-cell { display:grid; gap:5px; }
+    .monthly-document-actions { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
+    .monthly-bill-link { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; padding:6px 9px; border:1px solid #cbd5e1; border-radius:9px; color:#334155; background:#fff; text-decoration:none; font-size:.68rem; font-weight:850; }
+    .monthly-bill-link.missing { color:#94a3b8; background:#f8fafc; cursor:default; }
+    body.monthly-modal-open { overflow:hidden; }
+
+    @media (min-width: 761px) {
+        .monthly-table { width:100%; min-width:1050px; }
+        .monthly-table th:nth-child(1), .monthly-table td:nth-child(1) { width:19%; text-align:left; padding-left:16px; }
+        .monthly-table th:nth-child(2), .monthly-table td:nth-child(2) { width:15%; text-align:left; }
+        .monthly-table th:nth-child(3), .monthly-table td:nth-child(3) { width:18%; text-align:left; }
+        .monthly-table th:nth-child(4), .monthly-table td:nth-child(4) { width:14%; text-align:left; }
+        .monthly-table th:nth-child(5), .monthly-table td:nth-child(5) { width:14%; text-align:center; }
+        .monthly-table th:nth-child(6), .monthly-table td:nth-child(6) { width:13%; text-align:center; }
+        .monthly-table th:nth-child(7), .monthly-table td:nth-child(7) { width:7%; text-align:center; }
+    }
+    body.dark-mode .monthly-context-chip, body.dark-mode .monthly-performance-card, body.dark-mode .monthly-bill-link { background:#111827; border-color:#334155; color:#cbd5e1; }
+    body.dark-mode .monthly-performance-value { color:#f1f5f9; }
+    body.dark-mode .monthly-workflow { background:#0f172a; border-color:#334155; }
+    body.dark-mode .monthly-workflow-step { border-color:#334155; }
+    body.dark-mode .monthly-workflow-title { color:#e2e8f0; }
+    @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow-step:nth-child(2) { border-right:0; } }
+    @media (max-width:760px) {
+        .monthly-table-wrap { overflow:visible; padding:10px; border-top:0; }
+        .monthly-table, .monthly-table tbody { display:block; width:100%; min-width:0; }
+        .monthly-table thead { display:none; }
+        .monthly-table tbody { display:grid; gap:11px; }
+        .monthly-table tbody tr { display:grid; grid-template-columns:1fr 1fr; overflow:hidden; border:1px solid #dbe5f2; border-radius:13px; background:#fff; }
+        .monthly-table tbody td { display:block; width:auto !important; padding:11px 12px !important; border-bottom:1px solid #edf2f7; text-align:left !important; }
+        .monthly-table tbody td::before { content:attr(data-label); display:block; margin-bottom:6px; color:#94a3b8; font-size:.59rem; font-weight:850; text-transform:uppercase; letter-spacing:.04em; }
+        .monthly-table tbody td:first-child, .monthly-table tbody td:nth-child(3), .monthly-table tbody td:nth-child(6), .monthly-table tbody td:last-child { grid-column:1/-1; }
+        body.dark-mode .monthly-table tbody tr { background:#111827; border-color:#334155; }
+    }
+    @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-workflow { grid-template-columns:1fr; } .monthly-workflow-step { border-right:0; border-bottom:1px solid #e2e8f0; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } }
 </style>
 
 @php
@@ -1601,17 +1908,45 @@
     $monthlyOverviewChart = collect(range(1, 12))->map(function ($monthNumber) use ($recordsForYear, $monthLabels) {
         $monthRecords = $recordsForYear
             ->filter(fn ($record) => (int) ($record->month ?? 0) === (int) $monthNumber);
+        $monthKwh = round((float) $monthRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2);
+        $monthBaseline = round((float) $monthRecords->sum(function ($record) {
+            if ($record->meter && is_numeric($record->meter->baseline_kwh)) {
+                return (float) $record->meter->baseline_kwh;
+            }
+            return is_numeric($record->baseline_kwh) ? (float) $record->baseline_kwh : 0.0;
+        }), 2);
+        $allApproved = $monthRecords->isNotEmpty() && $monthRecords->every(
+            fn ($record) => (string) ($record->review_status ?: 'for_review') === 'approved'
+        );
+        $deviation = $allApproved && $monthBaseline > 0
+            ? round((($monthKwh - $monthBaseline) / $monthBaseline) * 100, 2)
+            : null;
+        $level = $deviation !== null
+            ? \App\Models\EnergyRecord::resolveAlertLevel($deviation, $monthBaseline)
+            : ($monthRecords->isNotEmpty() ? 'Pending Review' : 'No Data');
 
         return [
             'month' => (int) $monthNumber,
             'label' => $monthLabels[(int) $monthNumber] ?? ('Month ' . (int) $monthNumber),
-            'kwh' => round((float) $monthRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0)), 2),
+            'kwh' => $monthKwh,
+            'baseline_kwh' => $monthBaseline > 0 ? $monthBaseline : null,
+            'deviation' => $deviation,
+            'alert_level' => $level,
             'cost' => round((float) $monthRecords->sum(fn ($record) => \App\Support\EnergyCost::cost($record)), 2),
             'record_count' => (int) $monthRecords->count(),
         ];
     });
     $monthlyOverviewMaxKwh = max(1, (float) $monthlyOverviewChart->max('kwh'));
     $monthlyOverviewTotalCost = round((float) $monthlyOverviewChart->sum('cost'), 2);
+    $monthlyOverviewRecordedMonths = $monthlyOverviewChart->where('record_count', '>', 0)->values();
+    $monthlyOverviewCoverage = $monthlyOverviewRecordedMonths->count();
+    $monthlyOverviewAverageKwh = $monthlyOverviewCoverage > 0
+        ? round((float) $monthlyOverviewRecordedMonths->avg('kwh'), 2)
+        : 0.0;
+    $monthlyOverviewPeak = $monthlyOverviewRecordedMonths->sortByDesc('kwh')->first();
+    $monthlyOverviewAttentionCount = $monthlyOverviewRecordedMonths
+        ->filter(fn ($row) => ! in_array((string) ($row['alert_level'] ?? ''), ['Normal', 'No Data', 'Pending Review'], true))
+        ->count();
 
     $mainMeterRecordCount = (int) ($mainMeterRecordCount ?? 0);
     $selectedRecordCount = (int) ($selectedRecordCount ?? $recordsForYear->count());
@@ -1684,11 +2019,37 @@
     );
     $tableFilterApplied = $tableFilterMonth > 0 || $tableFilterMeterId > 0;
     $baselineAlertThresholds = \App\Models\EnergyRecord::alertThresholdsBySize();
+    $tableApprovedCount = $tableRecords->filter(fn ($record) => (string) ($record->review_status ?: 'for_review') === 'approved')->count();
+    $tablePendingCount = $tableRecords->filter(fn ($record) => (string) ($record->review_status ?: 'for_review') !== 'approved')->count();
+    $tableAttentionCount = $tableRecords->filter(function ($record) use ($baselineAlertThresholds) {
+        if ((string) ($record->review_status ?: 'for_review') !== 'approved') {
+            return false;
+        }
+        $actual = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
+        $baseline = ($record->meter && is_numeric($record->meter->baseline_kwh))
+            ? (float) $record->meter->baseline_kwh
+            : (is_numeric($record->baseline_kwh) ? (float) $record->baseline_kwh : null);
+        $deviation = is_numeric($record->deviation)
+            ? (float) $record->deviation
+            : (($actual !== null && $baseline !== null && $baseline > 0) ? (($actual - $baseline) / $baseline) * 100 : null);
+        if ($deviation === null || $baseline === null || $baseline <= 0) {
+            return false;
+        }
+        $level = \App\Models\EnergyRecord::resolveAlertLevel($deviation, $baseline, $baselineAlertThresholds);
+        return ! in_array($level, ['', 'Normal'], true) || ! empty($record->trend_spike_detected);
+    })->count();
+    $tableCoverageCount = $tableRecords->pluck('month')->filter()->unique()->count();
+    $isCprfManaged = method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged();
+    $canManageLocalMonthlyRecords = ! $isCprfManaged
+        && \App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings');
 
     $tableFilterResetQuery = request()->except(['table_month', 'table_meter_id']);
     $tableFilterResetUrl = request()->url() . (empty($tableFilterResetQuery) ? '' : ('?' . http_build_query($tableFilterResetQuery)));
     if (! $hasApprovedMainMeter) {
-        if ($totalMainMeterCount === 0) {
+        if ($isCprfManaged) {
+            $mainMeterNoticeTitle = 'Monthly usage is supplied by CPRF.';
+            $mainMeterNoticeText = 'A local Main Meter is not required for the CPRF facility-level monthly record. Meter profiles may still be maintained for local monitoring context.';
+        } elseif ($totalMainMeterCount === 0) {
             $mainMeterNoticeTitle = 'No Main Meter configured yet.';
             $mainMeterNoticeText = 'Add a Main Meter in Energy Profile first, then approve it before encoding monthly records or viewing sub-meter data.';
         } elseif ($pendingMainMeterCount > 0) {
@@ -1701,7 +2062,16 @@
     }
 @endphp
 
-<div class="monthly-shell">
+@php
+    $requestedRecordDate = trim((string) request('record_date', ''));
+    $recordDateDefault = date('Y-m-d');
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $requestedRecordDate, $recordDateParts)
+        && checkdate((int) $recordDateParts[2], (int) $recordDateParts[3], (int) $recordDateParts[1])) {
+        $recordDateDefault = $requestedRecordDate;
+    }
+@endphp
+
+<div class="report-card-container monthly-report-card-container monthly-shell">
     @if(session('success'))
         <div class="monthly-alert success">
             {{ session('success') }}
@@ -1710,6 +2080,13 @@
     @if(session('error'))
         <div class="monthly-alert error">
             {{ session('error') }}
+        </div>
+    @endif
+    @if($isCprfManaged)
+        <div class="monthly-alert" style="border-color:#bfdbfe;background:#eff6ff;color:#1e3a8a;">
+            <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+            <strong>CPRF-managed monthly records.</strong>
+            Consumption data is encoded in CPRF and appears here automatically after synchronization. This page is view-only for monthly record entry.
         </div>
     @endif
     @if($errors->has('duplicate'))
@@ -1721,18 +2098,23 @@
     <div class="monthly-card">
         <div class="monthly-card-body">
             <div class="monthly-header">
-                <div>
-                    <h1>Monthly Energy Records</h1>
-                    <p>Facility: <span class="facility-name">{{ $facility->name }}</span></p>
-                    <p style="margin-top:2px;">
-                        Source: <span class="facility-name">{{ $billingSourceLabel }}</span>
-                    </p>
+                <div class="monthly-header-identity">
+                    <span class="monthly-header-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                    <div>
+                        <h1>Monthly Energy Records</h1>
+                        <p>Billing, baseline performance, review status, and supporting documents in one place.</p>
+                        <div class="monthly-header-context">
+                            <span class="monthly-context-chip"><i class="fa-solid fa-building"></i> {{ $facility->name }}</span>
+                            <span class="monthly-context-chip"><i class="fa-solid fa-plug-circle-bolt"></i> {{ $billingSourceLabel }}</span>
+                            <span class="monthly-context-chip"><i class="fa-solid fa-calendar"></i> {{ $selectedYear }}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="monthly-actions">
                     <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="monthly-action-btn is-info">
-                        <i class="fa fa-bolt"></i>Energy Profile
+                        <i class="fa fa-bolt"></i> Energy Profile
                     </a>
-                    @if(\App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings'))
+                    @if($canManageLocalMonthlyRecords)
                     <button type="button" onclick="openAddModal()" class="monthly-action-btn is-primary">
                         <i class="fa fa-plus"></i> Add Monthly Record
                     </button>
@@ -1742,6 +2124,13 @@
 
         </div>
     </div>
+
+    <section class="monthly-performance-grid" aria-label="Monthly record performance summary">
+        <article class="monthly-performance-card records"><div class="monthly-performance-top"><span class="monthly-performance-label">Filtered records</span><span class="monthly-performance-icon"><i class="fa-solid fa-file-lines"></i></span></div><div class="monthly-performance-value">{{ number_format($tableRecordCount) }}</div><div class="monthly-performance-note">{{ $tableCoverageCount }} of 12 month(s) covered</div></article>
+        <article class="monthly-performance-card approved"><div class="monthly-performance-top"><span class="monthly-performance-label">Approved</span><span class="monthly-performance-icon"><i class="fa-solid fa-circle-check"></i></span></div><div class="monthly-performance-value">{{ number_format($tableApprovedCount) }}</div><div class="monthly-performance-note">Included in evaluated performance</div></article>
+        <article class="monthly-performance-card pending"><div class="monthly-performance-top"><span class="monthly-performance-label">Pending review</span><span class="monthly-performance-icon"><i class="fa-solid fa-clock"></i></span></div><div class="monthly-performance-value">{{ number_format($tablePendingCount) }}</div><div class="monthly-performance-note">Needs validation before final status</div></article>
+        <article class="monthly-performance-card attention"><div class="monthly-performance-top"><span class="monthly-performance-label">Requires attention</span><span class="monthly-performance-icon"><i class="fa-solid fa-triangle-exclamation"></i></span></div><div class="monthly-performance-value">{{ number_format($tableAttentionCount) }}</div><div class="monthly-performance-note">Non-normal variance or trend spike</div></article>
+    </section>
 
     <div class="monthly-card">
         <div class="monthly-card-body">
@@ -1780,32 +2169,51 @@
                     <div style="font-size:.86rem;line-height:1.4;">{{ $mainMeterNoticeText }}</div>
                 </div>
             @else
+                <div class="monthly-overview-insights">
+                    <div class="monthly-overview-insight"><i class="fa-solid fa-calendar-check"></i><div><div class="monthly-overview-insight-label">Coverage</div><div class="monthly-overview-insight-value">{{ $monthlyOverviewCoverage }} of 12 months</div></div></div>
+                    <div class="monthly-overview-insight"><i class="fa-solid fa-chart-simple"></i><div><div class="monthly-overview-insight-label">Recorded-month average</div><div class="monthly-overview-insight-value">{{ number_format($monthlyOverviewAverageKwh, 2) }} kWh</div></div></div>
+                    <div class="monthly-overview-insight"><i class="fa-solid fa-arrow-up-right-dots"></i><div><div class="monthly-overview-insight-label">Highest month</div><div class="monthly-overview-insight-value">{{ $monthlyOverviewPeak['label'] ?? 'No data' }}{{ $monthlyOverviewPeak ? ' · '.number_format((float) $monthlyOverviewPeak['kwh'], 2).' kWh' : '' }}</div></div></div>
+                    <div class="monthly-overview-insight"><i class="fa-solid fa-triangle-exclamation"></i><div><div class="monthly-overview-insight-label">Attention months</div><div class="monthly-overview-insight-value">{{ $monthlyOverviewAttentionCount }}</div></div></div>
+                </div>
                 <div class="monthly-overview-chart-wrap" aria-label="Monthly energy usage chart for {{ $selectedYear }}">
                     <div class="monthly-overview-chart">
                         @foreach($monthlyOverviewChart as $chartMonth)
                             @php
                                 $chartKwh = (float) ($chartMonth['kwh'] ?? 0);
                                 $chartCost = (float) ($chartMonth['cost'] ?? 0);
-                                $chartHeight = $chartKwh > 0
+                                $chartRecordCount = (int) ($chartMonth['record_count'] ?? 0);
+                                $chartHasRecord = $chartRecordCount > 0;
+                                $chartLevel = (string) ($chartMonth['alert_level'] ?? 'No Data');
+                                $chartLevelClass = \Illuminate\Support\Str::slug($chartLevel);
+                                $chartHeight = $chartHasRecord && $chartKwh > 0
                                     ? max(4, round(($chartKwh / $monthlyOverviewMaxKwh) * 100, 2))
                                     : 1;
                                 $chartDescription = ($chartMonth['label'] ?? '') . ' ' . $selectedYear
                                     . ': ' . number_format($chartKwh, 2) . ' kWh, PHP '
                                     . number_format($chartCost, 2) . ', '
-                                    . number_format((int) ($chartMonth['record_count'] ?? 0)) . ' record(s)';
+                                    . number_format($chartRecordCount) . ' record(s), status ' . $chartLevel;
                             @endphp
-                            <div class="monthly-overview-bar-column {{ $chartKwh <= 0 ? 'is-empty' : '' }}"
+                            <div class="monthly-overview-bar-column {{ !$chartHasRecord ? 'is-empty' : 'is-'.$chartLevelClass }}"
                                  tabindex="0"
                                  title="{{ $chartDescription }}"
                                  aria-label="{{ $chartDescription }}">
                                 <div class="monthly-overview-bar-area">
-                                    <div class="monthly-overview-bar-value">{{ number_format($chartKwh, 2) }}</div>
+                                    @if($chartHasRecord)
+                                        <div class="monthly-overview-bar-value">{{ number_format($chartKwh, 2) }}</div>
+                                        <span class="monthly-overview-alert {{ $chartLevelClass }}">{{ strtoupper($chartLevel) }}</span>
+                                    @else
+                                        <div class="monthly-overview-no-record">No record</div>
+                                    @endif
                                     <div class="monthly-overview-bar" style="height: {{ $chartHeight }}%;"></div>
                                 </div>
                                 <div class="monthly-overview-month">{{ $chartMonth['label'] }}</div>
                                 <div class="monthly-overview-cost">
-                                    PHP {{ number_format($chartCost, 2) }}
-                                    <span>{{ number_format((int) ($chartMonth['record_count'] ?? 0)) }} record(s)</span>
+                                    @if($chartHasRecord)
+                                        PHP {{ number_format($chartCost, 2) }}
+                                        <span>{{ number_format($chartRecordCount) }} record(s)</span>
+                                    @else
+                                        <span>No billing data</span>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -1857,6 +2265,13 @@
             </div>
         </div>
 
+        <div class="monthly-workflow" aria-label="Monthly record workflow">
+            <div class="monthly-workflow-step"><span class="monthly-workflow-number">1</span><div><div class="monthly-workflow-title">{{ $isCprfManaged ? 'Receive from CPRF' : 'Encode bill' }}</div><div class="monthly-workflow-text">{{ $isCprfManaged ? 'Monthly usage is synchronized from the CPRF system.' : 'Select main meter and enter monthly usage.' }}</div></div></div>
+            <div class="monthly-workflow-step"><span class="monthly-workflow-number">2</span><div><div class="monthly-workflow-title">Validate record</div><div class="monthly-workflow-text">Review the bill, rate, and meter assignment.</div></div></div>
+            <div class="monthly-workflow-step"><span class="monthly-workflow-number">3</span><div><div class="monthly-workflow-title">Evaluate performance</div><div class="monthly-workflow-text">Compare against baseline and threshold settings.</div></div></div>
+            <div class="monthly-workflow-step"><span class="monthly-workflow-number">4</span><div><div class="monthly-workflow-title">Review insight</div><div class="monthly-workflow-text">Open recommendations and act on exceptions.</div></div></div>
+        </div>
+
         <div class="monthly-record-table-filter">
             <form method="GET" action="{{ route('facilities.monthly-records', $facility->id) }}" class="monthly-record-table-filter-form">
                 <input type="hidden" name="year" value="{{ $selectedYear }}">
@@ -1900,17 +2315,12 @@
             <table class="monthly-table">
                 <thead>
                     <tr>
-                        <th>Month</th>
-                        <th>Main Meter</th>
-                        <th>Usage (kWh)</th>
-                        <th>Baseline (kWh)</th>
-                        <th>Change vs Baseline</th>
-                        <th>Status</th>
-                        <th>Rate (PHP/kWh)</th>
-                        <th>Energy Cost (PHP)</th>
-                        <th>Recommendation</th>
-                        <th>Bill Image</th>
-                        <th>Review</th>
+                        <th>Period / Main Meter</th>
+                        <th>Consumption</th>
+                        <th>Performance</th>
+                        <th>Billing</th>
+                        <th>Review Status</th>
+                        <th>Documents / Insight</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -1950,8 +2360,8 @@
                                     $changeColor = '#991b1b';
                                 } elseif ($deviationRow < -0.0001) {
                                     $changeLabel = 'Decreased ' . number_format(abs($deviationRow), 2) . '%';
-                                    $changeBg = '#dcfce7';
-                                    $changeColor = '#166534';
+                                    $changeBg = '#e0e7ff';
+                                    $changeColor = '#4338ca';
                                 } else {
                                     $changeLabel = 'No Change';
                                     $changeBg = '#eff6ff';
@@ -1969,6 +2379,9 @@
                                     'Very High' => ['bg' => '#fff1f2', 'color' => '#be123c'],
                                     'High' => ['bg' => '#ffedd5', 'color' => '#9a3412'],
                                     'Warning' => ['bg' => '#fef3c7', 'color' => '#92400e'],
+                                    'Drop Critical' => ['bg' => '#ede9fe', 'color' => '#6d28d9'],
+                                    'Drop High' => ['bg' => '#e0e7ff', 'color' => '#4338ca'],
+                                    'Drop Warning' => ['bg' => '#cffafe', 'color' => '#0e7490'],
                                     'Normal' => ['bg' => '#dcfce7', 'color' => '#166534'],
                                 ];
                                 $alertTheme = $alertThemes[$baselineAlertLabel] ?? $alertThemes['Normal'];
@@ -2018,28 +2431,21 @@
                             $reviewTheme = $reviewThemes[$reviewStatus] ?? $reviewThemes['for_review'];
                         @endphp
                         <tr>
-                            <td>{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }}</td>
-                            <td>
-                                <div class="monthly-scope-cell">
-                                    <span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span>
-                                    <span class="monthly-meter-name">{{ $scopeNameRow }}</span>
+                            <td data-label="Period / Main Meter">
+                                <div style="font-weight:950;color:#172554;margin-bottom:6px;">{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }} {{ (int) ($record->year ?? $selectedYear) }}</div>
+                                <div class="monthly-scope-cell"><span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span><span class="monthly-meter-name">{{ $scopeNameRow }}</span></div>
+                            </td>
+                            <td data-label="Consumption">
+                                <div class="monthly-record-comparison">
+                                    <div class="monthly-record-metric"><span>Actual</span><strong class="monthly-number">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2).' kWh' : '-' }}</strong></div>
+                                    <div class="monthly-record-metric"><span>Baseline</span><strong class="monthly-muted-number">{{ $baselineRow !== null ? number_format($baselineRow, 2).' kWh' : '-' }}</strong></div>
                                 </div>
                             </td>
-                            <td class="monthly-number">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2) : '-' }}</td>
-                            <td class="monthly-muted-number">{{ $baselineRow !== null ? number_format($baselineRow, 2) : '-' }}</td>
-                            <td>
+                            <td data-label="Performance"><div class="monthly-performance-cell">
                                 @if($reviewStatus === 'approved')
                                     <span class="monthly-status-pill" style="background:{{ $changeBg }};color:{{ $changeColor }};">
                                         {{ $changeLabel }}
                                     </span>
-                                @else
-                                    <span class="monthly-pending-mark" title="Change will be shown after this record is approved.">
-                                        <i class="fa-solid fa-minus"></i> Pending review
-                                    </span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($reviewStatus === 'approved')
                                     <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
                                         {{ $baselineAlertLabel }}
                                     </span>
@@ -2052,19 +2458,24 @@
                                     @endif
                                 @else
                                     <span class="monthly-pending-mark" title="Status will be shown after this record is approved.">
-                                        <i class="fa-solid fa-minus"></i> Pending review
+                                        <i class="fa-solid fa-clock"></i> Pending review
                                     </span>
                                 @endif
+                            </div></td>
+                            <td data-label="Billing"><div class="monthly-billing-cell"><div class="monthly-record-metric"><span>Rate</span><strong class="monthly-muted-number">PHP {{ number_format($rate, 2) }}/kWh</strong></div><div class="monthly-record-metric"><span>Cost</span><strong class="monthly-cost">PHP {{ number_format($cost, 2) }}</strong></div></div></td>
+                            <td data-label="Review Status">
+                                <div class="monthly-review-cell">
+                                    <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};"><i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>{{ $reviewTheme['label'] }}</span>
+                                    @if($record->review_remarks)<div class="monthly-review-remark" title="{{ $record->review_remarks }}">{{ \Illuminate\Support\Str::limit($record->review_remarks, 55) }}</div>@endif
+                                </div>
                             </td>
-                            <td class="monthly-muted-number">{{ number_format($rate, 2) }}</td>
-                            <td class="monthly-cost">{{ number_format($cost, 2) }}</td>
-                            <td>
-                                <div class="monthly-recommendation-cell is-action-only">
+                            <td data-label="Documents / Insight">
+                                <div class="monthly-document-actions"><div class="monthly-recommendation-cell is-action-only">
                                     <span class="monthly-recommendation-action-wrap">
                                         <a href="{{ $recommendationUrl }}"
                                            class="monthly-recommendation-btn"
                                            title="View recommendation">
-                                            <span>View</span>
+                                            <span>Insight</span>
                                             <i class="fa fa-arrow-right" aria-hidden="true"></i>
                                         </a>
                                         @if($hasUnreadRecommendation)
@@ -2074,32 +2485,16 @@
                                         @endif
                                     </span>
                                 </div>
-                            </td>
-                            <td>
                                 @if($billImageUrl)
-                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener" class="monthly-bill-thumb">
-                                        <img src="{{ $billImageUrl }}" alt="Bill Image">
-                                    </a>
+                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener" class="monthly-bill-link"><i class="fa-solid fa-receipt"></i> Bill</a>
                                 @else
-                                    <span class="monthly-empty-mark">-</span>
+                                    <span class="monthly-bill-link missing"><i class="fa-solid fa-receipt"></i> No bill</span>
                                 @endif
-                            </td>
-                            <td>
-                                <div class="monthly-review-cell">
-                                    <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};">
-                                        <i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>
-                                        {{ $reviewTheme['label'] }}
-                                    </span>
-                                    @if($record->review_remarks)
-                                        <div class="monthly-review-remark" title="{{ $record->review_remarks }}">
-                                            {{ \Illuminate\Support\Str::limit($record->review_remarks, 55) }}
-                                        </div>
-                                    @endif
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Actions">
                                 <div class="monthly-action-group">
-                                @if(\App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings'))
+                                @if($canManageLocalMonthlyRecords && strtolower((string) ($record->input_source ?? 'manual')) !== 'cprf')
                                 <form id="deleteMonthlyRecordForm-{{ $record->id }}"
                                       action="{{ route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id]) }}"
                                       method="POST"
@@ -2122,7 +2517,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" style="padding:16px;color:#64748b;font-weight:700;">
+                            <td colspan="7" style="padding:28px;color:#64748b;font-weight:700;text-align:center;">
                                 @if($tableMainMeterSelectionRequired)
                                     Select a Main Meter first to view its monthly records.
                                 @elseif($tableFilterApplied)
@@ -2139,24 +2534,31 @@
     </div>
 </div>
 
+@if($canManageLocalMonthlyRecords)
 <div id="addModal" class="monthly-modal-overlay">
-    <div class="monthly-modal-card">
-        <button type="button" onclick="closeAddModal()" class="monthly-modal-close">&times;</button>
-        <h2 class="monthly-modal-title">Add Monthly Record</h2>
-        <div class="monthly-modal-subtitle">
-            Enter monthly usage based on <strong>{{ $billingSourceLabel }}</strong> bill. Cost is auto-computed.
-        </div>
+    <div class="monthly-modal-card record-form" role="dialog" aria-modal="true" aria-labelledby="addMonthlyRecordTitle" aria-describedby="addMonthlyRecordSubtitle">
+        <button type="button" onclick="closeAddModal()" class="monthly-modal-close" aria-label="Close add monthly record form"><i class="fa-solid fa-xmark"></i></button>
+        <header class="monthly-record-modal-header">
+            <div class="monthly-record-modal-icon"><i class="fa-solid fa-calendar-plus"></i></div>
+            <div>
+                <h2 id="addMonthlyRecordTitle" class="monthly-modal-title">Add Monthly Record</h2>
+                <div id="addMonthlyRecordSubtitle" class="monthly-modal-subtitle">
+                    Encode usage from the <strong>{{ $billingSourceLabel }}</strong> bill. Energy cost is calculated automatically.
+                </div>
+            </div>
+        </header>
 
         <form id="addMonthlyRecordForm" method="POST" action="{{ route('energy-records.store', ['facility' => $facility->id]) }}" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:12px;">
             @csrf
 
+            <div class="monthly-form-section-title"><i class="fa-solid fa-receipt"></i> Billing Information</div>
             <div class="monthly-field">
-                <label for="add_date">Billing Date</label>
-                <input type="date" id="add_date" name="date" value="{{ old('date', date('Y-m-d')) }}" required>
+                <label for="add_date">Billing Date <span style="color:#e11d48;">*</span></label>
+                <input type="date" id="add_date" name="date" value="{{ old('date', $recordDateDefault) }}" required>
             </div>
 
             <div class="monthly-field">
-                <label for="add_meter_id">Record Type</label>
+                <label for="add_meter_id">Main Meter <span style="color:#e11d48;">*</span></label>
                 <select id="add_meter_id" name="meter_id" required>
                     <option value="">Select Main Meter</option>
                     @forelse($meterOptions as $meterOption)
@@ -2169,8 +2571,9 @@
                     @endforelse
                 </select>
                 @if($primaryBillingMeter)
-                    <div style="font-size:.82rem;color:#0f172a;font-weight:700;">
-                        Suggested default: {{ $primaryBillingMeter->meter_name }}{{ $primaryBillingMeter->meter_number ? ' (' . $primaryBillingMeter->meter_number . ')' : '' }}
+                    <div class="monthly-meter-suggestion">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>Suggested: {{ $primaryBillingMeter->meter_name }}{{ $primaryBillingMeter->meter_number ? ' (' . $primaryBillingMeter->meter_number . ')' : '' }}</span>
                     </div>
                 @endif
                 @if($meterOptions->isEmpty())
@@ -2178,34 +2581,39 @@
                 @endif
             </div>
 
+            <div class="monthly-form-section-title"><i class="fa-solid fa-bolt"></i> Consumption &amp; Cost</div>
             <div class="monthly-pair-grid">
                 <div class="monthly-field">
-                    <label for="add_actual_kwh">Current Consumption (kWh)</label>
-                    <input type="number" step="0.01" id="add_actual_kwh" name="actual_kwh" value="{{ old('actual_kwh') }}" required>
+                    <label for="add_actual_kwh">Current Consumption (kWh) <span style="color:#e11d48;">*</span></label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_actual_kwh" name="actual_kwh" value="{{ old('actual_kwh') }}" placeholder="e.g. 1250.50" required>
                 </div>
                 <div class="monthly-field">
-                    <label for="add_rate_per_kwh">Rate (PHP/kWh)</label>
-                    <input type="number" step="0.01" id="add_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required>
+                    <label for="add_rate_per_kwh">Rate (PHP/kWh) <span style="color:#e11d48;">*</span></label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required>
                 </div>
             </div>
 
-            <div class="monthly-field">
+            <div class="monthly-field monthly-computed-field">
                 <label for="add_energy_cost">Auto-computed Cost (PHP)</label>
-                <input type="number" step="0.01" id="add_energy_cost" name="energy_cost" readonly>
+                <i class="fa-solid fa-peso-sign" aria-hidden="true"></i>
+                <input type="number" step="0.01" id="add_energy_cost" name="energy_cost" readonly aria-live="polite" placeholder="Calculated from consumption × rate">
             </div>
 
+            <div class="monthly-form-section-title"><i class="fa-solid fa-image"></i> Supporting Document</div>
             <div class="monthly-field">
                 <label for="add_bill_image">Bill Image (Optional)</label>
                 <input type="file" id="add_bill_image" name="bill_image" accept="image/*">
+                <span class="monthly-upload-help">Upload a clear photo or scan of the electric bill.</span>
             </div>
 
             <div class="monthly-modal-actions">
-                <button id="addMonthlyRecordSaveBtn" type="submit" class="monthly-modal-btn primary" @disabled($meterOptions->isEmpty())>Save</button>
                 <button type="button" onclick="closeAddModal()" class="monthly-modal-btn neutral">Cancel</button>
+                <button id="addMonthlyRecordSaveBtn" type="submit" class="monthly-modal-btn primary" @disabled($meterOptions->isEmpty())><i class="fa-solid fa-floppy-disk"></i> Save Record</button>
             </div>
         </form>
     </div>
 </div>
+@endif
 
 <div id="deleteMonthlyRecordModal" class="monthly-modal-overlay">
     <div class="monthly-modal-card compact">
@@ -2229,18 +2637,33 @@
 <script>
 let deleteMonthlyRecordId = null;
 
+function syncMonthlyModalScrollLock() {
+    const hasOpenModal = ['addModal', 'deleteMonthlyRecordModal'].some(function (id) {
+        return document.getElementById(id)?.style.display === 'flex';
+    });
+    document.body.classList.toggle('monthly-modal-open', hasOpenModal);
+}
+
 function openAddModal() {
     const modal = document.getElementById('addModal');
+    const form = document.getElementById('addMonthlyRecordForm');
     if (!modal) return;
     modal.style.display = 'flex';
+    syncMonthlyModalScrollLock();
+    if (form) form.scrollTop = 0;
     computeEnergyCost();
     syncAddSaveButtonState();
+    window.requestAnimationFrame(function () {
+        const firstIncomplete = form?.querySelector(':required:invalid');
+        (firstIncomplete || document.getElementById('add_actual_kwh'))?.focus();
+    });
 }
 
 function closeAddModal() {
     const modal = document.getElementById('addModal');
     if (!modal) return;
     modal.style.display = 'none';
+    syncMonthlyModalScrollLock();
 }
 
 function computeEnergyCost() {
@@ -2249,10 +2672,12 @@ function computeEnergyCost() {
     const costInput = document.getElementById('add_energy_cost');
     if (!kwhInput || !rateInput || !costInput) return;
 
+    const hasKwh = String(kwhInput.value || '').trim() !== '';
+    const hasRate = String(rateInput.value || '').trim() !== '';
     const kwh = parseFloat(kwhInput.value) || 0;
     const rate = parseFloat(rateInput.value) || 0;
     const cost = kwh * rate;
-    costInput.value = cost > 0 ? cost.toFixed(2) : '';
+    costInput.value = hasKwh && hasRate ? cost.toFixed(2) : '';
 }
 
 function syncAddSaveButtonState() {
@@ -2289,12 +2714,14 @@ function openDeleteMonthlyRecordModal(recordId, monthName, year) {
     if (reason) reason.value = '';
     if (error) error.style.display = 'none';
     if (modal) modal.style.display = 'flex';
+    syncMonthlyModalScrollLock();
 }
 
 function closeDeleteMonthlyRecordModal() {
     deleteMonthlyRecordId = null;
     const modal = document.getElementById('deleteMonthlyRecordModal');
     if (modal) modal.style.display = 'none';
+    syncMonthlyModalScrollLock();
 }
 
 document.getElementById('confirmDeleteMonthlyRecordBtn')?.addEventListener('click', function () {
@@ -2382,6 +2809,11 @@ window.addEventListener('DOMContentLoaded', function () {
             const saveBtn = document.getElementById('addMonthlyRecordSaveBtn');
             if (saveBtn && saveBtn.disabled) {
                 event.preventDefault();
+                return;
+            }
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Record...';
             }
         });
     }
@@ -2413,7 +2845,7 @@ window.addEventListener('DOMContentLoaded', function () {
     syncAddSaveButtonState();
 });
 
-@if($errors->has('duplicate'))
+@if($canManageLocalMonthlyRecords && ($errors->has('duplicate') || request()->boolean('open_add')))
 window.addEventListener('DOMContentLoaded', function () {
     openAddModal();
 });

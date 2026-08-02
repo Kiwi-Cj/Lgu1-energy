@@ -107,14 +107,19 @@ class OtpVerificationController extends Controller
 
         $key = 'otp-resend-'.$user->id;
         if (RateLimiter::tooManyAttempts($key, 1)) {
-            $seconds = RateLimiter::availableIn($key);
+            $seconds = max(1, RateLimiter::availableIn($key));
+            $resendAvailableAt = now()->addSeconds($seconds)->timestamp;
+            $request->session()->put('otp_resend_available_at', $resendAvailableAt);
 
             return response()->json([
                 'message' => "Please wait {$seconds} seconds before requesting another OTP.",
+                'retry_after' => $seconds,
+                'resend_available_at' => $resendAvailableAt,
             ], 429);
         }
 
-        RateLimiter::hit($key, 30);
+        $resendCooldown = max(1, (int) config('otp.resend_cooldown_seconds', 30));
+        RateLimiter::hit($key, $resendCooldown);
         $user->otps()->where('used', false)->update(['used' => true]);
 
         $code = random_int(100000, 999999);
@@ -126,15 +131,18 @@ class OtpVerificationController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
+        $resendAvailableAt = now()->addSeconds($resendCooldown);
         $request->session()->put([
             'otp_expires_at' => $expiresAt->timestamp,
-            'otp_resend_available_at' => now()->addSeconds(30)->timestamp,
+            'otp_resend_available_at' => $resendAvailableAt->timestamp,
         ]);
         $user->notify(new SendOtpNotification((string) $code));
 
         return response()->json([
             'message' => 'A new OTP was sent to your email.',
             'expires_at' => $expiresAt->timestamp,
+            'resend_available_at' => $resendAvailableAt->timestamp,
+            'retry_after' => $resendCooldown,
         ]);
     }
 

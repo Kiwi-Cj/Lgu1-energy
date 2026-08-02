@@ -306,8 +306,8 @@
                                 @php
                                     $activityAt = $isCprf ? $record->updated_at : $record->created_at;
                                 @endphp
-                                <strong>{{ optional($activityAt)->timezone('Asia/Manila')->format('M d, Y') }}</strong>
-                                <div class="muted">{{ optional($activityAt)->timezone('Asia/Manila')->format('h:i A') }}{!! $isCprf && $record->updated_at?->gt($record->created_at) ? ' &middot; Updated' : '' !!}</div>
+                                <strong>{{ optional($activityAt)->timezone(config('app.timezone'))->format('M d, Y') }}</strong>
+                                <div class="muted">{{ optional($activityAt)->timezone(config('app.timezone'))->format('h:i A') }}{!! $isCprf && $record->updated_at?->gt($record->created_at) ? ' &middot; Updated' : '' !!}</div>
                             </td>
                             <td>
                                 <div class="record-actions">

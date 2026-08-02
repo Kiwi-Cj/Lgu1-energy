@@ -117,17 +117,25 @@
         padding: 12px 12px;
     }
 
+    .eff-kpi-heading { display:flex; align-items:center; gap:11px; }
+    .eff-kpi-icon {
+        width:40px; height:40px; flex:0 0 40px;
+        display:inline-flex; align-items:center; justify-content:center;
+        border-radius:12px; font-size:1rem;
+    }
+
     .eff-kpi-label {
         display: block;
         font-size: 0.71rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        margin-bottom: 5px;
+        margin-bottom: 0;
     }
 
     .eff-kpi-value {
-        font-size: 1.45rem;
+        margin-top: 18px;
+        font-size: 2.15rem;
         font-weight: 900;
         line-height: 1;
     }
@@ -517,19 +525,19 @@
 
         <div class="eff-kpis">
             <div class="eff-kpi total">
-                <span class="eff-kpi-label">Facilities Evaluated</span>
+                <div class="eff-kpi-heading"><span class="eff-kpi-icon"><i class="fa-solid fa-building-circle-check"></i></span><span class="eff-kpi-label">Facilities Evaluated</span></div>
                 <div class="eff-kpi-value">{{ $evaluatedCount }} / {{ $rows->count() }}</div>
             </div>
             <div class="eff-kpi avg">
-                <span class="eff-kpi-label">Average EUI</span>
+                <div class="eff-kpi-heading"><span class="eff-kpi-icon"><i class="fa-solid fa-gauge-high"></i></span><span class="eff-kpi-label">Average EUI</span></div>
                 <div class="eff-kpi-value">{{ $avgEui }}</div>
             </div>
             <div class="eff-kpi high">
-                <span class="eff-kpi-label">Energy Efficient</span>
+                <div class="eff-kpi-heading"><span class="eff-kpi-icon"><i class="fa-solid fa-leaf"></i></span><span class="eff-kpi-label">Energy Efficient</span></div>
                 <div class="eff-kpi-value">{{ $highCount }}</div>
             </div>
             <div class="eff-kpi low">
-                <span class="eff-kpi-label">Requires Action</span>
+                <div class="eff-kpi-heading"><span class="eff-kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></span><span class="eff-kpi-label">Requires Action</span></div>
                 <div class="eff-kpi-value">{{ $flaggedCount }}</div>
             </div>
         </div>

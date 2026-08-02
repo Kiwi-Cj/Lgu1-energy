@@ -16,6 +16,7 @@ use App\Models\MaintenanceHistory;
 use App\Services\ArchivePruneService;
 use App\Services\CprfFacilitySyncService;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Excel as ExcelWriter;
@@ -72,7 +73,7 @@ class FacilityController extends Controller
         // own controllers and is unaffected.
         if ($facility->isCprfManaged()) {
             $request->validate([
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+                'image' => SystemSettings::facilityImageRules(),
             ]);
             if ($path = $this->storeFacilityImageToPublic($request)) {
                 $facility->update(['image_path' => $path]);
@@ -93,7 +94,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image' => SystemSettings::facilityImageRules(),
         ]);
 
         // Handle image upload if present
@@ -113,6 +114,10 @@ class FacilityController extends Controller
      */
     public function store(Request $request)
     {
+        if (! $request->has('status')) {
+            $request->merge(['status' => SystemSettings::defaultFacilityStatus()]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
@@ -124,7 +129,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image' => SystemSettings::facilityImageRules(),
         ]);
 
         // Handle image upload if present
@@ -322,9 +327,9 @@ class FacilityController extends Controller
         return view('modules.facilities.index', [
             'facilities' => $facilitiesWithAvg,
             'totalFacilities' => $facilities->count(),
-            'activeFacilities' => $facilities->where('status', 'active')->count(),
-            'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
-            'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
+            'activeFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'active')->count(),
+            'inactiveFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'inactive')->count(),
+            'maintenanceFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'maintenance')->count(),
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
             'sourceTab' => $sourceTab,
             'localFacilitiesCount' => $localFacilitiesCount,

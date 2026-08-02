@@ -2125,7 +2125,7 @@
                             @foreach($latestContactSuggestions as $suggestion)
                                 <div class="suggestion-item">
                                     <div class="suggestion-name">{{ $suggestion->subject ?: 'Energy suggestion' }}</div>
-                                    <div class="suggestion-meta">By {{ $suggestion->name }} | {{ $suggestion->created_at?->timezone('Asia/Manila')?->format('M d, Y') }}</div>
+                                    <div class="suggestion-meta">By {{ $suggestion->name }} | {{ $suggestion->created_at?->timezone(config('app.timezone'))?->format('M d, Y') }}</div>
                                     <div class="suggestion-body">{{ \Illuminate\Support\Str::limit($suggestion->message, 120) }}</div>
                                 </div>
                             @endforeach

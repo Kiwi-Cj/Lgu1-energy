@@ -471,9 +471,21 @@
         border-color: #1d4ed8;
         color: #fff;
     }
+    .detail-action-btn.danger {
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
+    .detail-action-btn.danger:hover {
+        background: #fef2f2;
+    }
     .detail-action-form {
         margin: 0;
         display: inline-flex;
+    }
+    .ci-mobile-back {
+        display: none;
+        width: fit-content;
+        margin-bottom: 10px;
     }
     .thread-scroll-body {
         flex: 1;
@@ -998,6 +1010,117 @@
         opacity: .45;
         pointer-events: none;
     }
+    .reply-draft-status {
+        color: #64748b;
+        font-size: .74rem;
+        margin-top: 4px;
+    }
+    .ci-loading-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, .32);
+        backdrop-filter: blur(2px);
+    }
+    .ci-loading-overlay.active {
+        display: flex;
+    }
+    .ci-loading-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #fff;
+        color: #0f172a;
+        box-shadow: 0 14px 40px rgba(15, 23, 42, .2);
+        font-size: .86rem;
+        font-weight: 800;
+    }
+    .ci-loading-spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid #bfdbfe;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: ci-spin .7s linear infinite;
+    }
+    @keyframes ci-spin { to { transform: rotate(360deg); } }
+    .ci-confirm-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(15, 23, 42, .62);
+        backdrop-filter: blur(4px);
+    }
+    .ci-confirm-overlay.is-open { display: flex; }
+    .ci-confirm-modal {
+        width: min(430px, 100%);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, .28);
+    }
+    .ci-confirm-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .ci-confirm-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: #fef3c7;
+        color: #b45309;
+    }
+    .ci-confirm-title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+    .ci-confirm-message {
+        margin: 0;
+        padding: 18px 20px 4px;
+        color: #475569;
+        font-size: .9rem;
+        line-height: 1.55;
+    }
+    .ci-confirm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 18px 20px 20px;
+    }
+    .ci-confirm-btn {
+        min-height: 40px;
+        border: 0;
+        border-radius: 10px;
+        padding: 0 16px;
+        font-size: .84rem;
+        font-weight: 900;
+        cursor: pointer;
+    }
+    .ci-confirm-btn.cancel { background: #f1f5f9; color: #334155; }
+    .ci-confirm-btn.confirm { background: #d97706; color: #fff; }
+    .ci-confirm-btn.confirm:hover { background: #b45309; }
+    .ci-confirm-btn.confirm.permanent { background: #dc2626; }
+    .ci-confirm-btn.confirm.permanent:hover { background: #b91c1c; }
+    .ci-confirm-icon.permanent { background: #fee2e2; color: #dc2626; }
     @media (max-width: 1100px) {
         .contact-inbox-layout {
             grid-template-columns: 1fr;
@@ -1041,6 +1164,28 @@
         .contact-search {
             grid-template-columns: 1fr;
         }
+        .contact-inbox-layout.has-mobile-selection .contact-list-panel {
+            display: none;
+        }
+        .contact-inbox-layout:not(.has-mobile-selection) .contact-detail-panel {
+            display: none;
+        }
+        .ci-mobile-back {
+            display: inline-flex;
+        }
+        .contact-list {
+            max-height: none;
+        }
+        .detail-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .detail-action-btn,
+        .detail-action-form,
+        .detail-action-form .detail-action-btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 
     body.dark-mode .contact-inbox-header,
@@ -1050,6 +1195,13 @@
         border-color: #334155 !important;
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
     }
+    body.dark-mode .ci-confirm-modal {
+        border-color: #334155;
+        background: #0f172a;
+    }
+    body.dark-mode .ci-confirm-head { border-bottom-color: #334155; }
+    body.dark-mode .ci-confirm-title { color: #f8fafc; }
+    body.dark-mode .ci-confirm-message { color: #cbd5e1; }
 
     body.dark-mode .contact-panel-head,
     body.dark-mode .detail-card-head,
@@ -1303,8 +1455,8 @@
 
     </section>
 
-    <section class="contact-inbox-layout">
-        <div class="contact-panel">
+    <section class="contact-inbox-layout{{ request()->filled('message') ? ' has-mobile-selection' : '' }}">
+        <div class="contact-panel contact-list-panel">
             <div class="contact-panel-head">
                 <form method="GET" action="{{ route('modules.contact-messages.index') }}" class="contact-search">
                     <input type="hidden" name="tab" value="inbox">
@@ -1314,7 +1466,8 @@
                         type="text"
                         name="q"
                         value="{{ $search }}"
-                        placeholder="Search name, email, subject, or message..."
+                        placeholder="Search messages..."
+                        aria-label="Search contact messages"
                     >
                     <button type="submit">Search</button>
                     @if($search !== '')
@@ -1328,6 +1481,7 @@
                             'unread' => 'Unread',
                             'replied' => 'Has Replies',
                             'failed' => 'Failed Sends',
+                            'archived' => 'Archived',
                         ];
                     @endphp
                     @foreach($filterLabels as $filterKey => $filterLabel)
@@ -1380,7 +1534,7 @@
                                     <span class="contact-item-new">New</span>
                                 @endif
                             </div>
-                            <span class="contact-item-date">{{ $message->created_at?->timezone('Asia/Manila')->format('M d, h:i A') }}</span>
+                            <span class="contact-item-date">{{ $message->created_at?->timezone(config('app.timezone'))->format('M d, h:i A') }}</span>
                         </div>
                         <p class="contact-item-preview">{{ $message->email }}</p>
                         <span class="contact-item-status{{ $deliveryWarn ? ' warn' : '' }}">
@@ -1412,19 +1566,77 @@
             </div>
         </div>
 
-        <div class="contact-panel">
+        <div class="contact-panel contact-detail-panel">
             @if($selectedMessage)
                 @php
-                    $replySubject = 'Re: ' . ($selectedMessage->subject ?: 'Your message to LGU Energy System');
-                    $replyBody = "Hello {$selectedMessage->name},\n\nThank you for your message.\n\n--- Your message ---\n" . $selectedMessage->message . "\n\nRegards,\nLGU Energy Team";
+                    $replySubject = 'Re: ' . ($selectedMessage->subject ?: 'Your message to '.$systemName);
+                    $replyBody = "Hello {$selectedMessage->name},\n\nThank you for your message.\n\nRegards,\n{$systemName} Team";
+                    $returnFields = [
+                        'return_filter' => $filter ?? 'all',
+                        'return_sort' => $sort ?? 'latest_activity',
+                        'return_q' => $search !== '' ? $search : null,
+                    ];
+                    $mobileBackUrl = route('modules.contact-messages.index', array_filter([
+                        'filter' => $filter ?? 'all',
+                        'sort' => $sort ?? 'latest_activity',
+                        'q' => $search !== '' ? $search : null,
+                        'inbox_page' => request('inbox_page'),
+                    ]));
                 @endphp
                 <div class="contact-detail">
+                    <a href="{{ $mobileBackUrl }}" class="detail-action-btn ci-mobile-back">
+                        <i class="fa-solid fa-arrow-left"></i> Back to messages
+                    </a>
                     <div class="detail-card">
                         <div class="detail-card-head">
                             <h2 class="detail-title">{{ $selectedMessage->subject ?: 'No subject' }}</h2>
                             <p class="detail-meta">
-                                Received {{ $selectedMessage->created_at?->timezone('Asia/Manila')->format('F d, Y h:i A') }}
+                                Received {{ $selectedMessage->created_at?->timezone(config('app.timezone'))->format('F d, Y h:i A') }}
                             </p>
+                            <div class="detail-actions" aria-label="Message actions">
+                                <button type="button" class="detail-action-btn js-copy-email-btn" data-email="{{ $selectedMessage->email }}">
+                                    <i class="fa-regular fa-copy"></i> Copy Email
+                                </button>
+                                @if(!$selectedMessage->archived_at)
+                                    <button type="button" class="detail-action-btn primary js-focus-reply-btn">
+                                        <i class="fa-solid fa-reply"></i> Reply
+                                    </button>
+                                    <form method="POST" action="{{ route('modules.contact-messages.mark-unread', $selectedMessage) }}" class="detail-action-form">
+                                        @csrf
+                                        @foreach($returnFields as $returnName => $returnValue)
+                                            @if(filled($returnValue))<input type="hidden" name="{{ $returnName }}" value="{{ $returnValue }}">@endif
+                                        @endforeach
+                                        <button type="submit" class="detail-action-btn">
+                                            <i class="fa-regular fa-envelope"></i> Mark Unread
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('modules.contact-messages.archive', $selectedMessage) }}" class="detail-action-form" data-confirm="true" data-confirm-title="Archive Message" data-confirm-message="Move this message to Archived? You can restore it anytime." data-confirm-action="Archive Message">
+                                        @csrf
+                                        @foreach($returnFields as $returnName => $returnValue)
+                                            @if(filled($returnValue))<input type="hidden" name="{{ $returnName }}" value="{{ $returnValue }}">@endif
+                                        @endforeach
+                                        <button type="submit" class="detail-action-btn danger">
+                                            <i class="fa-solid fa-box-archive"></i> Archive
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('modules.contact-messages.restore', $selectedMessage) }}" class="detail-action-form">
+                                        @csrf
+                                        <button type="submit" class="detail-action-btn primary">
+                                            <i class="fa-solid fa-rotate-left"></i> Restore to Inbox
+                                        </button>
+                                    </form>
+                                    @if(\App\Support\RoleAccess::is($user, 'super_admin'))
+                                        <form method="POST" action="{{ route('modules.contact-messages.destroy', $selectedMessage) }}" class="detail-action-form" data-confirm="true" data-confirm-type="permanent" data-confirm-title="Permanently Delete Message?" data-confirm-message="This will permanently delete the message, reply history, and attachments. This action cannot be undone." data-confirm-action="Delete Permanently">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="detail-action-btn danger">
+                                                <i class="fa-solid fa-trash-can"></i> Delete Permanently
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
+                            </div>
                         </div>
 
                         <div class="thread-scroll-body" id="threadScrollBody">
@@ -1451,7 +1663,7 @@
                                         <p class="detail-label">Read Status</p>
                                         <p class="detail-value">
                                             @if($selectedMessage->read_at)
-                                                Read {{ $selectedMessage->read_at->timezone('Asia/Manila')->format('M d, Y h:i A') }}
+                                                Read {{ $selectedMessage->read_at->timezone(config('app.timezone'))->format('M d, Y h:i A') }}
                                             @else
                                                 Unread
                                             @endif
@@ -1505,7 +1717,7 @@
                                     <div class="conversation-bubble">
                                         <div class="conversation-meta">
                                             <p class="conversation-author">{{ $selectedMessage->name }} (Original Message)</p>
-                                            <p class="conversation-submeta">{{ $selectedMessage->created_at?->timezone('Asia/Manila')->format('M d, Y h:i A') }}</p>
+                                            <p class="conversation-submeta">{{ $selectedMessage->created_at?->timezone(config('app.timezone'))->format('M d, Y h:i A') }}</p>
                                         </div>
                                         <p class="conversation-submeta" style="margin:0 0 8px;">{{ $selectedMessage->email }}</p>
                                         <p class="conversation-body">{{ $selectedMessage->message }}</p>
@@ -1528,7 +1740,7 @@
                                                 </span>
                                             </div>
                                             <p class="conversation-submeta" style="margin:0 0 8px;">
-                                                Subject: {{ $reply->subject }} | To: {{ $reply->recipient_email }} | {{ optional($reply->sent_at ?? $reply->created_at)?->timezone('Asia/Manila')?->format('M d, Y h:i A') }}
+                                                Subject: {{ $reply->subject }} | To: {{ $reply->recipient_email }} | {{ optional($reply->sent_at ?? $reply->created_at)?->timezone(config('app.timezone'))?->format('M d, Y h:i A') }}
                                             </p>
                                             <p class="conversation-body">{{ $reply->message }}</p>
 
@@ -1584,7 +1796,7 @@
                                             <p class="reply-history-meta">
                                                 By {{ $reply->sender?->full_name ?? $reply->sender?->name ?? $reply->sender?->username ?? 'System' }}
                                                 • To {{ $reply->recipient_email }}
-                                                • {{ optional($reply->sent_at ?? $reply->created_at)?->timezone('Asia/Manila')?->format('M d, Y h:i A') }}
+                                                • {{ optional($reply->sent_at ?? $reply->created_at)?->timezone(config('app.timezone'))?->format('M d, Y h:i A') }}
                                             </p>
                                             <p class="reply-history-body">{{ $reply->message }}</p>
 
@@ -1626,6 +1838,7 @@
                         @endif
                         </div>
 
+                        @if(!$selectedMessage->archived_at)
                         @php
                             $replyComposerOpen = session('reply_error')
                                 || $errors->has('reply_subject')
@@ -1643,7 +1856,7 @@
                                     </span>
                                 </summary>
                                 <div class="reply-composer-body">
-                            <form method="POST" action="{{ route('modules.contact-messages.reply', $selectedMessage) }}" class="reply-form-grid" enctype="multipart/form-data">
+                            <form method="POST" action="{{ route('modules.contact-messages.reply', $selectedMessage) }}" class="reply-form-grid" id="contactReplyForm" enctype="multipart/form-data">
                                 @csrf
                                 <div class="reply-field">
                                     <label for="reply_subject">Subject</label>
@@ -1667,7 +1880,7 @@
                                         name="reply_message"
                                         maxlength="8000"
                                         required
-                                    >{{ old('reply_message', "Hello {$selectedMessage->name},\n\nThank you for your message.\n\nRegards,\nLGU Energy Team") }}</textarea>
+                                    >{{ old('reply_message', $replyBody) }}</textarea>
                                     @error('reply_message')
                                         <div class="reply-error-text">{{ $message }}</div>
                                     @enderror
@@ -1696,6 +1909,7 @@
                                 <div class="reply-form-actions">
                                     <div class="reply-form-note">
                                         This sends email using your current system mail settings.
+                                        <div class="reply-draft-status" id="replyDraftStatus">Your text draft is saved on this device.</div>
                                     </div>
                                     <button type="submit" class="reply-send-btn">
                                         <i class="fa-solid fa-paper-plane"></i> Send Reply
@@ -1705,6 +1919,7 @@
                                 </div>
                             </details>
                         </div>
+                        @endif
 
                     </div>
                 </div>
@@ -1718,6 +1933,27 @@
 
 </div>
 
+<div class="ci-confirm-overlay" id="contactInboxConfirm" aria-hidden="true">
+    <div class="ci-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="contactInboxConfirmTitle" aria-describedby="contactInboxConfirmMessage">
+        <div class="ci-confirm-head">
+            <span class="ci-confirm-icon" id="contactInboxConfirmIcon" aria-hidden="true"><i class="fa-solid fa-box-archive"></i></span>
+            <h3 class="ci-confirm-title" id="contactInboxConfirmTitle">Archive Message</h3>
+        </div>
+        <p class="ci-confirm-message" id="contactInboxConfirmMessage">Move this message to Archived? You can restore it anytime.</p>
+        <div class="ci-confirm-actions">
+            <button type="button" class="ci-confirm-btn cancel" id="contactInboxConfirmCancel">Cancel</button>
+            <button type="button" class="ci-confirm-btn confirm" id="contactInboxConfirmSubmit">Archive Message</button>
+        </div>
+    </div>
+</div>
+
+<div class="ci-loading-overlay" id="contactInboxLoading" role="status" aria-live="polite" aria-hidden="true">
+    <div class="ci-loading-card">
+        <span class="ci-loading-spinner" aria-hidden="true"></span>
+        <span id="contactInboxLoadingText">Loading inbox...</span>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var stateKey = 'contactInboxUiState:v2:' + window.location.pathname + window.location.search;
@@ -1729,10 +1965,113 @@ document.addEventListener('DOMContentLoaded', function () {
     var replySubjectInput = document.getElementById('reply_subject');
     var replyMessageInput = document.getElementById('reply_message');
     var replyAttachmentsInput = document.querySelector('input[name="reply_attachments[]"]');
+    var loadingOverlay = document.getElementById('contactInboxLoading');
+    var loadingText = document.getElementById('contactInboxLoadingText');
+    var confirmOverlay = document.getElementById('contactInboxConfirm');
+    var confirmIcon = document.getElementById('contactInboxConfirmIcon');
+    var confirmTitle = document.getElementById('contactInboxConfirmTitle');
+    var confirmMessage = document.getElementById('contactInboxConfirmMessage');
+    var confirmCancel = document.getElementById('contactInboxConfirmCancel');
+    var confirmSubmit = document.getElementById('contactInboxConfirmSubmit');
+    var draftStatus = document.getElementById('replyDraftStatus');
+    var draftKey = 'contactInboxReplyDraft:v1:' + @json((int) auth()->id()) + ':' + @json((int) ($selectedMessage->id ?? 0));
     var autoRefreshTimer = null;
+    var draftSaveTimer = null;
+    var pendingConfirmForm = null;
+    var confirmTrigger = null;
     var AUTO_REFRESH_MS = 30000;
     var initialReplySubject = replySubjectInput ? replySubjectInput.value : '';
     var initialReplyMessage = replyMessageInput ? replyMessageInput.value : '';
+
+    function showInboxLoading(label) {
+        if (!loadingOverlay) return;
+        if (loadingText) loadingText.textContent = label || 'Loading inbox...';
+        loadingOverlay.classList.add('active');
+        loadingOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function openInboxConfirm(form) {
+        if (!confirmOverlay) return false;
+        pendingConfirmForm = form;
+        confirmTrigger = document.activeElement;
+        var confirmType = form.getAttribute('data-confirm-type') || 'archive';
+        if (confirmTitle) confirmTitle.textContent = form.getAttribute('data-confirm-title') || 'Confirm Action';
+        if (confirmMessage) confirmMessage.textContent = form.getAttribute('data-confirm-message') || 'Continue with this action?';
+        if (confirmSubmit) {
+            confirmSubmit.textContent = form.getAttribute('data-confirm-action') || 'Confirm';
+            confirmSubmit.classList.toggle('permanent', confirmType === 'permanent');
+        }
+        if (confirmIcon) {
+            confirmIcon.classList.toggle('permanent', confirmType === 'permanent');
+            confirmIcon.innerHTML = confirmType === 'permanent'
+                ? '<i class="fa-solid fa-triangle-exclamation"></i>'
+                : '<i class="fa-solid fa-box-archive"></i>';
+        }
+        confirmOverlay.classList.add('is-open');
+        confirmOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        if (confirmCancel) confirmCancel.focus();
+        return true;
+    }
+
+    function closeInboxConfirm() {
+        if (!confirmOverlay) return;
+        confirmOverlay.classList.remove('is-open');
+        confirmOverlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        pendingConfirmForm = null;
+        if (confirmTrigger && typeof confirmTrigger.focus === 'function') confirmTrigger.focus();
+        confirmTrigger = null;
+    }
+
+    function saveReplyDraft() {
+        if (!replySubjectInput || !replyMessageInput) return;
+        try {
+            localStorage.setItem(draftKey, JSON.stringify({
+                subject: replySubjectInput.value,
+                message: replyMessageInput.value,
+                savedAt: Date.now()
+            }));
+            if (draftStatus) draftStatus.textContent = 'Draft saved on this device.';
+        } catch (e) {
+            if (draftStatus) draftStatus.textContent = 'Draft could not be saved on this device.';
+        }
+    }
+
+    function restoreReplyDraft() {
+        if (!replySubjectInput || !replyMessageInput) return;
+        try {
+            if (@json((bool) session('reply_success'))) {
+                localStorage.removeItem(draftKey);
+                return;
+            }
+            if (@json($errors->any())) return;
+            var raw = localStorage.getItem(draftKey);
+            if (!raw) return;
+            var draft = JSON.parse(raw);
+            if (!draft || typeof draft !== 'object') return;
+            replySubjectInput.value = typeof draft.subject === 'string' ? draft.subject : replySubjectInput.value;
+            replyMessageInput.value = typeof draft.message === 'string' ? draft.message : replyMessageInput.value;
+            if (draftStatus) draftStatus.textContent = 'Saved draft restored from this device.';
+            var composer = document.getElementById('replyComposer');
+            if (composer && composer.tagName === 'DETAILS') composer.open = true;
+        } catch (e) {}
+    }
+
+    function validateReplyAttachments() {
+        if (!replyAttachmentsInput || !replyAttachmentsInput.files) return true;
+        var files = Array.from(replyAttachmentsInput.files);
+        if (files.length > 5) {
+            alert('You can attach up to 5 files only.');
+            return false;
+        }
+        var oversized = files.find(function (file) { return file.size > 5 * 1024 * 1024; });
+        if (oversized) {
+            alert('"' + oversized.name + '" is larger than 5MB.');
+            return false;
+        }
+        return true;
+    }
 
     function saveContactInboxState() {
         try {
@@ -1821,11 +2160,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             saveContactInboxState();
+            showInboxLoading('Refreshing inbox...');
             window.location.reload();
         }, typeof delay === 'number' ? delay : AUTO_REFRESH_MS);
     }
 
     restoreContactInboxState();
+    restoreReplyDraft();
 
     document.querySelectorAll('.js-copy-email-btn').forEach(function (btn) {
         btn.addEventListener('click', async function () {
@@ -1873,17 +2214,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Save current panel/window scroll positions before navigations and form submits.
     document.querySelectorAll('a').forEach(function (link) {
-        link.addEventListener('click', function () {
+        link.addEventListener('click', function (event) {
             saveContactInboxState();
+            var href = link.getAttribute('href') || '';
+            if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey
+                && href !== '' && href !== '#' && !href.startsWith('mailto:') && !link.hasAttribute('download')
+                && (!link.target || link.target === '_self')) {
+                showInboxLoading('Loading message...');
+            }
         });
     });
     document.querySelectorAll('form').forEach(function (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (event) {
+            var confirmation = form.getAttribute('data-confirm');
+            if (confirmation && form.dataset.confirmed !== 'true') {
+                event.preventDefault();
+                openInboxConfirm(form);
+                return;
+            }
+            delete form.dataset.confirmed;
+            if (form === replyForm && !validateReplyAttachments()) {
+                event.preventDefault();
+                return;
+            }
             if (autoRefreshTimer) {
                 clearTimeout(autoRefreshTimer);
             }
             saveContactInboxState();
+            var submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) submitButton.disabled = true;
+            showInboxLoading(form === replyForm ? 'Sending reply...' : 'Saving changes...');
         });
+    });
+    if (confirmCancel) confirmCancel.addEventListener('click', closeInboxConfirm);
+    if (confirmSubmit) {
+        confirmSubmit.addEventListener('click', function () {
+            if (!pendingConfirmForm) return;
+            var form = pendingConfirmForm;
+            closeInboxConfirm();
+            form.dataset.confirmed = 'true';
+            if (typeof form.requestSubmit === 'function') form.requestSubmit();
+            else form.submit();
+        });
+    }
+    if (confirmOverlay) {
+        confirmOverlay.addEventListener('click', function (event) {
+            if (event.target === confirmOverlay) closeInboxConfirm();
+        });
+    }
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && confirmOverlay && confirmOverlay.classList.contains('is-open')) {
+            closeInboxConfirm();
+        }
     });
     window.addEventListener('beforeunload', saveContactInboxState);
     document.addEventListener('visibilitychange', function () {
@@ -1896,6 +2278,12 @@ document.addEventListener('DOMContentLoaded', function () {
         ['input', 'change', 'focusin', 'focusout'].forEach(function (evtName) {
             replyForm.addEventListener(evtName, function () {
                 scheduleAutoRefresh(AUTO_REFRESH_MS);
+            });
+        });
+        ['input', 'change'].forEach(function (evtName) {
+            replyForm.addEventListener(evtName, function () {
+                if (draftSaveTimer) clearTimeout(draftSaveTimer);
+                draftSaveTimer = setTimeout(saveReplyDraft, 350);
             });
         });
     }

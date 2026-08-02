@@ -8,6 +8,7 @@ use App\Models\Facility;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
@@ -16,20 +17,60 @@ use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (! $this->canAccessUserManagement()) {
             return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to access User Management.');
         }
 
-        $selectedRole = RoleAccess::normalize(request('role', ''));
+        $search = trim((string) $request->query('q', ''));
+        $selectedRole = RoleAccess::normalize($request->query('role', ''));
+        $selectedStatus = strtolower(trim((string) $request->query('status', '')));
+        if (! in_array($selectedStatus, ['', 'active', 'inactive'], true)) {
+            $selectedStatus = '';
+        }
+        $sort = strtolower(trim((string) $request->query('sort', 'newest')));
+        if (! in_array($sort, ['newest', 'name', 'role', 'last_login'], true)) {
+            $sort = 'newest';
+        }
         $actorRole = RoleAccess::normalize(auth()->user());
-        $usersQuery = User::with('facilities');
+        $scopeQuery = User::query();
 
         if ($actorRole === 'admin') {
-            $usersQuery->whereRaw('LOWER(role) NOT IN (?, ?)', ['super admin', 'admin']);
+            $scopeQuery->whereRaw(
+                "REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') NOT IN (?, ?)",
+                ['super_admin', 'admin']
+            );
         }
+
+        $scopedUsers = (clone $scopeQuery)->get(['id', 'role', 'status']);
+        $totalUsers = $scopedUsers->count();
+        $activeUsers = $scopedUsers->filter(fn ($row) => strtolower((string) $row->status) === 'active')->count();
+        $inactiveUsers = $totalUsers - $activeUsers;
+        $activeSuperAdminCount = $scopedUsers->filter(fn ($row) =>
+            RoleAccess::normalize($row->role) === 'super_admin'
+            && strtolower((string) $row->status) === 'active'
+        )->count();
+        $roleCounts = $scopedUsers
+            ->groupBy(fn ($row) => RoleAccess::normalize($row->role))
+            ->map->count()
+            ->sortKeys();
+
+        $usersQuery = (clone $scopeQuery)
+            ->with('facilities')
+            ->withCount('facilities')
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%' . $search . '%';
+                $query->where(function ($subQuery) use ($like) {
+                    $subQuery->where('full_name', 'like', $like)
+                        ->orWhere('name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhere('username', 'like', $like)
+                        ->orWhere('department', 'like', $like);
+                });
+            })
+            ->when($selectedStatus !== '', fn ($query) => $query->whereRaw('LOWER(status) = ?', [$selectedStatus]));
 
         if ($selectedRole !== '') {
             $usersQuery->whereRaw(
@@ -38,12 +79,16 @@ class UsersController extends Controller
             );
         }
 
-        $users = $usersQuery->get();
-        $facilities = Facility::all();
-        $totalUsers = $users->count();
-        $activeUsers = $users->where('status', 'active')->count();
-        $inactiveUsers = $users->where('status', 'inactive')->count();
-        $rolesList = $users->pluck('role')->unique()->implode(', ');
+        match ($sort) {
+            'name' => $usersQuery->orderByRaw('COALESCE(full_name, name, username, email) ASC'),
+            'role' => $usersQuery->orderBy('role')->orderByRaw('COALESCE(full_name, name, username, email) ASC'),
+            'last_login' => $usersQuery->orderByRaw('last_login IS NULL')->orderByDesc('last_login'),
+            default => $usersQuery->orderByDesc('id'),
+        };
+
+        $users = $usersQuery->paginate(20)->withQueryString();
+        $facilities = Facility::orderBy('name')->get();
+        $rolesList = $roleCounts->keys()->implode(', ');
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
         $availableRoleOptions = collect($this->roleTemplates())
@@ -67,6 +112,11 @@ class UsersController extends Controller
             'role',
             'user',
             'selectedRole',
+            'selectedStatus',
+            'search',
+            'sort',
+            'roleCounts',
+            'activeSuperAdminCount',
             'availableRoleOptions'
         ));
     }
@@ -130,6 +180,11 @@ class UsersController extends Controller
             $user->facilities()->sync($facilityIds);
         }
 
+        if (! SystemSettings::emailNotificationsEnabled()) {
+            return redirect()->route('users.index')
+                ->with('success', 'User created successfully. Welcome email delivery is disabled in System Settings.');
+        }
+
         try {
             Mail::to($user->email)->send(new UserWelcome(
                 recipientName: (string) $user->full_name,
@@ -190,6 +245,18 @@ class UsersController extends Controller
             return redirect()->route('users.index')
                 ->withInput()
                 ->with('error', 'Only Super Admin can assign Admin or Super Admin roles.');
+        }
+
+        if ((int) auth()->id() === (int) $user->id && strtolower($validated['status']) === 'inactive') {
+            return redirect()->route('users.index')->with('error', 'You cannot deactivate your own account.');
+        }
+
+        if ($existingRole === 'super_admin'
+            && strtolower((string) $user->status) === 'active'
+            && ($targetRole !== 'super_admin' || strtolower($validated['status']) === 'inactive')
+            && ! $this->hasAnotherActiveSuperAdmin((int) $user->id)
+        ) {
+            return redirect()->route('users.index')->with('error', 'The last active Super Admin cannot be deactivated or assigned a different role.');
         }
 
         $facilityIds = $request->input('facility_id', []);
@@ -404,33 +471,50 @@ class UsersController extends Controller
         return redirect()->route('users.roles')->with('success', 'Role deleted successfully.');
     }
 
-    public function disable($id)
+    public function updateStatus(Request $request, $id)
     {
         if (! $this->canAccessUserManagement()) {
             return redirect()->route('modules.energy-monitoring.index')
                 ->with('error', 'You do not have permission to manage users.');
         }
 
-        $user = User::findOrFail($id);
-        $actor = auth()->user();
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['active', 'inactive'])],
+        ]);
+        $target = User::findOrFail($id);
+        $actor = $request->user();
         $actorRole = RoleAccess::normalize($actor);
-        $targetRole = RoleAccess::normalize($user->role ?? '');
+        $targetRole = RoleAccess::normalize($target);
+        $newStatus = $validated['status'];
 
-        if ($actor && (int) $actor->id === (int) $user->id) {
-            return redirect()->route('users.index')
-                ->with('error', 'You cannot disable your own account.');
+        if ((int) $actor?->id === (int) $target->id && $newStatus === 'inactive') {
+            return back()->with('error', 'You cannot deactivate your own account.');
         }
 
         if ($actorRole !== 'super_admin' && in_array($targetRole, ['super_admin', 'admin'], true)) {
-            return redirect()->route('users.index')
-                ->with('error', 'Only Super Admin can disable Admin or Super Admin accounts.');
+            return back()->with('error', 'Only Super Admin can change the status of Admin or Super Admin accounts.');
         }
 
-        $user->status = 'inactive';
-        $user->save();
+        if ($targetRole === 'super_admin'
+            && strtolower((string) $target->status) === 'active'
+            && $newStatus === 'inactive'
+            && ! $this->hasAnotherActiveSuperAdmin((int) $target->id)
+        ) {
+            return back()->with('error', 'The last active Super Admin cannot be deactivated.');
+        }
 
-        return redirect()->route('users.index')
-            ->with('success', 'User disabled successfully.');
+        $target->forceFill(['status' => $newStatus])->save();
+
+        return back()->with('success', $newStatus === 'active' ? 'User reactivated successfully.' : 'User deactivated successfully.');
+    }
+
+    private function hasAnotherActiveSuperAdmin(int $excludedUserId): bool
+    {
+        return User::query()
+            ->where('id', '!=', $excludedUserId)
+            ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') = ?", ['super_admin'])
+            ->whereRaw('LOWER(status) = ?', ['active'])
+            ->exists();
     }
 
     private function canAccessUserManagement(): bool

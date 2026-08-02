@@ -391,6 +391,23 @@ class DashboardController extends Controller
             $costChartData[] = $cost ?: 0;
         }
 
+        $recordedMonthCount = collect($energyChartData)->filter(fn ($value) => (float) $value > 0)->count();
+        $missingMonthCount = max(0, count($months) - $recordedMonthCount);
+        $periodActualTotal = (float) array_sum($energyChartData);
+        $periodBaselineTotal = (float) array_sum($baselineChartData);
+        $periodVariancePercent = $periodBaselineTotal > 0
+            ? (($periodActualTotal - $periodBaselineTotal) / $periodBaselineTotal) * 100
+            : null;
+        $averageMonthlyKwh = $recordedMonthCount > 0 ? $periodActualTotal / $recordedMonthCount : 0;
+        $averageEnergyRate = $periodActualTotal > 0 ? ((float) array_sum($costChartData)) / $periodActualTotal : 0;
+        $peakUsageValue = ! empty($energyChartData) ? (float) max($energyChartData) : 0;
+        $peakUsageIndex = $peakUsageValue > 0 ? array_search($peakUsageValue, array_map('floatval', $energyChartData), true) : false;
+        $peakUsageLabel = $peakUsageIndex !== false ? ($energyChartLabels[$peakUsageIndex] ?? 'No data') : 'No data';
+
+        // A missing monthly record must be shown as a chart gap, not as zero consumption/cost.
+        $energyChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $energyChartData);
+        $costChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $costChartData);
+
         // 2b. High Consumption Hubs (selected period, average vs. baseline)
         $topFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
             $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
@@ -540,9 +557,18 @@ class DashboardController extends Controller
             'complianceStatus' => $complianceStatus,
             'energyChartLabels' => $energyChartLabels,
             'energyChartData' => $energyChartData,
+            'energyChartDisplayData' => $energyChartDisplayData,
             'baselineChartData' => $baselineChartData,
             'costChartLabels' => $costChartLabels,
             'costChartData' => $costChartData,
+            'costChartDisplayData' => $costChartDisplayData,
+            'recordedMonthCount' => $recordedMonthCount,
+            'missingMonthCount' => $missingMonthCount,
+            'periodVariancePercent' => $periodVariancePercent,
+            'averageMonthlyKwh' => $averageMonthlyKwh,
+            'averageEnergyRate' => $averageEnergyRate,
+            'peakUsageValue' => $peakUsageValue,
+            'peakUsageLabel' => $peakUsageLabel,
             'recentLogs' => $recentLogs,
             'alerts' => $alerts,
             'criticalAlerts' => $criticalAlerts,

@@ -381,7 +381,7 @@
                 <select id="report_facility_id" name="facility_id" required>
                     <option value="">Select facility</option>
                     @foreach($reportFacilities ?? [] as $facility)
-                        <option value="{{ $facility->id }}" @selected((string) old('facility_id') === (string) $facility->id)>{{ $facility->name }}</option>
+                        <option value="{{ $facility->id }}" @selected((string) old('facility_id', request('facility_id')) === (string) $facility->id)>{{ $facility->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function () {
     reportModal?.addEventListener('click', (event) => {
         if (event.target === reportModal) toggleReportModal(false);
     });
-    @if(count($incidentFormErrors)) toggleReportModal(true); @endif
+    @if(count($incidentFormErrors) || (request()->boolean('report') && $canReportIncidents)) toggleReportModal(true); @endif
 
     rows.forEach((row) => {
         row.addEventListener('keydown', function (e) {

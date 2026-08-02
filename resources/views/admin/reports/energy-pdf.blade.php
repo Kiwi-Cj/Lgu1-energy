@@ -136,6 +136,6 @@
         </tr>
     </table>
 
-    <div class="footer">LGU Energy Monitoring System | Generated report for official monitoring use</div>
+    <div class="footer">{{ $systemName }} | Generated report for official monitoring use</div>
 </body>
 </html>

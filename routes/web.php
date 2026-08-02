@@ -34,7 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('modules/users', [\App\Http\Controllers\Modules\UsersController::class, 'store'])->name('users.store');
     Route::get('modules/users/{id}/edit', [\App\Http\Controllers\Modules\UsersController::class, 'edit'])->name('users.edit');
     Route::put('modules/users/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'update'])->name('users.update');
-    Route::get('modules/users/disable/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'disable'])->name('users.disable');
+    Route::patch('modules/users/{id}/status', [\App\Http\Controllers\Modules\UsersController::class, 'updateStatus'])->name('users.status.update');
     Route::get('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('users.roles');
     Route::post('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'storeRole'])->name('users.roles.store');
     Route::delete('/users/roles/{role}', [\App\Http\Controllers\Modules\UsersController::class, 'destroyRole'])->name('users.roles.destroy');
@@ -103,6 +103,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // System Settings route for dashboard shortcut - Super Admin only
     Route::get('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/modules/settings/test-email', [\App\Http\Controllers\Modules\SettingsController::class, 'testEmail'])->name('settings.test-email');
     Route::get('/modules/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
 });
 

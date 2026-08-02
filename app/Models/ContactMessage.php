@@ -21,11 +21,13 @@ class ContactMessage extends Model
         'email_error',
         'read_at',
         'read_by_user_id',
+        'archived_at',
     ];
 
     protected $casts = [
         'emailed_at' => 'datetime',
         'read_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function replies()

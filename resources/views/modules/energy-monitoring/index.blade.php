@@ -183,7 +183,12 @@
     .energy-monitor-page .metric-cost .metric-label { color: #166534; }
 
     .energy-monitor-page .monitor-table-wrap {
-        overflow-x: auto;
+        height: 570px;
+        max-height: 570px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
         background: #fff;
@@ -193,7 +198,7 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 820px;
+        min-width: 100%;
         font-size: 0.86rem;
     }
 
@@ -202,7 +207,11 @@
     }
 
     .energy-monitor-page .monitor-table th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
         padding: 11px 8px;
+        background: #f1f5f9;
         color: #475569;
         font-weight: 700;
         text-align: center;
@@ -224,6 +233,14 @@
         border-bottom: 1px solid #f1f5f9;
         color: #334155;
         line-height: 1.3;
+    }
+    .energy-monitor-page .monitor-table tbody tr {
+        height: 104px;
+    }
+    .energy-monitor-page .monitor-table th:last-child,
+    .energy-monitor-page .monitor-table td:last-child {
+        width: 260px;
+        min-width: 260px;
     }
 
     .energy-monitor-page .monitor-row:hover {
@@ -329,7 +346,8 @@
         font-size: 0.82rem;
     }
 
-    .energy-monitor-page .alert-pill-level-critical {
+    .energy-monitor-page .alert-pill-level-critical,
+    .energy-monitor-page .alert-pill-level-drop-critical {
         color: #7c1d1d;
         background: #fef2f2;
         border-color: rgba(124, 29, 29, 0.2);
@@ -341,14 +359,16 @@
         border-color: rgba(190, 18, 60, 0.2);
     }
 
-    .energy-monitor-page .alert-pill-level-high {
+    .energy-monitor-page .alert-pill-level-high,
+    .energy-monitor-page .alert-pill-level-drop-high {
         color: #c2410c;
         background: #fff7ed;
         border-color: rgba(194, 65, 12, 0.2);
     }
 
     .energy-monitor-page .alert-pill-level-moderate,
-    .energy-monitor-page .alert-pill-level-warning {
+    .energy-monitor-page .alert-pill-level-warning,
+    .energy-monitor-page .alert-pill-level-drop-warning {
         color: #b45309;
         background: #fffbeb;
         border-color: rgba(180, 83, 9, 0.22);
@@ -368,11 +388,14 @@
     }
 
     .energy-monitor-page .recommendation-btn.level-critical,
-    .energy-monitor-page .recommendation-btn.level-very-high {
+    .energy-monitor-page .recommendation-btn.level-very-high,
+    .energy-monitor-page .recommendation-btn.level-drop-critical {
         color: #e11d48;
     }
 
     .energy-monitor-page .recommendation-btn.level-high,
+    .energy-monitor-page .recommendation-btn.level-drop-high,
+    .energy-monitor-page .recommendation-btn.level-drop-warning,
     .energy-monitor-page .recommendation-btn.level-warning,
     .energy-monitor-page .recommendation-btn.level-moderate {
         color: #f59e42;
@@ -764,6 +787,76 @@
         padding: 7px 10px;
         white-space: nowrap;
     }
+    .energy-monitor-page .monitor-actions {
+        min-width: 190px;
+        display: grid;
+        gap: 7px;
+    }
+    .energy-monitor-page .monitor-primary-action {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: 1px solid #2563eb;
+        border-radius: 9px;
+        padding: 7px 10px;
+        background: #2563eb;
+        color: #fff;
+        font-size: .76rem;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .energy-monitor-page .monitor-primary-action:hover {
+        border-color: #1d4ed8;
+        background: #1d4ed8;
+    }
+    .energy-monitor-page .monitor-primary-action.setup {
+        border-color: #d97706;
+        background: #d97706;
+    }
+    .energy-monitor-page .monitor-primary-action.setup:hover { background: #b45309; }
+    .energy-monitor-page .monitor-primary-action.integration-waiting {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        cursor: default;
+        box-shadow: none;
+    }
+    .energy-monitor-page .monitor-primary-action.integration-waiting:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+    .energy-monitor-page .monitor-quick-actions {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        flex-wrap: nowrap;
+    }
+    .energy-monitor-page .monitor-quick-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #dbe4f0;
+        border-radius: 8px;
+        padding: 5px 6px;
+        background: #fff;
+        color: #475569;
+        font-size: .65rem;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .energy-monitor-page .monitor-quick-link:hover {
+        border-color: #93c5fd;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .energy-monitor-page .monitor-quick-link.attention {
+        border-color: #fecaca;
+        color: #b91c1c;
+    }
 
     .energy-monitor-page .pagination-wrap {
         margin-top: 20px;
@@ -775,6 +868,11 @@
         background: #0f172a !important;
         border-color: #334155 !important;
         box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+    }
+    body.dark-mode .energy-monitor-page .monitor-quick-link {
+        border-color: #475569;
+        background: #1e293b;
+        color: #cbd5e1;
     }
 
     body.dark-mode .energy-monitor-page .monitor-title,
@@ -902,21 +1000,24 @@
         border-color: #166534 !important;
     }
 
-    body.dark-mode .energy-monitor-page .alert-pill-level-critical {
+    body.dark-mode .energy-monitor-page .alert-pill-level-critical,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-critical {
         color: #fecaca;
         background: rgba(127, 29, 29, 0.35);
         border-color: rgba(248, 113, 113, 0.4);
     }
 
     body.dark-mode .energy-monitor-page .alert-pill-level-very-high,
-    body.dark-mode .energy-monitor-page .alert-pill-level-high {
+    body.dark-mode .energy-monitor-page .alert-pill-level-high,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-high {
         color: #fda4af;
         background: rgba(190, 18, 60, 0.25);
         border-color: rgba(244, 114, 182, 0.35);
     }
 
     body.dark-mode .energy-monitor-page .alert-pill-level-moderate,
-    body.dark-mode .energy-monitor-page .alert-pill-level-warning {
+    body.dark-mode .energy-monitor-page .alert-pill-level-warning,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-warning {
         color: #fde68a;
         background: rgba(146, 64, 14, 0.3);
         border-color: rgba(251, 191, 36, 0.35);
@@ -1132,6 +1233,14 @@
         .energy-monitor-page .search-field,
         .energy-monitor-page .search-input { width: 100%; }
         .energy-monitor-page .search-btn { width: 100%; }
+        .energy-monitor-page .monitor-table-wrap {
+            height: 62vh;
+            max-height: 62vh;
+            overflow-x: auto;
+        }
+        .energy-monitor-page .monitor-table {
+            min-width: 1120px;
+        }
     }
 </style>
 
@@ -1140,6 +1249,8 @@
 @php
     $user = auth()->user();
     $userRole = strtolower($user->role ?? '');
+    $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
+    $canManageEnergyIncidents = \App\Support\RoleAccess::can($user, 'manage_energy_incidents');
 @endphp
 
 <a href="#main-content" class="skip-link" tabindex="0">Skip to main content</a>
@@ -1191,7 +1302,7 @@
         <div class="metric-card metric-alert">
             <div class="metric-label">Facilities Requiring Attention</div>
             <div class="metric-value">{{ $highAlertCount ?? 0 }}</div>
-            <div class="metric-meta">High, very high, or critical alert</div>
+            <div class="metric-meta">High/critical increase or abnormal drop</div>
         </div>
         <div class="metric-card metric-cost">
             <div class="metric-label">Estimated Energy Cost</div>
@@ -1219,6 +1330,8 @@
                     $record = $facility->currentMonthRecord;
                     $trendAnalysis = $facility->trend_analysis ?? '-';
                     $trendSpikeDetected = (bool) ($facility->trend_spike_detected ?? false);
+                    $trendSpikeThreshold = (float) ($facility->trend_spike_threshold ?? 0);
+                    $trendSpikeSizeLabel = (string) ($facility->trend_spike_size_label ?? '');
                     $alertLevel = $facility->alert_level ?? 'No Data';
                     $mainMeterLabel = $facility->main_meter_name ?? 'No Main Meter';
                     $mainMeterStatus = $facility->main_meter_status_label ?? 'No Main Meter';
@@ -1264,6 +1377,27 @@
                     $trendRecommendation = $facility->trend_recommendation ?? 'Not enough data yet to generate a trend recommendation.';
                     $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', ['facility' => $facility->id, 'month' => $selectedMonthInput]);
                     $baselineKwh = $record->baseline_kwh ?? null;
+                    $hasApprovedMainMeter = collect($facility->main_meters ?? [])->contains(fn ($meter) => !empty($meter->approved_at));
+                    $hasCurrentReading = $record && is_numeric($record->actual_kwh ?? null);
+                    $isCprfManaged = method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged();
+                    $selectedDashboardYear = (int) substr($selectedMonthInput, 0, 4);
+                    $selectedDashboardMonth = (int) substr($selectedMonthInput, 5, 2);
+                    $monthlyRecordsUrl = route('facilities.monthly-records', [
+                        'facility' => $facility->id,
+                        'year' => $selectedDashboardYear,
+                        'summary_mode' => 'month',
+                        'summary_month' => $selectedDashboardMonth,
+                    ]);
+                    $encodeReadingUrl = route('facilities.monthly-records', [
+                        'facility' => $facility->id,
+                        'year' => $selectedDashboardYear,
+                        'summary_mode' => 'month',
+                        'summary_month' => $selectedDashboardMonth,
+                        'open_add' => 1,
+                        'record_date' => $selectedMonthInput . '-01',
+                    ]);
+                    $energyProfileUrl = route('modules.facilities.energy-profile.index', ['facility' => $facility->id]);
+                    $createIncidentUrl = route('energy-incidents.index', ['report' => 1, 'facility_id' => $facility->id]);
                 @endphp
                 <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
                     <td class="cell-facility">
@@ -1301,8 +1435,8 @@
                     <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
                         {{ $trendAnalysis }}
                         @if($trendSpikeDetected)
-                            <div class="trend-spike-badge" style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
-                                3-Month Spike
+                            <div class="trend-spike-badge" title="Three consecutive increases, at least {{ number_format($trendSpikeThreshold, 2) }}% total growth, and at least {{ number_format($trendSpikeThreshold, 2) }}% above baseline." style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
+                                3-Month Spike · {{ $trendSpikeSizeLabel }} ≥{{ number_format($trendSpikeThreshold, 2) }}%
                             </div>
                         @endif
                     </td>
@@ -1324,14 +1458,52 @@
                                 'Very High' => ['icon' => '!'],
                                 'High' => ['icon' => '!'],
                                 'Warning' => ['icon' => 'i'],
+                                'Drop Critical' => ['icon' => '!'],
+                                'Drop High' => ['icon' => '!'],
+                                'Drop Warning' => ['icon' => 'i'],
                                 'Normal' => ['icon' => 'i'],
                                 'No Data' => ['icon' => 'i'],
                             ][$alertLevel] ?? ['icon' => 'i'];
                         @endphp
-                        <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
-                            <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
-                            <span>View Guidance</span>
-                        </button>
+                        <div class="monitor-actions">
+                            @if($isCprfManaged && !$hasCurrentReading)
+                                <span class="monitor-primary-action integration-waiting" title="The monthly record will appear after CPRF sends it through the integration.">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Waiting for CPRF
+                                </span>
+                            @elseif(!$hasApprovedMainMeter)
+                                <a href="{{ $energyProfileUrl }}" class="monitor-primary-action setup">
+                                    <i class="fa-solid fa-gauge-high"></i> Configure Main Meter
+                                </a>
+                            @elseif(!$hasCurrentReading && $canEncodeMainReadings)
+                                <a href="{{ $encodeReadingUrl }}" class="monitor-primary-action">
+                                    <i class="fa-solid fa-plus"></i> Encode {{ $selectedPeriodLabel }}
+                                </a>
+                            @else
+                                <button type="button" title="View data-based recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" style="width:100%;" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
+                                    <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
+                                    <span>View Guidance</span>
+                                </button>
+                            @endif
+
+                            <div class="monitor-quick-actions">
+                                <a href="{{ $energyProfileUrl }}" class="monitor-quick-link" title="Open facility energy profile">
+                                    <i class="fa-solid fa-building"></i> Facility
+                                </a>
+                                <a href="{{ $monthlyRecordsUrl }}" class="monitor-quick-link" title="View monthly records and trends">
+                                    <i class="fa-solid fa-chart-line"></i> Records
+                                </a>
+                                @if(!$hasCurrentReading || !$hasApprovedMainMeter)
+                                    <button type="button" class="monitor-quick-link" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
+                                        <i class="fa-solid fa-lightbulb"></i> Guidance
+                                    </button>
+                                @endif
+                                @if($canManageEnergyIncidents && in_array($alertLevel, ['High', 'Very High', 'Critical', 'Drop High', 'Drop Critical'], true))
+                                    <a href="{{ $createIncidentUrl }}" class="monitor-quick-link attention" title="Create a corrective action incident">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Create Action
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
                     </td>
                 </tr>
             @empty
@@ -1416,6 +1588,9 @@ function formatMetricValue(value, suffix = '') {
 
 function normalizeAlertLevel(level) {
     const raw = String(level || '').trim().toLowerCase();
+    if (raw === 'drop critical' || raw === 'drop_critical') return 'Drop Critical';
+    if (raw === 'drop high' || raw === 'drop_high') return 'Drop High';
+    if (raw === 'drop warning' || raw === 'drop_warning') return 'Drop Warning';
     if (raw === 'critical') return 'Critical';
     if (raw === 'very high' || raw === 'very_high') return 'Very High';
     if (raw === 'high') return 'High';
@@ -1466,10 +1641,13 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     const isDark = document.body.classList.contains('dark-mode');
     const alertStyles = {
         'Critical': { color: '#991b1b', bg: '#fef2f2', border: '#fca5a5', badgeBg: '#ffffff', badgeColor: '#991b1b', darkBg: 'rgba(127,29,29,0.22)', darkBorder: 'rgba(248,113,113,0.35)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fecaca', icon: '!' },
+        'Drop Critical': { color: '#991b1b', bg: '#fef2f2', border: '#fca5a5', badgeBg: '#ffffff', badgeColor: '#991b1b', darkBg: 'rgba(127,29,29,0.22)', darkBorder: 'rgba(248,113,113,0.35)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fecaca', icon: '↓' },
         'Very High': { color: '#be123c', bg: '#fff1f2', border: '#fda4af', badgeBg: '#ffffff', badgeColor: '#be123c', darkBg: 'rgba(190,18,60,0.18)', darkBorder: 'rgba(244,114,182,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fda4af', icon: '!' },
         'High': { color: '#c2410c', bg: '#fff7ed', border: '#fdba74', badgeBg: '#ffffff', badgeColor: '#c2410c', darkBg: 'rgba(194,65,12,0.18)', darkBorder: 'rgba(251,146,60,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fdba74', icon: '!' },
+        'Drop High': { color: '#c2410c', bg: '#fff7ed', border: '#fdba74', badgeBg: '#ffffff', badgeColor: '#c2410c', darkBg: 'rgba(194,65,12,0.18)', darkBorder: 'rgba(251,146,60,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fdba74', icon: '↓' },
         'Moderate': { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', badgeBg: '#ffffff', badgeColor: '#92400e', darkBg: 'rgba(146,64,14,0.18)', darkBorder: 'rgba(251,191,36,0.28)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
         'Warning': { color: '#9a4a12', bg: '#f7edc0', border: '#f3c23c', badgeBg: '#ffffff', badgeColor: '#b45309', darkBg: 'rgba(180,83,9,0.16)', darkBorder: 'rgba(251,191,36,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
+        'Drop Warning': { color: '#9a4a12', bg: '#fffbeb', border: '#fcd34d', badgeBg: '#ffffff', badgeColor: '#b45309', darkBg: 'rgba(180,83,9,0.16)', darkBorder: 'rgba(251,191,36,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: '↓' },
         'Low': { color: '#166534', bg: '#f0fdf4', border: '#86efac', badgeBg: '#ffffff', badgeColor: '#166534', darkBg: 'rgba(22,101,52,0.16)', darkBorder: 'rgba(74,222,128,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#86efac', icon: 'i' },
         'Normal': { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', badgeBg: '#ffffff', badgeColor: '#1d4ed8', darkBg: 'rgba(37,99,235,0.14)', darkBorder: 'rgba(147,197,253,0.22)', darkBadgeBg: '#0f172a', darkBadgeColor: '#93c5fd', icon: 'i' },
         'No Data': { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', badgeBg: '#ffffff', badgeColor: '#475569', darkBg: 'rgba(51,65,85,0.22)', darkBorder: 'rgba(148,163,184,0.20)', darkBadgeBg: '#0f172a', darkBadgeColor: '#cbd5e1', icon: 'i' },

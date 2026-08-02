@@ -151,13 +151,17 @@ class EnergyRecord extends Model
     public static function resolveSizeKeyFromBaseline(?float $baselineKwh): string
     {
         $baseline = $baselineKwh ?? 0.0;
-        if ($baseline <= 1000) {
+        $smallMax = max(1.0, (float) Setting::getValue('baseline_small_max_kwh', 1000));
+        $mediumMax = max($smallMax, (float) Setting::getValue('baseline_medium_max_kwh', 3000));
+        $largeMax = max($mediumMax, (float) Setting::getValue('baseline_large_max_kwh', 10000));
+
+        if ($baseline <= $smallMax) {
             return 'small';
         }
-        if ($baseline <= 3000) {
+        if ($baseline <= $mediumMax) {
             return 'medium';
         }
-        if ($baseline <= 10000) {
+        if ($baseline <= $largeMax) {
             return 'large';
         }
 
@@ -186,6 +190,9 @@ class EnergyRecord extends Model
             foreach (array_keys($defaults) as $sizeKey) {
                 for ($level = 1; $level <= 5; $level++) {
                     $keys[] = "alert_level{$level}_{$sizeKey}";
+                }
+                for ($level = 1; $level <= 3; $level++) {
+                    $keys[] = "alert_drop_level{$level}_{$sizeKey}";
                 }
             }
 

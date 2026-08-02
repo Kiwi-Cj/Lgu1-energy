@@ -125,8 +125,8 @@
 
     .insights-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-        gap: 24px;
+        grid-template-columns: minmax(0, 1.25fr) minmax(360px, .85fr);
+        gap: 16px;
     }
 
     .insight-card {
@@ -140,6 +140,10 @@
         padding: 16px 18px;
         border-bottom: 1px solid #eef2f7;
         background: #fff;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
     }
 
     .insight-card-title {
@@ -165,23 +169,43 @@
         font-size: 0.82rem;
     }
 
+    .insight-card-meta { margin-top:4px; color:#94a3b8; font-size:.68rem; font-weight:700; }
+    .insight-header-action { color:#2563eb; font-size:.7rem; font-weight:800; text-decoration:none; white-space:nowrap; }
+    .insight-header-action:hover { color:#1d4ed8; text-decoration:underline; }
+
+    .consumption-table { table-layout:fixed; }
+    .consumption-table th:nth-child(1) { width:24%; }
+    .consumption-table th:nth-child(2),
+    .consumption-table th:nth-child(3) { width:16%; }
+    .consumption-table th:nth-child(4) { width:13%; }
+    .consumption-table th:nth-child(5) { width:15%; }
+    .consumption-table th:nth-child(6) { width:16%; }
+
     .consumption-table th {
-        font-size: 0.9rem;
+        padding:12px 9px;
+        font-size: 0.7rem;
         font-weight: 700;
         color: #355dc2;
         background: #f2f5fb;
     }
 
     .consumption-table td {
-        font-size: 0.86rem;
+        padding:13px 9px !important;
+        font-size: 0.74rem;
     }
 
     .consumption-table td.facility-name {
-        font-size: 0.9rem;
+        font-size: 0.78rem;
         font-weight: 700;
         line-height: 1.25;
         color: #1e293b;
     }
+
+    .facility-rank { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-right:6px; border-radius:7px; background:#eff6ff; color:#2563eb; font-size:.62rem; font-weight:900; vertical-align:middle; }
+    .facility-name-text { vertical-align:middle; }
+    .trend-indicator { display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:4px 7px; border-radius:999px; font-size:.61rem; font-weight:850; white-space:nowrap; }
+    .trend-indicator.spike { color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; }
+    .trend-indicator.stable { color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; }
 
     .consumption-table .value-kwh {
         color: #0f172a;
@@ -212,10 +236,10 @@
     }
 
     .notifications-body {
-        padding: 18px 20px 20px;
+        padding: 14px 16px 16px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 10px;
     }
 
     .alert-item {
@@ -225,9 +249,9 @@
         background: #f8fafc;
         border-left: 4px solid #cbd5e1;
         border-radius: 12px;
-        padding: 16px 16px 16px 14px;
+        padding: 13px 14px 13px 12px;
         color: #334155;
-        font-size: 0.86rem;
+        font-size: 0.76rem;
         font-weight: 700;
         line-height: 1.45;
     }
@@ -257,9 +281,8 @@
     }
 
     .alert-icon {
-        font-size: 0.86rem;
-        line-height: 1.5;
-        margin-top: 1px;
+        width:28px; height:28px; flex:0 0 28px; display:inline-flex; align-items:center; justify-content:center;
+        border-radius:9px; background:rgba(255,255,255,.72); font-size:.72rem; line-height:1; margin-top:0;
     }
 
     .alert-level {
@@ -270,6 +293,110 @@
         opacity: 0.9;
         margin-bottom: 2px;
     }
+
+    .insight-card-footer { padding:11px 16px; border-top:1px solid #eef2f7; background:#fbfdff; text-align:right; }
+    .insight-footer-link { display:inline-flex; align-items:center; gap:6px; color:#2563eb; font-size:.7rem; font-weight:850; text-decoration:none; }
+
+    /* Dashboard overview hierarchy */
+    .dashboard-header {
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        align-items:start;
+        gap:20px;
+        margin-bottom:20px;
+    }
+    .dashboard-title-row { display:flex; align-items:flex-start; gap:13px; }
+    .dashboard-title-icon {
+        width:48px; height:48px; flex:0 0 48px; display:inline-flex; align-items:center; justify-content:center;
+        border-radius:14px; color:#ea580c; background:#fff7ed; border:1px solid #fed7aa; font-size:1.2rem;
+    }
+    .dashboard-title { margin:0; color:#0f2450; font-size:clamp(1.55rem,2.2vw,2rem); font-weight:850; line-height:1.1; letter-spacing:-.035em; }
+    .dashboard-subtitle { margin:6px 0 0; color:#64748b; font-size:.95rem; }
+    .dashboard-role-badge {
+        display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border-radius:11px;
+        background:#eef2ff; color:#4f46e5; border:1px solid #dbe3ff; font-size:.72rem; font-weight:850;
+        text-transform:uppercase; letter-spacing:.04em;
+    }
+    .dashboard-filter-panel {
+        display:flex; align-items:end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+        margin-bottom:22px; padding:14px 16px; border:1px solid #dbe5f2; border-radius:14px; background:#f8fafc;
+    }
+    .dashboard-period-summary { display:flex; align-items:center; gap:9px; color:#64748b; font-size:.78rem; }
+    .dashboard-period-summary i { color:#2563eb; }
+    .dashboard-period-form { display:flex; align-items:end; gap:8px; flex-wrap:wrap; }
+    .dashboard-filter-field { display:flex; flex-direction:column; gap:5px; }
+    .dashboard-filter-field label { color:#64748b; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .dashboard-filter-field input {
+        min-height:38px; border:1px solid #cbd5e1; border-radius:9px; padding:6px 10px;
+        color:#334155; background:#fff; font:inherit; font-size:.78rem;
+    }
+    .dashboard-filter-field input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+    .dashboard-filter-button {
+        min-height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:9px;
+        padding:7px 13px; font-size:.75rem; font-weight:800; text-decoration:none; cursor:pointer;
+    }
+    .dashboard-filter-button.primary { border:1px solid #1d4ed8; background:#2563eb; color:#fff; }
+    .dashboard-filter-button.secondary { border:1px solid #cbd5e1; background:#fff; color:#334155; }
+
+    .dashboard-page .stats-grid {
+        display:grid;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+        gap:14px;
+        margin-bottom:22px;
+    }
+    .dashboard-page .stat-card {
+        position:relative; min-width:0; min-height:142px; padding:18px; overflow:hidden;
+        border:1px solid #dbe5f2; border-top:4px solid var(--kpi-accent); border-radius:15px;
+        background:#fff; box-shadow:0 8px 20px rgba(15,23,42,.045);
+    }
+    .dashboard-page .stat-card::after {
+        content:""; position:absolute; width:86px; height:86px; top:-38px; right:-32px; border-radius:50%;
+        background:var(--kpi-soft); opacity:.9;
+    }
+    .dashboard-page .stat-card.kpi-blue { --kpi-accent:#2563eb; --kpi-soft:#dbeafe; }
+    .dashboard-page .stat-card.kpi-green { --kpi-accent:#16a34a; --kpi-soft:#dcfce7; }
+    .dashboard-page .stat-card.kpi-amber { --kpi-accent:#d97706; --kpi-soft:#fef3c7; }
+    .dashboard-page .stat-card.kpi-red { --kpi-accent:#e11d48; --kpi-soft:#ffe4e6; }
+    .dashboard-page .stat-card.kpi-violet { --kpi-accent:#7c3aed; --kpi-soft:#ede9fe; }
+    .dashboard-kpi-heading { display:flex; align-items:center; gap:7px; margin-bottom:14px; color:var(--kpi-accent); font-size:.67rem; font-weight:850; text-transform:uppercase; letter-spacing:.045em; }
+    .dashboard-kpi-value { color:#0f172a; font-size:1.75rem; font-weight:850; line-height:1; letter-spacing:-.035em; white-space:nowrap; }
+    .dashboard-kpi-value small { font-size:.72rem; letter-spacing:0; }
+    .dashboard-kpi-note { margin-top:9px; color:#64748b; font-size:.68rem; font-weight:700; }
+    .dashboard-kpi-note.is-up { color:#be123c; }
+    .dashboard-kpi-note.is-down { color:#15803d; }
+
+    .dashboard-page .summary-grid { grid-template-columns:1.3fr 1fr; gap:14px; margin-bottom:22px; }
+    .dashboard-page .summary-card { padding:15px 16px; border-color:#dbe5f2; background:#f8fafc; }
+    .summary-card-heading { display:flex; align-items:center; gap:7px; margin-bottom:11px; color:#475569; font-size:.7rem; font-weight:850; text-transform:uppercase; letter-spacing:.045em; }
+    .operational-pills { display:flex; flex-wrap:wrap; gap:8px; }
+    .operational-pill { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid; border-radius:999px; font-size:.74rem; font-weight:800; }
+    .operational-pill i { font-size:.45rem; }
+    .operational-pill.active { color:#166534; background:#ecfdf5; border-color:#bbf7d0; }
+    .operational-pill.maintenance { color:#92400e; background:#fffbeb; border-color:#fde68a; }
+    .operational-pill.inactive { color:#991b1b; background:#fef2f2; border-color:#fecaca; }
+    .quick-actions-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+    .dashboard-page .quick-action-btn { justify-content:center; min-height:40px; padding:8px 9px; font-size:.72rem; }
+
+    .dashboard-page .chart-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px !important; margin-bottom:22px !important; }
+    .dashboard-page .chart-container { padding:18px; border-color:#dbe5f2; box-shadow:0 7px 20px rgba(15,23,42,.035); }
+    .dashboard-chart-title { display:flex; align-items:center; gap:9px; margin:0 0 15px; color:#334155; font-size:.9rem; font-weight:850; }
+    .chart-insights-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .chart-insight-card {
+        min-width:0; padding:11px 12px; border:1px solid #dbe5f2; border-radius:12px; background:#f8fafc;
+    }
+    .chart-insight-label { display:flex; align-items:center; gap:6px; color:#64748b; font-size:.62rem; font-weight:850; text-transform:uppercase; letter-spacing:.04em; }
+    .chart-insight-label i { color:#2563eb; }
+    .chart-insight-value { margin-top:5px; overflow:hidden; color:#0f172a; font-size:1rem; font-weight:850; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-insight-value.negative { color:#15803d; }
+    .chart-insight-value.positive { color:#be123c; }
+    .chart-insight-note { margin-top:3px; color:#94a3b8; font-size:.61rem; font-weight:650; }
+    .chart-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .chart-card-subtitle { margin:-8px 0 14px 17px; color:#94a3b8; font-size:.65rem; font-weight:650; }
+    .chart-footnote { display:flex; align-items:flex-start; gap:7px; margin-top:10px; padding:8px 10px; border-radius:9px; background:#fffbeb; color:#92400e; font-size:.65rem; font-weight:700; }
+
+    body.dark-mode .dashboard-page .chart-insight-card { background:#111827; border-color:#334155; }
+    body.dark-mode .dashboard-page .chart-insight-value { color:#f8fafc; }
+    body.dark-mode .dashboard-page .chart-footnote { background:rgba(245,158,11,.12); color:#fde68a; }
 
     /* Dashboard Dark Mode */
     body.dark-mode .dashboard-page .report-card-container {
@@ -315,6 +442,16 @@
         box-shadow: 0 8px 18px rgba(2, 6, 23, 0.5) !important;
     }
 
+    body.dark-mode .dashboard-page .dashboard-filter-panel,
+    body.dark-mode .dashboard-page .dashboard-filter-field input {
+        background:#111827;
+        border-color:#334155;
+        color:#e2e8f0;
+    }
+    body.dark-mode .dashboard-page .dashboard-title { color:#f8fafc; }
+    body.dark-mode .dashboard-page .dashboard-title-icon { background:#3b2417; border-color:#7c2d12; color:#fb923c; }
+    body.dark-mode .dashboard-page .dashboard-kpi-value { color:#f8fafc; }
+
     body.dark-mode .dashboard-page .consumption-table th {
         background: #0f172a !important;
         color: #93c5fd !important;
@@ -328,6 +465,8 @@
     body.dark-mode .dashboard-page .consumption-table .value-baseline {
         color: #94a3b8 !important;
     }
+    body.dark-mode .dashboard-page .insight-card-footer { background:#0f172a; border-color:#334155; }
+    body.dark-mode .dashboard-page .trend-indicator.stable { background:#0f172a; border-color:#334155; color:#94a3b8; }
 
     body.dark-mode .dashboard-page .insight-card-title.consumption,
     body.dark-mode .dashboard-page .insight-card-title.critical,
@@ -420,6 +559,12 @@
             grid-template-columns: 1fr;
             gap: 14px;
         }
+        .consumption-table { min-width:720px; }
+        .dashboard-page .stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        .dashboard-page .summary-grid { grid-template-columns:1fr; }
+        .dashboard-page .chart-grid { grid-template-columns:1fr; }
+        .chart-insights-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .quick-actions-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
     }
 
     @media (max-width: 640px) {
@@ -477,92 +622,106 @@
         .consumption-table td.facility-name {
             font-size: 1rem;
         }
+        .dashboard-header { grid-template-columns:1fr; }
+        .dashboard-role-badge { width:fit-content; }
+        .dashboard-filter-panel { align-items:stretch; }
+        .dashboard-period-form { width:100%; }
+        .dashboard-filter-field { flex:1 1 130px; }
+        .dashboard-page .stats-grid { grid-template-columns:1fr; }
+        .quick-actions-grid { grid-template-columns:1fr; }
+        .chart-insights-grid { grid-template-columns:1fr; }
     }
 </style>
 
 <div class="dashboard-page" style="width:100%; margin:0 auto;">
     <div class="report-card-container">
         
-        <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2.5rem;">
-            <div>
-                <h1 style="font-size:1.8rem; font-weight:800; color:#1e293b; margin:0; letter-spacing:-0.5px;">⚡ Energy Efficiency Overview</h1>
-                <p style="font-size:1rem; color:#64748b; margin-top:4px;">Real-time monitoring and analytics for LGU facilities.</p>
-                <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px; display:flex; align-items:center; gap:10px;">
-                    <i class="fa fa-calendar"></i>
-                    <span>
-                        Period: <strong>{{ $periodStartLabel ?? now()->subMonths(5)->format('F') }}</strong> - <strong>{{ $periodEndLabel ?? now()->format('F Y') }}</strong>
-                        <span style="opacity:0.75;">({{ $periodMonthCount ?? 6 }}mo)</span>
-                    </span>
+        <div class="dashboard-header">
+            <div class="dashboard-title-row">
+                <span class="dashboard-title-icon" aria-hidden="true"><i class="fas fa-bolt"></i></span>
+                <div>
+                    <h1 class="dashboard-title">Energy Efficiency Overview</h1>
+                    <p class="dashboard-subtitle">Period-based energy monitoring, cost analysis, and operational alerts.</p>
                 </div>
-                <form id="dashboard-period-form" method="GET" action="{{ route('dashboard.index') }}" style="margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <label for="start_month" style="font-size:0.78rem; color:#64748b; font-weight:700;">From</label>
-                    <input id="start_month" type="month" name="start_month" value="{{ $periodStartInput ?? now()->subMonths(5)->format('Y-m') }}" style="border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; font-size:0.82rem; color:#334155; background:#fff;">
-                    <label for="end_month" style="font-size:0.78rem; color:#64748b; font-weight:700;">To</label>
-                    <input id="end_month" type="month" name="end_month" value="{{ $periodEndInput ?? now()->format('Y-m') }}" style="border:1px solid #cbd5e1; border-radius:8px; padding:6px 10px; font-size:0.82rem; color:#334155; background:#fff;">
-                    <button type="submit" style="border:1px solid #1d4ed8; background:#2563eb; color:#fff; border-radius:8px; padding:7px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">Apply</button>
-                    <a href="{{ route('dashboard.index') }}" style="border:1px solid #cbd5e1; background:#fff; color:#334155; border-radius:8px; padding:7px 12px; font-size:0.78rem; font-weight:700; text-decoration:none;">Reset</a>
-                </form>
             </div>
-            <div style="text-align:right;">
-                <span style="background:#eef2ff; color:#4f46e5; padding:10px 18px; border-radius:12px; font-weight:800; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; border: 1px solid #e0e7ff;">
-                    <i class="fa fa-shield"></i> {{ Auth::user()->role ?? 'Administrator' }}
+            <span class="dashboard-role-badge"><i class="fas fa-shield-alt"></i> {{ Auth::user()->role ?? 'Administrator' }}</span>
+        </div>
+
+        <div class="dashboard-filter-panel">
+            <div class="dashboard-period-summary">
+                <i class="fas fa-calendar-alt"></i>
+                <span>
+                    Viewing <strong>{{ $periodStartLabel ?? now()->subMonths(5)->format('F') }}</strong> to
+                    <strong>{{ $periodEndLabel ?? now()->format('F Y') }}</strong>
+                    <span>({{ $periodMonthCount ?? 6 }} months)</span>
                 </span>
             </div>
+            <form id="dashboard-period-form" class="dashboard-period-form" method="GET" action="{{ route('dashboard.index') }}">
+                <div class="dashboard-filter-field">
+                    <label for="start_month">From</label>
+                    <input id="start_month" type="month" name="start_month" value="{{ $periodStartInput ?? now()->subMonths(5)->format('Y-m') }}">
+                </div>
+                <div class="dashboard-filter-field">
+                    <label for="end_month">To</label>
+                    <input id="end_month" type="month" name="end_month" value="{{ $periodEndInput ?? now()->format('Y-m') }}">
+                </div>
+                <button type="submit" class="dashboard-filter-button primary"><i class="fas fa-filter"></i>&nbsp; Apply</button>
+                <a href="{{ route('dashboard.index') }}" class="dashboard-filter-button secondary">Reset</a>
+            </form>
         </div>
 
-        <div class="stats-grid" style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:2.5rem;">
-            <div class="stat-card" style="background:#f0f7ff;">
-                <div style="color:#3762c8; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Total Facilities</div>
-                <div style="font-size:2rem; font-weight:800; color:#1e3a8a;">{{ $totalFacilities ?? 0 }}</div>
+        @php
+            $trendText = trim((string) ($kwhTrend ?? '0%'));
+            $trendIsDown = str_starts_with($trendText, '-');
+        @endphp
+        <div class="stats-grid">
+            <div class="stat-card kpi-blue">
+                <div class="dashboard-kpi-heading"><i class="fas fa-building"></i> Total Facilities</div>
+                <div class="dashboard-kpi-value">{{ $totalFacilities ?? 0 }}</div>
+                <div class="dashboard-kpi-note">Monitored facility portfolio</div>
             </div>
 
-            <div class="stat-card" style="background:#f0fdf4;">
-                <div style="color:#16a34a; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Net Consumption</div>
-                <div style="font-size:2rem; font-weight:800; color:#14532d;">{{ number_format($totalKwh ?? 0) }} <small style="font-size:0.9rem;">kWh</small></div>
-                <div style="font-size:0.8rem; font-weight:700; color:#166534; margin-top:5px;">
-                    <i class="fa fa-caret-up"></i> {{ $kwhTrend ?? '0%' }} <span style="font-weight:500; opacity:0.8;">vs last period</span>
+            <div class="stat-card kpi-green">
+                <div class="dashboard-kpi-heading"><i class="fas fa-bolt"></i> Net Consumption</div>
+                <div class="dashboard-kpi-value">{{ number_format($totalKwh ?? 0) }} <small>kWh</small></div>
+                <div class="dashboard-kpi-note {{ $trendIsDown ? 'is-down' : 'is-up' }}">
+                    <i class="fas {{ $trendIsDown ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
+                    {{ $trendText }} vs previous period
                 </div>
             </div>
 
-            <div class="stat-card" style="background:#fffbeb;">
-                <div style="color:#d97706; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Total Expenditure</div>
-                <div style="font-size:2rem; font-weight:800; color:#78350f;">₱{{ number_format($totalCost ?? 0, 0) }}</div>
+            <div class="stat-card kpi-amber">
+                <div class="dashboard-kpi-heading"><i class="fas fa-coins"></i> Total Expenditure</div>
+                <div class="dashboard-kpi-value">₱{{ number_format($totalCost ?? 0, 0) }}</div>
+                <div class="dashboard-kpi-note">Selected period energy cost</div>
             </div>
 
-            <div class="stat-card" style="background:#fff7ed;">
-                <div style="color:#c2410c; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Unresolved Incidents</div>
-                <div style="font-size:2rem; font-weight:800; color:#9a3412;">{{ $unresolvedIncidentCount ?? 0 }}</div>
+            <div class="stat-card kpi-red">
+                <div class="dashboard-kpi-heading"><i class="fas fa-exclamation-triangle"></i> Unresolved Incidents</div>
+                <div class="dashboard-kpi-value">{{ $unresolvedIncidentCount ?? 0 }}</div>
+                <div class="dashboard-kpi-note">Items requiring follow-up</div>
             </div>
 
-            <div class="stat-card" style="background:#f5f3ff;">
-                <div style="color:#6d28d9; font-weight:700; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Ongoing Maintenance</div>
-                <div style="font-size:2rem; font-weight:800; color:#4c1d95;">{{ $ongoingMaintenance ?? 0 }}</div>
+            <div class="stat-card kpi-violet">
+                <div class="dashboard-kpi-heading"><i class="fas fa-tools"></i> Ongoing Maintenance</div>
+                <div class="dashboard-kpi-value">{{ $ongoingMaintenance ?? 0 }}</div>
+                <div class="dashboard-kpi-note">Active maintenance activities</div>
             </div>
         </div>
 
-        <div class="summary-grid" style="display:grid; grid-template-columns: 1.5fr 1fr; gap:18px; margin-bottom:2rem;">
-            <div class="summary-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px;">
-                <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; margin-bottom:12px;">
-                    Facility Operational Snapshot
-                </div>
-                <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                    <span style="background:#ecfdf5; color:#166534; border:1px solid #bbf7d0; padding:8px 12px; border-radius:999px; font-weight:700; font-size:0.82rem;">
-                        Active: {{ optional($facilityStatusCounts)->active_count ?? 0 }}
-                    </span>
-                    <span style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; padding:8px 12px; border-radius:999px; font-weight:700; font-size:0.82rem;">
-                        Maintenance: {{ optional($facilityStatusCounts)->maintenance_count ?? 0 }}
-                    </span>
-                    <span style="background:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding:8px 12px; border-radius:999px; font-weight:700; font-size:0.82rem;">
-                        Inactive: {{ optional($facilityStatusCounts)->inactive_count ?? 0 }}
-                    </span>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-card-heading"><i class="fas fa-signal"></i> Facility Operational Snapshot</div>
+                <div class="operational-pills">
+                    <span class="operational-pill active"><i class="fas fa-circle"></i> Active <strong>{{ optional($facilityStatusCounts)->active_count ?? 0 }}</strong></span>
+                    <span class="operational-pill maintenance"><i class="fas fa-circle"></i> Maintenance <strong>{{ optional($facilityStatusCounts)->maintenance_count ?? 0 }}</strong></span>
+                    <span class="operational-pill inactive"><i class="fas fa-circle"></i> Inactive <strong>{{ optional($facilityStatusCounts)->inactive_count ?? 0 }}</strong></span>
                 </div>
             </div>
 
-            <div class="summary-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:16px;">
-                <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; margin-bottom:12px;">
-                    Quick Actions
-                </div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <div class="summary-card">
+                <div class="summary-card-heading"><i class="fas fa-bolt"></i> Quick Actions</div>
+                <div class="quick-actions-grid">
                     <a href="{{ route('modules.facilities.index') }}" class="quick-action-btn"><i class="fa-solid fa-building"></i> Facilities</a>
                     <a href="{{ route('energy.dashboard') }}" class="quick-action-btn"><i class="fa-solid fa-bolt"></i> Energy Monitoring</a>
                     <a href="{{ route('energy-incidents.index') }}" class="quick-action-btn"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a>
@@ -570,24 +729,62 @@
             </div>
         </div>
 
-        <div class="chart-grid" style="display:flex; gap:24px; margin-bottom:2.5rem;">
-            <div class="chart-item" style="flex:1;">
+        @php
+            $varianceValue = $periodVariancePercent ?? null;
+            $varianceClass = $varianceValue === null ? '' : ($varianceValue > 0 ? 'positive' : 'negative');
+            $variancePrefix = $varianceValue !== null && $varianceValue > 0 ? '+' : '';
+        @endphp
+        <div class="chart-insights-grid" aria-label="Selected period insights">
+            <div class="chart-insight-card">
+                <div class="chart-insight-label"><i class="fas fa-balance-scale"></i> Baseline Variance</div>
+                <div class="chart-insight-value {{ $varianceClass }}">
+                    {{ $varianceValue === null ? 'N/A' : $variancePrefix . number_format($varianceValue, 1) . '%' }}
+                </div>
+                <div class="chart-insight-note">{{ $varianceValue !== null && $varianceValue > 0 ? 'Consumption is above target' : 'Compared with period baseline' }}</div>
+            </div>
+            <div class="chart-insight-card">
+                <div class="chart-insight-label"><i class="fas fa-chart-bar"></i> Peak Usage Month</div>
+                <div class="chart-insight-value">{{ $peakUsageLabel ?? 'No data' }}</div>
+                <div class="chart-insight-note">{{ number_format($peakUsageValue ?? 0) }} kWh recorded</div>
+            </div>
+            <div class="chart-insight-card">
+                <div class="chart-insight-label"><i class="fas fa-coins"></i> Effective Rate</div>
+                <div class="chart-insight-value">₱{{ number_format($averageEnergyRate ?? 0, 2) }}/kWh</div>
+                <div class="chart-insight-note">Average cost for recorded usage</div>
+            </div>
+            <div class="chart-insight-card">
+                <div class="chart-insight-label"><i class="fas fa-database"></i> Data Coverage</div>
+                <div class="chart-insight-value">{{ $recordedMonthCount ?? 0 }} / {{ $periodMonthCount ?? 0 }} months</div>
+                <div class="chart-insight-note">{{ $missingMonthCount ?? 0 }} month(s) without usage data</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-item">
                 <div class="chart-container">
-                    <h3 style="font-size:1rem; font-weight:800; color:#334155; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    <h3 class="dashboard-chart-title">
                         <span style="width:8px; height:8px; background:#3762c8; border-radius:50%;"></span>
                         Actual vs Baseline Consumption
                     </h3>
-                    <div class="chart-canvas-wrap" style="height:320px;"><canvas id="energyChart"></canvas></div>
+                    <p class="chart-card-subtitle">Monthly consumption against the configured efficiency target</p>
+                    <div class="chart-canvas-wrap"><canvas id="energyChart"></canvas></div>
+                    @if(($missingMonthCount ?? 0) > 0)
+                        <div class="chart-footnote"><i class="fas fa-info-circle"></i> Missing monthly readings are displayed as gaps and are not treated as zero consumption.</div>
+                    @endif
                 </div>
             </div>
 
-            <div class="chart-item" style="flex:1;">
+            <div class="chart-item">
                 <div class="chart-container">
-                    <h3 style="font-size:1rem; font-weight:800; color:#334155; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                    <h3 class="dashboard-chart-title">
                         <span style="width:8px; height:8px; background:#e11d48; border-radius:50%;"></span>
                         Monthly Cost Trend
                     </h3>
-                    <div class="chart-canvas-wrap" style="height:320px;"><canvas id="costChart"></canvas></div>
+                    <p class="chart-card-subtitle">Energy expenditure movement across the selected period</p>
+                    <div class="chart-canvas-wrap"><canvas id="costChart"></canvas></div>
+                    @if(($missingMonthCount ?? 0) > 0)
+                        <div class="chart-footnote"><i class="fas fa-info-circle"></i> Months without recorded bills are displayed as gaps instead of zero cost.</div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -596,22 +793,26 @@
             
             <div class="insight-card">
                 <div class="insight-card-header">
-                    <h3 class="insight-card-title consumption"><i class="fa-solid fa-fire-flame-curved"></i> High Consumption Hubs</h3>
+                    <div>
+                        <h3 class="insight-card-title consumption"><i class="fa-solid fa-fire-flame-curved"></i> High Consumption Hubs</h3>
+                        <div class="insight-card-meta">Ranked by variance for the selected {{ $periodMonthCount ?? 6 }}-month period</div>
+                    </div>
+                    <a href="{{ route('energy.dashboard') }}" class="insight-header-action">View monitoring <i class="fas fa-arrow-right"></i></a>
                 </div>
-                <div class="table-scroll" style="overflow-x:auto;">
+                <div class="table-scroll">
                     <table class="custom-table consumption-table">
                         <thead>
                             <tr>
-                                <th>Facility Name</th>
-                                <th style="text-align:center;">Total kWh ({{ $periodMonthCount ?? 6 }}mo)</th>
-                                <th style="text-align:center;">Total Baseline ({{ $periodMonthCount ?? 6 }}mo)</th>
-                                <th style="text-align:center;">Deviation %</th>
-                                <th style="text-align:center;">Status</th>
-                                <th style="text-align:center;">Trend Alert</th>
+                                <th>Facility</th>
+                                <th style="text-align:center;" title="Total consumption for selected period">Actual kWh</th>
+                                <th style="text-align:center;" title="Total baseline for selected period">Baseline kWh</th>
+                                <th style="text-align:center;">Variance</th>
+                                <th style="text-align:center;">Condition</th>
+                                <th style="text-align:center;">Trend</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse(($topFacilities ?? collect())->take(5) as $facility)
+                            @forelse(collect($topFacilities ?? [])->filter(fn ($row) => (float) ($row->total_kwh ?? 0) > 0)->take(5) as $facility)
                             @php
                                 $deviation = (float) ($facility->deviation ?? 0);
                                 $status = (string) ($facility->status ?? 'Normal');
@@ -627,27 +828,27 @@
                                 $deviationColor = $deviation >= 0 ? '#e11d48' : '#16a34a';
                             @endphp
                             <tr>
-                                <td class="facility-name">{{ $facility->name }}</td>
+                                <td class="facility-name"><span class="facility-rank">{{ $loop->iteration }}</span><span class="facility-name-text">{{ $facility->name }}</span></td>
                                 <td class="value-kwh" style="text-align:center;">{{ number_format($facility->total_kwh, 2) }}</td>
                                 <td class="value-baseline" style="text-align:center;">{{ number_format($facility->baseline_kwh, 2) }}</td>
                                 <td class="value-deviation" style="text-align:center; color:{{ $deviationColor }};">{{ number_format($deviation, 2) }}%</td>
                                 <td style="text-align:center;">
-                                    <span class="status-pill" style="background:{{ $theme['bg'] }}; color:{{ $theme['text'] }}; border-color:{{ $theme['border'] }};">
+                                    <span class="status-pill"
+                                          title="{{ $trendSpikeDetected ? 'Escalated because consumption increased for three consecutive months.' : 'Condition based on baseline variance thresholds.' }}"
+                                          style="background:{{ $theme['bg'] }}; color:{{ $theme['text'] }}; border-color:{{ $theme['border'] }};">
                                         {{ $status }}
                                     </span>
                                 </td>
                                 <td style="text-align:center;">
                                     @if($trendSpikeDetected)
-                                        <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size:.76rem; font-weight:800; white-space:nowrap;">
-                                            <i class="fa-solid fa-triangle-exclamation"></i> 3-Month Spike
-                                        </span>
+                                        <span class="trend-indicator spike" title="Consumption increased for three consecutive months"><i class="fas fa-chart-line"></i> Spike</span>
                                     @else
-                                        <span style="color:#94a3b8;">-</span>
+                                        <span class="trend-indicator stable"><i class="fas fa-minus"></i> Stable</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No records found for this period.</td></tr>
+                            <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No consumption records found for this period.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -656,9 +857,11 @@
 
             <div class="insight-card">
                 <div class="insight-card-header">
-                    <h3 class="insight-card-title critical">
-                        <i class="fa fa-bell"></i> Critical Notifications
-                    </h3>
+                    <div>
+                        <h3 class="insight-card-title critical"><i class="fa fa-bell"></i> Critical Notifications</h3>
+                        <div class="insight-card-meta">{{ collect($criticalAlerts ?? [])->count() }} priority alert(s) in the selected period</div>
+                    </div>
+                    <a href="{{ route('energy-incidents.index') }}" class="insight-header-action">Open incidents <i class="fas fa-arrow-right"></i></a>
                 </div>
 
                 <div class="notifications-body">
@@ -667,6 +870,7 @@
                             $level = (string) ($alert['level'] ?? 'High');
                             $levelClass = strtolower(str_replace(' ', '-', $level));
                             $message = (string) ($alert['message'] ?? $alert);
+                            $displayMessage = preg_replace('/^(Critical|Alert|Incident):\s*/i', '', $message) ?: $message;
                             $icons = [
                                 'critical' => 'fa-circle-exclamation',
                                 'very-high' => 'fa-triangle-exclamation',
@@ -679,7 +883,7 @@
                             <span class="alert-icon"><i class="fa-solid {{ $iconClass }}"></i></span>
                             <span>
                                 <strong class="alert-level">{{ $level }}</strong>
-                                <span>{{ $message }}</span>
+                                <span>{{ $displayMessage }}</span>
                             </span>
                         </div>
                     @empty
@@ -687,6 +891,9 @@
                             <i class="fa fa-check-circle" style="color:#22c55e;"></i> No critical alerts at the moment.
                         </div>
                     @endforelse
+                </div>
+                <div class="insight-card-footer">
+                    <a href="{{ route('energy-incidents.index') }}" class="insight-footer-link">Review all incidents <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
 
@@ -766,6 +973,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
                     position: 'bottom',
@@ -823,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     datasets: [
                         {
                             label: 'Actual Usage (kWh)',
-                            data: {!! json_encode($energyChartData ?? [1200,1500,1100,1700,1600,1400]) !!},
+                            data: {!! json_encode($energyChartDisplayData ?? $energyChartData ?? []) !!},
                             backgroundColor: theme.energyBar,
                             borderRadius: 8,
                             barThickness: 20
@@ -853,11 +1061,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     labels: {!! json_encode($costChartLabels ?? ['Jan','Feb','Mar','Apr','May','Jun']) !!},
                     datasets: [{
                         label: 'Monthly Cost (PHP)',
-                        data: {!! json_encode($costChartData ?? [5000,6200,4800,7100,6600,5800]) !!},
+                        data: {!! json_encode($costChartDisplayData ?? $costChartData ?? []) !!},
                         borderColor: theme.costLine,
                         backgroundColor: theme.costFill,
                         fill: true,
                         tension: 0.4,
+                        spanGaps: false,
                         pointRadius: 4,
                         pointBackgroundColor: theme.costLine
                     }]

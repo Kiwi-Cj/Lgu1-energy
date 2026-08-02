@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Models\EnergyRecord;
 use App\Models\Submeter;
 use App\Models\SubmeterAlert;
 use App\Models\SubmeterBaseline;
@@ -16,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -89,7 +91,20 @@ class SubmeterMonitoringController extends Controller
             ->get()
             ->groupBy(fn ($item) => $item->submeter_id . '|' . $item->computed_for_period);
 
-        $rows = $submetersForTable->map(function (Submeter $submeter) use ($rowsBySubmeter, $baselineMap, $periodType) {
+        // Submeters can have a manually configured baseline on their linked
+        // facility meter even before a period/computed baseline is generated.
+        $configuredBaselineMap = FacilityMeter::query()
+            ->where('meter_type', 'sub')
+            ->whereIn('facility_id', $submetersForTable->pluck('facility_id')->filter()->unique())
+            ->whereNotNull('baseline_kwh')
+            ->get(['facility_id', 'meter_name', 'baseline_kwh'])
+            ->filter(fn (FacilityMeter $meter) => is_numeric($meter->baseline_kwh) && (float) $meter->baseline_kwh > 0)
+            ->keyBy(fn (FacilityMeter $meter) => $this->submeterMeterKey(
+                (int) $meter->facility_id,
+                (string) $meter->meter_name
+            ));
+
+        $rows = $submetersForTable->map(function (Submeter $submeter) use ($rowsBySubmeter, $baselineMap, $configuredBaselineMap, $periodType) {
             $reading = $rowsBySubmeter->get($submeter->id);
             $hasReading = $reading instanceof SubmeterReading;
 
@@ -104,21 +119,25 @@ class SubmeterMonitoringController extends Controller
                 $baselineMap->get($reading->submeter_id . '|' . $reading->periodLabel(), collect())
             );
             $baseline = $baselineInfo['value'];
-            $alert = $reading->alert;
-            if ($alert) {
-                if ($baseline === null && is_numeric($alert->baseline_value_kwh)) {
-                    $baseline = (float) $alert->baseline_value_kwh;
+            $baselineSource = $baselineInfo['type'];
+            if ($baseline === null) {
+                $configuredMeter = $configuredBaselineMap->get($this->submeterMeterKey(
+                    (int) $submeter->facility_id,
+                    (string) $submeter->submeter_name
+                ));
+                if ($configuredMeter instanceof FacilityMeter) {
+                    $baseline = round((float) $configuredMeter->baseline_kwh, 2);
+                    $baselineSource = 'configured_meter';
                 }
-                $reading->setAttribute('monitor_baseline_kwh', $baseline);
-                $reading->setAttribute('monitor_baseline_source', $baselineInfo['type'] ?? 'alert');
-                $increaseFromAlert = is_numeric($alert->increase_percent) ? (float) $alert->increase_percent : null;
-                $reading->setAttribute('monitor_alert_level', $this->normalizeSubmeterRowAlertLevel((string) $alert->alert_level));
-                $reading->setAttribute('monitor_increase_percent', $increaseFromAlert);
-                return $reading;
+            }
+            $alert = $reading->alert;
+            if ($baseline === null && $alert && is_numeric($alert->baseline_value_kwh) && (float) $alert->baseline_value_kwh > 0) {
+                $baseline = round((float) $alert->baseline_value_kwh, 2);
+                $baselineSource = 'alert';
             }
 
             $reading->setAttribute('monitor_baseline_kwh', $baseline);
-            $reading->setAttribute('monitor_baseline_source', $baselineInfo['type']);
+            $reading->setAttribute('monitor_baseline_source', $baselineSource);
             $increasePercent = null;
             if ($baseline && $baseline > 0) {
                 $kwh = is_numeric($reading->kwh_used) ? (float) $reading->kwh_used : 0.0;
@@ -127,7 +146,7 @@ class SubmeterMonitoringController extends Controller
                 $increasePercent = null;
             }
             $reading->setAttribute('monitor_increase_percent', $increasePercent);
-            $reading->setAttribute('monitor_alert_level', $this->resolveSubmeterRowAlertFromIncrease($increasePercent));
+            $reading->setAttribute('monitor_alert_level', $this->resolveSubmeterRowAlertFromIncrease($increasePercent, $baseline));
             return $reading;
         })->filter()->values();
 
@@ -135,9 +154,27 @@ class SubmeterMonitoringController extends Controller
         $widgets['top5HighestIncrease'] = $rows
             ->filter(fn (SubmeterReading $row) => (bool) ($row->monitor_has_reading ?? false))
             ->filter(fn (SubmeterReading $row) => is_numeric($row->monitor_increase_percent ?? null))
+            ->filter(fn (SubmeterReading $row) => (float) $row->monitor_increase_percent > 0)
             ->sortByDesc(fn (SubmeterReading $row) => (float) $row->monitor_increase_percent)
             ->take(5)
             ->values();
+        $evaluatedAlertRows = $rows->filter(fn (SubmeterReading $row) => ! in_array(
+            (string) ($row->monitor_alert_level ?? 'none'),
+            ['none', 'normal'],
+            true
+        ));
+        $widgets['criticalAlertsThisMonth'] = $evaluatedAlertRows
+            ->filter(fn (SubmeterReading $row) => in_array(
+                (string) $row->monitor_alert_level,
+                ['critical', 'drop_critical'],
+                true
+            ))
+            ->count();
+        $widgets['facilitiesWithAlertsCount'] = $evaluatedAlertRows
+            ->pluck('submeter.facility_id')
+            ->filter()
+            ->unique()
+            ->count();
 
         $facilities = Facility::query()
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('id', $facilityScope))
@@ -278,21 +315,35 @@ class SubmeterMonitoringController extends Controller
             $baselineKwh = $baselineInfo['value'];
             $baselineSource = $baselineInfo['type'];
 
-            if ($reading->alert) {
-                if ($baselineKwh === null && is_numeric($reading->alert->baseline_value_kwh)) {
-                    $baselineKwh = (float) $reading->alert->baseline_value_kwh;
+            if ($baselineKwh === null) {
+                $configuredMeter = FacilityMeter::query()
+                    ->where('facility_id', $submeter->facility_id)
+                    ->where('meter_type', 'sub')
+                    ->where('meter_name', $submeter->submeter_name)
+                    ->whereNotNull('baseline_kwh')
+                    ->first(['baseline_kwh']);
+
+                if ($configuredMeter && is_numeric($configuredMeter->baseline_kwh) && (float) $configuredMeter->baseline_kwh > 0) {
+                    $baselineKwh = round((float) $configuredMeter->baseline_kwh, 2);
+                    $baselineSource = 'configured_meter';
                 }
-                $increasePercent = is_numeric($reading->alert->increase_percent)
-                    ? (float) $reading->alert->increase_percent
-                    : null;
-                $fallbackAlertLevel = $this->mapSubmeterAlertLevelToAi((string) $reading->alert->alert_level);
-            } else {
-                if ($baselineKwh !== null && $baselineKwh > 0 && $actualKwh !== null) {
-                    $increasePercent = round((($actualKwh - $baselineKwh) / $baselineKwh) * 100, 2);
-                }
+            }
+
+            if ($baselineKwh === null && $reading->alert && is_numeric($reading->alert->baseline_value_kwh) && (float) $reading->alert->baseline_value_kwh > 0) {
+                $baselineKwh = round((float) $reading->alert->baseline_value_kwh, 2);
+                $baselineSource = 'alert';
+            }
+
+            if ($baselineKwh !== null && $baselineKwh > 0 && $actualKwh !== null) {
+                $increasePercent = round((($actualKwh - $baselineKwh) / $baselineKwh) * 100, 2);
                 $fallbackAlertLevel = $this->mapSubmeterAlertLevelToAi(
-                    $this->resolveSubmeterRowAlertFromIncrease($increasePercent)
+                    $this->resolveSubmeterRowAlertFromIncrease($increasePercent, $baselineKwh)
                 );
+            }
+
+            if ($baselineKwh === null || $baselineKwh <= 0) {
+                $increasePercent = null;
+                $fallbackAlertLevel = 'No Data';
             }
         }
 
@@ -308,7 +359,21 @@ class SubmeterMonitoringController extends Controller
             'next_maintenance' => '',
         ];
 
-        $insight = $this->energyRecommendationService->generateFacilityInsight($context, true);
+        // Without a valid baseline, an AI response must not classify the reading
+        // as normal because no variance evaluation is possible yet.
+        $hasValidBaseline = $baselineKwh !== null && $baselineKwh > 0;
+        $insight = $hasValidBaseline
+            ? $this->energyRecommendationService->generateFacilityInsight($context, true)
+            : [
+                'alert_level' => 'No Data',
+                'recommendation' => $actualKwh !== null
+                    ? 'A reading is available, but no valid baseline exists for comparison. Configure or compute a baseline before evaluating variance and alert status.'
+                    : 'No reading is available for this submeter in the selected period. Verify the reporting schedule and IoT data source.',
+                'source' => 'rules',
+            ];
+        // Alert classification always comes from the configured threshold engine.
+        // AI may explain the result, but it must not override the system status.
+        $resolvedAlertLevel = $hasValidBaseline ? $fallbackAlertLevel : 'No Data';
 
         return response()->json([
             'submeter_id' => (int) $submeter->id,
@@ -321,7 +386,7 @@ class SubmeterMonitoringController extends Controller
             'baseline_kwh' => $baselineKwh,
             'increase_percent' => $increasePercent,
             'baseline_source' => $baselineSource,
-            'alert_level' => (string) ($insight['alert_level'] ?? $fallbackAlertLevel),
+            'alert_level' => $resolvedAlertLevel,
             'recommendation' => (string) ($insight['recommendation'] ?? ''),
             'recommendation_source' => (string) ($insight['source'] ?? 'rules'),
         ]);
@@ -358,43 +423,118 @@ class SubmeterMonitoringController extends Controller
         }
 
         $selectedFacility = $request->query('facility_id');
+        $selectedPeriodType = (string) $request->query('period_type', 'monthly');
+        if (! in_array($selectedPeriodType, ['daily', 'weekly', 'monthly'], true)) {
+            $selectedPeriodType = 'monthly';
+        }
         $facilityScope = $this->staffFacilityIds($request);
         $selectedMonth = $this->resolvePreferredAlertMonth(
             (string) $request->query('month', ''),
             $selectedFacility,
-            $facilityScope
+            $facilityScope,
+            $selectedPeriodType
         );
         [$periodStart, $periodEnd, $safeMonth] = $this->resolveMonthRange($selectedMonth);
         $selectedLevel = (string) $request->query('alert_level', '');
-        $selectedLevel = in_array($selectedLevel, ['warning', 'critical'], true) ? $selectedLevel : '';
+        $allowedLevels = ['warning', 'high', 'very_high', 'critical', 'drop_warning', 'drop_high', 'drop_critical'];
+        $selectedLevel = in_array($selectedLevel, $allowedLevels, true) ? $selectedLevel : '';
 
-        $query = SubmeterAlert::query()
-            ->with([
-                'submeter.facility:id,name',
-                'reading:id,submeter_id,period_type,period_start_date,period_end_date,kwh_used,approved_at',
-            ])
+        $readings = SubmeterReading::query()
+            ->with(['submeter.facility:id,name', 'alert'])
+            ->where('period_type', $selectedPeriodType)
+            ->whereBetween('period_end_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
             ->whereHas('submeter.facility')
-            ->whereHas('reading', function (Builder $builder) use ($periodStart, $periodEnd) {
-                $builder->whereBetween('period_end_date', [$periodStart->toDateString(), $periodEnd->toDateString()]);
-            });
+            ->when($selectedFacility, fn ($query) => $query->whereHas(
+                'submeter',
+                fn (Builder $builder) => $builder->where('facility_id', $selectedFacility)
+            ))
+            ->when($facilityScope !== null, fn ($query) => $query->whereHas(
+                'submeter',
+                fn (Builder $builder) => $builder->whereIn('facility_id', $facilityScope)
+            ))
+            ->orderByDesc('period_end_date')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('submeter_id')
+            ->map(fn (Collection $group) => $group->first())
+            ->values();
 
-        if ($selectedFacility) {
-            $query->whereHas('submeter', function (Builder $builder) use ($selectedFacility) {
-                $builder->where('facility_id', $selectedFacility);
-            });
-        }
+        $periodLabels = $readings->map(fn (SubmeterReading $reading) => $reading->periodLabel())->unique()->values();
+        $baselineMap = SubmeterBaseline::query()
+            ->whereIn('baseline_type', $this->submeterBaselineTypePriority())
+            ->whereIn('submeter_id', $readings->pluck('submeter_id')->unique())
+            ->whereIn('computed_for_period', $periodLabels)
+            ->get()
+            ->groupBy(fn (SubmeterBaseline $baseline) => $baseline->submeter_id.'|'.$baseline->computed_for_period);
+        $configuredBaselineMap = FacilityMeter::query()
+            ->where('meter_type', 'sub')
+            ->whereIn('facility_id', $readings->pluck('submeter.facility_id')->filter()->unique())
+            ->whereNotNull('baseline_kwh')
+            ->get(['facility_id', 'meter_name', 'baseline_kwh'])
+            ->filter(fn (FacilityMeter $meter) => is_numeric($meter->baseline_kwh) && (float) $meter->baseline_kwh > 0)
+            ->keyBy(fn (FacilityMeter $meter) => $this->submeterMeterKey((int) $meter->facility_id, (string) $meter->meter_name));
 
-        if ($selectedLevel !== '') {
-            $query->where('alert_level', $selectedLevel);
-        }
+        $evaluatedAlerts = $readings->map(function (SubmeterReading $reading) use ($baselineMap, $configuredBaselineMap) {
+            $baselineInfo = $this->pickPreferredSubmeterBaseline(
+                $baselineMap->get($reading->submeter_id.'|'.$reading->periodLabel(), collect())
+            );
+            $baseline = $baselineInfo['value'];
+            $baselineSource = $baselineInfo['type'];
+            if ($baseline === null && $reading->submeter) {
+                $configuredMeter = $configuredBaselineMap->get($this->submeterMeterKey(
+                    (int) $reading->submeter->facility_id,
+                    (string) $reading->submeter->submeter_name
+                ));
+                if ($configuredMeter instanceof FacilityMeter) {
+                    $baseline = round((float) $configuredMeter->baseline_kwh, 2);
+                    $baselineSource = 'configured_meter';
+                }
+            }
+            if ($baseline === null && $reading->alert && is_numeric($reading->alert->baseline_value_kwh) && (float) $reading->alert->baseline_value_kwh > 0) {
+                $baseline = round((float) $reading->alert->baseline_value_kwh, 2);
+                $baselineSource = 'alert';
+            }
+            if ($baseline === null || $baseline <= 0 || ! is_numeric($reading->kwh_used)) {
+                return null;
+            }
 
-        if ($facilityScope !== null) {
-            $query->whereHas('submeter', function (Builder $builder) use ($facilityScope) {
-                $builder->whereIn('facility_id', $facilityScope);
-            });
-        }
+            $actual = (float) $reading->kwh_used;
+            $variance = round((($actual - $baseline) / $baseline) * 100, 2);
+            $level = $this->resolveSubmeterRowAlertFromIncrease($variance, $baseline);
+            if (in_array($level, ['none', 'normal'], true)) {
+                return null;
+            }
 
-        $alerts = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+            $reading->setAttribute('alert_baseline_kwh', $baseline);
+            $reading->setAttribute('alert_baseline_source', $baselineSource);
+            $reading->setAttribute('alert_variance_percent', $variance);
+            $reading->setAttribute('alert_evaluated_level', $level);
+            $reading->setAttribute('alert_reason', $this->buildEvaluatedSubmeterAlertReason($level, $actual, $baseline, $variance));
+
+            return $reading;
+        })->filter()->sortByDesc(fn (SubmeterReading $reading) =>
+            ($this->submeterAlertSeverityRank((string) $reading->alert_evaluated_level) * 100000)
+            + abs((float) $reading->alert_variance_percent)
+        )->values();
+
+        $alertSummary = [
+            'total' => $evaluatedAlerts->count(),
+            'critical' => $evaluatedAlerts->whereIn('alert_evaluated_level', ['critical', 'drop_critical'])->count(),
+            'increases' => $evaluatedAlerts->filter(fn (SubmeterReading $reading) => (float) $reading->alert_variance_percent > 0)->count(),
+            'drops' => $evaluatedAlerts->filter(fn (SubmeterReading $reading) => (float) $reading->alert_variance_percent < 0)->count(),
+        ];
+        $filteredAlerts = $selectedLevel === ''
+            ? $evaluatedAlerts
+            : $evaluatedAlerts->where('alert_evaluated_level', $selectedLevel)->values();
+        $page = max(1, $request->integer('page', 1));
+        $perPage = 15;
+        $alerts = new LengthAwarePaginator(
+            $filteredAlerts->forPage($page, $perPage)->values(),
+            $filteredAlerts->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
         $facilities = Facility::query()
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('id', $facilityScope))
             ->orderBy('name')
@@ -406,6 +546,8 @@ class SubmeterMonitoringController extends Controller
             'selectedMonth' => $safeMonth,
             'selectedFacility' => $selectedFacility,
             'selectedLevel' => $selectedLevel,
+            'selectedPeriodType' => $selectedPeriodType,
+            'alertSummary' => $alertSummary,
         ]);
     }
 
@@ -450,21 +592,71 @@ class SubmeterMonitoringController extends Controller
             ->get()
             ->groupBy('computed_for_period');
 
+        $configuredMeter = FacilityMeter::query()
+            ->where('facility_id', $submeter->facility_id)
+            ->where('meter_type', 'sub')
+            ->where('meter_name', $submeter->submeter_name)
+            ->whereNotNull('baseline_kwh')
+            ->first(['baseline_kwh']);
+        $configuredBaseline = $configuredMeter
+            && is_numeric($configuredMeter->baseline_kwh)
+            && (float) $configuredMeter->baseline_kwh > 0
+                ? round((float) $configuredMeter->baseline_kwh, 2)
+                : null;
+
         foreach ($readings as $reading) {
             $label = $reading->periodLabel();
             $labels[] = $label;
             $kwhSeries[] = (float) $reading->kwh_used;
 
             $baselineInfo = $this->pickPreferredSubmeterBaseline($baselineRowsByLabel->get($label, collect()));
-            $baselineSeries[] = $baselineInfo['value'];
+            $baseline = $baselineInfo['value'];
+            $baselineSource = $baselineInfo['type'];
+            if ($baseline === null && $configuredBaseline !== null) {
+                $baseline = $configuredBaseline;
+                $baselineSource = 'configured_meter';
+            }
+            if ($baseline === null && $reading->alert && is_numeric($reading->alert->baseline_value_kwh) && (float) $reading->alert->baseline_value_kwh > 0) {
+                $baseline = round((float) $reading->alert->baseline_value_kwh, 2);
+                $baselineSource = 'alert';
+            }
+            $variance = $baseline !== null && $baseline > 0
+                ? round((((float) $reading->kwh_used - $baseline) / $baseline) * 100, 2)
+                : null;
+            $level = $this->resolveSubmeterRowAlertFromIncrease($variance, $baseline);
+
+            $baselineSeries[] = $baseline;
+            $reading->setAttribute('detail_baseline_kwh', $baseline);
+            $reading->setAttribute('detail_baseline_source', $baselineSource);
+            $reading->setAttribute('detail_variance_percent', $variance);
+            $reading->setAttribute('detail_alert_level', $level);
+            $reading->setAttribute('detail_reason', $variance !== null && $baseline !== null
+                ? $this->buildEvaluatedSubmeterAlertReason($level, (float) $reading->kwh_used, $baseline, $variance)
+                : 'No valid baseline is available for this period, so the reading cannot be evaluated.');
         }
 
-        $alertsTimeline = SubmeterAlert::query()
-            ->with('reading:id,submeter_id,period_type,period_start_date,period_end_date,kwh_used')
-            ->where('submeter_id', $submeter->id)
-            ->orderByDesc('created_at')
-            ->paginate(15)
-            ->withQueryString();
+        $readingsForTable = $readings->reverse()->values();
+        $alertsTimeline = $readingsForTable
+            ->filter(fn (SubmeterReading $reading) => ! in_array(
+                (string) ($reading->detail_alert_level ?? 'none'),
+                ['none', 'normal'],
+                true
+            ))
+            ->values();
+        $latestReading = $readings->last();
+        $latestBaseline = $latestReading?->detail_baseline_kwh;
+        $latestVariance = $latestReading?->detail_variance_percent;
+        $latestLevel = (string) ($latestReading?->detail_alert_level ?? 'none');
+        $detailSummary = [
+            'actual_kwh' => $latestReading && is_numeric($latestReading->kwh_used) ? (float) $latestReading->kwh_used : null,
+            'baseline_kwh' => is_numeric($latestBaseline) ? (float) $latestBaseline : null,
+            'variance_percent' => is_numeric($latestVariance) ? (float) $latestVariance : null,
+            'alert_level' => $latestLevel,
+            'baseline_source' => $latestReading?->detail_baseline_source,
+            'period_label' => $latestReading?->periodLabel(),
+            'average_kwh' => $readings->isNotEmpty() ? round((float) $readings->avg('kwh_used'), 2) : null,
+            'actionable_periods' => $alertsTimeline->count(),
+        ];
 
         $latestReadingEndDate = SubmeterReading::query()
             ->where('submeter_id', $submeter->id)
@@ -480,7 +672,9 @@ class SubmeterMonitoringController extends Controller
             'kwhSeries' => $kwhSeries,
             'baselineSeries' => $baselineSeries,
             'readings' => $readings,
+            'readingsForTable' => $readingsForTable,
             'alertsTimeline' => $alertsTimeline,
+            'detailSummary' => $detailSummary,
             'canApprove' => $this->canApprove(),
             'loadTrackingMonth' => $loadTrackingMonth,
         ]);
@@ -546,7 +740,8 @@ class SubmeterMonitoringController extends Controller
     private function resolvePreferredAlertMonth(
         string $requestedMonth,
         mixed $selectedFacility,
-        ?array $facilityScope
+        ?array $facilityScope,
+        string $periodType = 'monthly'
     ): string {
         $requestedMonth = trim($requestedMonth);
         if ($requestedMonth !== '') {
@@ -554,8 +749,8 @@ class SubmeterMonitoringController extends Controller
         }
 
         $query = SubmeterReading::query()
-            ->where('period_type', 'monthly')
-            ->whereHas('alert');
+            ->where('period_type', $periodType)
+            ->whereHas('submeter.facility');
 
         if ($selectedFacility) {
             $query->whereHas('submeter', function (Builder $builder) use ($selectedFacility) {
@@ -631,10 +826,18 @@ class SubmeterMonitoringController extends Controller
             ->limit(5)
             ->get();
 
+        $facilitiesWithAlertsCount = (clone $alertQuery)
+            ->join('submeters', 'submeters.id', '=', 'submeter_alerts.submeter_id')
+            ->join('facilities', 'facilities.id', '=', 'submeters.facility_id')
+            ->whereNull('facilities.deleted_at')
+            ->distinct()
+            ->count('facilities.id');
+
         return [
             'top5HighestIncrease' => $top5,
             'criticalAlertsThisMonth' => $criticalThisMonth,
             'facilitiesWithMostAlerts' => $facilitiesWithMostAlerts,
+            'facilitiesWithAlertsCount' => $facilitiesWithAlertsCount,
         ];
     }
 
@@ -744,37 +947,99 @@ class SubmeterMonitoringController extends Controller
     {
         return match (strtolower(trim((string) $level))) {
             'critical' => 'Critical',
+            'very_high', 'very high' => 'Very High',
+            'high' => 'High',
             'warning' => 'Warning',
-            'normal', 'none' => 'Normal',
+            'drop_critical', 'drop critical' => 'Drop Critical',
+            'drop_high', 'drop high' => 'Drop High',
+            'drop_warning', 'drop warning' => 'Drop Warning',
+            'normal' => 'Normal',
+            'none' => 'No Data',
             default => 'No Data',
         };
     }
 
-    private function resolveSubmeterRowAlertFromIncrease(?float $increasePercent): string
+    private function resolveSubmeterRowAlertFromIncrease(?float $increasePercent, ?float $baselineKwh): string
     {
-        if ($increasePercent === null) {
+        if ($increasePercent === null || $baselineKwh === null || $baselineKwh <= 0) {
             return 'none';
         }
 
-        if ($increasePercent >= 10.0) {
-            return 'critical';
-        }
-
-        if ($increasePercent >= 3.0) {
-            return 'warning';
-        }
-
-        return 'normal';
+        return $this->normalizeSubmeterRowAlertLevel(
+            EnergyRecord::resolveAlertLevel($increasePercent, $baselineKwh)
+        );
     }
 
     private function normalizeSubmeterRowAlertLevel(?string $level): string
     {
         return match (strtolower(trim((string) $level))) {
             'critical' => 'critical',
+            'very high', 'very_high' => 'very_high',
+            'high' => 'high',
             'warning' => 'warning',
+            'drop critical', 'drop_critical' => 'drop_critical',
+            'drop high', 'drop_high' => 'drop_high',
+            'drop warning', 'drop_warning' => 'drop_warning',
             'normal' => 'normal',
             default => 'none',
         };
+    }
+
+    private function submeterAlertSeverityRank(string $level): int
+    {
+        return match ($level) {
+            'critical', 'drop_critical' => 4,
+            'very_high' => 3,
+            'high', 'drop_high' => 2,
+            'warning', 'drop_warning' => 1,
+            default => 0,
+        };
+    }
+
+    private function buildEvaluatedSubmeterAlertReason(
+        string $level,
+        float $actualKwh,
+        float $baselineKwh,
+        float $variancePercent
+    ): string {
+        $sizeKey = EnergyRecord::resolveSizeKeyFromBaseline($baselineKwh);
+        $thresholds = EnergyRecord::alertThresholdsBySize()[$sizeKey] ?? [];
+        $sizeLabel = match ($sizeKey) {
+            'small' => 'Small',
+            'medium' => 'Medium',
+            'large' => 'Large',
+            'xlarge' => 'Extra Large',
+            default => ucfirst($sizeKey),
+        };
+        $threshold = match ($level) {
+            'critical' => $thresholds['level5'] ?? null,
+            'very_high' => $thresholds['level4'] ?? null,
+            'high' => $thresholds['level3'] ?? null,
+            'warning' => $thresholds['level2'] ?? null,
+            'drop_critical' => $thresholds['drop']['level3'] ?? null,
+            'drop_high' => $thresholds['drop']['level2'] ?? null,
+            'drop_warning' => $thresholds['drop']['level1'] ?? null,
+            default => null,
+        };
+        $direction = $variancePercent < 0 ? 'below' : 'above';
+        $thresholdText = is_numeric($threshold)
+            ? sprintf(' The configured %s threshold starts beyond %.2f%%.', str_replace('_', ' ', $level), (float) $threshold)
+            : '';
+
+        return sprintf(
+            '%s baseline classification. Current usage %.2f kWh is %.2f%% %s the %.2f kWh baseline.%s',
+            $sizeLabel,
+            $actualKwh,
+            abs($variancePercent),
+            $direction,
+            $baselineKwh,
+            $thresholdText
+        );
+    }
+
+    private function submeterMeterKey(int $facilityId, string $meterName): string
+    {
+        return $facilityId.'|'.mb_strtolower(trim($meterName));
     }
 
     /**

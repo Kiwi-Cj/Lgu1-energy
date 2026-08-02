@@ -114,8 +114,7 @@
     </table>
 
     <div class="footer">
-        LGU Energy Monitoring System
+        {{ $systemName }}
     </div>
 </body>
 </html>
-

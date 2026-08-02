@@ -1,3 +1,6 @@
+@php
+    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index');
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +18,8 @@
 })();
 </script>
 
-<title>@yield('title','LGU Employee Portal')</title>
- <link rel="icon" href="{{ $systemFaviconUrl }}" />
+<title>@yield('title', $systemName)</title>
+@include('partials.favicon')
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
@@ -1431,10 +1434,238 @@ body.dark-mode .secure-download-feedback.is-success {
         max-width: calc(100vw - 24px);
     }
 }
+
+/* Public information pages do not use the application sidebar. */
+body.information-page-layout .top-header {
+    left: 0;
+    padding-right: max(24px, calc((100vw - 1240px) / 2));
+    padding-left: max(24px, calc((100vw - 1240px) / 2));
+    border-bottom-color: #e2e8f0;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, .07);
+}
+
+body.information-page-layout .main-content {
+    margin-left: 0;
+}
+
+body.information-page-layout .sidebar-nav,
+body.information-page-layout .sidebar-hamburger,
+body.information-page-layout .sidebar-backdrop {
+    display: none !important;
+}
+
+body.information-page-layout .main-content-inner {
+    padding-right: clamp(18px, 3vw, 48px);
+    padding-left: clamp(18px, 3vw, 48px);
+    padding-top: clamp(22px, 3vw, 38px);
+    padding-bottom: clamp(28px, 4vw, 52px);
+    background:
+        radial-gradient(circle at 8% 4%, rgba(37,99,235,.07), transparent 24%),
+        radial-gradient(circle at 94% 92%, rgba(14,165,233,.06), transparent 25%),
+        #edf3f8;
+}
+
+.information-report-card {
+    width: min(100%, 1380px);
+    margin: 0 auto;
+    padding: clamp(18px, 2.1vw, 30px);
+    border: 1px solid rgba(203, 213, 225, .82);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, .82);
+    box-shadow: 0 24px 65px rgba(15, 23, 42, .1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+body.dark-mode .information-report-card {
+    border-color: #334155;
+    background: rgba(15, 23, 42, .76);
+    box-shadow: 0 24px 65px rgba(0, 0, 0, .28);
+}
+
+body.dark-mode.information-page-layout .main-content-inner {
+    background:
+        radial-gradient(circle at 8% 4%, rgba(37,99,235,.1), transparent 24%),
+        radial-gradient(circle at 94% 92%, rgba(14,165,233,.07), transparent 25%),
+        #0b1220;
+}
+
+.information-brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.information-brand img {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, .1);
+}
+
+.information-brand__copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.information-brand__copy strong {
+    overflow: hidden;
+    color: #0f172a;
+    font-size: .9rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.information-brand__copy span {
+    overflow: hidden;
+    color: #64748b;
+    font-size: .62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.information-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.information-header-nav a {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    color: #64748b;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: .64rem;
+    font-weight: 700;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.information-header-nav a:hover,
+.information-header-nav a.is-active {
+    color: #1d4ed8;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .07);
+}
+
+.information-header-nav a.is-active {
+    box-shadow: inset 0 0 0 1px #dbeafe, 0 4px 12px rgba(15, 23, 42, .06);
+}
+
+.information-header-nav .information-header-cta {
+    margin-left: 3px;
+    padding-right: 13px;
+    padding-left: 13px;
+    color: #fff;
+    background: linear-gradient(105deg, #2563eb, #4f46e5);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, .18);
+}
+
+.information-header-nav .information-header-cta:hover {
+    color: #fff;
+    background: linear-gradient(105deg, #1d4ed8, #4338ca);
+}
+
+body.dark-mode .information-brand,
+body.dark-mode .information-brand__copy strong {
+    color: #f1f5f9;
+}
+
+body.dark-mode .information-brand__copy span {
+    color: #94a3b8;
+}
+
+body.dark-mode.information-page-layout .top-header {
+    border-bottom-color: #334155;
+}
+
+body.dark-mode .information-header-nav {
+    border-color: #334155;
+    background: #0f172a;
+}
+
+body.dark-mode .information-header-nav a {
+    color: #94a3b8;
+}
+
+body.dark-mode .information-header-nav a:hover,
+body.dark-mode .information-header-nav a.is-active {
+    color: #bfdbfe;
+    background: #1e293b;
+    box-shadow: inset 0 0 0 1px #334155;
+}
+
+body.dark-mode .information-header-nav .information-header-cta,
+body.dark-mode .information-header-nav .information-header-cta:hover {
+    color: #fff;
+    background: linear-gradient(105deg, #2563eb, #4f46e5);
+}
+
+@media (max-width: 880px) {
+    body.information-page-layout .top-header {
+        padding-right: 18px;
+        padding-left: 18px;
+    }
+
+    .information-header-nav a:not(.is-active):not(.information-header-cta) {
+        display: none;
+    }
+}
+
+@media (max-width: 540px) {
+    .information-brand__copy span,
+    .information-header-nav a.is-active {
+        display: none;
+    }
+
+    .information-brand__copy strong {
+        max-width: 150px;
+        font-size: .78rem;
+    }
+
+    .information-header-nav {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .information-header-nav .information-header-cta {
+        min-width: 40px;
+        width: 40px;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .information-header-nav .information-header-cta i {
+        font-size: .72rem;
+    }
+
+    .information-report-card {
+        padding: 12px;
+        border-radius: 20px;
+    }
+}
 </style>
 </head>
 
-<body>
+<body class="{{ $isInformationPageLayout ? 'information-page-layout' : '' }}">
 @include('layouts.partials.flash-toast')
 
 <div id="secureDownloadModal" class="secure-download-modal" style="display:none;" aria-hidden="true">
@@ -1474,12 +1705,35 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
 <header class="top-header">
     <div class="header-left">
-        <div>
-            <h1>Energy System</h1>
-            <div class="header-sub">LGU Employee Portal</div>
-        </div>
+        @if($isInformationPageLayout)
+            <a class="information-brand" href="{{ url('/') }}">
+                <img src="{{ $systemLogoUrl }}" alt="">
+                <span class="information-brand__copy">
+                    <strong>{{ $systemShortName }}</strong>
+                    <span>{{ $systemOrganization }}</span>
+                </span>
+            </a>
+        @else
+            <div>
+                <h1>{{ $systemShortName }}</h1>
+                <div class="header-sub">{{ $systemOrganization }}</div>
+            </div>
+        @endif
     </div>
     <div class="header-right">
+        @if($isInformationPageLayout)
+            <nav class="information-header-nav" aria-label="Information pages">
+                <a href="{{ url('/') }}"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="{{ route('about.index') }}" class="{{ request()->routeIs('about.index') ? 'is-active' : '' }}" {{ request()->routeIs('about.index') ? 'aria-current=page' : '' }}>About</a>
+                <a href="{{ route('faqs.index') }}" class="{{ request()->routeIs('faqs.index') ? 'is-active' : '' }}" {{ request()->routeIs('faqs.index') ? 'aria-current=page' : '' }}>FAQs</a>
+                <a href="{{ route('privacy.index') }}" class="{{ request()->routeIs('privacy.index') ? 'is-active' : '' }}" {{ request()->routeIs('privacy.index') ? 'aria-current=page' : '' }}>Privacy</a>
+                <a class="information-header-cta" href="{{ auth()->check() ? route('dashboard') : route('login') }}">
+                    {{ auth()->check() ? 'Dashboard' : 'Sign in' }}
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </nav>
+        @endif
+        @auth
         <button class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
             <i class="fa fa-bell"></i>
             <span id="notifCount" class="notif-count {{ ($unreadNotifCount ?? 0) > 0 ? '' : 'is-hidden' }}">{{ $unreadNotifCount ?? 0 }}</span>
@@ -1627,6 +1881,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             </div>
             <a class="notif-view-all" href="{{ route('notifications.index') }}">View all notifications <i class="fa-solid fa-arrow-right"></i></a>
         </div>
+        @endauth
 
         <button id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
             <i id="darkModeIcon" class="fa fa-moon"></i>
@@ -1648,7 +1903,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <i class="fa fa-user"></i> My Profile
     </a>
     <a href="{{ route('about.index') }}" class="user-dropdown-link">
-        <i class="fa fa-info-circle"></i> About LGU Energy System
+        <i class="fa fa-info-circle"></i> About {{ $systemShortName }}
     </a>
     <a href="{{ route('faqs.index') }}" class="user-dropdown-link">
         <i class="fa fa-question-circle"></i> FAQs
@@ -1789,9 +2044,32 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
 <div class="main-content">
     <div class="main-content-inner">
-        @yield('content')
+        @if($isInformationPageLayout)
+            <div class="information-report-card">
+                @yield('content')
+            </div>
+        @else
+            @yield('content')
+        @endif
     </div>
 </div>
+
+@include('partials.global-summary-cards')
+
+<style>
+    html.app-modal-open,
+    body.app-modal-open {
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    .modal-overlay,
+    .monthly-modal-overlay,
+    .meter-modal-overlay,
+    [role="dialog"][aria-modal="true"] {
+        overscroll-behavior: contain;
+    }
+</style>
 
 <div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;padding:12px;">
     <div class="session-timeout-dialog" style="width:100%;background:#fff;padding:44px 36px 36px 36px;border-radius:20px;max-width:430px;text-align:center;box-shadow:0 12px 40px rgba(37,99,235,0.15);">
@@ -1806,6 +2084,56 @@ if (document.documentElement.classList.contains('dark-mode')) {
 <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
 <script src="/js/echo.js"></script>
 <script>
+// Keep the page behind an open modal fixed while allowing the modal body to scroll.
+(function initializeGlobalModalScrollLock() {
+    const modalSelector = [
+        '.modal-overlay',
+        '.monthly-modal-overlay',
+        '.meter-modal-overlay',
+        '.modal',
+        '[role="dialog"][aria-modal="true"]',
+        '#sessionTimeoutModal'
+    ].join(',');
+    let scheduled = false;
+
+    const isVisible = (element) => {
+        if (!(element instanceof HTMLElement) || element.getClientRects().length === 0) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) !== 0;
+    };
+
+    const syncModalScrollLock = () => {
+        scheduled = false;
+        const hasOpenModal = Array.from(document.querySelectorAll(modalSelector)).some(isVisible);
+        document.documentElement.classList.toggle('app-modal-open', hasOpenModal);
+        document.body?.classList.toggle('app-modal-open', hasOpenModal);
+    };
+
+    const scheduleSync = () => {
+        if (scheduled) return;
+        scheduled = true;
+        window.requestAnimationFrame(syncModalScrollLock);
+    };
+
+    const startObserver = () => {
+        syncModalScrollLock();
+        new MutationObserver(scheduleSync).observe(document.body, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ['style', 'class', 'hidden', 'open']
+        });
+        document.addEventListener('click', scheduleSync, true);
+        document.addEventListener('keydown', scheduleSync, true);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+    } else {
+        startObserver();
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-global-toast]').forEach((toast) => {
         setTimeout(() => {

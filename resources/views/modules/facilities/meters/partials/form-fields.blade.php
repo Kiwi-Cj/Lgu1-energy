@@ -8,6 +8,9 @@
     $selectedMeterType = $forcedMeterType ?? ($disableSubOption ? 'main' : old('meter_type', $defaultMeterType));
 @endphp
 
+@if($showFormSections ?? false)
+    <div class="meter-form-section-title"><i class="fa-solid fa-gauge-high"></i> Meter Identity</div>
+@endif
 <div class="meter-form-field">
     <label class="meter-form-label" for="{{ $prefix }}_meter_name">Meter Name <span class="meter-required">*</span></label>
     <input class="meter-form-control" id="{{ $prefix }}_meter_name" type="text" name="meter_name" required maxlength="255" value="{{ old('meter_name') }}" placeholder="e.g. Main Meter, 2nd Floor Panel">
@@ -18,6 +21,9 @@
     <input class="meter-form-control" id="{{ $prefix }}_meter_number" type="text" name="meter_number" maxlength="255" value="{{ old('meter_number') }}" placeholder="Utility / meter serial no.">
 </div>
 
+@if($showFormSections ?? false)
+    <div class="meter-form-section-title"><i class="fa-solid fa-sliders"></i> Meter Configuration</div>
+@endif
 <div class="meter-form-field">
     <label class="meter-form-label" for="{{ $prefix }}_meter_type">Meter Type <span class="meter-required">*</span></label>
     @if($isMeterTypeForced)
@@ -68,6 +74,9 @@
     <div class="meter-form-hint">Use 1.0 unless your meter uses CT/PT multiplier.</div>
 </div>
 
+@if($showFormSections ?? false)
+    <div class="meter-form-section-title"><i class="fa-solid fa-chart-line"></i> Baseline &amp; Notes</div>
+@endif
 <div class="meter-form-field full">
     <label class="meter-form-label" for="{{ $prefix }}_baseline_kwh">Meter Baseline kWh</label>
     <input class="meter-form-control" id="{{ $prefix }}_baseline_kwh" type="number" step="0.01" min="0" name="baseline_kwh" value="{{ old('baseline_kwh') }}" placeholder="Optional baseline kWh (e.g. 4200.00)">

@@ -36,6 +36,12 @@
             background: #fff1f2;
             font-size: 2rem;
         }
+        .session-modal-icon svg {
+            width: 34px;
+            height: 34px;
+            display: block;
+            stroke: currentColor;
+        }
         .session-modal-title {
             font-size: 1.55rem;
             font-weight: 900;
@@ -77,7 +83,13 @@
 </head>
 <body>
     <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionExpiredTitle">
-        <div class="session-modal-icon">🔒</div>
+        <div class="session-modal-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="10" width="16" height="11" rx="3" stroke-width="2"/>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 14.5v2" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
         <div id="sessionExpiredTitle" class="session-modal-title">Session Ended for Security</div>
         <div class="session-modal-copy">
             Your session has expired because there was no activity for a period of time.

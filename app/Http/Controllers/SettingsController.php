@@ -4,17 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Setting;
+use App\Support\RoleAccess;
 
 class SettingsController extends Controller
 {
     // Get all relevant settings
     public function index()
     {
+        abort_unless(RoleAccess::can(request()->user(), 'access_settings'), 403);
+
         $keys = [
             'otp_expiration',
-            'otp_max_attempts',
+            'max_login_attempts',
             'session_timeout',
-            'otp_login',
+            'enable_otp_login',
             'system_name',
         ];
         $settings = Setting::getMany($keys);
@@ -24,18 +27,17 @@ class SettingsController extends Controller
     // Update settings
     public function update(Request $request)
     {
-        $data = $request->only([
-            'otp_expiration',
-            'otp_max_attempts',
-            'session_timeout',
-            'otp_login',
-            'system_name',
+        abort_unless(RoleAccess::can($request->user(), 'access_settings'), 403);
+
+        $data = $request->validate([
+            'otp_expiration' => ['sometimes', 'integer', 'min:1', 'max:60'],
+            'max_login_attempts' => ['sometimes', 'integer', 'min:1', 'max:15'],
+            'session_timeout' => ['sometimes', 'integer', 'min:1', 'max:60'],
+            'enable_otp_login' => ['sometimes', 'boolean'],
+            'system_name' => ['sometimes', 'string', 'max:255'],
         ]);
-        // Validate: all values must be non-null strings
+
         foreach ($data as $key => $value) {
-            if ($value === null) {
-                return response()->json(['error' => $key . ' cannot be null'], 422);
-            }
             Setting::setValue($key, $value);
         }
         return response()->json(['success' => true]);

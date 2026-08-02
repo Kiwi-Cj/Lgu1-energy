@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use App\Services\EnergyTrendService;
 use Illuminate\Http\Request;
 
@@ -249,7 +250,7 @@ class EnergyController extends Controller
         $summary = $this->buildAnnualReportSummaries(collect([$seedRecord]))[$summaryKey] ?? null;
         abort_unless($summary, 404);
 
-        $format = strtolower((string) $request->query('format', 'csv'));
+        $format = strtolower((string) $request->query('format', SystemSettings::defaultExportFormat(['pdf', 'csv'])));
         abort_unless(in_array($format, ['csv', 'pdf'], true), 404);
 
         $baseFilename = \Illuminate\Support\Str::slug($facility->name)

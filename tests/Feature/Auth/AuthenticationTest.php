@@ -42,6 +42,51 @@ test('users with otp enabled are redirected to the verification page before auth
     Notification::assertSentTo($user, SendOtpNotification::class);
 });
 
+test('otp resend stays blocked for the full server cooldown', function () {
+    Notification::fake();
+    config([
+        'otp.enabled' => true,
+        'otp.resend_cooldown_seconds' => 30,
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('verify.otp.form', absolute: false));
+
+    $response = $this->postJson(route('verify.otp.resend', absolute: false));
+
+    $response
+        ->assertStatus(429)
+        ->assertJsonStructure(['message', 'retry_after', 'resend_available_at']);
+
+    expect($response->json('retry_after'))->toBeGreaterThan(0)
+        ->and(session('otp_resend_available_at'))->toBeGreaterThan(now()->timestamp);
+
+    Notification::assertSentToTimes($user, SendOtpNotification::class, 1);
+});
+
+test('otp email uses the recipient name and correct singular expiration wording', function () {
+    config(['otp.expire_minutes' => 1]);
+
+    $user = User::factory()->make([
+        'full_name' => 'Juan Dela Cruz',
+    ]);
+
+    $mail = (new SendOtpNotification('415874'))->toMail($user);
+    $html = $mail->render();
+
+    expect($html)
+        ->toContain('Hello Juan Dela Cruz,')
+        ->toContain('415874')
+        ->toContain('1 minute')
+        ->not->toContain('1 minutes')
+        ->toContain('never share this code with anyone')
+        ->toContain('cid:energy-system-logo@energy-system');
+});
+
 test('a pending user can verify otp and complete authentication', function () {
     Notification::fake();
     config(['otp.enabled' => true]);

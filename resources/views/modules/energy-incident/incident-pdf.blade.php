@@ -59,6 +59,6 @@
     <div class="section"><h2>Evidence</h2><div class="box">{{ $incident->evidence_path ? 'Photo evidence attached in the Energy system: '.basename($incident->evidence_path) : 'No reporter evidence attached.' }}</div></div>
     <div class="section"><h2>Report Preparation</h2><div class="box">Prepared by {{ $preparedBy }} on {{ $generatedAt->format('M d, Y h:i A') }}.</div></div>
 
-    <div class="footer">LGU Energy Monitoring System · CIMM-managed incident workflow</div>
+    <div class="footer">{{ $systemName }} &middot; CIMM-managed incident workflow</div>
 </body>
 </html>

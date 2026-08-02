@@ -174,3 +174,63 @@ test('edit user modal displays validation errors and restores the edited user', 
         ->assertSee('Retry Updated User')
         ->assertSee('openUserModalEdit(failedEditTrigger);', escape: false);
 });
+
+test('super admin can deactivate and reactivate a user', function () {
+    $superAdmin = User::factory()->create(['role' => 'super_admin', 'status' => 'active']);
+    $staff = User::factory()->create(['role' => 'staff', 'status' => 'active']);
+
+    $this->actingAs($superAdmin)
+        ->patch(route('users.status.update', $staff), ['status' => 'inactive'])
+        ->assertSessionHas('success', 'User deactivated successfully.');
+
+    $this->assertDatabaseHas('users', ['id' => $staff->id, 'status' => 'inactive']);
+
+    $this->actingAs($superAdmin)
+        ->patch(route('users.status.update', $staff), ['status' => 'active'])
+        ->assertSessionHas('success', 'User reactivated successfully.');
+
+    $this->assertDatabaseHas('users', ['id' => $staff->id, 'status' => 'active']);
+});
+
+test('a user cannot deactivate their own account', function () {
+    $superAdmin = User::factory()->create(['role' => 'super_admin', 'status' => 'active']);
+
+    $this->actingAs($superAdmin)
+        ->patch(route('users.status.update', $superAdmin), ['status' => 'inactive'])
+        ->assertSessionHas('error', 'You cannot deactivate your own account.');
+
+    $this->assertDatabaseHas('users', ['id' => $superAdmin->id, 'status' => 'active']);
+});
+
+test('the last active super admin cannot be deactivated', function () {
+    $inactiveSuperAdmin = User::factory()->create(['role' => 'super_admin', 'status' => 'inactive']);
+    $lastActiveSuperAdmin = User::factory()->create(['role' => 'super_admin', 'status' => 'active']);
+
+    $this->actingAs($inactiveSuperAdmin)
+        ->patch(route('users.status.update', $lastActiveSuperAdmin), ['status' => 'inactive'])
+        ->assertSessionHas('error', 'The last active Super Admin cannot be deactivated.');
+
+    $this->assertDatabaseHas('users', ['id' => $lastActiveSuperAdmin->id, 'status' => 'active']);
+});
+
+test('users list can be searched and filtered by status', function () {
+    $superAdmin = User::factory()->create(['role' => 'super_admin', 'status' => 'active']);
+    User::factory()->create([
+        'full_name' => 'Visible Energy Staff',
+        'name' => 'Visible Energy Staff',
+        'role' => 'staff',
+        'status' => 'inactive',
+    ]);
+    User::factory()->create([
+        'full_name' => 'Hidden Energy Staff',
+        'name' => 'Hidden Energy Staff',
+        'role' => 'staff',
+        'status' => 'active',
+    ]);
+
+    $this->actingAs($superAdmin)
+        ->get(route('users.index', ['q' => 'Visible Energy', 'status' => 'inactive']))
+        ->assertOk()
+        ->assertSee('Visible Energy Staff')
+        ->assertDontSee('Hidden Energy Staff');
+});

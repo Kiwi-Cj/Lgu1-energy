@@ -4,11 +4,7 @@ use App\Http\Controllers\Api\SubmeterSensorReadingController;
 use App\Http\Controllers\Api\IntegrationDataController;
 use App\Http\Controllers\Api\CprfFacilityReadingController;
 use App\Http\Controllers\Api\CprfFacilityProfileController;
-use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/settings', [SettingsController::class, 'index']);
-Route::post('/settings', [SettingsController::class, 'update']);
 
 Route::get('/submeter/sensor-readings', function () {
     return response()->json([

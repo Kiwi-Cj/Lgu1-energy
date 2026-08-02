@@ -910,6 +910,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/contact-messages', [ContactInboxController::class, 'index'])->name('modules.contact-messages.index');
     Route::post('/modules/contact-messages/{contactMessage}/mark-read', [ContactInboxController::class, 'markRead'])->name('modules.contact-messages.mark-read');
     Route::post('/modules/contact-messages/{contactMessage}/mark-unread', [ContactInboxController::class, 'markUnread'])->name('modules.contact-messages.mark-unread');
+    Route::post('/modules/contact-messages/{contactMessage}/archive', [ContactInboxController::class, 'archive'])->name('modules.contact-messages.archive');
+    Route::post('/modules/contact-messages/{contactMessage}/restore', [ContactInboxController::class, 'restore'])->name('modules.contact-messages.restore');
+    Route::delete('/modules/contact-messages/{contactMessage}', [ContactInboxController::class, 'destroy'])->name('modules.contact-messages.destroy');
     Route::post('/modules/contact-messages/{contactMessage}/reply', [ContactInboxController::class, 'reply'])->name('modules.contact-messages.reply');
 
 });

@@ -11,6 +11,7 @@ use App\Observers\EnergyIncidentObserver;
 use App\Observers\EnergyRecordObserver;
 use App\Observers\MaintenanceObserver;
 use App\Models\Setting;
+use App\Support\SystemSettings;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
@@ -81,11 +82,28 @@ class AppServiceProvider extends ServiceProvider
         try {
             if (Schema::hasTable('settings')) {
                 $runtimeKeys = Setting::getMany([
+                    'system_name',
+                    'short_name',
+                    'org_name',
+                    'timezone',
                     'session_timeout',
                     'otp_expiration',
                     'enable_otp_login',
                     'max_login_attempts',
+                    'mail_host',
+                    'mail_port',
                 ]);
+
+                $systemName = trim((string) ($runtimeKeys['system_name'] ?? ''));
+                if ($systemName !== '') {
+                    config(['app.name' => $systemName]);
+                }
+
+                $timezone = trim((string) ($runtimeKeys['timezone'] ?? ''));
+                if ($timezone !== '' && in_array($timezone, timezone_identifiers_list(), true)) {
+                    config(['app.timezone' => $timezone]);
+                    date_default_timezone_set($timezone);
+                }
 
                 $minutes = (int) ($runtimeKeys['session_timeout'] ?? 0);
                 if ($minutes > 0) {
@@ -105,6 +123,15 @@ class AppServiceProvider extends ServiceProvider
                 $maxLoginAttempts = (int) ($runtimeKeys['max_login_attempts'] ?? 0);
                 if ($maxLoginAttempts > 0) {
                     config(['otp.max_login_attempts' => $maxLoginAttempts]);
+                }
+
+                $mailHost = trim((string) ($runtimeKeys['mail_host'] ?? ''));
+                $mailPort = (int) ($runtimeKeys['mail_port'] ?? 0);
+                if ($mailHost !== '') {
+                    config(['mail.mailers.smtp.host' => $mailHost]);
+                    if ($mailPort > 0) {
+                        config(['mail.mailers.smtp.port' => $mailPort]);
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -149,6 +176,13 @@ class AppServiceProvider extends ServiceProvider
         View::share([
             'systemLogoUrl' => $brandingUrl($logoPath) ?? asset('img/logocityhall.jpg'),
             'systemFaviconUrl' => $brandingUrl($faviconPath) ?? asset('img/logocityhall.jpg'),
+            'systemName' => SystemSettings::string('system_name', 'LGU Energy Monitoring System'),
+            'systemShortName' => SystemSettings::string('short_name', 'LGU EMS'),
+            'systemOrganization' => SystemSettings::string('org_name', 'Local Government Unit'),
+            'defaultFacilityStatus' => SystemSettings::defaultFacilityStatus(),
+            'facilityAllowedImageTypes' => SystemSettings::facilityImageExtensions(),
+            'facilityImageMaxMb' => max(1, min(20, SystemSettings::integer('facility_image_size', 5))),
+            'defaultExportFormat' => SystemSettings::defaultExportFormat(),
         ]);
     }
 }

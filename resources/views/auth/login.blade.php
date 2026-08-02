@@ -4,515 +4,1051 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>LGU | Energy Efficiency System</title>
-     <link rel="icon" href="{{ $systemFaviconUrl }}" />
+    <title>Sign In | {{ $systemName }}</title>
+    @include('partials.favicon')
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --secondary: #6366f1;
-            --accent: #0ea5e9;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.4);
+            --primary-dark: #1d4ed8;
+            --indigo: #6366f1;
+            --sky: #0ea5e9;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #dbe4f0;
+            --danger: #be123c;
+            --danger-soft: #fff1f2;
+            --surface: rgba(255, 255, 255, 0.97);
         }
 
         * {
             box-sizing: border-box;
-            transition: all 0.2s ease-in-out;
+        }
+
+        html {
+            min-height: 100%;
         }
 
         body {
             min-height: 100vh;
             margin: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            background-color: #0f172a; /* Fallback color */
+            color: var(--ink);
+            background: #0f172a;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Modern Blurred Background */
         body::before {
-            content: "";
+            content: '';
+            position: fixed;
+            inset: -18px;
+            z-index: -2;
+            background:
+                linear-gradient(120deg, rgba(15, 23, 42, 0.88), rgba(30, 64, 175, 0.56)),
+                url('{{ asset("img/cityhall.jpeg") }}') center / cover no-repeat;
+            filter: blur(7px);
+        }
+
+        body::after {
+            content: '';
             position: fixed;
             inset: 0;
-            background: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), 
-                        url('{{ asset("img/cityhall.jpeg") }}') center/cover no-repeat;
-            filter: blur(8px);
-            transform: scale(1.1); /* Prevents white edges on blur */
             z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(59, 130, 246, 0.3), transparent 34%),
+                radial-gradient(circle at 88% 84%, rgba(99, 102, 241, 0.22), transparent 30%);
         }
 
-        /* Transparent Glass Navbar */
-        .nav {
-            height: 80px;
-            padding: 0 5%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+        button,
+        input {
+            font: inherit;
+        }
+
+        .autofill-trap {
+            position: fixed !important;
+            top: -10000px !important;
+            left: -10000px !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            border: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        .site-header {
+            height: 76px;
+            flex: 0 0 auto;
+            padding: 0 clamp(20px, 5vw, 72px);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 23, 42, 0.28);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
 
-        .nav-logo {
+        .brand {
+            min-width: 0;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-weight: 700;
-            color: #ffffff;
-            font-size: 1.25rem;
-            letter-spacing: -0.5px;
+            color: #fff;
             text-decoration: none;
+            font-size: 1.02rem;
+            font-weight: 700;
         }
 
-        .nav-logo img {
+        .brand img {
             width: 42px;
             height: 42px;
-            border-radius: 12px;
+            flex: 0 0 auto;
             object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.32);
+            border-radius: 13px;
+            box-shadow: 0 8px 20px rgba(2, 6, 23, 0.22);
         }
 
-        .nav-links a {
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
+        .brand span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 13px;
+            color: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 160ms ease, color 160ms ease;
         }
 
-        .nav-links a:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .home-link:hover {
             color: #fff;
+            background: rgba(255, 255, 255, 0.13);
         }
 
-        /* Center Content */
-        .wrapper {
-            flex: 1;
+        .home-link svg,
+        .input-icon,
+        .password-toggle svg,
+        .login-button svg,
+        .security-note svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+
+        .page {
+            width: 100%;
+            flex: 1 0 auto;
+            display: grid;
+            place-items: center;
+            padding: 36px 20px;
+        }
+
+        .login-shell {
+            width: min(100%, 980px);
+            min-height: 570px;
+            display: grid;
+            grid-template-columns: minmax(300px, 0.9fr) minmax(440px, 1.1fr);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.48);
+            border-radius: 28px;
+            background: var(--surface);
+            box-shadow: 0 30px 80px rgba(2, 6, 23, 0.44);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .login-aside {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 42px 38px 38px;
+            color: #fff;
+            background:
+                radial-gradient(circle at 100% 0, rgba(125, 211, 252, 0.3), transparent 42%),
+                linear-gradient(155deg, #1e40af 0%, #2563eb 48%, #4f46e5 100%);
+        }
+
+        .login-aside::before,
+        .login-aside::after {
+            content: '';
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .login-aside::before {
+            top: -115px;
+            right: -115px;
+            width: 300px;
+            height: 300px;
+        }
+
+        .login-aside::after {
+            right: -90px;
+            bottom: -110px;
+            width: 280px;
+            height: 280px;
+            border-width: 48px;
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .aside-content,
+        .aside-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        .aside-logo {
+            width: 72px;
+            height: 72px;
+            display: block;
+            margin-bottom: 34px;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.36);
+            border-radius: 21px;
+            background: #fff;
+            box-shadow: 0 16px 32px rgba(30, 64, 175, 0.28);
+        }
+
+        .eyebrow {
+            margin: 0 0 11px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+        }
+
+        .login-aside h2 {
+            max-width: 330px;
+            margin: 0;
+            font-size: clamp(1.85rem, 3vw, 2.5rem);
+            line-height: 1.13;
+            letter-spacing: -0.045em;
+        }
+
+        .aside-copy {
+            max-width: 330px;
+            margin: 18px 0 0;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+
+        .aside-footer {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
+            gap: 10px;
+            padding-top: 28px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 0.72rem;
+            line-height: 1.45;
         }
 
-        /* Modern Glass Card */
-        .card {
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            flex: 0 0 auto;
+            border: 2px solid rgba(255, 255, 255, 0.45);
+            border-radius: 50%;
+            background: #86efac;
+            box-shadow: 0 0 0 5px rgba(134, 239, 172, 0.1);
+        }
+
+        .login-panel {
+            display: flex;
+            align-items: center;
+            padding: 46px clamp(28px, 5vw, 58px);
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .login-content {
             width: 100%;
-            max-width: 410px;
-            padding: 38px 34px 32px 34px;
-            border-radius: 20px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            text-align: center;
+            max-width: 420px;
+            margin: auto;
         }
 
-        .icon-top {
-            width: 80px;
-            height: 80px;
-            border-radius: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        .mobile-logo {
+            width: 64px;
+            height: 64px;
+            display: none;
+            margin-bottom: 22px;
+            object-fit: cover;
+            border: 1px solid #dbeafe;
+            border-radius: 18px;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.13);
         }
 
-        .title {
-            font-size: 1.85rem;
-            font-weight: 800;
-            color: var(--text-main);
-            margin-bottom: 8px;
-            letter-spacing: -1px;
+        .login-heading {
+            margin-bottom: 26px;
         }
 
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 32px;
+        .login-heading h1 {
+            margin: 0 0 8px;
+            color: var(--ink);
+            font-size: clamp(1.65rem, 3vw, 2rem);
+            line-height: 1.2;
+            letter-spacing: -0.04em;
+        }
+
+        .login-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .login-error {
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            color: #9f1239;
+            border: 1px solid #fecdd3;
+            border-radius: 12px;
+            background: var(--danger-soft);
+            font-size: 0.78rem;
+            font-weight: 600;
             line-height: 1.5;
         }
 
-        /* Form Styling */
-        .input-box {
-            text-align: left;
-            margin-bottom: 20px;
+        .login-error.is-visible {
+            display: flex;
         }
 
-        .input-box label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-main);
-            margin-bottom: 8px;
-            margin-left: 4px;
+        .login-error svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            margin-top: 1px;
+        }
+
+        .input-box {
+            margin-bottom: 18px;
+        }
+
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin: 0 2px 8px;
+        }
+
+        .label-row label {
+            color: #334155;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .forgot-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            color: #94a3b8;
+            pointer-events: none;
+            transform: translateY(-50%);
+            transition: color 160ms ease;
         }
 
         .input-box input {
             width: 100%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            border: 2px solid #e2e8f0;
+            min-height: 50px;
+            padding: 12px 44px 12px 43px;
+            color: var(--ink);
+            border: 1.5px solid #cbd5e1;
+            border-radius: 13px;
             background: #f8fafc;
-            font-size: 1rem;
-            color: var(--text-main);
+            font-size: 0.86rem;
+            transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+        }
+
+        .input-box input::placeholder {
+            color: #a3afc2;
+        }
+
+        .input-box input:hover {
+            border-color: #94a3b8;
         }
 
         .input-box input:focus {
             outline: none;
             border-color: var(--primary);
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11);
         }
 
-        /* Modern Gradient Button */
-        .login-btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(100deg, var(--primary), var(--secondary), var(--accent));
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.08rem;
-            margin-top: 12px;
+        .input-wrap:focus-within .input-icon {
+            color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            color: #64748b;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
             cursor: pointer;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.18);
-            transition: background 0.18s, box-shadow 0.18s, filter 0.18s, transform 0.18s;
+            transform: translateY(-50%);
+            transition: color 160ms ease, background 160ms ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .password-toggle .eye-off,
+        .password-toggle.is-visible .eye-on {
+            display: none;
+        }
+
+        .password-toggle.is-visible .eye-off {
+            display: block;
+        }
+
+        .login-button {
+            width: 100%;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            position: relative;
+            gap: 9px;
+            margin-top: 24px;
+            padding: 12px 18px;
             overflow: hidden;
+            color: #fff;
+            border: 0;
+            border-radius: 13px;
+            background: linear-gradient(110deg, var(--primary), var(--indigo), var(--sky));
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 800;
+            transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
         }
 
-        .login-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            filter: grayscale(0.2) brightness(0.95);
+        .login-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 17px 30px rgba(37, 99, 235, 0.28);
+            filter: brightness(1.05);
         }
 
-        .login-btn:hover:not(:disabled) {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.22);
-            filter: brightness(1.08);
+        .login-button:active:not(:disabled) {
+            transform: translateY(0);
         }
 
-        .login-btn:active:not(:disabled) {
-            transform: translateY(0) scale(0.98);
+        .login-button:disabled {
+            opacity: 0.72;
+            cursor: wait;
+        }
+
+        .button-loading {
+            display: none;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.38);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 700ms linear infinite;
+        }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 18px 0 0;
+            color: var(--muted);
+            font-size: 0.67rem;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .security-note svg {
+            color: #15803d;
+        }
+
+        .footer {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 18px clamp(20px, 5vw, 72px);
+            color: rgba(255, 255, 255, 0.58);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            font-size: 0.7rem;
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.68);
+            text-decoration: none;
+            transition: color 160ms ease;
+        }
+
+        .footer-links a:hover {
+            color: #fff;
         }
 
         .session-modal-backdrop {
-            display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.62);
-            backdrop-filter: blur(4px);
             z-index: 99999;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(7px);
         }
 
         .session-modal-card {
-            width: 100%;
-            max-width: 430px;
-            background: #fff;
+            width: min(100%, 430px);
+            padding: 36px 32px 30px;
+            border: 1px solid #e2e8f0;
             border-radius: 22px;
-            padding: 40px 34px 32px;
+            background: #fff;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35);
             text-align: center;
-            box-shadow: 0 18px 60px rgba(15, 23, 42, 0.32);
         }
 
         .session-modal-icon {
-            width: 78px;
-            height: 78px;
-            margin: 0 auto 14px;
-            border-radius: 24px;
+            width: 68px;
+            height: 68px;
             display: grid;
             place-items: center;
+            margin: 0 auto 17px;
             color: #e11d48;
+            border-radius: 20px;
             background: #fff1f2;
-            font-size: 2rem;
+        }
+
+        .session-modal-icon svg {
+            width: 30px;
+            height: 30px;
+            stroke: currentColor;
         }
 
         .session-modal-title {
-            font-size: 1.55rem;
-            font-weight: 900;
-            color: #e11d48;
-            margin-bottom: 10px;
+            margin-bottom: 9px;
+            color: var(--ink);
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
         }
 
         .session-modal-copy {
-            color: #334155;
-            line-height: 1.55;
-            font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.6;
         }
 
         .session-modal-actions {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
         }
 
         .session-modal-btn {
+            min-height: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 132px;
-            padding: 12px 18px;
-            border-radius: 12px;
+            padding: 10px 14px;
+            border-radius: 11px;
             text-decoration: none;
+            font-size: 0.75rem;
             font-weight: 800;
         }
 
         .session-modal-btn.primary {
-            background: linear-gradient(90deg,#2563eb,#6366f1);
             color: #fff;
+            background: linear-gradient(100deg, var(--primary), var(--indigo));
         }
 
         .session-modal-btn.secondary {
-            background: #f8fafc;
-            color: #1d4ed8;
+            color: #334155;
             border: 1px solid #cbd5e1;
+            background: #f8fafc;
         }
 
-        .modern-spinner {
-            animation: spinner-rotate 0.9s linear infinite;
-            margin-right: 6px;
-        }
-        @keyframes spinner-rotate {
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Footer */
-        .footer {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 24px;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.6);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .home-link:focus-visible,
+        .forgot-link:focus-visible,
+        .password-toggle:focus-visible,
+        .login-button:focus-visible,
+        .session-modal-btn:focus-visible {
+            outline: 3px solid rgba(14, 165, 233, 0.42);
+            outline-offset: 2px;
         }
 
-        .footer-links {
-            margin-bottom: 12px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .footer-links a {
-            color: #fff;
-            text-decoration: none;
-            margin: 0 12px;
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-
-        .footer-links a:hover {
-            opacity: 1;
-        }
-
-        .footer-logo {
-            font-size: 0.85rem;
-        }
-
-        /* Error Message */
-        #loginError {
-            background: #fff1f2;
-            color: #e11d48;
-            border: 1px solid #ffe4e6;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 480px) {
-            .card {
-                padding: 32px 24px;
-                border-radius: 20px;
+        @media (max-width: 820px) {
+            .login-shell {
+                width: min(100%, 560px);
+                min-height: auto;
+                grid-template-columns: 1fr;
             }
-            .nav {
-                padding: 0 20px;
-            }
-            .nav-text {
+
+            .login-aside {
                 display: none;
+            }
+
+            .mobile-logo {
+                display: block;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .site-header {
+                height: 66px;
+                padding: 0 16px;
+            }
+
+            .brand {
+                max-width: calc(100% - 54px);
+                font-size: 0.9rem;
+            }
+
+            .brand img {
+                width: 38px;
+                height: 38px;
+            }
+
+            .home-link {
+                width: 40px;
+                height: 40px;
+                justify-content: center;
+                padding: 0;
+            }
+
+            .home-link span {
+                display: none;
+            }
+
+            .page {
+                padding: 18px 12px;
+                place-items: start center;
+            }
+
+            .login-shell {
+                border-radius: 21px;
+            }
+
+            .login-panel {
+                padding: 30px 20px 28px;
+            }
+
+            .footer {
+                justify-content: center;
+                padding: 16px;
+                text-align: center;
+            }
+
+            .footer-links {
+                display: none;
+            }
+
+            .session-modal-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
             }
         }
     </style>
 </head>
 
 <body>
-@include('layouts.partials.flash-toast')
+    @include('layouts.partials.flash-toast')
 
-<header class="nav">
-    <a href="/" class="nav-logo">
-        <img src="{{ $systemLogoUrl }}" alt="Logo">
-        <span>Energy System Portal</span>
-    </a>
-    <div class="nav-links">
-        <a href="/">Home</a>
-    </div>
-</header>
+    <header class="site-header">
+        <a class="brand" href="{{ url('/') }}" aria-label="Go to {{ $systemName }} home page">
+            <img src="{{ $systemLogoUrl }}" alt="">
+            <span>{{ $systemName }}</span>
+        </a>
+        <a class="home-link" href="{{ url('/') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M3 11.5 12 4l9 7.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5.5 10v9h13v-9M9 19v-5h6v5" stroke-linejoin="round"/>
+            </svg>
+            <span>Home</span>
+        </a>
+    </header>
 
-<div class="wrapper">
-    <div class="card">
-        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 8px;">
-            <img src="{{ $systemLogoUrl }}" class="icon-top" alt="LGU Logo" style="box-shadow:0 4px 16px rgba(37,99,235,0.10);">
+    <main class="page">
+        <div class="login-shell">
+            <aside class="login-aside" aria-label="System information">
+                <div class="aside-content">
+                    <img class="aside-logo" src="{{ $systemLogoUrl }}" alt="{{ $systemName }} logo">
+                    <p class="eyebrow">Energy intelligence platform</p>
+                    <h2>Powering smarter public service.</h2>
+                    <p class="aside-copy">
+                        Monitor energy performance, uncover efficiency opportunities, and make informed decisions from one secure workspace.
+                    </p>
+                </div>
+                <div class="aside-footer">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span>Secure access for authorized personnel</span>
+                </div>
+            </aside>
+
+            <section class="login-panel" aria-labelledby="login-title">
+                <div class="login-content">
+                    <img class="mobile-logo" src="{{ $systemLogoUrl }}" alt="{{ $systemName }} logo">
+
+                    <div class="login-heading">
+                        <h1 id="login-title">Sign in to your account</h1>
+                        <p>Enter your credentials to access the {{ $systemName }} workspace.</p>
+                    </div>
+
+                    <div
+                        id="loginError"
+                        class="login-error {{ $errors->any() ? 'is-visible' : '' }}"
+                        role="alert"
+                        aria-live="assertive"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path d="M12 7.5v5M12 16.5h.01" stroke-linecap="round"/>
+                        </svg>
+                        <span id="loginErrorText">{{ $errors->first('email') ?: $errors->first('password') }}</span>
+                    </div>
+
+                    <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off">
+                        @csrf
+                        <input class="autofill-trap" type="text" name="decoy_username" tabindex="-1" autocomplete="username" aria-hidden="true">
+                        <input class="autofill-trap" type="password" name="decoy_password" tabindex="-1" autocomplete="current-password" aria-hidden="true">
+
+                        <div class="input-box">
+                            <div class="label-row">
+                                <label for="loginEmail">Email address</label>
+                            </div>
+                            <div class="input-wrap">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <rect x="3.5" y="5.5" width="17" height="13" rx="2"/>
+                                    <path d="m5 7 7 5 7-5" stroke-linejoin="round"/>
+                                </svg>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="loginEmail"
+                                    value=""
+                                    placeholder="name@lgu.infra.ph"
+                                    required
+                                    autocomplete="off"
+                                    autocapitalize="none"
+                                    spellcheck="false"
+                                    data-lpignore="true"
+                                    data-1p-ignore="true"
+                                    readonly
+                                >
+                            </div>
+                        </div>
+
+                        <div class="input-box">
+                            <div class="label-row">
+                                <label for="loginPassword">Password</label>
+                                <a class="forgot-link" href="{{ route('password.request') }}">Forgot password?</a>
+                            </div>
+                            <div class="input-wrap">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <rect x="4" y="10" width="16" height="11" rx="3"/>
+                                    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                                    <path d="M12 14.5v2" stroke-linecap="round"/>
+                                </svg>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="loginPassword"
+                                    placeholder="Enter your password"
+                                    required
+                                    autocomplete="new-password"
+                                    data-lpignore="true"
+                                    data-1p-ignore="true"
+                                    readonly
+                                >
+                                <button
+                                    class="password-toggle"
+                                    id="passwordToggle"
+                                    type="button"
+                                    aria-label="Show password"
+                                    aria-pressed="false"
+                                >
+                                    <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                                        <circle cx="12" cy="12" r="2.5"/>
+                                    </svg>
+                                    <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path d="m3 3 18 18M10.6 6.1A9 9 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-2.1 2.8M6.3 6.7C3.9 8.4 2.5 12 2.5 12s3.5 6 9.5 6a9 9 0 0 0 3-.5M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="login-button" id="loginBtn">
+                            <span id="loginBtnText">Sign in securely</span>
+                            <svg id="loginBtnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M5 12h14M14 7l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="button-loading" id="loginBtnLoading">
+                                <span class="spinner" aria-hidden="true"></span>
+                                Authenticating...
+                            </span>
+                        </button>
+                    </form>
+
+                    <p class="security-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M12 3 5 6v5c0 4.7 2.8 8.2 7 10 4.2-1.8 7-5.3 7-10V6l-7-3Z"/>
+                            <path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Your credentials are protected and securely transmitted.
+                    </p>
+                </div>
+            </section>
         </div>
-      
-        <div class="subtitle">Sign in to your LGU Energy Efficiency System account</div>
-        <div id="loginError" style="display:none;margin-bottom:20px;padding:12px;border-radius:12px;font-weight:500;"></div>
+    </main>
 
-        <form id="loginForm" method="POST" action="{{ url('/login') }}" autocomplete="off" style="margin-top: 10px;">
-            @csrf
-            <input type="text" name="fake_user" style="display:none" tabindex="-1" autocomplete="off">
-            <input type="password" name="fake_pass" style="display:none" tabindex="-1" autocomplete="new-password">
-
-            <div class="input-box">
-                <label for="loginEmail">Email Address</label>
-                <input type="email" name="email" id="loginEmail" placeholder="name@lgu.infra.ph" required autocomplete="off" autocapitalize="off" spellcheck="false" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
+    <div id="sessionEndedModal" class="session-modal-backdrop" aria-hidden="true">
+        <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionEndedTitle" aria-describedby="sessionEndedCopy">
+            <div class="session-modal-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="10" width="16" height="11" rx="3" stroke-width="2"/>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 14.5v2" stroke-width="2" stroke-linecap="round"/>
+                </svg>
             </div>
-
-            <div class="input-box">
-                <label for="loginPassword">Password</label>
-                <input type="password" name="password" id="loginPassword" placeholder="••••••••" required autocomplete="off" style="box-shadow:0 2px 8px rgba(37,99,235,0.04);">
+            <div id="sessionEndedTitle" class="session-modal-title">Your session has ended</div>
+            <div id="sessionEndedCopy" class="session-modal-copy">
+                You were signed out after a period of inactivity. Please sign in again to keep your account and portal access protected.
             </div>
-
-            <button type="submit" class="login-btn d-flex align-items-center justify-content-center gap-2" id="loginBtn" style="position:relative;overflow:hidden;">
-                <span id="loginBtnText" style="display:inline-block;">Sign In</span>
-                <span id="loginBtnLoading" style="display:none;align-items:center;gap:8px;">
-                    <svg class="modern-spinner" width="22" height="22" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;"><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" opacity="0.2"/><circle cx="22" cy="22" r="18" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 60" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 22 22" to="360 22 22" dur="0.9s" repeatCount="indefinite"/></circle></svg>
-                    Authenticating...
-                </span>
-            </button>
-        </form>
-        <div style="margin-top:18px;font-size:0.97rem;color:var(--text-muted);">
-            <span style="opacity:0.7;">Forgot your password?</span>
-            <a href="{{ route('password.request') }}" style="color:var(--primary);font-weight:600;text-decoration:none;">Reset it</a>
+            <div class="session-modal-actions">
+                <a href="{{ route('login') }}" class="session-modal-btn primary" id="sessionLoginLink">Continue to sign in</a>
+                <a href="{{ url('/') }}" class="session-modal-btn secondary">Go to home</a>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="sessionEndedModal" class="session-modal-backdrop" aria-hidden="true">
-    <div class="session-modal-card" role="dialog" aria-modal="true" aria-labelledby="sessionEndedTitle">
-        <div class="session-modal-icon"><i class="fa fa-lock"></i></div>
-        <div id="sessionEndedTitle" class="session-modal-title">Session Ended for Security</div>
-        <div class="session-modal-copy">
-            Your session has ended and you need to sign in again to continue.
-            This keeps your account and portal access protected.
-        </div>
-        <div class="session-modal-actions">
-            <a href="{{ route('login') }}" class="session-modal-btn primary">Continue to Login</a>
-            <a href="{{ url('/') }}" class="session-modal-btn secondary">Go to Home</a>
-        </div>
-    </div>
-</div>
+    <footer class="footer">
+        <span>&copy; {{ date('Y') }} {{ $systemName }} &middot; {{ $systemOrganization }}</span>
+        <nav class="footer-links" aria-label="Footer navigation">
+            <a href="{{ url('/') }}">About system</a>
+            <a href="{{ url('/contact') }}">Technical support</a>
+        </nav>
+    </footer>
 
-<footer class="footer">
-    <div class="footer-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">About System</a>
-        <a href="#">Technical Support</a>
-    </div>
-    <div class="footer-logo">
-        © 2026 Energy Efficiency System · Local Government Unit
-    </div>
-</footer>
-
-<script src="{{ asset('js/scripts.js') }}"></script>
-<script>
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
+    <script>
+        (function () {
+            const loginForm = document.getElementById('loginForm');
             const emailInput = document.getElementById('loginEmail');
             const passwordInput = document.getElementById('loginPassword');
-            const btn = document.getElementById('loginBtn');
-            const btnText = document.getElementById('loginBtnText');
-            const btnLoading = document.getElementById('loginBtnLoading');
-            const errorDiv = document.getElementById('loginError');
+            const passwordToggle = document.getElementById('passwordToggle');
+            const loginButton = document.getElementById('loginBtn');
+            const buttonText = document.getElementById('loginBtnText');
+            const buttonIcon = document.getElementById('loginBtnIcon');
+            const buttonLoading = document.getElementById('loginBtnLoading');
+            const errorBox = document.getElementById('loginError');
+            const errorText = document.getElementById('loginErrorText');
 
-            if (!emailInput || !passwordInput || !btn || !btnText || !btnLoading || !errorDiv) {
-                return;
+            function prepareCredentialField(input) {
+                if (!input) return;
+
+                input.value = '';
+
+                const unlock = function () {
+                    input.readOnly = false;
+                };
+
+                input.addEventListener('pointerdown', unlock);
+                input.addEventListener('focus', unlock);
+                input.addEventListener('keydown', unlock);
             }
 
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            const resetButtonState = () => {
-                btn.disabled = false;
-                btnText.style.display = '';
-                btnLoading.style.display = 'none';
-            };
+            prepareCredentialField(emailInput);
+            prepareCredentialField(passwordInput);
 
-            // Loading State
-            btn.disabled = true;
-            btnText.style.display = 'none';
-            btnLoading.style.display = 'inline-block';
-            errorDiv.style.display = 'none';
-
-            const tokenInput = this.querySelector('input[name="_token"]');
-            const metaToken = document.querySelector('meta[name="csrf-token"]');
-            const csrfToken = tokenInput?.value || metaToken?.getAttribute('content');
-
-            if (!csrfToken) {
-                errorDiv.textContent = 'Session token is missing. Please refresh the page.';
-                errorDiv.style.display = 'block';
-                resetButtonState();
-                return;
-            }
-
-            try {
-                const response = await fetch(this.action, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ email, password }),
-                    credentials: 'same-origin'
+            window.addEventListener('pageshow', function () {
+                [emailInput, passwordInput].forEach(function (input) {
+                    if (!input) return;
+                    input.value = '';
+                    input.readOnly = true;
                 });
+            });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    errorDiv.textContent = data.message || 'The credentials you entered are incorrect.';
-                    errorDiv.style.display = 'block';
-                    resetButtonState();
-                }
-            } catch (err) {
-                errorDiv.textContent = 'Connection error. Please check your internet.';
-                errorDiv.style.display = 'block';
-                resetButtonState();
+            function setError(message) {
+                if (!errorBox || !errorText) return;
+                errorText.textContent = message;
+                errorBox.classList.add('is-visible');
             }
-        });
-    }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const sessionEndedModal = document.getElementById('sessionEndedModal');
-        const showSessionEndedModal = @json((bool) session('session_ended_modal'))
-            || new URLSearchParams(window.location.search).get('session') === 'expired';
-        if (sessionEndedModal && showSessionEndedModal) {
-            sessionEndedModal.style.display = 'flex';
-        }
-    });
-</script>
+            function clearError() {
+                if (!errorBox) return;
+                errorBox.classList.remove('is-visible');
+            }
+
+            function setLoading(isLoading) {
+                if (!loginButton || !buttonText || !buttonIcon || !buttonLoading) return;
+                loginButton.disabled = isLoading;
+                loginButton.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+                buttonText.style.display = isLoading ? 'none' : '';
+                buttonIcon.style.display = isLoading ? 'none' : '';
+                buttonLoading.style.display = isLoading ? 'flex' : 'none';
+            }
+
+            if (passwordToggle && passwordInput) {
+                passwordToggle.addEventListener('click', function () {
+                    const willShow = passwordInput.type === 'password';
+                    passwordInput.type = willShow ? 'text' : 'password';
+                    this.classList.toggle('is-visible', willShow);
+                    this.setAttribute('aria-pressed', willShow ? 'true' : 'false');
+                    this.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
+                    passwordInput.focus({ preventScroll: true });
+                });
+            }
+
+            [emailInput, passwordInput].forEach(function (input) {
+                if (input) input.addEventListener('input', clearError);
+            });
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function (event) {
+                    event.preventDefault();
+
+                    if (!this.reportValidity() || !emailInput || !passwordInput) return;
+
+                    const tokenInput = this.querySelector('input[name="_token"]');
+                    const metaToken = document.querySelector('meta[name="csrf-token"]');
+                    const csrfToken = tokenInput?.value || metaToken?.getAttribute('content');
+
+                    clearError();
+                    setLoading(true);
+
+                    if (!csrfToken) {
+                        setError('Your session token is missing. Please refresh the page and try again.');
+                        setLoading(false);
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: emailInput.value.trim(),
+                                password: passwordInput.value
+                            }),
+                            credentials: 'same-origin'
+                        });
+
+                        const contentType = response.headers.get('content-type') || '';
+                        const data = contentType.includes('application/json') ? await response.json() : {};
+
+                        if (response.ok) {
+                            window.location.href = data.redirect || '{{ route('dashboard') }}';
+                            return;
+                        }
+
+                        const validationMessage = data.errors
+                            ? Object.values(data.errors).flat()[0]
+                            : null;
+
+                        setError(validationMessage || data.message || 'Unable to sign in. Please check your credentials and try again.');
+                    } catch (error) {
+                        setError('We could not reach the server. Check your connection and try again.');
+                    } finally {
+                        setLoading(false);
+                    }
+                });
+            }
+
+            window.addEventListener('DOMContentLoaded', function () {
+                const sessionEndedModal = document.getElementById('sessionEndedModal');
+                const showSessionEndedModal = @json((bool) session('session_ended_modal'))
+                    || new URLSearchParams(window.location.search).get('session') === 'expired';
+
+                if (sessionEndedModal && showSessionEndedModal) {
+                    sessionEndedModal.style.display = 'flex';
+                    sessionEndedModal.setAttribute('aria-hidden', 'false');
+                    document.getElementById('sessionLoginLink')?.focus();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

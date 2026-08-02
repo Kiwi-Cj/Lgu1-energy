@@ -66,7 +66,7 @@ class EnergyMonitoringController extends Controller
                     $q2->whereNull('meter_id')->where('input_source', 'cprf');
                 });
             })
-            ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
+            ->whereIn('facility_id', $facilityIds)
             ->sum('energy_cost');
 
         $totalConsumptionKwh = EnergyRecord::where('month', $currentMonth)
@@ -78,7 +78,7 @@ class EnergyMonitoringController extends Controller
                     $q2->whereNull('meter_id')->where('input_source', 'cprf');
                 });
             })
-            ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
+            ->whereIn('facility_id', $facilityIds)
             ->sum('actual_kwh');
 
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
@@ -105,7 +105,16 @@ class EnergyMonitoringController extends Controller
             $facility->main_meter_alert_summary_label = $this->resolveMainMeterAlertSummaryLabel($mainMeters);
             $facility->currentMonthRecord = $currentMonthRecord;
             [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
-            $trendSpikeDetected = $this->hasThreeMonthSpike($facilityRecords, $currentYear, $currentMonth);
+            $spikeBaseline = $this->resolveSpikeBaseline($facility, $currentMonthRecord);
+            $spikeSizeKey = EnergyRecord::resolveSizeKeyFromBaseline($spikeBaseline);
+            $spikeThreshold = (float) ($this->getTrendPercentThresholdsBySize()[$spikeSizeKey] ?? 10);
+            $trendSpikeDetected = $this->hasThreeMonthSpike(
+                $facilityRecords,
+                $currentYear,
+                $currentMonth,
+                $spikeBaseline,
+                $spikeThreshold
+            );
             $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
             if ($trendSpikeDetected && in_array($trendAlertLevel, ['Normal', 'Warning'], true)) {
                 $trendAlertLevel = 'High';
@@ -116,6 +125,9 @@ class EnergyMonitoringController extends Controller
 
             $facility->trend_percent = $trendPercent;
             $facility->trend_analysis = $trendDisplay;
+            $facility->trend_spike_detected = $trendSpikeDetected;
+            $facility->trend_spike_threshold = $spikeThreshold;
+            $facility->trend_spike_size_label = $this->sizeLabelFromKey($spikeSizeKey);
             $facility->trend_alert_level = $trendAlertLevel;
             $facility->alert_level = $alertLevel;
             $facility->facility_status_label = $this->resolveFacilityOperationalStatusLabel($facility);
@@ -147,7 +159,7 @@ class EnergyMonitoringController extends Controller
                 $currentMonthRecord->next_maintenance = $nextMaintenance?->scheduled_date;
             }
 
-            if ($currentMonthRecord && in_array($alertLevel, ['High', 'Very High', 'Critical'], true)) {
+            if ($currentMonthRecord && in_array($alertLevel, ['High', 'Very High', 'Critical', 'Drop High', 'Drop Critical'], true)) {
                 $highAlertCount++;
             }
         }
@@ -202,7 +214,16 @@ class EnergyMonitoringController extends Controller
         });
 
         [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
-        $trendSpikeDetected = $this->hasThreeMonthSpike($facilityRecords, $currentYear, $currentMonth);
+        $spikeBaseline = $this->resolveSpikeBaseline($facility, $currentMonthRecord);
+        $spikeSizeKey = EnergyRecord::resolveSizeKeyFromBaseline($spikeBaseline);
+        $spikeThreshold = (float) ($this->getTrendPercentThresholdsBySize()[$spikeSizeKey] ?? 10);
+        $trendSpikeDetected = $this->hasThreeMonthSpike(
+            $facilityRecords,
+            $currentYear,
+            $currentMonth,
+            $spikeBaseline,
+            $spikeThreshold
+        );
         $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
         if ($trendSpikeDetected && in_array($trendAlertLevel, ['Normal', 'Warning'], true)) {
             $trendAlertLevel = 'High';
@@ -488,7 +509,11 @@ class EnergyMonitoringController extends Controller
 
         $anchor = Carbon::create($currentYear, $currentMonth, 1);
         $currentKey = $anchor->format('Y-m');
-        $currentKwh = (float) ($monthTotals->get($currentKey) ?? 0);
+        if (! $monthTotals->has($currentKey)) {
+            return [null, '-'];
+        }
+
+        $currentKwh = (float) $monthTotals->get($currentKey);
 
         $previousMonths = [];
         for ($i = 1; $i <= 3; $i++) {
@@ -520,7 +545,13 @@ class EnergyMonitoringController extends Controller
         return [$trendPercent, $trendDisplay];
     }
 
-    private function hasThreeMonthSpike(Collection $facilityRecords, int $currentYear, int $currentMonth): bool
+    private function hasThreeMonthSpike(
+        Collection $facilityRecords,
+        int $currentYear,
+        int $currentMonth,
+        ?float $baselineKwh,
+        float $minimumIncreasePercent
+    ): bool
     {
         $monthTotals = $facilityRecords
             ->groupBy(fn ($row) => sprintf('%04d-%02d', (int) $row->year, (int) $row->month))
@@ -544,7 +575,37 @@ class EnergyMonitoringController extends Controller
         $m2 = (float) $monthTotals->get($keys[1]);
         $m3 = (float) $monthTotals->get($keys[2]);
 
-        return $m3 > $m2 && $m2 > $m1;
+        if ($m1 <= 0 || ! is_numeric($baselineKwh) || (float) $baselineKwh <= 0) {
+            return false;
+        }
+
+        if (! ($m3 > $m2 && $m2 > $m1)) {
+            return false;
+        }
+
+        $minimumIncreasePercent = max(0.01, $minimumIncreasePercent);
+        $threeMonthIncrease = (($m3 - $m1) / $m1) * 100;
+        $latestBaselineDeviation = (($m3 - (float) $baselineKwh) / (float) $baselineKwh) * 100;
+
+        return $threeMonthIncrease >= $minimumIncreasePercent
+            && $latestBaselineDeviation >= $minimumIncreasePercent;
+    }
+
+    private function resolveSpikeBaseline(Facility $facility, $record): ?float
+    {
+        $baseline = $record?->baseline_kwh ?? $facility->baseline_kwh ?? null;
+
+        return is_numeric($baseline) && (float) $baseline > 0 ? (float) $baseline : null;
+    }
+
+    private function sizeLabelFromKey(string $sizeKey): string
+    {
+        return match ($sizeKey) {
+            'medium' => 'Medium',
+            'large' => 'Large',
+            'xlarge' => 'Extra Large',
+            default => 'Small',
+        };
     }
 
     private function aggregateFacilityRecordsByMonth(Collection $rows): Collection
@@ -698,9 +759,12 @@ class EnergyMonitoringController extends Controller
     {
         return [
             'Critical' => 5,
+            'Drop Critical' => 5,
             'Very High' => 4,
             'High' => 3,
+            'Drop High' => 3,
             'Warning' => 2,
+            'Drop Warning' => 2,
             'Normal' => 1,
             'No Data' => 0,
         ];
@@ -790,11 +854,23 @@ class EnergyMonitoringController extends Controller
             return $this->trendPercentThresholdsBySize;
         }
 
-        return $this->trendPercentThresholdsBySize = [
+        $defaults = [
             'small' => 10,
             'medium' => 7,
             'large' => 4,
             'xlarge' => 2,
         ];
+
+        $settings = Setting::getMany(array_map(
+            fn (string $sizeKey) => "trend_spike_threshold_{$sizeKey}",
+            array_keys($defaults)
+        ));
+
+        foreach ($defaults as $sizeKey => $default) {
+            $raw = $settings["trend_spike_threshold_{$sizeKey}"] ?? $default;
+            $defaults[$sizeKey] = is_numeric($raw) ? max(0.01, (float) $raw) : (float) $default;
+        }
+
+        return $this->trendPercentThresholdsBySize = $defaults;
     }
 }

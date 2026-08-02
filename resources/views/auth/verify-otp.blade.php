@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Verify OTP | LGU Energy System</title>
-    <link rel="icon" href="{{ $systemFaviconUrl }}">
+    <title>Verify OTP | {{ $systemName }}</title>
+    @include('partials.favicon')
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -170,7 +170,12 @@
             font: 700 .9rem "Plus Jakarta Sans", sans-serif;
             cursor: pointer;
         }
-        .link-btn:disabled { color: #94a3b8; cursor: not-allowed; }
+        .link-btn:disabled {
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: .72;
+            pointer-events: none;
+        }
         .back { display: inline-block; margin-top: 18px; color: var(--muted); font-size: .86rem; text-decoration: none; }
         @keyframes otp-shake {
             0%, 100% { transform: translateX(0); }
@@ -195,7 +200,7 @@
     <header class="nav">
         <a href="{{ url('/') }}" class="brand">
             <img src="{{ $systemLogoUrl }}" alt="LGU logo">
-            <span>Energy System Portal</span>
+            <span>{{ $systemName }}</span>
         </a>
         <a href="{{ url('/') }}" class="home-link">Home</a>
     </header>
@@ -273,6 +278,8 @@
             let resendAvailableAt = {{ $resendAvailableAt }};
             let secondsRemaining = Math.max(0, expiresAt - Math.floor(Date.now() / 1000));
             let isSubmitting = false;
+            let isResending = false;
+            let hasResendPenaltyMessage = false;
 
             const updateVerifyState = () => {
                 const complete = hiddenInput.value.length === 6;
@@ -430,14 +437,26 @@
                 updateVerifyState();
 
                 const resendWait = Math.max(0, resendAvailableAt - now);
-                resendButton.disabled = resendWait > 0;
-                resendButton.textContent = resendWait > 0 ? `Resend OTP (${resendWait}s)` : 'Resend OTP';
+                resendButton.disabled = isResending || resendWait > 0;
+                resendButton.textContent = isResending
+                    ? 'Sending...'
+                    : (resendWait > 0 ? `Resend OTP (${resendWait}s)` : 'Resend OTP');
+                if (resendWait === 0 && hasResendPenaltyMessage) {
+                    resendMessage.style.display = 'none';
+                    hasResendPenaltyMessage = false;
+                }
             }
 
             resendButton.addEventListener('click', async () => {
+                const now = Math.floor(Date.now() / 1000);
+                if (isResending || now < resendAvailableAt) {
+                    updateTimer();
+                    return;
+                }
+
                 clearOtpError();
-                resendButton.disabled = true;
-                resendButton.textContent = 'Sending...';
+                isResending = true;
+                updateTimer();
                 resendMessage.style.display = 'none';
 
                 try {
@@ -456,15 +475,29 @@
                             window.location.href = @json(route('login'));
                             return;
                         }
+
+                        if (response.status === 429) {
+                            const retryAfter = Math.max(1, Number(data.retry_after) || 1);
+                            resendAvailableAt = Number(data.resend_available_at)
+                                || (Math.floor(Date.now() / 1000) + retryAfter);
+                            resendMessage.textContent = data.message || `Please wait ${retryAfter} seconds before requesting another OTP.`;
+                            resendMessage.style.color = '#be123c';
+                            resendMessage.style.background = '#fff1f2';
+                            resendMessage.style.display = 'block';
+                            hasResendPenaltyMessage = true;
+                            return;
+                        }
                         throw new Error(data.message || 'Unable to resend OTP.');
                     }
 
                     expiresAt = data.expires_at;
-                    resendAvailableAt = Math.floor(Date.now() / 1000) + 30;
+                    resendAvailableAt = Number(data.resend_available_at)
+                        || (Math.floor(Date.now() / 1000) + Math.max(1, Number(data.retry_after) || 30));
                     resendMessage.textContent = data.message;
                     resendMessage.style.color = '#166534';
                     resendMessage.style.background = '#f0fdf4';
                     resendMessage.style.display = 'block';
+                    hasResendPenaltyMessage = false;
                     fillOtpBoxes('');
                     digitInputs[0]?.focus();
                 } catch (error) {
@@ -473,9 +506,10 @@
                     resendMessage.style.background = '#fff1f2';
                     resendMessage.style.display = 'block';
                     resendAvailableAt = Math.floor(Date.now() / 1000) + 5;
+                } finally {
+                    isResending = false;
+                    updateTimer();
                 }
-
-                updateTimer();
             });
 
             updateTimer();

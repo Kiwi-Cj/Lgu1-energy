@@ -129,7 +129,7 @@
 
 <div class="footer">
     Change percentages compare each recorded month with the previous available recorded month.
-    LGU Energy Monitoring System.
+    {{ $systemName }}.
 </div>
 </body>
 </html>

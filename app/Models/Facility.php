@@ -52,7 +52,8 @@ class Facility extends Model
     /**
      * Mirrored from the CPRF facilities reservation system: identity fields
      * (name, address, details, status) are managed by the sync and read-only
-     * here; energy data (profiles, meters, readings) stays fully editable.
+     * here. Monthly facility readings are also supplied by CPRF through the
+     * integration endpoint, while local energy setup remains editable here.
      */
     public function isCprfManaged(): bool
     {
@@ -194,21 +195,12 @@ class Facility extends Model
             return null;
         }
 
-        $baseline = (float) $baseline;
-
-        if ($baseline < 3000) {
-            return 'Small';
-        }
-
-        if ($baseline < 10000) {
-            return 'Medium';
-        }
-
-        if ($baseline < 30000) {
-            return 'Large';
-        }
-
-        return 'Extra Large';
+        return match (EnergyRecord::resolveSizeKeyFromBaseline((float) $baseline)) {
+            'medium' => 'Medium',
+            'large' => 'Large',
+            'xlarge' => 'Extra Large',
+            default => 'Small',
+        };
     }
 
     // Removed: getAverageMonthlyKwhAttribute (use baseline_kwh instead)
