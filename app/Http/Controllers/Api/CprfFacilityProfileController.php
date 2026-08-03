@@ -78,12 +78,18 @@ class CprfFacilityProfileController extends Controller
             $latestUpdatedAt = $profile?->updated_at && $meterUpdatedAt
                 ? ($profile->updated_at->greaterThan($meterUpdatedAt) ? $profile->updated_at : $meterUpdatedAt)
                 : ($profile?->updated_at ?? $meterUpdatedAt);
+            $registeredMeterNumber = trim((string) ($meter?->meter_number ?? ''));
+            $profileMeterNumber = trim((string) ($profile?->electric_meter_no ?? ''));
+            $electricMeterNumber = $registeredMeterNumber !== ''
+                ? $registeredMeterNumber
+                : (! in_array(strtoupper($profileMeterNumber), ['', 'N/A', 'NA', '-'], true)
+                    ? $profileMeterNumber
+                    : null);
 
             return [
                 'facility_external_ref' => (int) $facility->external_ref,
                 'energy_facility_id' => $facility->id,
-                'main_meter_name' => $meter->meter_name ?? null,
-                'electric_meter_no' => $profile->electric_meter_no ?? null,
+                'electric_meter_no' => $electricMeterNumber,
                 'utility_provider' => $profile->utility_provider ?? null,
                 'contract_account_no' => $profile->contract_account_no ?? null,
                 'main_energy_source' => $profile->main_energy_source ?? null,

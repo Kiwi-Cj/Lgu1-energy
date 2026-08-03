@@ -39,12 +39,14 @@ test('incident list filters real CPRF incidents and labels their source', functi
     makeWorkflowIncident([], ['name' => 'Integrated Civic Hall', 'source' => 'cprf', 'external_ref' => 777]);
     makeWorkflowIncident([], ['name' => 'Local Civic Hall']);
 
-    $this->actingAs($admin)
+    $response = $this->actingAs($admin)
         ->get(route('energy-incidents.index', ['source' => 'cprf', 'year' => 2026, 'month' => 7]))
         ->assertOk()
         ->assertSee('Integrated Civic Hall')
-        ->assertSee('CPRF Integrated')
-        ->assertDontSee('Local Civic Hall');
+        ->assertSee('CPRF Integrated');
+
+    expect($response->viewData('incidents')->getCollection()->pluck('facility.name')->all())
+        ->toBe(['Integrated Civic Hall']);
 });
 
 test('incident status cannot be changed manually because CIMM owns the action workflow', function () {
@@ -65,7 +67,7 @@ test('staff also cannot change a CIMM-managed incident status', function () {
     $incident = makeWorkflowIncident();
 
     $this->actingAs($staff)
-        ->put(route('energy-incidents.update', $incident), ['status' => 'Resolved'])
+        ->putJson(route('energy-incidents.update', $incident), ['status' => 'Resolved'])
         ->assertForbidden();
 
     expect($incident->fresh()->status)->toBe('Open');

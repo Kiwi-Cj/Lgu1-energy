@@ -225,6 +225,8 @@ class EnergyIncidentController extends Controller
 
     public function update(Request $request, EnergyIncident $energyIncident)
     {
+        abort_unless(RoleAccess::can($request->user(), 'manage_energy_incidents'), 403);
+
         return redirect()->route('energy-incidents.index')->with(
             'error',
             'Incident status is managed by CIMM. Update the linked maintenance action in CIMM instead.'

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ $systemName }} helps local government teams monitor facilities, analyze energy use, and make informed efficiency decisions.">
     <meta name="theme-color" content="#0f172a">
+    <script>
+        try {
+            if (localStorage.getItem('darkMode') === 'on') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.style.colorScheme = 'dark';
+            }
+        } catch (e) {}
+    </script>
     <title>{{ $systemName }}</title>
     @include('partials.favicon')
 
@@ -139,6 +147,32 @@
         .nav-area {
             gap: 14px;
         }
+
+        .theme-toggle {
+            width: 45px;
+            height: 45px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            color: #bfdbfe;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.07);
+            cursor: pointer;
+            transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+        }
+
+        .theme-toggle:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.14);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle svg { width: 19px; height: 19px; }
+        .theme-toggle .sun-icon { display: none; }
+        html.dark-mode .theme-toggle .moon-icon { display: none; }
+        html.dark-mode .theme-toggle .sun-icon { display: block; }
 
         .nav-links {
             gap: 2px;
@@ -1355,6 +1389,63 @@
             font-size: 0.63rem;
         }
 
+        html.dark-mode {
+            --ink: #f1f5f9;
+            --body: #cbd5e1;
+            --muted: #94a3b8;
+            --line: #334155;
+            --soft: #111827;
+        }
+
+        html.dark-mode body { background: #0b1220; }
+        html.dark-mode .site-header.is-scrolled { background: rgba(8, 15, 29, 0.96); }
+        html.dark-mode .capability-inner { border-color: #334155; background: rgba(15, 23, 42, 0.93); box-shadow: 0 22px 55px rgba(0, 0, 0, 0.28); }
+        html.dark-mode .capability { border-color: #334155; background: linear-gradient(145deg, #111c30, #172033); }
+        html.dark-mode .capability:hover { border-color: #475b75; }
+        html.dark-mode .capability strong { color: #e2e8f0; }
+        html.dark-mode .capability > div span { color: #94a3b8; }
+        html.dark-mode .capability::after { color: #475569; }
+
+        html.dark-mode .feature-card,
+        html.dark-mode .feature-card:nth-child(1),
+        html.dark-mode .feature-card:nth-child(2),
+        html.dark-mode .feature-card:nth-child(3),
+        html.dark-mode .feature-card:nth-child(4) {
+            border-color: #334155;
+            background: linear-gradient(145deg, #111c30, #172033);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+        }
+        html.dark-mode .feature-card:hover { border-color: #475b75; }
+        html.dark-mode .feature-card::after { background: rgba(37, 99, 235, 0.08); }
+        html.dark-mode .feature-card h3 { color: #f1f5f9; }
+        html.dark-mode .feature-card p { color: #94a3b8; }
+        html.dark-mode .feature-link { color: #7dd3fc; }
+
+        html.dark-mode .cta-wrap,
+        html.dark-mode .contact-section { background: #0b1220; }
+        html.dark-mode .contact-copy h2 { color: #f1f5f9; }
+        html.dark-mode .contact-copy > p,
+        html.dark-mode .contact-points li { color: #94a3b8; }
+        html.dark-mode .contact-points span { color: #7dd3fc; background: rgba(37, 99, 235, 0.14); }
+        html.dark-mode .contact-form-wrap { border-color: #334155; background: #111c30; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22); }
+        html.dark-mode .field label { color: #cbd5e1; }
+        html.dark-mode .field input,
+        html.dark-mode .field textarea { color: #e5edf7; border-color: #334155; background: #0f172a; }
+        html.dark-mode .field input:focus,
+        html.dark-mode .field textarea:focus { border-color: #3b82f6; background: #111827; }
+        html.dark-mode .form-alert.success { color: #a7f3d0; border-color: #176b54; background: rgba(5,150,105,.12); }
+        html.dark-mode .form-alert.warning { color: #fde68a; border-color: #72551a; background: rgba(217,119,6,.1); }
+        html.dark-mode .form-alert.error { color: #fecdd3; border-color: #7f3045; background: rgba(190,18,60,.11); }
+
+        html.dark-mode .preview-inner { color: #e2e8f0; background: rgba(15, 23, 42, 0.96); }
+        html.dark-mode .preview-title strong,
+        html.dark-mode .metric strong { color: #e2e8f0; }
+        html.dark-mode .metric,
+        html.dark-mode .chart-card { border-color: #334155; background: #111827; }
+        html.dark-mode .chart-head { color: #cbd5e1; }
+        html.dark-mode .chart { border-bottom-color: #334155; background: repeating-linear-gradient(to bottom, #263449 0 1px, transparent 1px 30px); }
+        html.dark-mode .floating-chip { color: #cbd5e1; border-color: #475569; background: rgba(15, 23, 42, 0.95); }
+
         .reveal {
             opacity: 0;
             transform: translateY(18px);
@@ -1369,6 +1460,7 @@
         .button:focus-visible,
         .nav-cta:focus-visible,
         .menu-toggle:focus-visible,
+        .theme-toggle:focus-visible,
         .submit-button:focus-visible,
         .footer-column a:focus-visible,
         .feature-link:focus-visible {
@@ -1444,6 +1536,10 @@
             }
 
             .nav-cta {
+                width: 100%;
+            }
+
+            .theme-toggle {
                 width: 100%;
             }
 
@@ -1695,6 +1791,10 @@
                         <path d="M5 12h14M14 7l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </a>
+                <button class="theme-toggle" id="landingThemeToggle" type="button" aria-label="Switch to dark mode" title="Toggle theme">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.7 15.2A8.7 8.7 0 0 1 8.8 3.3 9 9 0 1 0 20.7 15.2Z"/></svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg>
+                </button>
             </div>
         </div>
     </header>
@@ -1969,12 +2069,28 @@
     <script>
         (function () {
             const header = document.getElementById('siteHeader');
+            const themeToggle = document.getElementById('landingThemeToggle');
             const menuToggle = document.getElementById('menuToggle');
             const navArea = document.getElementById('navArea');
             const contactForm = document.getElementById('contactForm');
             const contactSubmit = document.getElementById('contactSubmit');
             const contactSubmitLabel = document.getElementById('contactSubmitLabel');
             const sectionLinks = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
+
+            function applyTheme(isDark) {
+                document.documentElement.classList.toggle('dark-mode', isDark);
+                document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                if (themeToggle) themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+                try { localStorage.setItem('darkMode', isDark ? 'on' : 'off'); } catch (e) {}
+            }
+
+            applyTheme(document.documentElement.classList.contains('dark-mode'));
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    applyTheme(!document.documentElement.classList.contains('dark-mode'));
+                });
+            }
 
             function updateHeader() {
                 if (header) header.classList.toggle('is-scrolled', window.scrollY > 24);

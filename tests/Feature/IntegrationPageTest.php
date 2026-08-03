@@ -9,7 +9,7 @@ test('super admin can view the integrations documentation page', function () {
 
     $response
         ->assertOk()
-        ->assertSee('Connected Systems &amp; API Processes', escape: false)
+        ->assertSee('System Integrations')
         ->assertSee('CIMM Maintenance Sync')
         ->assertSee('CPRF Facilities Reservation')
         ->assertSee('Main LGU Single Sign-On')

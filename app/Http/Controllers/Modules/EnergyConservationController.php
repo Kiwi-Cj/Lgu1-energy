@@ -750,7 +750,7 @@ class EnergyConservationController extends Controller
             abort(403);
         }
 
-        [$year, $month, $selectedMonth, $periodLabel] = $this->resolveMonth($request->query('month'));
+        [$year, $month, $selectedMonth, $periodLabel] = $this->resolveMonth($request->input('month'));
         $facilityScope = $this->facilityScope($request);
 
         $facilities = Facility::query()

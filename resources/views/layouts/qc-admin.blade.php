@@ -1,5 +1,5 @@
 @php
-    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index');
+    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index', 'landing.contact');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -1727,6 +1727,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 <a href="{{ route('about.index') }}" class="{{ request()->routeIs('about.index') ? 'is-active' : '' }}" {{ request()->routeIs('about.index') ? 'aria-current=page' : '' }}>About</a>
                 <a href="{{ route('faqs.index') }}" class="{{ request()->routeIs('faqs.index') ? 'is-active' : '' }}" {{ request()->routeIs('faqs.index') ? 'aria-current=page' : '' }}>FAQs</a>
                 <a href="{{ route('privacy.index') }}" class="{{ request()->routeIs('privacy.index') ? 'is-active' : '' }}" {{ request()->routeIs('privacy.index') ? 'aria-current=page' : '' }}>Privacy</a>
+                <a href="{{ route('landing.contact') }}" class="{{ request()->routeIs('landing.contact') ? 'is-active' : '' }}" {{ request()->routeIs('landing.contact') ? 'aria-current=page' : '' }}>Contact</a>
                 <a class="information-header-cta" href="{{ auth()->check() ? route('dashboard') : route('login') }}">
                     {{ auth()->check() ? 'Dashboard' : 'Sign in' }}
                     <i class="fa-solid fa-arrow-right"></i>
@@ -2604,14 +2605,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    userBtn.onclick = (e) => { e.stopPropagation(); userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block'; notifDrop.style.display = 'none'; };
-    notifBtn.onclick = (e) => { e.stopPropagation(); notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block'; userDrop.style.display = 'none'; applyNotifFilter(); };
-    userDrop.addEventListener('click', (e) => e.stopPropagation());
-    notifDrop.addEventListener('click', (e) => e.stopPropagation());
+    if (userBtn && userDrop) {
+        userBtn.onclick = (e) => {
+            e.stopPropagation();
+            userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block';
+            if (notifDrop) notifDrop.style.display = 'none';
+        };
+        userDrop.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    if (notifBtn && notifDrop) {
+        notifBtn.onclick = (e) => {
+            e.stopPropagation();
+            notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block';
+            if (userDrop) userDrop.style.display = 'none';
+            applyNotifFilter();
+        };
+        notifDrop.addEventListener('click', (e) => e.stopPropagation());
+    }
     
     document.addEventListener('click', () => {
-        userDrop.style.display = 'none';
-        notifDrop.style.display = 'none';
+        if (userDrop) userDrop.style.display = 'none';
+        if (notifDrop) notifDrop.style.display = 'none';
     });
 
     if (notifMarkAllBtn) {

@@ -20,13 +20,9 @@
                 <tr>
                     <td class="email-content" style="padding:36px 40px;">
                         <div style="text-align:center; margin-bottom:24px;">
-                            @if($logoSrc)
-                                <img src="{{ $logoSrc }}" width="72" alt="{{ $systemName }}" style="display:inline-block; width:72px; max-width:72px; height:auto; border:0; border-radius:16px;">
-                            @else
-                                <div style="display:inline-block; min-width:72px; padding:15px 18px; border:1px solid #bfdbfe; border-radius:16px; background-color:#eff6ff; color:#1d4ed8; font-size:16px; font-weight:700; line-height:1.2; letter-spacing:0.04em;">
-                                    {{ $systemShortName }}
-                                </div>
-                            @endif
+                            <div style="display:inline-block; min-width:72px; padding:15px 18px; border:1px solid #bfdbfe; border-radius:16px; background-color:#eff6ff; color:#1d4ed8; font-size:16px; font-weight:700; line-height:1.2; letter-spacing:0.04em;">
+                                {{ $systemShortName }}
+                            </div>
                             <div style="margin-top:10px; color:#64748b; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;">
                                 Secure account verification
                             </div>

@@ -486,6 +486,12 @@ $approvedMeterCount = $allMeters->filter(fn ($meter) => !empty($meter->approved_
 $totalMeterCount = $allMeters->count();
 $meterApprovalPercent = $totalMeterCount > 0 ? (int) round(($approvedMeterCount / $totalMeterCount) * 100) : 0;
 $primaryMainMeter = ($profile?->primaryMeter && !empty($profile->primaryMeter->approved_at)) ? $profile->primaryMeter : null;
+$resolvedMainMeter = $primaryMainMeter ?? $activeApprovedMainMeters->first() ?? $mainMeters->first();
+$profileMeterNumber = trim((string) ($profile?->electric_meter_no ?? ''));
+$profileHasMeterNumber = !in_array(strtoupper($profileMeterNumber), ['', 'N/A', 'NA', '-'], true);
+$displayElectricMeterNumber = $facility->isCprfManaged()
+	? (trim((string) ($resolvedMainMeter?->meter_number ?? '')) ?: ($profileHasMeterNumber ? $profileMeterNumber : 'N/A'))
+	: ($profileHasMeterNumber ? $profileMeterNumber : 'N/A');
 @endphp
 
 <!-- HEADER -->
@@ -611,7 +617,7 @@ if ($baselineForSize !== null) {
 	@if($profile)
 		<div class="energy-profile-grid">
 			@foreach([
-				['Electric Meter No.', $profile->electric_meter_no ?? '-'],
+				['Electric Meter No.', $displayElectricMeterNumber],
 				['Utility Provider', $profile->utility_provider ?? '-'],
 				['Contract Account No.', $profile->contract_account_no ?? '-'],
 				['Profile Baseline', is_numeric($profile->baseline_kwh) ? number_format((float) $profile->baseline_kwh, 2).' kWh' : '-'],

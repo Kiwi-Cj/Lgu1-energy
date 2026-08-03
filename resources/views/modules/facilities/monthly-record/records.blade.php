@@ -417,7 +417,14 @@
         padding: 10px 16px;
         border-bottom: 1px solid #e2e8f0;
         background: #ffffff;
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
     }
+
+    .monthly-filter-heading { min-width: 110px; padding-bottom: 7px; }
+    .monthly-filter-heading strong { display:flex; align-items:center; gap:7px; color:#334155; font-size:.73rem; }
+    .monthly-filter-heading span { display:block; margin-top:3px; color:#94a3b8; font-size:.6rem; }
 
     .monthly-record-table-filter-form {
         display: flex;
@@ -545,6 +552,10 @@
         font-weight: 800;
         font-size: 1rem;
     }
+
+    .monthly-period-label { margin-bottom:6px; color:#172554; font-weight:950; }
+    .monthly-archive-btn { min-height:42px; display:inline-flex; align-items:center; gap:8px; padding:9px 13px; color:#334155; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; text-decoration:none; font-size:.75rem; font-weight:800; transition:transform .15s ease,border-color .15s ease,background .15s ease; }
+    .monthly-archive-btn:hover { color:#1d4ed8; border-color:#93c5fd; background:#eff6ff; transform:translateY(-1px); }
 
     .monthly-table-subtitle {
         color: #64748b;
@@ -1851,7 +1862,28 @@
     body.dark-mode .monthly-workflow { background:#0f172a; border-color:#334155; }
     body.dark-mode .monthly-workflow-step { border-color:#334155; }
     body.dark-mode .monthly-workflow-title { color:#e2e8f0; }
-    @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow-step:nth-child(2) { border-right:0; } }
+    body.dark-mode .monthly-workflow-text { color:#94a3b8; }
+    body.dark-mode .monthly-workflow-number { color:#bfdbfe; border:1px solid #334b70; background:rgba(37,99,235,.16); }
+    body.dark-mode .monthly-table-title { color:#f1f5f9; }
+    body.dark-mode .monthly-table-subtitle { color:#8fa0b5; }
+    body.dark-mode .monthly-record-table-filter { border-color:#334155; background:#0f192a; }
+    body.dark-mode .monthly-filter-heading strong { color:#cbd5e1; }
+    body.dark-mode .monthly-filter-heading span { color:#7f91a8; }
+    body.dark-mode .monthly-record-table-filter .monthly-field label { color:#aebed0; }
+    body.dark-mode .monthly-record-table-filter .monthly-field select { color:#e5edf7; border-color:#334155; background:#111827; }
+    body.dark-mode .monthly-record-table-filter .monthly-field select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.14); outline:0; }
+    body.dark-mode .monthly-inline-filter-btn { color:#fff; border-color:#2563eb; background:linear-gradient(105deg,#2563eb,#4f46e5); }
+    body.dark-mode .monthly-chip { color:#bfdbfe; border-color:#334b70; background:rgba(37,99,235,.13); }
+    body.dark-mode .monthly-chip.is-success { color:#a7f3d0; border-color:rgba(52,211,153,.3); background:rgba(5,150,105,.12); }
+    body.dark-mode .monthly-archive-btn { color:#cbd5e1; border-color:#475569; background:#172033; }
+    body.dark-mode .monthly-archive-btn:hover { color:#bfdbfe; border-color:#3b82f6; background:#172554; }
+    body.dark-mode .monthly-period-label { color:#93c5fd; }
+    body.dark-mode .monthly-performance-label,
+    body.dark-mode .monthly-performance-note { color:#94a3b8; }
+    body.dark-mode .monthly-performance-icon { color:var(--monthly-accent,#60a5fa); background:rgba(37,99,235,.12); }
+    body.dark-mode .monthly-context-chip { color:#cbd5e1; }
+    body.dark-mode .monthly-reset-btn { color:#cbd5e1; }
+    @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow-step:nth-child(2) { border-right:0; } .monthly-record-table-filter { align-items:stretch; flex-direction:column; gap:8px; } .monthly-filter-heading { padding-bottom:0; } }
     @media (max-width:760px) {
         .monthly-table-wrap { overflow:visible; padding:10px; border-top:0; }
         .monthly-table, .monthly-table tbody { display:block; width:100%; min-width:0; }
@@ -2258,7 +2290,7 @@
                 </span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
                 <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}"
-                   style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:0.875rem;font-weight:700;transition:all 0.2s;"
+                   class="monthly-archive-btn"
                    title="View archived records">
                     <i class="fa fa-archive"></i> Archive
                 </a>
@@ -2273,6 +2305,10 @@
         </div>
 
         <div class="monthly-record-table-filter">
+            <div class="monthly-filter-heading">
+                <strong><i class="fa-solid fa-filter"></i> Filter records</strong>
+                <span>Narrow the table view</span>
+            </div>
             <form method="GET" action="{{ route('facilities.monthly-records', $facility->id) }}" class="monthly-record-table-filter-form">
                 <input type="hidden" name="year" value="{{ $selectedYear }}">
                 <input type="hidden" name="record_scope" value="{{ $selectedRecordScope }}">
@@ -2432,7 +2468,7 @@
                         @endphp
                         <tr>
                             <td data-label="Period / Main Meter">
-                                <div style="font-weight:950;color:#172554;margin-bottom:6px;">{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }} {{ (int) ($record->year ?? $selectedYear) }}</div>
+                                <div class="monthly-period-label">{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }} {{ (int) ($record->year ?? $selectedYear) }}</div>
                                 <div class="monthly-scope-cell"><span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span><span class="monthly-meter-name">{{ $scopeNameRow }}</span></div>
                             </td>
                             <td data-label="Consumption">

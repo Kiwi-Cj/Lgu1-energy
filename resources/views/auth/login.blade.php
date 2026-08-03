@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        try {
+            if (localStorage.getItem('darkMode') === 'on') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.style.colorScheme = 'dark';
+            }
+        } catch (e) {}
+    </script>
     <title>Sign In | {{ $systemName }}</title>
     @include('partials.favicon')
 
@@ -124,6 +132,12 @@
             white-space: nowrap;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
         .home-link {
             display: inline-flex;
             align-items: center;
@@ -143,6 +157,31 @@
             color: #fff;
             background: rgba(255, 255, 255, 0.13);
         }
+
+        .theme-toggle {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            color: #93c5fd;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+        }
+
+        .theme-toggle:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.13);
+            transform: translateY(-1px);
+        }
+
+        .theme-toggle svg { width: 19px; height: 19px; }
+        .theme-toggle .sun-icon { display: none; }
+        html.dark-mode .theme-toggle .moon-icon { display: none; }
+        html.dark-mode .theme-toggle .sun-icon { display: block; }
 
         .home-link svg,
         .input-icon,
@@ -633,7 +672,44 @@
             background: #f8fafc;
         }
 
+        html.dark-mode {
+            --ink: #f1f5f9;
+            --muted: #94a3b8;
+            --line: #334155;
+            --surface: rgba(15, 23, 42, 0.97);
+        }
+
+        html.dark-mode .login-shell {
+            border-color: rgba(96, 165, 250, 0.24);
+            background: rgba(15, 23, 42, 0.96);
+            box-shadow: 0 30px 80px rgba(2, 6, 23, 0.65);
+        }
+
+        html.dark-mode .login-panel {
+            background: rgba(15, 23, 42, 0.98);
+        }
+
+        html.dark-mode .login-heading h1,
+        html.dark-mode .label-row label {
+            color: #f1f5f9;
+        }
+
+        html.dark-mode .input-box input {
+            color: #e5edf7;
+            border-color: #334155;
+            background: #111c30;
+        }
+
+        html.dark-mode .input-box input:hover { border-color: #475569; }
+        html.dark-mode .input-box input:focus { border-color: #3b82f6; background: #0b1220; }
+        html.dark-mode .password-toggle:hover { background: rgba(37, 99, 235, 0.14); }
+        html.dark-mode .login-error { color: #fecdd3; border-color: #7f3045; background: rgba(190, 18, 60, 0.12); }
+        html.dark-mode .session-modal-card { color: #e2e8f0; border-color: #334155; background: #111827; }
+        html.dark-mode .session-modal-title { color: #f8fafc; }
+        html.dark-mode .session-modal-btn.secondary { color: #cbd5e1; border-color: #475569; background: #1e293b; }
+
         .home-link:focus-visible,
+        .theme-toggle:focus-visible,
         .forgot-link:focus-visible,
         .password-toggle:focus-visible,
         .login-button:focus-visible,
@@ -738,13 +814,19 @@
             <img src="{{ $systemLogoUrl }}" alt="">
             <span>{{ $systemName }}</span>
         </a>
-        <a class="home-link" href="{{ url('/') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M3 11.5 12 4l9 7.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M5.5 10v9h13v-9M9 19v-5h6v5" stroke-linejoin="round"/>
-            </svg>
-            <span>Home</span>
-        </a>
+        <div class="header-actions">
+            <a class="home-link" href="{{ url('/') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 11.5 12 4l9 7.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M5.5 10v9h13v-9M9 19v-5h6v5" stroke-linejoin="round"/>
+                </svg>
+                <span>Home</span>
+            </a>
+            <button class="theme-toggle" id="loginThemeToggle" type="button" aria-label="Switch to dark mode" title="Toggle theme">
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.7 15.2A8.7 8.7 0 0 1 8.8 3.3 9 9 0 1 0 20.7 15.2Z"/></svg>
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg>
+            </button>
+        </div>
     </header>
 
     <main class="page">
@@ -911,6 +993,7 @@
 
     <script>
         (function () {
+            const themeToggle = document.getElementById('loginThemeToggle');
             const loginForm = document.getElementById('loginForm');
             const emailInput = document.getElementById('loginEmail');
             const passwordInput = document.getElementById('loginPassword');
@@ -921,6 +1004,21 @@
             const buttonLoading = document.getElementById('loginBtnLoading');
             const errorBox = document.getElementById('loginError');
             const errorText = document.getElementById('loginErrorText');
+
+            function applyTheme(isDark) {
+                document.documentElement.classList.toggle('dark-mode', isDark);
+                document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                if (themeToggle) themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+                try { localStorage.setItem('darkMode', isDark ? 'on' : 'off'); } catch (e) {}
+            }
+
+            applyTheme(document.documentElement.classList.contains('dark-mode'));
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    applyTheme(!document.documentElement.classList.contains('dark-mode'));
+                });
+            }
 
             function prepareCredentialField(input) {
                 if (!input) return;

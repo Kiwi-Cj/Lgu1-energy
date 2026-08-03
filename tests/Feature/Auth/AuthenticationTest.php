@@ -84,7 +84,8 @@ test('otp email uses the recipient name and correct singular expiration wording'
         ->toContain('1 minute')
         ->not->toContain('1 minutes')
         ->toContain('never share this code with anyone')
-        ->toContain('cid:energy-system-logo@energy-system');
+        ->not->toContain('<img')
+        ->not->toContain('cid:');
 });
 
 test('a pending user can verify otp and complete authentication', function () {

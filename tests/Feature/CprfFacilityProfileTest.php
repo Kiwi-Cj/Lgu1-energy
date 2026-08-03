@@ -3,6 +3,7 @@
 use App\Models\EnergyProfile;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Models\User;
 
 function makeCprfMappedFacility(array $overrides = []): Facility
 {
@@ -32,8 +33,9 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
     config(['services.cprf_integration.token' => 'test-token']);
 
     $facility = makeCprfMappedFacility(['external_ref' => 501]);
-    makeMainMeter($facility, [
+    $meter = makeMainMeter($facility, [
         'meter_name' => 'Bernardo Court Main Meter',
+        'meter_number' => 'CPRF-MTR-001',
         'baseline_kwh' => 4200,
         'approved_at' => now(),
         'approved_by_user_id' => null,
@@ -43,6 +45,8 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
     // never reflect real engineer sign-off.
     EnergyProfile::create([
         'facility_id' => $facility->id,
+        'primary_meter_id' => $meter->id,
+        'electric_meter_no' => 'N/A',
         'utility_provider' => 'Meralco',
         'contract_account_no' => '1234-5678',
         'baseline_kwh' => 1200, // deliberately different from the meter's baseline
@@ -55,10 +59,32 @@ test('facility-profiles reads engineer_approved and baseline_kwh from the approv
         ->and($response->json('data.0.facility_external_ref'))->toBe(501)
         ->and($response->json('data.0.utility_provider'))->toBe('Meralco') // still from profile
         ->and($response->json('data.0.contract_account_no'))->toBe('1234-5678') // still from profile
+        ->and($response->json('data.0.electric_meter_no'))->toBe('CPRF-MTR-001')
         ->and($response->json('data.0.main_meter_name'))->toBe('Bernardo Court Main Meter')
         ->and($response->json('data.0.baseline_kwh'))->toBe(4200.0) // from the meter, not the profile's 1200
-        ->and($response->json('data.0.engineer_approved'))->toBeTrue() // from the meter's approved_at
-        ->and($response->json('data.0.main_meter_name'))->toBe('Main Meter'); // the resolved meter's own name
+        ->and($response->json('data.0.engineer_approved'))->toBeTrue(); // from the meter's approved_at
+});
+
+test('CPRF facility details show the registered main meter number instead of the profile placeholder', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = makeCprfMappedFacility(['external_ref' => 501]);
+    $meter = makeMainMeter($facility, [
+        'meter_number' => 'CPRF-MTR-DETAIL-001',
+        'baseline_kwh' => 4500,
+        'approved_at' => now(),
+    ]);
+    EnergyProfile::create([
+        'facility_id' => $facility->id,
+        'primary_meter_id' => $meter->id,
+        'electric_meter_no' => 'N/A',
+        'baseline_kwh' => 4500,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('modules.facilities.show', $facility->id))
+        ->assertOk()
+        ->assertSee('Electric Meter No.')
+        ->assertSee('CPRF-MTR-DETAIL-001');
 });
 
 test('facility-profiles shows engineer_approved false when the main meter is not yet approved', function () {

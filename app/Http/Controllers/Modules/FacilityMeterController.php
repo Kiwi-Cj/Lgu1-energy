@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\Submeter;
-use App\Models\SubmeterEquipment;
 use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 
@@ -51,11 +50,6 @@ class FacilityMeterController extends Controller
     private function canViewUnapproved(): bool
     {
         return $this->canApprove() || $this->canManage();
-    }
-
-    private function canManageEquipment(): bool
-    {
-        return $this->canManage();
     }
 
     private function validateMeter(Request $request, int $facilityId, ?int $meterId = null): array
@@ -173,121 +167,6 @@ class FacilityMeterController extends Controller
             'canManageMeters' => $this->canManage(),
             'canApproveMeters' => $this->canApprove(),
         ]);
-    }
-
-    public function submeterEquipment($facilityId, $meterId)
-    {
-        $facility = Facility::findOrFail($facilityId);
-        $subMeter = FacilityMeter::query()
-            ->where('facility_id', $facility->id)
-            ->where('meter_type', 'sub')
-            ->whereKey($meterId)
-            ->firstOrFail();
-
-        $mainMeter = null;
-        if (! empty($subMeter->parent_meter_id)) {
-            $mainMeter = FacilityMeter::query()
-                ->where('facility_id', $facility->id)
-                ->where('meter_type', 'main')
-                ->whereKey((int) $subMeter->parent_meter_id)
-                ->first();
-        }
-
-        $submeterEntity = Submeter::query()
-            ->where('facility_id', $facility->id)
-            ->whereRaw('LOWER(TRIM(submeter_name)) = ?', [strtolower(trim((string) $subMeter->meter_name))])
-            ->first();
-
-        $equipmentRows = collect();
-        if ($submeterEntity) {
-            $equipmentRows = SubmeterEquipment::query()
-                ->where('meter_scope', 'sub')
-                ->where('submeter_id', (int) $submeterEntity->id)
-                ->orderByDesc('estimated_kwh')
-                ->orderBy('equipment_name')
-                ->get();
-        }
-
-        $totalWatts = (float) $equipmentRows->sum(function ($equipment) {
-            $quantity = (int) ($equipment->quantity ?? 0);
-            $ratedWatts = (float) ($equipment->rated_watts ?? 0);
-            return $quantity * $ratedWatts;
-        });
-        $totalEstimatedKwh = (float) $equipmentRows->sum(fn ($equipment) => (float) ($equipment->estimated_kwh ?? 0));
-
-        return view('modules.facilities.meters.equipment-by-submeter', [
-            'facility' => $facility,
-            'subMeter' => $subMeter,
-            'mainMeter' => $mainMeter,
-            'submeterEntity' => $submeterEntity,
-            'equipmentRows' => $equipmentRows,
-            'equipmentCount' => $equipmentRows->count(),
-            'totalWatts' => $totalWatts,
-            'totalEstimatedKwh' => $totalEstimatedKwh,
-            'canManageEquipment' => $this->canManageEquipment(),
-        ]);
-    }
-
-    public function storeSubmeterEquipment(Request $request, $facilityId, $meterId)
-    {
-        if (! $this->canManageEquipment()) {
-            return redirect()->back()->with('error', 'You do not have permission to manage equipment inventory.');
-        }
-
-        $facility = Facility::findOrFail($facilityId);
-        $subMeter = FacilityMeter::query()
-            ->where('facility_id', $facility->id)
-            ->where('meter_type', 'sub')
-            ->whereKey($meterId)
-            ->firstOrFail();
-
-        $submeterEntity = Submeter::query()
-            ->where('facility_id', $facility->id)
-            ->whereRaw('LOWER(TRIM(submeter_name)) = ?', [strtolower(trim((string) $subMeter->meter_name))])
-            ->first();
-
-        if (! $submeterEntity) {
-            return redirect()
-                ->route('modules.facilities.meters.submeter-equipment', [$facility->id, $subMeter->id])
-                ->with('error', 'No linked submeters record found for this sub-meter.');
-        }
-
-        $validated = $request->validate([
-            'equipment_name' => 'required|string|max:120',
-            'quantity' => 'required|integer|min:1|max:100000',
-            'rated_watts' => 'required|numeric|min:0.01|max:99999999.99',
-            'operating_hours_per_day' => 'required|numeric|min:0.01|max:24',
-            'operating_days_per_month' => 'required|integer|min:1|max:31',
-        ]);
-
-        $equipmentName = trim((string) $validated['equipment_name']);
-        $duplicateExists = SubmeterEquipment::query()
-            ->where('meter_scope', 'sub')
-            ->where('submeter_id', (int) $submeterEntity->id)
-            ->whereRaw('LOWER(equipment_name) = ?', [strtolower($equipmentName)])
-            ->exists();
-
-        if ($duplicateExists) {
-            return redirect()
-                ->route('modules.facilities.meters.submeter-equipment', [$facility->id, $subMeter->id])
-                ->withInput()
-                ->with('error', 'This equipment already exists for the selected sub-meter.');
-        }
-
-        SubmeterEquipment::create([
-            'meter_scope' => 'sub',
-            'submeter_id' => (int) $submeterEntity->id,
-            'facility_meter_id' => null,
-            'equipment_name' => $equipmentName,
-            'quantity' => (int) $validated['quantity'],
-            'rated_watts' => $validated['rated_watts'],
-            'operating_hours_per_day' => $validated['operating_hours_per_day'],
-            'operating_days_per_month' => (int) $validated['operating_days_per_month'],
-        ]);
-
-        return redirect()
-            ->route('modules.facilities.meters.submeter-equipment', [$facility->id, $subMeter->id])
-            ->with('success', 'Equipment added successfully.');
     }
 
     public function store(Request $request, $facilityId)

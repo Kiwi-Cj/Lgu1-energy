@@ -5,9 +5,16 @@
     $user = auth()->user();
     $roleKey = $user?->role_key ?? str_replace(' ', '_', strtolower((string) ($user?->role ?? '')));
     $canExportReports = \App\Support\RoleAccess::can($user, 'export_reports');
+    $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
 
     $rows = collect($energyRows ?? []);
     $recordRows = $rows->filter(fn ($row) => ($row['has_reading'] ?? true) === true);
+    $awaitingRows = $rows->reject(fn ($row) => ($row['has_reading'] ?? true) === true);
+    $facilityCount = $rows->pluck('facility_id')->filter()->unique()->count();
+    $recordedFacilityCount = $recordRows->pluck('facility_id')->filter()->unique()->count();
+    $awaitingFacilityCount = $awaitingRows->pluck('facility_id')->filter()->unique()->count();
+    $localFacilityCount = $rows->where('source', 'local')->pluck('facility_id')->filter()->unique()->count();
+    $cprfFacilityCount = $rows->where('source', 'cprf')->pluck('facility_id')->filter()->unique()->count();
     $toNumber = function ($value) {
         $clean = preg_replace('/[^0-9.\-]/', '', (string) $value);
         return is_numeric($clean) ? (float) $clean : null;
@@ -290,21 +297,66 @@
     border-color: #cbd5e1;
 }
 
+.energy-table-scroll-shell {
+    width: calc(100% - 8px);
+    margin-right: 8px;
+    position: relative;
+}
+
 .energy-table-wrap {
     overflow: auto;
+    width: 100%;
     max-height: calc(100vh - 320px);
     min-height: 420px;
     overscroll-behavior: contain;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     background: #fff;
+    scrollbar-gutter: stable;
+}
+
+.energy-table-scroll-cap {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    z-index: 8;
+    width: 17px;
+    height: 43px;
+    border-left: 1px solid #e2e8f0;
+    background: #f8fafc;
+    pointer-events: none;
+}
+
+/* Keep the vertical scrollbar clear of the sticky table heading. */
+.energy-table-wrap::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.energy-table-wrap::-webkit-scrollbar-track {
+    margin-top: 44px;
+    margin-bottom: 8px;
 }
 
 .energy-table {
     width: 100%;
-    min-width: 860px;
+    min-width: 1120px;
     border-collapse: collapse;
+    table-layout: fixed;
 }
+
+.energy-table th,
+.energy-table td { box-sizing:border-box; }
+.energy-table th:nth-child(1) { width:25%; }
+.energy-table th:nth-child(2) { width:8%; }
+.energy-table th:nth-child(3) { width:10%; }
+.energy-table th:nth-child(4) { width:12%; }
+.energy-table th:nth-child(5) { width:12%; }
+.energy-table th:nth-child(6) { width:19%; }
+.energy-table th:nth-child(7) { width:14%; }
+.energy-table td:nth-child(2),
+.energy-table td.num { white-space:nowrap; }
 
 .energy-table thead {
     background: #f8fafc;
@@ -359,6 +411,10 @@
     color: #0f172a;
 }
 
+.facility-cell__body { min-width:0; }
+.facility-cell__name { display:block; color:inherit; line-height:1.35; }
+.facility-cell__body .facility-source-badge { margin-top:6px; }
+
 .facility-dot {
     width: 10px;
     height: 10px;
@@ -382,15 +438,20 @@
     white-space: nowrap;
 }
 
+.facility-source-badge.is-local {
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
 .energy-row.is-awaiting {
-    cursor: default;
     background: #fcfdff;
 }
 
 .energy-row.is-awaiting:hover,
 .energy-row.is-awaiting:focus-visible {
-    background: #fcfdff;
-    box-shadow: none;
+    background: #eff6ff;
+    box-shadow: inset 4px 0 0 #2563eb;
 }
 
 .energy-table th.num,
@@ -428,6 +489,54 @@
 .trend-down { background: #dcfce7; color: #166534; border-color: #86efac; }
 .trend-awaiting { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
 .trend-stable { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+.energy-table th.action-col,
+.energy-table td.action-col {
+    text-align: center;
+    white-space: nowrap;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.row-action {
+    width: 132px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 7px 11px;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 9px;
+    background: #eff6ff;
+    text-decoration: none;
+    font-size: .68rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease, transform .15s ease;
+}
+
+.row-action:hover {
+    color: #fff;
+    border-color: #2563eb;
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+.row-action:focus-visible { outline: 3px solid rgba(59,130,246,.24); outline-offset: 2px; }
+
+.row-action--add { color: #047857; border-color: #a7f3d0; background: #ecfdf5; }
+.row-action--add:hover { color: #fff; border-color: #059669; background: #059669; }
+.row-action--records { color: #475569; border-color: #cbd5e1; background: #f8fafc; }
+.row-action--records:hover { color: #fff; border-color: #475569; background: #475569; }
+.row-action--sync {
+    color: #b45309;
+    border-color: #fed7aa;
+    background: #fff7ed;
+    cursor: default;
+}
+.row-action--sync:hover { color: #b45309; border-color: #fed7aa; background: #fff7ed; transform: none; }
+.row-action i:last-child { font-size: .58rem; }
 
 .empty-row {
     text-align: center;
@@ -693,6 +802,236 @@
     font-size: 0.75rem;
 }
 
+/* Refined report workspace */
+.energy-report-shell {
+    position: relative;
+    overflow: hidden;
+    padding: 28px;
+    border-radius: 22px;
+}
+
+.energy-report-shell::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2563eb, #6366f1 55%, #0ea5e9);
+}
+
+.energy-header {
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.energy-title-block {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.energy-title-icon {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    background: #eff6ff;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .1);
+}
+
+.energy-title-icon i { font-size: 1rem; }
+.energy-header h2 { letter-spacing: -.035em; }
+
+.energy-actions {
+    padding: 5px;
+    border: 1px solid #dbe5f1;
+    border-radius: 13px;
+    background: rgba(255,255,255,.7);
+}
+
+.btn-action {
+    min-height: 42px;
+    justify-content: center;
+    padding: 10px 15px;
+    border: 1px solid rgba(255,255,255,.12);
+    transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.btn-action:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+}
+
+.energy-kpis { gap: 14px; margin-bottom: 18px; }
+.kpi-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 124px;
+    padding: 17px;
+    border-color: #dbe5f1;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .055);
+}
+
+.kpi-card::after {
+    content: '';
+    position: absolute;
+    right: -35px;
+    bottom: -40px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .045;
+}
+
+.kpi-label { position: relative; z-index: 1; color: #52647a; }
+.kpi-label i {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    margin-right: 3px;
+    color: currentColor;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, .09);
+    font-size: .78rem;
+}
+.kpi-value { position: relative; z-index: 1; margin-top: 10px; color: #0f172a; letter-spacing: -.035em; }
+.kpi-note { position: relative; z-index: 1; color: #64748b; }
+.kpi-total .kpi-label i { color: #2563eb; background: #eff6ff; }
+.kpi-actual .kpi-label i { color: #0891b2; background: #ecfeff; }
+.kpi-baseline .kpi-label i { color: #6366f1; background: #eef2ff; }
+.kpi-var .kpi-label i { color: #ea580c; background: #fff7ed; }
+.kpi-trend .kpi-label i { color: #16a34a; background: #f0fdf4; }
+.kpi-total, .kpi-actual, .kpi-baseline, .kpi-var, .kpi-trend { background: #fff; }
+
+.energy-filters {
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 17px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .035);
+}
+.filter-group select,
+.filter-group input,
+.month-picker-toggle { min-height: 46px; }
+.btn-filter, .btn-reset { min-height: 46px; border-radius: 10px; }
+.btn-filter { box-shadow: 0 8px 18px rgba(37, 99, 235, .18); }
+
+.table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 15px 17px;
+    border: 1px solid #e2e8f0;
+    border-bottom: 0;
+    border-radius: 15px 15px 0 0;
+    background: #fff;
+}
+.table-toolbar__copy { min-width: 0; }
+.table-toolbar strong { display: block; color: #0f172a; font-size: .83rem; }
+.table-toolbar span { display: block; margin-top: 3px; color: #64748b; font-size: .68rem; }
+.table-result-count {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    font-size: .68rem;
+    font-weight: 800;
+}
+.table-result-count span { display: inline; margin: 0; color: inherit; font-size: inherit; }
+.table-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px 17px;
+    border: 1px solid #e2e8f0;
+    border-bottom: 0;
+    background: #f8fafc;
+}
+.table-filter-label { margin-right: 2px; color: #64748b; font-size: .67rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.row-filter-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 5px 9px;
+    color: #52647a;
+    border: 1px solid #dbe5f1;
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+    font-size: .65rem;
+    font-weight: 800;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.row-filter-button span { color: #94a3b8; font-variant-numeric: tabular-nums; }
+.row-filter-button:hover { color: #1d4ed8; border-color: #bfdbfe; }
+.row-filter-button.is-active { color: #fff; border-color: #2563eb; background: linear-gradient(105deg, #2563eb, #4f46e5); }
+.row-filter-button.is-active span { color: rgba(255,255,255,.82); }
+.energy-table-wrap { border-radius: 0 0 15px 15px; }
+.energy-table tbody tr:nth-child(even):not(.is-awaiting) { background: #fbfdff; }
+.energy-table td { height: 62px; }
+.facility-dot { flex: 0 0 auto; box-shadow: 0 0 0 4px rgba(37, 99, 235, .09); }
+
+body.dark-mode .energy-report-shell::before { opacity: .9; }
+body.dark-mode .energy-title-icon { color: #7dd3fc; border-color: #334b70; background: rgba(37,99,235,.14); box-shadow: none; }
+body.dark-mode .energy-actions { border-color: #29384d; background: rgba(15,23,42,.66); }
+body.dark-mode .kpi-card,
+body.dark-mode .kpi-total,
+body.dark-mode .kpi-actual,
+body.dark-mode .kpi-baseline,
+body.dark-mode .kpi-var,
+body.dark-mode .kpi-trend { border-color: #2c3d54; background: linear-gradient(145deg, #111c30, #142035); }
+body.dark-mode .kpi-label { color: #b8c5d5; }
+body.dark-mode .kpi-value { color: #f8fafc; }
+body.dark-mode .kpi-note { color: #94a3b8; }
+body.dark-mode .kpi-label i { border: 1px solid rgba(148,163,184,.13); }
+body.dark-mode .energy-filters { border-color: #29384d; background: #111c30; box-shadow: none; }
+body.dark-mode .table-toolbar { border-color: #29384d; background: #111c30; }
+body.dark-mode .table-toolbar strong { color: #f1f5f9; }
+body.dark-mode .table-toolbar span { color: #94a3b8; }
+body.dark-mode .table-result-count { color: #bfdbfe; border-color: #334b70; background: rgba(37,99,235,.14); }
+body.dark-mode .table-result-count span { color: inherit; }
+body.dark-mode .table-filter-bar { border-color: #29384d; background: #0f192a; }
+body.dark-mode .table-filter-label { color: #8494a8; }
+body.dark-mode .row-filter-button { color: #b8c5d5; border-color: #334155; background: #172033; }
+body.dark-mode .row-filter-button span { color: #7f91a8; }
+body.dark-mode .row-filter-button:hover { color: #bfdbfe; border-color: #475b75; }
+body.dark-mode .row-filter-button.is-active { color: #fff; border-color: #3b82f6; background: linear-gradient(105deg, #2563eb, #4f46e5); }
+body.dark-mode .row-filter-button.is-active span { color: rgba(255,255,255,.82); }
+body.dark-mode .energy-table tbody tr { background: #111827; }
+body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) { background: #101a2c; }
+body.dark-mode .energy-row.is-awaiting { background: #111827; }
+body.dark-mode .energy-row.is-awaiting:nth-child(even) { background: #101a2c; }
+body.dark-mode .energy-row.is-awaiting td { color: #a9b7c9; }
+body.dark-mode .energy-row.is-awaiting .facility-cell { color: #d7e0eb; }
+body.dark-mode .facility-source-badge { color: #5eead4; border-color: rgba(45,212,191,.35); background: rgba(13,148,136,.12); }
+body.dark-mode .facility-source-badge.is-local { color: #93c5fd; border-color: rgba(96,165,250,.3); background: rgba(37,99,235,.1); }
+body.dark-mode .trend-awaiting { color: #fdba74; border-color: rgba(251,146,60,.35); background: rgba(194,65,12,.14); }
+body.dark-mode .row-action { color: #bfdbfe; border-color: #334b70; background: rgba(37,99,235,.13); }
+body.dark-mode .row-action:hover { color: #fff; border-color: #3b82f6; background: #2563eb; }
+body.dark-mode .row-action--add { color: #6ee7b7; border-color: rgba(52,211,153,.3); background: rgba(5,150,105,.12); }
+body.dark-mode .row-action--add:hover { color: #fff; border-color: #10b981; background: #059669; }
+body.dark-mode .row-action--records { color: #cbd5e1; border-color: #475569; background: #1e293b; }
+body.dark-mode .row-action--sync,
+body.dark-mode .row-action--sync:hover { color: #fdba74; border-color: rgba(251,146,60,.3); background: rgba(194,65,12,.13); }
+
 /* Page-level dark mode */
 body.dark-mode .energy-report-shell {
     background: linear-gradient(160deg, #0f172a 0%, #111827 100%);
@@ -712,6 +1051,7 @@ body.dark-mode .kpi-trend { background: rgba(22, 101, 52, 0.24); color: #86efac;
 body.dark-mode .btn-csv { background: linear-gradient(90deg, #115e59, #0f766e); }
 body.dark-mode .energy-filters,
 body.dark-mode .energy-table-wrap { background: #111827; border-color: #1f2937; }
+body.dark-mode .energy-table-scroll-cap { border-left-color:#1f2937; background:#0f172a; }
 body.dark-mode .filter-group label { color: #cbd5e1; }
 body.dark-mode .filter-group select,
 body.dark-mode .filter-group input {
@@ -743,7 +1083,11 @@ body.dark-mode .energy-table th { color: #94a3b8; border-bottom-color: #1f2937; 
 body.dark-mode .energy-table td { color: #e2e8f0; border-bottom-color: #1f2937; }
 body.dark-mode .energy-table tr:hover { background: #1f2937; }
 body.dark-mode .energy-row:hover,
-body.dark-mode .energy-row:focus-visible { background: #172033; }
+body.dark-mode .energy-row:focus-visible,
+body.dark-mode .energy-row.is-awaiting:hover,
+body.dark-mode .energy-row.is-awaiting:focus-visible,
+body.dark-mode .energy-row.is-awaiting:nth-child(even):hover,
+body.dark-mode .energy-row.is-awaiting:nth-child(even):focus-visible { background: #172033; }
 body.dark-mode .facility-cell { color: #f8fafc; }
 body.dark-mode .empty-row { color: #94a3b8; }
 body.dark-mode .trend-up { background: rgba(239, 68, 68, 0.14); color: #fca5a5; border-color: rgba(248, 113, 113, 0.32); }
@@ -793,6 +1137,7 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
         flex-direction: column;
         align-items: stretch;
     }
+    .energy-title-block { align-items: flex-start; }
     .energy-actions {
         width: 100%;
     }
@@ -809,7 +1154,17 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
     .energy-table-wrap {
         max-height: 60vh;
         min-height: 300px;
+        scrollbar-width: thin;
     }
+    .energy-table-wrap::-webkit-scrollbar-track {
+        margin-top: 40px;
+        margin-bottom: 6px;
+    }
+    .energy-table th:first-child { left:0; z-index:4; }
+    .energy-table td:first-child { position:sticky; left:0; z-index:1; background:#fff; box-shadow:8px 0 14px -14px rgba(15,23,42,.55); }
+    .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first-child { background:#fbfdff; }
+    .table-toolbar { align-items: flex-start; flex-direction: column; }
+    .table-filter-bar { padding: 10px 12px; }
     .annual-summary-modal {
         padding: 8px;
     }
@@ -840,25 +1195,68 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
         flex-direction: column;
     }
 }
+
+@media (max-width: 480px) {
+    .energy-report-shell { padding: 12px 9px; border-radius: 16px; }
+    .energy-header { gap: 12px; margin-bottom: 13px; }
+    .energy-title-block { gap: 10px; }
+    .energy-title-icon { width: 38px; height: 38px; border-radius: 11px; }
+    .energy-header h2 { font-size: 1.12rem; }
+    .energy-header p { margin-top:4px; font-size:.76rem; line-height:1.4; }
+    .energy-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; border-radius:11px; }
+    .btn-action { min-width:0; min-height:36px; gap:5px; padding:7px 5px; border-radius:8px; font-size:.68rem; box-shadow:none; }
+    .btn-action i { font-size:.7rem; }
+    .action-prefix { display:none; }
+    .energy-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+    .kpi-card { min-height:94px; padding:11px; border-radius:11px; }
+    .kpi-trend { grid-column:1/-1; }
+    .kpi-label { gap:4px; font-size:.6rem; letter-spacing:.025em; }
+    .kpi-label i { width:28px; height:28px; margin-right:1px; border-radius:8px; font-size:.68rem; }
+    .kpi-value { margin-top:6px; font-size:1.12rem; }
+    .kpi-note { margin-top:4px; font-size:.62rem; }
+    .energy-filters { grid-template-columns:1fr 1fr; gap:9px; margin-bottom:12px; padding:11px; border-radius:12px; }
+    .energy-filters .filter-group:first-child,
+    .energy-filters .filter-group:nth-child(4) { grid-column:1/-1; }
+    .filter-group label { font-size:.64rem; }
+    .filter-group select,
+    .filter-group input,
+    .month-picker-toggle { min-height:40px; padding:8px 9px; font-size:.82rem; }
+    .btn-filter,
+    .btn-reset { width:100%; min-height:40px; font-size:.76rem; }
+    .table-toolbar { gap:9px; padding:11px 12px; }
+    .table-result-count { padding:5px 8px; }
+    .table-filter-bar { padding:8px 10px; }
+    .energy-table-scroll-shell { width:calc(100% - 5px); margin-right:5px; }
+    .energy-table-wrap { min-height:260px; }
+    .energy-table-scroll-cap { height:39px; }
+    .energy-table th,
+    .energy-table td { padding:10px 11px; }
+}
+
+body.dark-mode .energy-table td:first-child { background:#111827; }
+body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first-child { background:#101a2c; }
 </style>
 
 <div class="energy-report-page">
     <div class="energy-report-shell">
         <div class="energy-header">
-            <div>
+            <div class="energy-title-block">
+                <span class="energy-title-icon" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></span>
+                <div>
                 <h2>Energy Report</h2>
                 <p>Track facility consumption variance and trend behavior by period.</p>
+                </div>
             </div>
             <div class="energy-actions">
                 @if($canExportReports)
                 <a href="{{ route('reports.energy-export', $exportCsvFilters) }}" class="btn-action btn-csv" data-secure-download>
-                    <i class="fa fa-file-text-o"></i> Export CSV
+                    <i class="fa fa-file-text-o"></i> <span><span class="action-prefix">Export </span>CSV</span>
                 </a>
                 <a href="{{ route('reports.energy-export', $exportXlsxFilters) }}" class="btn-action btn-excel" data-secure-download>
-                    <i class="fa fa-download"></i> Export Excel
+                    <i class="fa fa-download"></i> <span><span class="action-prefix">Export </span>Excel</span>
                 </a>
                 <a href="{{ route('modules.energy.export-pdf', array_filter($exportFilters, fn ($value) => $value !== null && $value !== '')) }}" class="btn-action btn-pdf" data-secure-download>
-                    <i class="fa fa-file-pdf-o"></i> Export PDF
+                    <i class="fa fa-file-pdf-o"></i> <span><span class="action-prefix">Export </span>PDF</span>
                 </a>
                 @endif
             </div>
@@ -948,16 +1346,37 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
             <a href="{{ url()->current() }}" class="btn-reset">Reset</a>
         </form>
 
-        <div class="energy-table-wrap">
-            <table class="energy-table" id="energyTable">
+        <div class="table-toolbar">
+            <div class="table-toolbar__copy">
+                <strong>Facility performance</strong>
+                <span>Select a recorded facility to view its annual energy summary.</span>
+            </div>
+            <div class="table-result-count">
+                <i class="fa-solid fa-building"></i>
+                <span id="tableResultCount">{{ $facilityCount }} {{ Illuminate\Support\Str::plural('facility', $facilityCount) }}</span>
+            </div>
+        </div>
+        <div class="table-filter-bar" role="group" aria-label="Filter report rows">
+            <span class="table-filter-label">Show</span>
+            <button type="button" class="row-filter-button is-active" data-row-filter="all">All <span>{{ $facilityCount }}</span></button>
+            <button type="button" class="row-filter-button" data-row-filter="recorded"><i class="fa-solid fa-circle-check"></i> Recorded <span>{{ $recordedFacilityCount }}</span></button>
+            <button type="button" class="row-filter-button" data-row-filter="awaiting"><i class="fa-regular fa-clock"></i> Awaiting <span>{{ $awaitingFacilityCount }}</span></button>
+            <button type="button" class="row-filter-button" data-row-filter="local">Local <span>{{ $localFacilityCount }}</span></button>
+            <button type="button" class="row-filter-button" data-row-filter="cprf">CPRF <span>{{ $cprfFacilityCount }}</span></button>
+        </div>
+        <div class="energy-table-scroll-shell">
+            <div class="energy-table-scroll-cap" aria-hidden="true"></div>
+            <div class="energy-table-wrap">
+                <table class="energy-table" id="energyTable">
                 <thead>
                     <tr>
                         <th>Facility</th>
                         <th>Month</th>
-                        <th class="num">Actual</th>
-                        <th class="num">Baseline</th>
-                        <th class="num">Variance</th>
+                        <th class="num">Actual (kWh)</th>
+                        <th class="num">Baseline (kWh)</th>
+                        <th class="num">Variance (kWh)</th>
                         <th class="trend-col">Trend</th>
+                        <th class="action-col">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -970,24 +1389,52 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
                             $trendLabel = $trendBase === 'awaiting' ? 'Awaiting Reading' : ($trendBase === 'up' ? 'Increasing' : ($trendBase === 'down' ? 'Decreasing' : ($trendBase === 'insufficient' ? 'Insufficient Data' : 'Stable')));
                             $trendIcon = $trendBase === 'awaiting' ? 'fa-clock' : ($trendBase === 'up' ? 'fa-arrow-up' : ($trendBase === 'down' ? 'fa-arrow-down' : ($trendBase === 'insufficient' ? 'fa-circle-question' : 'fa-minus')));
                             $trendSpike = str_contains($trend, '3-Month Spike');
+                            $rowFacilityId = (int) ($row['facility_id'] ?? 0);
+                            $rowSource = strtolower((string) ($row['source'] ?? 'local'));
+                            $actionYear = (int) request('year', date('Y'));
+                            $actionMonth = $selectedMonthValue !== '' ? (int) $selectedMonthValue : null;
+                            $monthlyRecordsParams = [
+                                'facility' => $rowFacilityId,
+                                'year' => $actionYear,
+                                'summary_mode' => $actionMonth ? 'month' : 'year',
+                            ];
+                            if ($actionMonth) {
+                                $monthlyRecordsParams['summary_month'] = $actionMonth;
+                            }
+                            $monthlyRecordsUrl = route('facilities.monthly-records', $monthlyRecordsParams);
+                            $facilityProfileUrl = route('modules.facilities.energy-profile.index', ['facility' => $rowFacilityId]);
+                            $encodeReadingUrl = $actionMonth
+                                ? route('facilities.monthly-records', array_merge($monthlyRecordsParams, [
+                                    'open_add' => 1,
+                                    'record_date' => sprintf('%04d-%02d-01', $actionYear, $actionMonth),
+                                ]))
+                                : $monthlyRecordsUrl;
                         @endphp
                         <tr class="energy-row {{ $hasReading ? '' : 'is-awaiting' }}"
                             data-search="{{ strtolower(trim((string)($row['facility'] ?? '') . ' ' . (string)($row['source'] ?? ''))) }}"
+                            data-facility-id="{{ $row['facility_id'] ?? '' }}"
+                            data-profile-url="{{ $facilityProfileUrl }}"
+                            data-source="{{ $row['source'] ?? 'local' }}"
+                            data-status="{{ $hasReading ? 'recorded' : 'awaiting' }}"
                             data-summary-key="{{ $row['summary_key'] ?? '' }}"
-                            @if($hasReading)
-                                tabindex="0"
-                                role="button"
-                                aria-label="View {{ $row['facility'] }} annual energy summary for {{ substr((string) ($row['month'] ?? ''), -4) }}"
-                            @endif>
+                            tabindex="0"
+                            role="link"
+                            aria-label="Open the Energy Profile for {{ $row['facility'] }}">
                             <td>
                                 <div class="facility-cell">
                                     <span class="facility-dot"></span>
-                                    <span>{{ $row['facility'] }}</span>
-                                    @if(($row['source'] ?? 'local') === 'cprf')
-                                        <span class="facility-source-badge" title="Mirrored from CPRF facility {{ $row['external_ref'] ?? '' }}">
-                                            <i class="fa fa-link"></i> CPRF Integrated
-                                        </span>
-                                    @endif
+                                    <div class="facility-cell__body">
+                                        <span class="facility-cell__name">{{ $row['facility'] }}</span>
+                                        @if(($row['source'] ?? 'local') === 'cprf')
+                                            <span class="facility-source-badge" title="Mirrored from CPRF facility {{ $row['external_ref'] ?? '' }}">
+                                                <i class="fa fa-link"></i> CPRF Integrated
+                                            </span>
+                                        @else
+                                            <span class="facility-source-badge is-local" title="Facility managed in this system">
+                                                <i class="fa-solid fa-location-dot"></i> Local
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                             <td>{{ $row['month'] }}</td>
@@ -1002,17 +1449,37 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
                                     <div style="margin-top:6px;font-size:0.78rem;font-weight:800;color:#b91c1c;">3-Month Spike</div>
                                 @endif
                             </td>
+                            <td class="action-col">
+                                @if($hasReading)
+                                    <button type="button" class="row-action row-action--view" aria-label="View annual report for {{ $row['facility'] }}">
+                                        View Report <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                @elseif($rowSource === 'cprf')
+                                    <a href="{{ $facilityProfileUrl }}" class="row-action row-action--records" title="Reading is managed through CPRF integration. Open the facility profile.">
+                                        <i class="fa-solid fa-building"></i> View Facility
+                                    </a>
+                                @elseif($canEncodeMainReadings && $actionMonth)
+                                    <a href="{{ $encodeReadingUrl }}" class="row-action row-action--add" aria-label="Add {{ $row['month'] }} reading for {{ $row['facility'] }}">
+                                        <i class="fa-solid fa-plus"></i> Add Reading
+                                    </a>
+                                @else
+                                    <a href="{{ $monthlyRecordsUrl }}" class="row-action row-action--records" aria-label="View records for {{ $row['facility'] }}">
+                                        View Records <i class="fa-solid fa-chevron-right"></i>
+                                    </a>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="empty-row">No records found.</td>
+                            <td colspan="7" class="empty-row">No records found.</td>
                         </tr>
                     @endforelse
                     <tr id="energyNoMatch" style="display:none;">
-                        <td colspan="6" class="empty-row">No matching facility in current result.</td>
+                            <td colspan="7" class="empty-row">No facilities match the current search or filter.</td>
                     </tr>
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -1094,6 +1561,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('tableSearch');
     const rows = Array.from(document.querySelectorAll('.energy-row'));
     const noMatch = document.getElementById('energyNoMatch');
+    const resultCount = document.getElementById('tableResultCount');
+    const rowFilterButtons = Array.from(document.querySelectorAll('.row-filter-button'));
     const monthPicker = document.getElementById('monthPicker');
     const monthToggle = document.getElementById('monthPickerToggle');
     const monthInput = document.getElementById('month');
@@ -1114,6 +1583,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const annualDownloadCsv = document.getElementById('annualDownloadCsv');
     const annualDownloadPdf = document.getElementById('annualDownloadPdf');
     let annualTrigger = null;
+    let activeRowFilter = 'all';
 
     const numberFormatter = new Intl.NumberFormat('en-PH', {
         minimumFractionDigits: 2,
@@ -1196,11 +1666,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
 
-    const openAnnualSummary = (row) => {
+    const openAnnualSummary = (row, trigger = row) => {
         const summary = annualSummaries[row.dataset.summaryKey || ''];
         if (!summary || !annualModal) return;
 
-        annualTrigger = row;
+        annualTrigger = trigger;
         annualTitle.textContent = `${summary.facility} — ${summary.year}`;
         annualSubtitle.textContent = `${summary.months_recorded} of 12 months recorded`;
         annualTotalActual.textContent = formatKwh(summary.total_actual);
@@ -1232,13 +1702,22 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     rows.forEach((row) => {
-        row.addEventListener('click', () => openAnnualSummary(row));
+        row.addEventListener('click', (event) => {
+            if (event.target.closest('a, button')) return;
+            const profileUrl = row.dataset.profileUrl;
+            if (profileUrl) window.location.assign(profileUrl);
+        });
         row.addEventListener('keydown', (event) => {
+            if (event.target !== row) return;
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                openAnnualSummary(row);
+                const profileUrl = row.dataset.profileUrl;
+                if (profileUrl) window.location.assign(profileUrl);
             }
         });
+
+        const reportButton = row.querySelector('.row-action--view');
+        reportButton?.addEventListener('click', () => openAnnualSummary(row, reportButton));
     });
 
     annualClose?.addEventListener('click', closeAnnualSummary);
@@ -1253,7 +1732,11 @@ document.addEventListener('DOMContentLoaded', function () {
         let visible = 0;
         rows.forEach((row) => {
             const hay = (row.dataset.search || '').toLowerCase();
-            const show = q === '' || hay.includes(q);
+            const matchesSearch = q === '' || hay.includes(q);
+            const matchesFilter = activeRowFilter === 'all'
+                || row.dataset.status === activeRowFilter
+                || row.dataset.source === activeRowFilter;
+            const show = matchesSearch && matchesFilter;
             row.style.display = show ? '' : 'none';
             if (show) visible++;
         });
@@ -1261,11 +1744,26 @@ document.addEventListener('DOMContentLoaded', function () {
         if (noMatch) {
             noMatch.style.display = visible === 0 && rows.length ? '' : 'none';
         }
+        if (resultCount) {
+            const visibleFacilities = new Set(rows
+                .filter((row) => row.style.display !== 'none')
+                .map((row) => row.dataset.facilityId)
+                .filter(Boolean)).size;
+            resultCount.textContent = `${visibleFacilities} ${visibleFacilities === 1 ? 'facility' : 'facilities'}`;
+        }
     };
 
     if (input) {
         input.addEventListener('input', applySearch);
     }
+
+    rowFilterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activeRowFilter = button.dataset.rowFilter || 'all';
+            rowFilterButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+            applySearch();
+        });
+    });
 
     if (monthPicker && monthToggle && monthInput && monthLabel) {
         const closeMonthPicker = () => {

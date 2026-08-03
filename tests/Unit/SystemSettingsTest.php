@@ -10,5 +10,5 @@ test('system settings normalize supported facility image extensions', function (
 });
 
 test('system settings report the actual number of alert threshold inputs', function () {
-    expect(SystemSettings::thresholdInputCount())->toBe(32);
+    expect(SystemSettings::thresholdInputCount())->toBe(36);
 });

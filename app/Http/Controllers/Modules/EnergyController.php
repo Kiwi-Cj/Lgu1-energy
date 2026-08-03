@@ -180,9 +180,9 @@ class EnergyController extends Controller
             ];
         }
 
-        // CPRF facilities exist locally as mirrored facility records before their
-        // first reading arrives. Keep them visible in the report without
-        // fabricating consumption or including placeholders in KPI totals.
+        // Keep every registered facility visible for the selected period, even
+        // before its first reading arrives. Placeholders are excluded from KPI
+        // totals, so completeness is visible without fabricating consumption.
         $representedFacilityIds = $records
             ->pluck('facility_id')
             ->map(fn ($id) => (int) $id)
@@ -192,16 +192,16 @@ class EnergyController extends Controller
             : (string) $reportYear;
 
         $facilities
-            ->filter(fn (Facility $facility) => $facility->isCprfManaged())
             ->when($facilityId, fn ($rows) => $rows->where('id', (int) $facilityId))
             ->reject(fn (Facility $facility) => $representedFacilityIds->contains((int) $facility->id))
             ->each(function (Facility $facility) use (&$energyRows, $placeholderPeriod) {
                 $baseline = $facility->resolveBaselineKwh();
+                $source = strtolower((string) ($facility->source ?? 'local'));
 
                 $energyRows[] = [
                     'facility' => $facility->name,
                     'facility_id' => (int) $facility->id,
-                    'source' => 'cprf',
+                    'source' => $source === 'cprf' ? 'cprf' : 'local',
                     'external_ref' => $facility->external_ref,
                     'month' => $placeholderPeriod,
                     'actual_kwh' => '',
@@ -212,6 +212,11 @@ class EnergyController extends Controller
                     'summary_key' => '',
                 ];
             });
+
+        $energyRows = collect($energyRows)
+            ->sortBy(fn (array $row) => mb_strtolower((string) ($row['facility'] ?? '')))
+            ->values()
+            ->all();
 
         $annualSummaries = $this->buildAnnualReportSummaries($records);
         $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year')

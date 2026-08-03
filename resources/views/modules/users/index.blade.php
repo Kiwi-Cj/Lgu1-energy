@@ -279,17 +279,116 @@
 		.user-status-form { margin:0; display:inline-flex; }
 		.users-pagination { margin-top:14px; }
 		.user-status-dialog {
-			width:min(430px, calc(100% - 32px));
-			border:0;
-			border-radius:16px;
+			width:min(470px, calc(100vw - 28px));
+			max-height:calc(100vh - 28px);
+			border:1px solid #dbe5f1;
+			border-radius:20px;
 			padding:0;
-			box-shadow:0 24px 70px rgba(15,23,42,.3);
+			background:#fff;
+			color:#0f172a;
+			overflow:hidden;
+			box-shadow:0 28px 90px rgba(15,23,42,.34);
 		}
-		.user-status-dialog::backdrop { background:rgba(15,23,42,.62); backdrop-filter:blur(4px); }
-		.user-status-dialog-body { padding:22px; }
-		.user-status-dialog-title { margin:0 0 8px; color:#0f172a; font-size:1.15rem; font-weight:900; }
-		.user-status-dialog-message { margin:0; color:#64748b; line-height:1.55; }
-		.user-status-dialog-actions { display:flex; justify-content:flex-end; gap:9px; padding:0 22px 22px; }
+		.user-status-dialog[open] {
+			position:fixed;
+			inset:50% auto auto 50%;
+			margin:0;
+			transform:translate(-50%, -50%);
+		}
+		.user-status-dialog::backdrop {
+			background:rgba(15,23,42,.66);
+			backdrop-filter:blur(6px);
+			-webkit-backdrop-filter:blur(6px);
+		}
+		.user-status-dialog::before {
+			content:'';
+			position:absolute;
+			inset:0 0 auto;
+			height:4px;
+			background:linear-gradient(90deg,#e11d48,#fb7185);
+		}
+		.user-status-dialog.is-reactivate::before { background:linear-gradient(90deg,#059669,#34d399); }
+		.user-status-dialog-header {
+			position:relative;
+			display:flex;
+			align-items:flex-start;
+			gap:14px;
+			padding:26px 58px 18px 24px;
+		}
+		.user-status-dialog-icon {
+			width:46px;
+			height:46px;
+			flex:0 0 46px;
+			display:inline-flex;
+			align-items:center;
+			justify-content:center;
+			border:1px solid #fecdd3;
+			border-radius:14px;
+			background:#fff1f2;
+			color:#e11d48;
+			font-size:1.05rem;
+		}
+		.is-reactivate .user-status-dialog-icon { border-color:#a7f3d0; background:#ecfdf5; color:#059669; }
+		.user-status-dialog-eyebrow {
+			margin:0 0 4px;
+			color:#94a3b8;
+			font-size:.68rem;
+			font-weight:850;
+			letter-spacing:.085em;
+			text-transform:uppercase;
+		}
+		.user-status-dialog-title { margin:0; color:#0f172a; font-size:1.25rem; font-weight:900; line-height:1.3; letter-spacing:-.02em; }
+		.user-status-dialog-close {
+			position:absolute;
+			top:18px;
+			right:18px;
+			width:34px;
+			height:34px;
+			display:inline-flex;
+			align-items:center;
+			justify-content:center;
+			border:1px solid #e2e8f0;
+			border-radius:10px;
+			background:#fff;
+			color:#64748b;
+			cursor:pointer;
+		}
+		.user-status-dialog-close:hover { border-color:#cbd5e1; background:#f8fafc; color:#0f172a; }
+		.user-status-dialog-body { padding:0 24px 22px; }
+		.user-status-dialog-message { margin:0; color:#64748b; font-size:.93rem; line-height:1.65; }
+		.user-status-dialog-name { color:#1e293b; font-weight:850; overflow-wrap:anywhere; }
+		.user-status-dialog-note {
+			display:flex;
+			align-items:flex-start;
+			gap:9px;
+			margin-top:16px;
+			padding:12px 13px;
+			border:1px solid #fde3a7;
+			border-radius:11px;
+			background:#fffaf0;
+			color:#7c4a03;
+			font-size:.78rem;
+			font-weight:650;
+			line-height:1.5;
+		}
+		.is-reactivate .user-status-dialog-note { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+		.user-status-dialog-actions {
+			display:flex;
+			justify-content:flex-end;
+			gap:10px;
+			padding:17px 24px 22px;
+			border-top:1px solid #edf2f7;
+			background:#f8fafc;
+		}
+		.user-status-dialog-actions .user-action-btn {
+			min-height:40px;
+			padding:9px 15px;
+			border-radius:10px;
+			font-size:.78rem;
+		}
+		.user-status-dialog-actions .user-action-btn.danger { border-color:#e11d48; background:#e11d48; color:#fff; }
+		.user-status-dialog-actions .user-action-btn.success { border-color:#059669; background:#059669; color:#fff; }
+		.user-status-dialog-actions .user-action-btn:hover { transform:translateY(-1px); box-shadow:0 7px 16px rgba(15,23,42,.12); }
 		.users-role-overview {
 			padding: 16px 18px;
 			background: #f8fbff;
@@ -394,6 +493,11 @@
 		body.dark-mode .user-status-dialog { background:#0f172a; color:#e2e8f0; }
 		body.dark-mode .user-status-dialog-title { color:#f8fafc; }
 		body.dark-mode .user-status-dialog-message { color:#94a3b8; }
+		body.dark-mode .user-status-dialog-name { color:#e2e8f0; }
+		body.dark-mode .user-status-dialog-close { background:#111827; border-color:#334155; color:#94a3b8; }
+		body.dark-mode .user-status-dialog-actions { background:#111827; border-color:#253043; }
+		body.dark-mode .user-status-dialog-note { background:rgba(120,53,15,.22); border-color:#92400e; color:#fde68a; }
+		body.dark-mode .user-status-dialog.is-reactivate .user-status-dialog-note { background:rgba(6,78,59,.24); border-color:#047857; color:#a7f3d0; }
 		body.dark-mode .users-role-overview {
 			background: #111a2a !important;
 			border-color: #253043 !important;
@@ -449,6 +553,10 @@
 			.users-filter-form { grid-template-columns:repeat(2, minmax(0, 1fr)); }
 		}
 		@media (max-width: 680px) {
+			.user-status-dialog-header { padding:23px 52px 16px 18px; }
+			.user-status-dialog-body { padding:0 18px 18px; }
+			.user-status-dialog-actions { padding:14px 18px 18px; }
+			.user-status-dialog-actions .user-action-btn { flex:1; }
 			.users-shell {
 				padding: 20px 14px !important;
 			}
@@ -794,14 +902,22 @@
 		<div class="users-pagination">{{ $users->links() }}</div>
 	@endif
 
-	<dialog id="userStatusDialog" class="user-status-dialog" aria-labelledby="userStatusDialogTitle">
+	<dialog id="userStatusDialog" class="user-status-dialog" aria-labelledby="userStatusDialogTitle" aria-describedby="userStatusDialogMessage">
+		<header class="user-status-dialog-header">
+			<span id="userStatusDialogIcon" class="user-status-dialog-icon" aria-hidden="true"><i class="fa-solid fa-user-slash"></i></span>
+			<div>
+				<div id="userStatusDialogEyebrow" class="user-status-dialog-eyebrow">Account access</div>
+				<h2 id="userStatusDialogTitle" class="user-status-dialog-title">Change user status?</h2>
+			</div>
+			<button type="button" id="userStatusDialogClose" class="user-status-dialog-close" aria-label="Close confirmation"><i class="fa-solid fa-xmark"></i></button>
+		</header>
 		<div class="user-status-dialog-body">
-			<h2 id="userStatusDialogTitle" class="user-status-dialog-title">Change user status?</h2>
-			<p id="userStatusDialogMessage" class="user-status-dialog-message"></p>
+			<p class="user-status-dialog-message"><strong id="userStatusDialogUserName" class="user-status-dialog-name"></strong> <span id="userStatusDialogMessage"></span></p>
+			<div class="user-status-dialog-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span id="userStatusDialogNote">You can reactivate this account later.</span></div>
 		</div>
 		<div class="user-status-dialog-actions">
-			<button type="button" id="userStatusDialogCancel" class="user-action-btn">Cancel</button>
-			<button type="button" id="userStatusDialogConfirm" class="user-action-btn danger">Confirm</button>
+			<button type="button" id="userStatusDialogCancel" class="user-action-btn"><i class="fa-solid fa-xmark"></i> Cancel</button>
+			<button type="button" id="userStatusDialogConfirm" class="user-action-btn danger"><i class="fa-solid fa-user-slash"></i> <span>Confirm</span></button>
 		</div>
 	</dialog>
 	<!-- 5️⃣ ROLES OVERVIEW (Optional) -->
@@ -1924,9 +2040,17 @@
 		var statusDialog = document.getElementById('userStatusDialog');
 		var statusDialogTitle = document.getElementById('userStatusDialogTitle');
 		var statusDialogMessage = document.getElementById('userStatusDialogMessage');
+		var statusDialogUserName = document.getElementById('userStatusDialogUserName');
+		var statusDialogNote = document.getElementById('userStatusDialogNote');
+		var statusDialogIcon = document.getElementById('userStatusDialogIcon');
 		var statusDialogConfirm = document.getElementById('userStatusDialogConfirm');
 		var statusDialogCancel = document.getElementById('userStatusDialogCancel');
+		var statusDialogClose = document.getElementById('userStatusDialogClose');
 		var pendingStatusForm = null;
+		var closeStatusDialog = function () {
+			pendingStatusForm = null;
+			if (statusDialog && statusDialog.open) statusDialog.close();
+		};
 
 		document.querySelectorAll('[data-user-status-form]').forEach(function (form) {
 			form.addEventListener('submit', function (event) {
@@ -1936,23 +2060,29 @@
 				pendingStatusForm = form;
 				var isActivating = form.dataset.nextStatus === 'active';
 				var userName = form.dataset.userName || 'this user';
+				statusDialog.classList.toggle('is-reactivate', isActivating);
 				statusDialogTitle.textContent = isActivating ? 'Reactivate user?' : 'Deactivate user?';
+				statusDialogUserName.textContent = userName;
 				statusDialogMessage.textContent = isActivating
-					? userName + ' will be able to sign in and access assigned facilities again.'
-					: userName + ' will be blocked from signing in until the account is reactivated.';
-				statusDialogConfirm.textContent = isActivating ? 'Reactivate' : 'Deactivate';
+					? 'will be able to sign in and access assigned facilities again.'
+					: 'will be blocked from signing in until the account is reactivated.';
+				statusDialogNote.textContent = isActivating
+					? 'The existing role and facility assignments will remain unchanged.'
+					: 'You can reactivate this account later without deleting its records.';
+				statusDialogConfirm.querySelector('span').textContent = isActivating ? 'Reactivate user' : 'Deactivate user';
+				var confirmIcon = statusDialogConfirm.querySelector('i');
+				confirmIcon.className = isActivating ? 'fa-solid fa-user-check' : 'fa-solid fa-user-slash';
+				var headerIcon = statusDialogIcon.querySelector('i');
+				headerIcon.className = isActivating ? 'fa-solid fa-user-check' : 'fa-solid fa-user-slash';
 				statusDialogConfirm.classList.toggle('success', isActivating);
 				statusDialogConfirm.classList.toggle('danger', !isActivating);
 				statusDialog.showModal();
+				window.requestAnimationFrame(function () { statusDialogConfirm.focus(); });
 			});
 		});
 
-		if (statusDialogCancel) {
-			statusDialogCancel.addEventListener('click', function () {
-				pendingStatusForm = null;
-				statusDialog.close();
-			});
-		}
+		if (statusDialogCancel) statusDialogCancel.addEventListener('click', closeStatusDialog);
+		if (statusDialogClose) statusDialogClose.addEventListener('click', closeStatusDialog);
 
 		if (statusDialogConfirm) {
 			statusDialogConfirm.addEventListener('click', function () {

@@ -51,8 +51,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/facilities/{facility}/meters/unapproved', [FacilityMeterController::class, 'unapproved'])->name('modules.facilities.meters.unapproved');
     Route::get('/modules/facilities/{facility}/meters/archive', [FacilityMeterController::class, 'archive'])->name('modules.facilities.meters.archive');
     Route::get('/modules/facilities/{facility}/meters/{meter}/submeters', [FacilityMeterController::class, 'mainSubmeters'])->name('modules.facilities.meters.main-submeters');
-    Route::get('/modules/facilities/{facility}/meters/{meter}/equipment', [FacilityMeterController::class, 'submeterEquipment'])->name('modules.facilities.meters.submeter-equipment');
-    Route::post('/modules/facilities/{facility}/meters/{meter}/equipment', [FacilityMeterController::class, 'storeSubmeterEquipment'])->name('modules.facilities.meters.submeter-equipment.store');
     Route::post('/modules/facilities/{facility}/meters/{meter}/restore', [FacilityMeterController::class, 'restore'])->name('modules.facilities.meters.restore');
     Route::delete('/modules/facilities/{facility}/meters/{meter}/force-delete', [FacilityMeterController::class, 'forceDelete'])->name('modules.facilities.meters.force-delete');
 
@@ -952,13 +950,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNotNull('approved_at')
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at']);
+            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
         $subMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
             ->where('meter_type', 'sub')
             ->whereNotNull('approved_at')
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at']);
+            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
         $subMetersByParentMainId = $subMeterOptions
             ->filter(fn ($meter) => ! empty($meter->parent_meter_id))
             ->groupBy(fn ($meter) => (int) $meter->parent_meter_id);
@@ -1072,6 +1070,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()->where('facility_id', $facilityModel->id)->count();
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
+        $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
+        $latestEnergyRecord = \App\Models\EnergyRecord::query()
+            ->where('facility_id', $facilityModel->id)
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->first(['id', 'facility_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'input_source']);
         // 3-Month average update logic removed
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
@@ -1089,7 +1097,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'unapprovedMeterCount',
             'archivedMeterCount',
             'canManageMeters',
-            'canApproveMeters'
+            'canApproveMeters',
+            'canEncodeMainReadings',
+            'latestEnergyRecord'
         ));
     })->name('modules.facilities.energy-profile.index');
 

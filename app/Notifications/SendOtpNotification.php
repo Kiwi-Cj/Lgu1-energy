@@ -6,6 +6,7 @@ namespace App\Notifications;
 use App\Support\SystemSettings;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class SendOtpNotification extends Notification
 {
@@ -36,16 +37,12 @@ class SendOtpNotification extends Notification
         }
         $systemName = SystemSettings::string('system_name', 'LGU Energy Monitoring System');
         $systemShortName = SystemSettings::string('short_name', 'LGU EMS');
-        $logoUrl = SystemSettings::brandingUrl('system_logo', 'img/logocityhall.jpg');
-        $logoHost = strtolower((string) parse_url($logoUrl, PHP_URL_HOST));
-        $logoScheme = strtolower((string) parse_url($logoUrl, PHP_URL_SCHEME));
-        $logoIsPublic = in_array($logoScheme, ['http', 'https'], true)
-            && $logoHost !== ''
-            && ! in_array($logoHost, ['localhost', '127.0.0.1', '::1'], true)
-            && ! str_ends_with($logoHost, '.local');
+        $emailReference = Str::upper(Str::random(6));
 
         return (new MailMessage)
-            ->subject('Your OTP Code')
+            // A unique, non-sensitive reference prevents Gmail from grouping
+            // this message with older OTP emails that contained an image part.
+            ->subject("Your OTP Code - {$systemShortName} [{$emailReference}]")
             ->view([
                 'html' => 'emails.otp',
                 'text' => 'emails.otp-text',
@@ -55,7 +52,6 @@ class SendOtpNotification extends Notification
                 'expirationMinutes' => $expirationMinutes,
                 'systemName' => $systemName,
                 'systemShortName' => $systemShortName,
-                'logoSrc' => $logoIsPublic ? $logoUrl : null,
             ]);
     }
 }

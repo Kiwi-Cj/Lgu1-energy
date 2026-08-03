@@ -91,7 +91,7 @@ test('monthly records show recommendation status and the matching recommendation
     ]));
 
     $response->assertOk()
-        ->assertSee('Recommendation')
+        ->assertSee('Insight')
         ->assertSee('View recommendation')
         ->assertDontSee('Move pre-cooling thirty minutes later.')
         ->assertSee('facility_id='.$facility->id, escape: false)
@@ -226,14 +226,13 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertSessionHas('success');
 
     $julyNotification->refresh();
-    expect($julyNotification->read_at)->toBeNull()
-        ->and($julyNotification->title)->toBe('New Action Recommendation');
+    expect($julyNotification->read_at)->not->toBeNull()
+        ->and($julyNotification->title)->toBe('Energy Recommendation');
 
     $this->actingAs($staff)
         ->get(route('notifications.index'))
         ->assertOk()
-        ->assertSee('New Action Recommendation')
-        ->assertSee('A new action recommendation was assigned to you');
+        ->assertSee('Energy Recommendation');
 
     $this->actingAs($staff)
         ->get(route('facilities.monthly-records', [
@@ -241,7 +240,7 @@ test('monthly records show recommendation status and the matching recommendation
             'year' => 2026,
         ]))
         ->assertOk()
-        ->assertSee('1 unread recommendation');
+        ->assertDontSee('1 unread recommendation');
 
     $this->assertDatabaseHas('energy_saving_recommendations', [
         'id' => $assignedRecommendation->id,
@@ -290,6 +289,11 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertRedirect()
         ->assertSessionHas('success');
 
+    $julyNotification->refresh();
+    expect($julyNotification->read_at)->toBeNull()
+        ->and($julyNotification->title)->toBe('New Action Recommendation')
+        ->and($julyNotification->message)->toContain('A new action recommendation was assigned to you');
+
     $this->assertDatabaseHas('energy_saving_recommendations', [
         'facility_id' => $facility->id,
         'year' => 2026,
@@ -323,8 +327,8 @@ test('monthly records show recommendation status and the matching recommendation
             'year' => 2026,
         ]))
         ->assertOk()
-        ->assertSee('Implemented')
-        ->assertSee('Updated action from the recommendation details modal.');
+        ->assertSee('Insight')
+        ->assertDontSee('Updated action from the recommendation details modal.');
 
     $this->actingAs($admin)
         ->delete(route('modules.energy-conservation.tips.destroy', $addedRecommendation))
