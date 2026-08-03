@@ -156,6 +156,7 @@ Sample row:
 {
     "facility_external_ref": 501,
     "energy_facility_id": 14,
+    "main_meter_name": "Demo Facility 2 Main Meter",
     "electric_meter_no": "MTR-0042",
     "utility_provider": "Meralco",
     "contract_account_no": "1234-5678",
