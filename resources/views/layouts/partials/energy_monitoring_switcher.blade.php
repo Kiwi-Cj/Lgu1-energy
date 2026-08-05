@@ -209,7 +209,7 @@
 
 <div class="ems-switcher">
     <a href="{{ route('modules.energy-monitoring.index') }}" class="ems-tab{{ $energyTab === 'facility' ? ' active' : '' }}">
-        <i class="fa-solid fa-building"></i> Facility Monitoring
+        <i class="fa-solid fa-gauge-high"></i> Main Meter
     </a>
     <a href="{{ route('modules.submeters.monitoring') }}" class="ems-tab{{ $energyTab === 'sub' ? ' active' : '' }}">
         <i class="fa-solid fa-network-wired"></i> Submeter

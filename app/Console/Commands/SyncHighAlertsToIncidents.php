@@ -5,58 +5,63 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\EnergyRecord;
 use App\Models\EnergyIncident;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Support\BaselineResolver;
+use App\Support\EnergyAlertRouting;
 
 class SyncHighAlertsToIncidents extends Command
 {
     protected $signature = 'energy:sync-high-alerts';
-    protected $description = 'Sync all high alert monthly records to the energy_incidents table';
+    protected $description = 'Backfill incident-owned Critical and Very High monthly energy alerts';
 
     public function handle()
     {
-        $records = EnergyRecord::with('facility')->get();
+        $records = EnergyRecord::with(['facility.energyProfiles', 'meter'])->get();
         $count = 0;
+
         foreach ($records as $record) {
             $facility = $record->facility;
-            if (!$facility) continue;
-            $baseline = $facility->baseline_kwh ?? 0;
-            $actual = $record->actual_kwh;
-            if ($baseline <= 0) continue;
-            $deviation = round((($actual - $baseline) / $baseline) * 100, 2);
-            $sizeLabel = '';
-            if ($baseline <= 1000) {
-                $sizeLabel = 'Small';
-            } elseif ($baseline <= 3000) {
-                $sizeLabel = 'Medium';
-            } elseif ($baseline <= 10000) {
-                $sizeLabel = 'Large';
-            } else {
-                $sizeLabel = 'Extra Large';
+            if (! $facility || $this->isSubmeterRecord($record)) {
+                continue;
             }
-            $isHighAlert =
-                ($sizeLabel === 'Small' && $deviation > 30) ||
-                ($sizeLabel === 'Medium' && $deviation > 20) ||
-                (($sizeLabel === 'Large' || $sizeLabel === 'Extra Large') && $deviation > 15);
-            if ($isHighAlert) {
-                // Avoid duplicate for same facility, month, year
-                $exists = EnergyIncident::where('facility_id', $record->facility_id)
-                    ->whereYear('date_detected', $record->year)
-                    ->whereMonth('date_detected', $record->month)
-                    ->where('description', 'High Alert')
-                    ->first();
-                if (!$exists) {
-                    EnergyIncident::create([
-                        'facility_id' => $record->facility_id,
-                        'description' => 'High Alert',
-                        'status' => 'High Alert',
-                        'date_detected' => $record->created_at ?? now(),
-                        'created_by' => $record->recorded_by ?? null,
-                    ]);
-                    $count++;
-                }
+
+            $baseline = BaselineResolver::forRecord($record, $facility);
+            $actual = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
+            $deviation = EnergyRecord::calculateDeviation($actual, $baseline);
+            $alert = EnergyRecord::resolveAlertLevel($deviation, $baseline);
+            if (! EnergyAlertRouting::requiresIncident($alert)) {
+                continue;
+            }
+
+            $incident = EnergyIncident::firstOrCreate(
+                [
+                    'facility_id' => $record->facility_id,
+                    'month' => (int) $record->month,
+                    'year' => (int) $record->year,
+                ],
+                [
+                    'energy_record_id' => $record->id,
+                    'category' => 'energy_anomaly',
+                    'source' => strtolower(trim((string) $record->input_source)) === 'cprf' ? 'cprf' : 'auto',
+                    'deviation_percent' => $deviation,
+                    'description' => "{$alert} energy deviation detected and queued for incident review.",
+                    'status' => 'Open',
+                    'date_detected' => $record->created_at?->toDateString() ?? now()->toDateString(),
+                    'created_by' => $record->recorded_by ?? null,
+                ]
+            );
+
+            if ($incident->wasRecentlyCreated) {
+                $count++;
             }
         }
-        $this->info("$count high alert incidents synced.");
+
+        $this->info("{$count} incident-owned energy alert(s) backfilled.");
+
+        return self::SUCCESS;
+    }
+
+    private function isSubmeterRecord(EnergyRecord $record): bool
+    {
+        return strtolower((string) ($record->meter?->meter_type ?? '')) === 'sub';
     }
 }

@@ -6,11 +6,7 @@
     $feature = $feature ?? [];
     $overview = $overview ?? [];
     $facilities = $overview['facilities'] ?? collect();
-    $rows = $overview['rows'] ?? collect();
     $totals = $overview['totals'] ?? [];
-    $topFacility = $overview['topFacility'] ?? null;
-    $averageDeviation = $overview['averageDeviation'] ?? null;
-    $latestContactSuggestions = $overview['latestContactSuggestions'] ?? collect();
     $energyTips = $energyTips ?? collect();
     $canReviewTips = (bool) ($canReviewTips ?? false);
     $selectedFacility = $selectedFacility ?? null;
@@ -990,31 +986,6 @@
         text-transform: uppercase;
         letter-spacing: .04em;
     }
-    .suggestion-list {
-        display: grid;
-        gap: 10px;
-    }
-    .suggestion-item {
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 12px;
-        background: #f8fbff;
-    }
-    .suggestion-name {
-        color: #0f172a;
-        font-weight: 900;
-        margin-bottom: 3px;
-    }
-    .suggestion-meta {
-        color: #64748b;
-        font-size: .78rem;
-        margin-bottom: 6px;
-    }
-    .suggestion-body {
-        color: #334155;
-        font-size: .9rem;
-        line-height: 1.45;
-    }
     .checklist-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 200px auto; gap: 12px; align-items: end; }
     .checklist-filter { grid-template-columns: minmax(240px, 1fr) 220px; }
     .checklist-filter { padding-bottom: 18px; border-bottom: 1px solid #e2e8f0; }
@@ -1033,8 +1004,7 @@
     body.dark-mode .field input,
     body.dark-mode .field select,
     body.dark-mode .field textarea,
-    body.dark-mode .feature-point,
-    body.dark-mode .suggestion-item {
+    body.dark-mode .feature-point {
         background: #0f172a;
         border-color: #334155;
     }
@@ -1080,8 +1050,7 @@
     body.dark-mode .record-context-item.is-primary .record-context-value { color: #93c5fd; }
     body.dark-mode .feature-title,
     body.dark-mode .panel-title,
-    body.dark-mode .stat-value,
-    body.dark-mode .suggestion-name {
+    body.dark-mode .stat-value {
         color: #f8fafc;
     }
     body.dark-mode .energy-tip-card { background: #111827; border-color: #334155; }
@@ -1179,8 +1148,6 @@
     body.dark-mode .stat-label,
     body.dark-mode .stat-sub,
     body.dark-mode .help-text,
-    body.dark-mode .suggestion-meta,
-    body.dark-mode .suggestion-body,
     body.dark-mode .feature-point,
     body.dark-mode .field label {
         color: #cbd5e1;
@@ -1499,44 +1466,7 @@
                         <div class="feature-point"><i class="fa-solid fa-bullseye"></i><span>No conservation goals yet. Create the first measurable goal above.</span></div>
                     @endforelse
                     </div>
-                @elseif($featureSlug === 'suggestions-box')
-                    <form class="form-grid" method="POST" action="{{ route('landing.contact.store') }}">
-                        @csrf
-                        <div class="stat-grid">
-                            <div class="stat-card">
-                                <div class="stat-label">Inbox Count</div>
-                                <div class="stat-value">{{ number_format((int) ($overview['contactInboxCount'] ?? 0)) }}</div>
-                                <div class="stat-sub">Messages already stored in `contact_messages`.</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">Selected Month</div>
-                                <div class="stat-value">{{ $selectedMonth }}</div>
-                                <div class="stat-sub">Used for related energy summaries.</div>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Name</label>
-                            <input type="text" name="name" value="{{ old('name', auth()->user()?->full_name ?? auth()->user()?->name ?? auth()->user()?->username ?? '') }}" required>
-                        </div>
-                        <div class="field">
-                            <label>Email</label>
-                            <input type="email" name="email" value="{{ old('email', auth()->user()?->email ?? '') }}" required>
-                        </div>
-                        <div class="field">
-                            <label>Subject</label>
-                            <input type="text" name="subject" value="{{ old('subject', 'Energy conservation suggestion') }}" placeholder="Short subject">
-                        </div>
-                        <div class="field">
-                            <label>Suggestion</label>
-                            <textarea name="message" required placeholder="Write your energy-saving suggestion here...">{{ old('message') }}</textarea>
-                            <div class="help-text">This is saved in the existing contact inbox workflow and can be reviewed by admin.</div>
-                        </div>
-                        <div class="action-row">
-                            <span class="help-text">Uses the current contact message database and inbox notifications.</span>
-                            <button type="submit" class="btn-main"><i class="fa-solid fa-paper-plane"></i> Submit Suggestion</button>
-                        </div>
-                    </form>
-                @elseif(in_array($featureSlug, ['energy-saving-tips', 'estimated-savings', 'ai-recommendations'], true))
+                @elseif($featureSlug === 'energy-saving-tips')
                     <div class="summary-period" aria-label="Reporting period: {{ $overview['periodLabel'] ?? 'Selected month' }}">
                         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                         <span>Reporting Period:</span>
@@ -2035,115 +1965,10 @@
                                 </div>
                             @endforelse
                         </div>
-                    @elseif($featureSlug === 'ai-recommendations')
-                        <div class="feature-list">
-                            @forelse($rows->take(5) as $row)
-                                <div class="feature-point">
-                                    <i class="fa-solid fa-robot"></i>
-                                    <span>
-                                        <strong>{{ $row['facility_name'] }}</strong>:
-                                        {{ $row['recommendation'] }}
-                                    </span>
-                                </div>
-                            @empty
-                                <div class="feature-point">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                    <span>No monthly data yet for AI-style recommendations.</span>
-                                </div>
-                            @endforelse
-                        </div>
-                    @elseif($featureSlug === 'estimated-savings')
-                        <div class="feature-list">
-                            <div class="feature-point">
-                                <i class="fa-solid fa-bolt"></i>
-                                <span>Estimated kWh savings are computed from baseline vs actual records already stored in `energy_records`.</span>
-                            </div>
-                            <div class="feature-point">
-                                <i class="fa-solid fa-peso-sign"></i>
-                                <span>Avoidable cost uses the same monthly data and current rate logic used by the app.</span>
-                            </div>
-                            <div class="feature-point">
-                                <i class="fa-solid fa-leaf"></i>
-                                <span>CO2 reduction can be added later as a computed field once you confirm the preferred emission factor.</span>
-                            </div>
-                        </div>
                     @endif
-                @else
-                    <div class="feature-list">
-                        @foreach(($feature['details'] ?? []) as $detail)
-                            <div class="feature-point">
-                                <i class="fa-solid fa-circle-check"></i>
-                                <span>{{ $detail }}</span>
-                            </div>
-                        @endforeach
-                    </div>
                 @endif
             </div>
         </section>
-
-        @if(!in_array($featureSlug, ['energy-saving-tips', 'daily-checklist', 'conservation-goals'], true))
-        <aside class="panel">
-            <div class="panel-head">
-                <div>
-                    <h2 class="panel-title">Live Data</h2>
-                    <div class="panel-note">From current app tables and workflows.</div>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Top Facility</div>
-                        <div class="stat-value">{{ $topFacility['facility_name'] ?? 'No current data' }}</div>
-                        <div class="stat-sub">{{ $topFacility ? number_format((float) ($topFacility['actual_kwh'] ?? 0), 2) . ' kWh actual' : 'Add monthly records first.' }}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Average Deviation</div>
-                        <div class="stat-value">{{ $averageDeviation !== null ? number_format((float) $averageDeviation, 2) . '%' : 'No data' }}</div>
-                        <div class="stat-sub">Based on active facility records for {{ $selectedMonth }}.</div>
-                    </div>
-                </div>
-
-                <div class="feature-list">
-                    <div class="feature-point">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <span>{{ number_format((int) ($overview['contactInboxCount'] ?? 0)) }} suggestions already stored in the system inbox.</span>
-                    </div>
-                    <div class="feature-point">
-                        <i class="fa-solid fa-building"></i>
-                        <span>{{ number_format((int) ($totals['facilities'] ?? 0)) }} facilities are available for filtering and goal previews.</span>
-                    </div>
-                    <div class="feature-point">
-                        <i class="fa-solid fa-file-lines"></i>
-                        <span>Reports can link directly to the existing energy report routes in the app.</span>
-                    </div>
-                </div>
-
-                @if($featureSlug === 'suggestions-box' && $latestContactSuggestions->isNotEmpty())
-                    <div>
-                        <div class="panel-title" style="margin-bottom:10px;">Latest Suggestions</div>
-                        <div class="suggestion-list">
-                            @foreach($latestContactSuggestions as $suggestion)
-                                <div class="suggestion-item">
-                                    <div class="suggestion-name">{{ $suggestion->subject ?: 'Energy suggestion' }}</div>
-                                    <div class="suggestion-meta">By {{ $suggestion->name }} | {{ $suggestion->created_at?->timezone(config('app.timezone'))?->format('M d, Y') }}</div>
-                                    <div class="suggestion-body">{{ \Illuminate\Support\Str::limit($suggestion->message, 120) }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <div class="action-row">
-                    <a class="back-link" href="{{ route('modules.energy-conservation.index') }}">
-                        <i class="fa-solid fa-grid-2"></i> Overview
-                    </a>
-                    <a class="btn-main btn-secondary" href="{{ route('modules.reports.energy') }}">
-                        <i class="fa-solid fa-chart-column"></i> Open Reports
-                    </a>
-                </div>
-            </div>
-        </aside>
-        @endif
     </div>
 </div>
 @if($featureSlug === 'energy-saving-tips')

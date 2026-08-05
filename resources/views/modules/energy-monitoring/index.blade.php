@@ -18,28 +18,46 @@
 
     .energy-monitor-page .report-card {
         background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
-        border-radius: 16px;
-        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-        padding: 30px;
-        border: 1px solid #e7eef8;
+        border-radius: 22px;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+        border: 1px solid #dfe8f4;
         margin-bottom: 2rem;
     }
 
     .energy-monitor-page .monitor-header {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         justify-content: space-between;
-        margin-bottom: 25px;
-        gap: 20px;
+        margin-bottom: 24px;
+        gap: 24px;
         flex-wrap: wrap;
+    }
+
+    .energy-monitor-page .monitor-heading {
+        min-width: 280px;
+        flex: 1 1 430px;
+    }
+
+    .energy-monitor-page .monitor-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: #2563eb;
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
     }
 
     .energy-monitor-page .monitor-title {
         margin: 0;
-        font-size: 1.8rem;
-        color: #1e293b;
+        font-size: clamp(1.65rem, 2.2vw, 2rem);
+        color: #0f172a;
         font-weight: 800;
-        letter-spacing: -0.5px;
+        letter-spacing: -.035em;
+        line-height: 1.16;
     }
 
     .energy-monitor-page .monitor-title-accent {
@@ -47,20 +65,53 @@
     }
 
     .energy-monitor-page .monitor-subtitle {
-        margin: 4px 0 0;
+        margin: 7px 0 0;
         color: #64748b;
-        font-size: 1rem;
+        font-size: .9rem;
+        line-height: 1.55;
     }
 
     .energy-monitor-page .search-form {
         display: flex;
-        gap: 10px;
-        align-items: center;
+        gap: 9px;
+        align-items: flex-end;
         flex-wrap: wrap;
+        flex: 0 1 auto;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: rgba(248, 250, 252, .85);
+    }
+
+    .energy-monitor-page .filter-control {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    .energy-monitor-page .filter-control.period-field {
+        align-items: stretch;
+    }
+
+    .energy-monitor-page .filter-label {
+        color: #64748b;
+        font-size: .65rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
     }
 
     .energy-monitor-page .search-field {
         position: relative;
+    }
+
+    .energy-monitor-page .search-field > i {
+        position: absolute;
+        left: 13px;
+        bottom: 15px;
+        color: #94a3b8;
+        pointer-events: none;
     }
 
     .energy-monitor-page .period-field {
@@ -69,11 +120,12 @@
     }
 
     .energy-monitor-page .search-input {
-        border-radius: 10px;
+        height: 46px;
+        border-radius: 11px;
         border: 1px solid #e2e8f0;
-        padding: 10px 10px 10px 35px;
+        padding: 10px 12px 10px 38px;
         font-size: 0.9rem;
-        width: 220px;
+        width: 230px;
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
         background: #fff;
@@ -81,11 +133,12 @@
     }
 
     .energy-monitor-page .period-input {
-        border-radius: 10px;
+        height: 46px;
+        border-radius: 11px;
         border: 1px solid #e2e8f0;
         padding: 10px 12px;
         font-size: 0.9rem;
-        width: 165px;
+        width: 170px;
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
         background: #fff;
@@ -103,11 +156,12 @@
     }
 
     .energy-monitor-page .search-btn {
+        height: 46px;
         background: #2563eb;
         color: #fff;
         border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
+        border-radius: 11px;
+        padding: 10px 21px;
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -119,66 +173,108 @@
     }
 
     .energy-monitor-page .clear-link {
-        color: #e11d48;
+        display: inline-flex;
+        height: 46px;
+        align-items: center;
+        color: #64748b;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        padding: 0 7px;
     }
 
     .energy-monitor-page .overview-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
     }
 
     .energy-monitor-page .metric-card {
-        padding: 20px;
-        border-radius: 14px;
-        border-left: 4px solid transparent;
+        position: relative;
+        min-height: 154px;
+        padding: 19px 20px;
+        overflow: hidden;
+        border-radius: 16px;
         border: 1px solid transparent;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+    }
+
+    .energy-monitor-page .metric-card::before {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 4px;
+        background: var(--metric-accent);
+        content: '';
+    }
+
+    .energy-monitor-page .metric-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .energy-monitor-page .metric-icon {
+        display: inline-flex;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--metric-icon-bg);
+        color: var(--metric-accent);
+        font-size: .85rem;
     }
 
     .energy-monitor-page .metric-card .metric-label {
         font-weight: 700;
         font-size: 0.75rem;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 0;
         letter-spacing: 0.4px;
     }
 
     .energy-monitor-page .metric-card .metric-value {
         font-weight: 800;
-        font-size: 1.8rem;
-        color: #1e293b;
+        font-size: clamp(1.7rem, 2.2vw, 2rem);
+        color: #0f172a;
+        letter-spacing: -.035em;
+        line-height: 1.1;
     }
 
     .energy-monitor-page .metric-meta {
-        margin-top: 5px;
+        margin-top: 8px;
         color: #64748b;
         font-size: 0.76rem;
         font-weight: 600;
     }
 
     .energy-monitor-page .metric-facilities {
+        --metric-accent: #2563eb;
+        --metric-icon-bg: #dbeafe;
         background: linear-gradient(140deg, #f4f9ff, #f8fbff);
         border-color: #dbeafe;
-        border-left-color: #2563eb;
     }
     .energy-monitor-page .metric-facilities .metric-label { color: #64748b; }
 
     .energy-monitor-page .metric-alert {
+        --metric-accent: #e11d48;
+        --metric-icon-bg: #ffe4e6;
         background: linear-gradient(140deg, #fff3f5, #fff7f8);
         border-color: #fecdd3;
-        border-left-color: #e11d48;
     }
     .energy-monitor-page .metric-alert .metric-label { color: #e11d48; }
 
     .energy-monitor-page .metric-cost {
+        --metric-accent: #16a34a;
+        --metric-icon-bg: #dcfce7;
         background: linear-gradient(140deg, #f2fdf7, #f8fffb);
         border-color: #bbf7d0;
-        border-left-color: #16a34a;
     }
     .energy-monitor-page .metric-cost .metric-label { color: #166534; }
 
@@ -246,6 +342,8 @@
     .energy-monitor-page .monitor-row:hover {
         background: #fafcff;
     }
+    .energy-monitor-page .monitor-row[data-facility-url] { cursor: pointer; }
+    .energy-monitor-page .monitor-row[data-facility-url]:focus-visible { outline: 3px solid rgba(37,99,235,.35); outline-offset: -3px; }
 
     .energy-monitor-page .cell-facility {
         font-weight: 700;
@@ -786,6 +884,7 @@
         cursor: pointer;
         padding: 7px 10px;
         white-space: nowrap;
+        text-decoration: none;
     }
     .energy-monitor-page .monitor-actions {
         min-width: 190px;
@@ -891,7 +990,17 @@
         color: #fda4af;
     }
 
-    body.dark-mode .energy-monitor-page .search-input {
+    body.dark-mode .energy-monitor-page .search-form {
+        border-color: #334155;
+        background: rgba(15, 23, 42, .7);
+    }
+
+    body.dark-mode .energy-monitor-page .filter-label {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .energy-monitor-page .search-input,
+    body.dark-mode .energy-monitor-page .period-input {
         background: #0b1220 !important;
         color: #e2e8f0 !important;
         border-color: #334155 !important;
@@ -998,6 +1107,10 @@
     body.dark-mode .energy-monitor-page .metric-cost {
         background: linear-gradient(145deg, #0f2a22, #111827) !important;
         border-color: #166534 !important;
+    }
+
+    body.dark-mode .energy-monitor-page .metric-icon {
+        background: rgba(148, 163, 184, .13);
     }
 
     body.dark-mode .energy-monitor-page .alert-pill-level-critical,
@@ -1227,12 +1340,18 @@
 
     @media (max-width: 600px) {
         .energy-monitor-page .monitor-title { font-size: 1.5rem !important; }
+        .energy-monitor-page .monitor-header { align-items: stretch; gap: 18px; }
+        .energy-monitor-page .monitor-heading { min-width: 0; }
         .energy-monitor-page .overview-cards { grid-template-columns: 1fr; gap: 12px; }
         .energy-monitor-page .report-card { padding: 15px; }
-        .energy-monitor-page .search-form { width: 100%; flex-wrap: wrap; }
+        .energy-monitor-page .search-form { width: 100%; padding: 10px; flex-wrap: wrap; }
+        .energy-monitor-page .filter-control,
+        .energy-monitor-page .period-input,
         .energy-monitor-page .search-field,
         .energy-monitor-page .search-input { width: 100%; }
         .energy-monitor-page .search-btn { width: 100%; }
+        .energy-monitor-page .clear-link { width: 100%; justify-content: center; }
+        .energy-monitor-page .metric-card { min-height: 140px; }
         .energy-monitor-page .monitor-table-wrap {
             height: 62vh;
             max-height: 62vh;
@@ -1272,41 +1391,53 @@
         $selectedMonthInput = $selectedMonthInput ?? $dashboardNow->format('Y-m');
     @endphp
     <div class="monitor-header">
-        <div>
+        <div class="monitor-heading">
+            <div class="monitor-eyebrow"><i class="fa-solid fa-bolt"></i> Live energy overview</div>
             <h1 class="monitor-title">
                 Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
             <p class="monitor-subtitle">Period consumption, variance, and facilities requiring attention</p>
         </div>
         
-        <form class="search-form" method="GET" action="">
-            <div class="period-field">
-                <input class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}" aria-label="Filter period month">
+        <form class="search-form" method="GET" action="" aria-label="Filter energy monitoring data">
+            <div class="filter-control period-field">
+                <label class="filter-label" for="monitorPeriod">Billing month</label>
+                <input id="monitorPeriod" class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}">
             </div>
-            <div class="search-field">
-                <i class="fa fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                <input class="search-input" type="text" name="search" value="{{ request('search') }}" placeholder="Search facility...">
+            <div class="filter-control search-field">
+                <label class="filter-label" for="monitorSearch">Facility</label>
+                <i class="fa fa-search"></i>
+                <input id="monitorSearch" class="search-input" type="search" name="search" value="{{ request('search') }}" placeholder="Search facility...">
             </div>
             <button class="search-btn" type="submit">Apply</button>
             @if(request()->filled('search') || request()->filled('month'))
-                <a class="clear-link" href="{{ url()->current() }}">Clear</a>
+                <a class="clear-link" href="{{ url()->current() }}"><i class="fa-solid fa-rotate-left"></i>&nbsp; Reset</a>
             @endif
         </form>
     </div>
     <div class="overview-cards">
         <div class="metric-card metric-facilities">
-            <div class="metric-label">Main Meter Consumption</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Main Meter Consumption</div>
+                <span class="metric-icon"><i class="fa-solid fa-bolt"></i></span>
+            </div>
             <div class="metric-value">{{ number_format($totalConsumptionKwh ?? 0, 2) }} kWh</div>
             <div class="metric-meta">Across {{ $totalFacilities ?? 0 }} monitored facilities</div>
         </div>
         <div class="metric-card metric-alert">
-            <div class="metric-label">Facilities Requiring Attention</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Facilities Requiring Attention</div>
+                <span class="metric-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            </div>
             <div class="metric-value">{{ $highAlertCount ?? 0 }}</div>
             <div class="metric-meta">High/critical increase or abnormal drop</div>
         </div>
         <div class="metric-card metric-cost">
-            <div class="metric-label">Estimated Energy Cost</div>
-            <div class="metric-value">PHP {{ number_format($totalEnergyCost ?? 0, 2) }}</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Estimated Energy Cost</div>
+                <span class="metric-icon"><i class="fa-solid fa-peso-sign"></i></span>
+            </div>
+            <div class="metric-value">₱{{ number_format($totalEnergyCost ?? 0, 2) }}</div>
             <div class="metric-meta">For the selected billing period</div>
         </div>
     </div>
@@ -1374,8 +1505,6 @@
                     $actualKwh = $record->actual_kwh ?? 0;
                     $floorArea = $facility->floor_area;
                     $eui = ($record && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
-                    $trendRecommendation = $facility->trend_recommendation ?? 'Not enough data yet to generate a trend recommendation.';
-                    $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', ['facility' => $facility->id, 'month' => $selectedMonthInput]);
                     $baselineKwh = $record->baseline_kwh ?? null;
                     $hasApprovedMainMeter = collect($facility->main_meters ?? [])->contains(fn ($meter) => !empty($meter->approved_at));
                     $hasCurrentReading = $record && is_numeric($record->actual_kwh ?? null);
@@ -1397,9 +1526,11 @@
                         'record_date' => $selectedMonthInput . '-01',
                     ]);
                     $energyProfileUrl = route('modules.facilities.energy-profile.index', ['facility' => $facility->id]);
+                    $facilityDetailsUrl = route('modules.facilities.show', ['id' => $facility->id]);
                     $createIncidentUrl = route('energy-incidents.index', ['report' => 1, 'facility_id' => $facility->id]);
+                    $aiAlertsUrl = route('modules.ai-alerts.index', ['month' => $selectedMonthInput, 'facility' => $facility->name]);
                 @endphp
-                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
+                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}" data-facility-url="{{ $facilityDetailsUrl }}" tabindex="0" role="link" aria-label="View {{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }} facility details">
                     <td class="cell-facility">
                         <div>{{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }}</div>
                         <div class="cell-meter-meta">{{ $facility->type ?: 'Facility' }}</div>
@@ -1479,23 +1610,23 @@
                                     <i class="fa-solid fa-plus"></i> Encode {{ $selectedPeriodLabel }}
                                 </a>
                             @else
-                                <button type="button" title="View data-based recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" style="width:100%;" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
+                                <a href="{{ $aiAlertsUrl }}" title="Open this facility in AI Alerts" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" style="width:100%;">
                                     <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
-                                    <span>View Guidance</span>
-                                </button>
+                                    <span>Open AI Alert</span>
+                                </a>
                             @endif
 
                             <div class="monitor-quick-actions">
-                                <a href="{{ $energyProfileUrl }}" class="monitor-quick-link" title="Open facility energy profile">
-                                    <i class="fa-solid fa-building"></i> Facility
+                                <a href="{{ $facilityDetailsUrl }}" class="monitor-quick-link" title="View facility details">
+                                    <i class="fa-solid fa-building"></i> View Facility
                                 </a>
                                 <a href="{{ $monthlyRecordsUrl }}" class="monitor-quick-link" title="View monthly records and trends">
                                     <i class="fa-solid fa-chart-line"></i> Records
                                 </a>
                                 @if(!$hasCurrentReading || !$hasApprovedMainMeter)
-                                    <button type="button" class="monitor-quick-link" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
-                                        <i class="fa-solid fa-lightbulb"></i> Guidance
-                                    </button>
+                                    <a href="{{ $aiAlertsUrl }}" class="monitor-quick-link">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Alert
+                                    </a>
                                 @endif
                                 @if($canManageEnergyIncidents && in_array($alertLevel, ['High', 'Very High', 'Critical', 'Drop High', 'Drop Critical'], true))
                                     <a href="{{ $createIncidentUrl }}" class="monitor-quick-link attention" title="Create a corrective action incident">
@@ -1823,6 +1954,19 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    document.querySelectorAll('[data-facility-row][data-facility-url]').forEach((row) => {
+        const openFacility = () => { window.location.href = row.dataset.facilityUrl; };
+        row.addEventListener('click', (event) => {
+            if (event.target.closest('a, button, input, select, textarea, form, [role="button"]')) return;
+            openFacility();
+        });
+        row.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openFacility();
+        });
+    });
 });
 </script>
 

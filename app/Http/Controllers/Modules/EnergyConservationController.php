@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactMessage;
 use App\Models\ConservationGoal;
 use App\Models\DailyEnergyChecklist;
 use App\Models\DailyEnergyChecklistTask;
@@ -29,6 +28,18 @@ class EnergyConservationController extends Controller
 
     public function feature(Request $request, string $feature)
     {
+        // Legacy feature URLs now point to the single workspace that owns the
+        // workflow, instead of maintaining duplicate conservation screens.
+        if ($feature === 'ai-recommendations') {
+            return redirect()->route('modules.ai-alerts.index', ['month' => $request->query('month')]);
+        }
+        if (in_array($feature, ['estimated-savings', 'conservation-reports'], true)) {
+            return redirect()->route('reports.efficiency-summary');
+        }
+        if ($feature === 'suggestions-box') {
+            return redirect()->route('landing.contact');
+        }
+
         $features = $this->featureCatalog();
         $selected = $features[$feature] ?? null;
         if (! $selected) {
@@ -832,13 +843,6 @@ class EnergyConservationController extends Controller
             'rows' => $rows,
             'totals' => $totals,
             'facilitiesWithoutCurrentRecord' => $facilitiesWithoutCurrentRecord,
-            'topFacility' => $rows->first(),
-            'averageDeviation' => $rows->isNotEmpty() ? round((float) $rows->filter(fn (array $row) => $row['deviation'] !== null)->avg('deviation'), 2) : null,
-            'contactInboxCount' => ContactMessage::count(),
-            'latestContactSuggestions' => ContactMessage::query()
-                ->latest()
-                ->limit(5)
-                ->get(['id', 'name', 'subject', 'message', 'created_at']),
         ];
     }
 
@@ -846,76 +850,18 @@ class EnergyConservationController extends Controller
     {
         return [
             'energy-saving-tips' => [
-                'title' => 'Energy Saving Tips',
+                'title' => 'Action Recommendations',
                 'badge' => 'Enabled',
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-sun',
-                'description' => 'Data-driven recommendations for reducing electricity use across LGU facilities.',
-                'details' => [
-                    'Post practical tips for AC, lighting, and equipment use.',
-                    'Highlight weekly or monthly saving reminders.',
-                    'Use this area for quick staff education.',
-                ],
+                'description' => 'Review detected issues, approve corrective actions, assign owners, and track implementation.',
             ],
             'conservation-goals' => [
                 'title' => 'Conservation Goals',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-bullseye',
-                'description' => 'Set and monitor energy reduction targets.',
-                'details' => [
-                    'Set reduction targets per month or quarter.',
-                    'Track progress against baseline usage.',
-                    'Show goal progress in percent and kWh.',
-                ],
-            ],
-            'department-ranking' => [
-                'title' => 'Department Ranking',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-ranking-star',
-                'description' => 'Rank departments based on energy efficiency.',
-                'details' => [
-                    'Compare department usage against targets.',
-                    'Rank by savings percentage and consistency.',
-                    'Allow filters by month, quarter, and year.',
-                ],
-            ],
-            'rewards-system' => [
-                'title' => 'Rewards System',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-medal',
-                'description' => 'Award badges or incentives for energy savings.',
-                'details' => [
-                    'Issue badges for consistent low-consumption teams.',
-                    'Highlight top performers in the dashboard.',
-                    'Optionally connect to incentive approvals.',
-                ],
-            ],
-            'ai-recommendations' => [
-                'title' => 'AI Recommendations',
                 'badge' => 'Enabled',
                 'status' => 'enabled',
-                'icon' => 'fa-solid fa-robot',
-                'description' => 'Provide AI-based energy-saving recommendations.',
-                'details' => [
-                    'Suggest actions based on monthly trends.',
-                    'Summarize inefficiencies in plain language.',
-                    'Combine manual rules with AI output.',
-                ],
-            ],
-            'campaign-management' => [
-                'title' => 'Campaign Management',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-bullhorn',
-                'description' => 'Publish and manage energy conservation campaigns.',
-                'details' => [
-                    'Publish campaigns and reminders.',
-                    'Attach target dates and campaign owners.',
-                    'Track which departments acknowledged the campaign.',
-                ],
+                'icon' => 'fa-solid fa-bullseye',
+                'description' => 'Set and monitor energy reduction targets.',
             ],
             'daily-checklist' => [
                 'title' => 'Daily Checklist',
@@ -923,47 +869,6 @@ class EnergyConservationController extends Controller
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-clipboard-check',
                 'description' => 'Track daily energy-saving practices and routines.',
-                'details' => [
-                    'Use a simple checklist for opening and closing routines.',
-                    'Mark completed conservation tasks each day.',
-                    'Show overdue checklist items clearly.',
-                ],
-            ],
-            'estimated-savings' => [
-                'title' => 'Estimated Savings',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-chart-line',
-                'description' => 'View estimated kWh, cost, and CO2 savings.',
-                'details' => [
-                    'Display kWh savings, peso savings, and CO2 impact.',
-                    'Break down savings by month and department.',
-                    'Use baseline comparisons to compute estimates.',
-                ],
-            ],
-            'suggestions-box' => [
-                'title' => 'Suggestions Box',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-inbox',
-                'description' => 'Collect energy-saving suggestions from users.',
-                'details' => [
-                    'Let users submit ideas and observations.',
-                    'Show admin review status and follow-up notes.',
-                    'Keep the suggestions visible for everyone to see progress.',
-                ],
-            ],
-            'conservation-reports' => [
-                'title' => 'Conservation Reports',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-file-lines',
-                'description' => 'Generate reports on energy conservation efforts.',
-                'details' => [
-                    'Generate printable and exportable reports.',
-                    'Summarize goals, tips, ranking, and savings in one place.',
-                    'Use reports for management review and compliance.',
-                ],
             ],
         ];
     }

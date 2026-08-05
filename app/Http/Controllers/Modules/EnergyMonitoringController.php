@@ -235,6 +235,8 @@ class EnergyMonitoringController extends Controller
         $insight = $this->energyRecommendationService->generateFacilityInsight([
             'facility_name' => (string) ($facility->name ?? ''),
             'facility_type' => (string) ($facility->type ?? ''),
+            'insight_variant' => (string) request('_variant', request('_refresh', '')),
+            'previous_recommendation' => mb_substr(trim((string) request('_previous', '')), 0, 1200),
             'alert_level' => $alertLevel,
             'trend_percent' => $trendPercent,
             'trend_spike_detected' => $trendSpikeDetected,
@@ -260,6 +262,11 @@ class EnergyMonitoringController extends Controller
             'trend_analysis' => $trendDisplay,
             'recommendation' => $resolvedRecommendation,
             'recommendation_source' => (string) ($insight['source'] ?? 'rules'),
+            'analyzed_at' => now()->toIso8601String(),
+        ])->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
 

@@ -27,16 +27,22 @@
 		.users-shell {
 			border: 1px solid #dbe6f5;
 			background: linear-gradient(180deg, #f8fbff 0%, #f1f6fd 100%) !important;
+			padding: 24px !important;
+			border-radius: 22px !important;
 		}
 		.users-title {
 			color: #1e1b4b !important;
 			text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+			font-size: 1.7rem !important;
+			line-height: 1.15;
+			margin-bottom: 18px !important;
+			letter-spacing: -.035em !important;
 		}
 		.users-stat-grid {
 			display: grid !important;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: 16px !important;
-			margin-bottom: 28px !important;
+			gap: 13px !important;
+			margin-bottom: 20px !important;
 		}
 		.users-stat-card {
 			--stat-accent: #4f46e5;
@@ -47,13 +53,13 @@
 			align-items: stretch;
 			min-width: 0 !important;
 			max-width: none !important;
-			min-height: 220px;
-			padding: 22px !important;
+			min-height: 150px;
+			padding: 17px !important;
 			margin: 0 !important;
 			background: #fff !important;
 			border: 1px solid #dbe5f2 !important;
-			border-radius: 18px !important;
-			box-shadow: 0 8px 24px rgba(15, 23, 42, .06) !important;
+			border-radius: 15px !important;
+			box-shadow: 0 7px 19px rgba(15, 23, 42, .05) !important;
 			overflow: hidden;
 			transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 		}
@@ -71,28 +77,28 @@
 		.users-stat-heading {
 			display: flex;
 			align-items: center;
-			gap: 11px;
+			gap: 9px;
 			color: #334155;
-			font-size: 1rem;
+			font-size: .86rem;
 			font-weight: 800;
 			line-height: 1.25;
 		}
 		.users-stat-icon {
-			width: 40px;
-			height: 40px;
-			flex: 0 0 40px;
+			width: 34px;
+			height: 34px;
+			flex: 0 0 34px;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			border-radius: 12px;
+			border-radius: 10px;
 			background: var(--stat-soft);
 			color: var(--stat-accent);
-			font-size: 1.05rem;
+			font-size: .86rem;
 		}
 		.users-stat-value {
-			margin-top: 22px;
+			margin-top: 13px;
 			color: #0f172a;
-			font-size: 2.65rem;
+			font-size: 2rem;
 			font-weight: 850;
 			line-height: 1;
 			letter-spacing: -.04em;
@@ -101,32 +107,32 @@
 			display: flex;
 			flex-wrap: wrap;
 			align-content: flex-start;
-			gap: 8px;
-			margin-top: 18px;
+			gap: 6px;
+			margin-top: 11px;
 		}
 		.users-role-chip {
 			display: inline-flex;
 			align-items: center;
-			gap: 7px;
-			min-height: 32px;
-			padding: 5px 9px 5px 11px;
+			gap: 6px;
+			min-height: 27px;
+			padding: 4px 7px 4px 9px;
 			border: 1px solid #ddd6fe;
 			border-radius: 999px;
 			background: #faf8ff;
 			color: #6d28d9;
-			font-size: .82rem;
+			font-size: .72rem;
 			font-weight: 750;
 		}
 		.users-role-count {
-			min-width: 21px;
-			height: 21px;
+			min-width: 18px;
+			height: 18px;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
 			border-radius: 999px;
 			background: var(--stat-accent);
 			color: #fff;
-			font-size: .72rem;
+			font-size: .64rem;
 			font-weight: 800;
 		}
 		.users-stat-card:hover {
@@ -707,7 +713,7 @@
 			}
 		}
 	</style>
-	<h1 class="users-title" style="font-size:2.1rem;font-weight:800;color:#312e81;margin-bottom:10px;letter-spacing:-1px;">Users and Roles</h1>
+	<h1 class="users-title">Users and Roles</h1>
 	@if(session('success'))
 		<div role="status" style="margin-bottom:16px;padding:12px 14px;border:1px solid #86efac;border-radius:10px;background:#f0fdf4;color:#166534;font-weight:700;">
 			{{ session('success') }}

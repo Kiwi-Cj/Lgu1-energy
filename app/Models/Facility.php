@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\BaselineResolver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -109,20 +110,10 @@ class Facility extends Model
         return $this->hasMany(FacilityAuditLog::class);
     }
 
-    /**
-     * Baseline used for deviation/alert computation on new energy records:
-     * latest energy profile baseline first, then the facility's own column.
-     * Shared by the Energy Monitoring UI and the CPRF integration endpoint
-     * so both compute deviations identically.
-     */
+    /** Baseline fallback for facility-level readings without a specific meter. */
     public function resolveBaselineKwh(): ?float
     {
-        $profile = $this->energyProfiles()->latest()->first();
-        if ($profile && $profile->baseline_kwh !== null) {
-            return (float) $profile->baseline_kwh;
-        }
-
-        return $this->baseline_kwh !== null ? (float) $this->baseline_kwh : null;
+        return BaselineResolver::forFacility($this);
     }
 
     /* =======================

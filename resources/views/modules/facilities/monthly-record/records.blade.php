@@ -1020,6 +1020,149 @@
         background: #ffe4e6;
     }
 
+    .monthly-breakdown-toggle {
+        min-height: 30px;
+        padding: 5px 9px;
+        border: 1px solid #bfdbfe;
+        border-radius: 9px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        font: inherit;
+        font-size: .68rem;
+        font-weight: 900;
+        white-space: nowrap;
+        transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+    }
+
+    .monthly-breakdown-toggle:hover,
+    .monthly-breakdown-toggle[aria-expanded="true"] {
+        transform: translateY(-1px);
+        border-color: #93c5fd;
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .monthly-record-detail-row,
+    .monthly-record-detail-row:hover {
+        background: #f8fbff !important;
+        box-shadow: none !important;
+    }
+
+    .monthly-record-detail-row[hidden] {
+        display: none;
+    }
+
+    .monthly-record-detail-cell {
+        padding: 0 16px 18px !important;
+        border-bottom: 1px solid #dbe5f2;
+    }
+
+    .monthly-record-breakdown {
+        padding: 16px;
+        border: 1px solid #bfdbfe;
+        border-radius: 14px;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, .08);
+    }
+
+    .monthly-record-breakdown-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 13px;
+    }
+
+    .monthly-record-breakdown-head strong {
+        display: block;
+        color: #0f172a;
+        font-size: .92rem;
+        font-weight: 900;
+    }
+
+    .monthly-record-breakdown-head span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: .75rem;
+        font-weight: 700;
+    }
+
+    .monthly-record-breakdown-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .monthly-record-breakdown-item {
+        min-width: 0;
+        padding: 11px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 11px;
+        background: #f8fafc;
+    }
+
+    .monthly-record-breakdown-item span {
+        display: block;
+        color: #64748b;
+        font-size: .65rem;
+        font-weight: 850;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .monthly-record-breakdown-item strong {
+        display: block;
+        margin-top: 5px;
+        color: #0f172a;
+        font-size: .83rem;
+        font-weight: 900;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .monthly-record-breakdown-item small {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .monthly-record-breakdown-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .monthly-record-breakdown-actions a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 5px 10px;
+        border: 1px solid #dbe5f2;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #334155;
+        text-decoration: none;
+        font-size: .7rem;
+        font-weight: 850;
+    }
+
+    .monthly-record-breakdown-actions a:hover {
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+
     .monthly-breakdown-wrap {
         display: flex;
         flex-direction: column;
@@ -1722,6 +1865,49 @@
         color: #fda4af;
     }
 
+    body.dark-mode .monthly-breakdown-toggle {
+        border-color: #334b70;
+        background: rgba(37, 99, 235, .14);
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .monthly-record-detail-row,
+    body.dark-mode .monthly-record-detail-row:hover {
+        background: #0f192a !important;
+    }
+
+    body.dark-mode .monthly-record-detail-cell {
+        border-color: #334155;
+    }
+
+    body.dark-mode .monthly-record-breakdown {
+        border-color: #334b70;
+        background: #111827;
+        box-shadow: none;
+    }
+
+    body.dark-mode .monthly-record-breakdown-head strong,
+    body.dark-mode .monthly-record-breakdown-item strong {
+        color: #e5edf7;
+    }
+
+    body.dark-mode .monthly-record-breakdown-head span,
+    body.dark-mode .monthly-record-breakdown-item span,
+    body.dark-mode .monthly-record-breakdown-item small {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .monthly-record-breakdown-item {
+        border-color: #334155;
+        background: #0f172a;
+    }
+
+    body.dark-mode .monthly-record-breakdown-actions a {
+        border-color: #334155;
+        background: #172033;
+        color: #cbd5e1;
+    }
+
     body.dark-mode .monthly-bill-thumb {
         border-color: #334155;
         box-shadow: 0 6px 14px rgba(2, 6, 23, .45);
@@ -1893,9 +2079,14 @@
         .monthly-table tbody td { display:block; width:auto !important; padding:11px 12px !important; border-bottom:1px solid #edf2f7; text-align:left !important; }
         .monthly-table tbody td::before { content:attr(data-label); display:block; margin-bottom:6px; color:#94a3b8; font-size:.59rem; font-weight:850; text-transform:uppercase; letter-spacing:.04em; }
         .monthly-table tbody td:first-child, .monthly-table tbody td:nth-child(3), .monthly-table tbody td:nth-child(6), .monthly-table tbody td:last-child { grid-column:1/-1; }
+        .monthly-table tbody tr.monthly-record-detail-row { display:block; margin-top:-11px; border-top:0; border-radius:0 0 13px 13px; }
+        .monthly-record-detail-row .monthly-record-detail-cell { padding:10px !important; border-bottom:0; }
+        .monthly-record-detail-row .monthly-record-detail-cell::before { display:none; }
+        .monthly-record-breakdown { padding:13px; }
+        .monthly-record-breakdown-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
         body.dark-mode .monthly-table tbody tr { background:#111827; border-color:#334155; }
     }
-    @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-workflow { grid-template-columns:1fr; } .monthly-workflow-step { border-right:0; border-bottom:1px solid #e2e8f0; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } }
+    @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-workflow,.monthly-record-breakdown-grid { grid-template-columns:1fr; } .monthly-workflow-step { border-right:0; border-bottom:1px solid #e2e8f0; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } .monthly-record-breakdown-head { flex-direction:column; gap:8px; } .monthly-record-breakdown-actions { justify-content:stretch; } .monthly-record-breakdown-actions a { flex:1 1 auto; justify-content:center; } }
 </style>
 
 @php
@@ -2465,6 +2656,35 @@
                                 'returned' => ['label' => 'Returned', 'bg' => '#fee2e2', 'color' => '#b91c1c'],
                             ];
                             $reviewTheme = $reviewThemes[$reviewStatus] ?? $reviewThemes['for_review'];
+
+                            $recordYear = (int) ($record->year ?? $selectedYear);
+                            $recordMonth = (int) ($record->month ?? 1);
+                            $previousMonth = $recordMonth === 1 ? 12 : $recordMonth - 1;
+                            $previousYear = $recordMonth === 1 ? $recordYear - 1 : $recordYear;
+                            $previousRecordKey = (int) ($record->meter_id ?? 0) . '-' . $previousYear . '-' . $previousMonth;
+                            $previousRecord = $record->meter_id ? $mainRecordIndex->get($previousRecordKey) : null;
+                            $previousActual = $previousRecord && is_numeric($previousRecord->actual_kwh)
+                                ? (float) $previousRecord->actual_kwh
+                                : null;
+                            $previousChange = $previousActual !== null && $previousActual > 0 && $actualRow !== null
+                                ? (($actualRow - $previousActual) / $previousActual) * 100
+                                : null;
+                            $varianceKwh = $actualRow !== null && $baselineRow !== null
+                                ? $actualRow - $baselineRow
+                                : null;
+                            $sourceKey = strtolower(trim((string) ($record->input_source ?? 'manual')));
+                            $sourceLabel = match ($sourceKey) {
+                                'cprf' => 'CPRF synchronization',
+                                'iot', 'sensor' => 'IoT sensor',
+                                default => 'Manual bill entry',
+                            };
+                            $billingPeriodLabel = ($monthLabels[$recordMonth] ?? ('Month ' . $recordMonth))
+                                . ($record->day ? ' ' . (int) $record->day : '')
+                                . ', ' . $recordYear;
+                            $recordedByLabel = trim((string) ($record->recorded_by_name ?? '')) ?: ($sourceKey === 'cprf' ? 'CPRF integration' : 'System user');
+                            $reviewedAtLabel = $record->reviewed_at
+                                ? $record->reviewed_at->format('M j, Y g:i A')
+                                : 'Not reviewed yet';
                         @endphp
                         <tr>
                             <td data-label="Period / Main Meter">
@@ -2530,6 +2750,15 @@
                             </td>
                             <td data-label="Actions">
                                 <div class="monthly-action-group">
+                                <button type="button"
+                                        class="monthly-breakdown-toggle"
+                                        data-record-breakdown="monthly-record-breakdown-{{ $record->id }}"
+                                        aria-expanded="false"
+                                        aria-controls="monthly-record-breakdown-{{ $record->id }}"
+                                        title="View monthly record breakdown">
+                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                    <span>Details</span>
+                                </button>
                                 @if($canManageLocalMonthlyRecords && strtolower((string) ($record->input_source ?? 'manual')) !== 'cprf')
                                 <form id="deleteMonthlyRecordForm-{{ $record->id }}"
                                       action="{{ route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id]) }}"
@@ -2549,6 +2778,78 @@
                                     <span class="monthly-empty-mark">-</span>
                                 @endif
                                 </div>
+                            </td>
+                        </tr>
+                        <tr id="monthly-record-breakdown-{{ $record->id }}" class="monthly-record-detail-row" hidden>
+                            <td colspan="7" class="monthly-record-detail-cell">
+                                <section class="monthly-record-breakdown" aria-label="{{ $billingPeriodLabel }} monthly record breakdown">
+                                    <div class="monthly-record-breakdown-head">
+                                        <div>
+                                            <strong>{{ $billingPeriodLabel }} breakdown</strong>
+                                            <span>{{ $scopeNameRow }} &middot; {{ $sourceLabel }}</span>
+                                        </div>
+                                        <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};">
+                                            <i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>
+                                            {{ $reviewTheme['label'] }}
+                                        </span>
+                                    </div>
+
+                                    <div class="monthly-record-breakdown-grid">
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Total consumption</span>
+                                            <strong>{{ $actualRow !== null ? number_format($actualRow, 2) . ' kWh' : 'No reading' }}</strong>
+                                            <small>Recorded usage for this billing period</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Baseline / target</span>
+                                            <strong>{{ $baselineRow !== null ? number_format($baselineRow, 2) . ' kWh' : 'Not configured' }}</strong>
+                                            <small>Reference used by alerts and performance checks</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Variance from baseline</span>
+                                            <strong>
+                                                @if($varianceKwh !== null && $deviationRow !== null)
+                                                    {{ $varianceKwh >= 0 ? '+' : '' }}{{ number_format($varianceKwh, 2) }} kWh
+                                                @else
+                                                    Not available
+                                                @endif
+                                            </strong>
+                                            <small>{{ $deviationRow !== null ? (($deviationRow >= 0 ? '+' : '') . number_format($deviationRow, 2) . '% vs baseline') : 'Add a baseline to calculate variance' }}</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Previous month</span>
+                                            <strong>{{ $previousActual !== null ? number_format($previousActual, 2) . ' kWh' : 'No prior record' }}</strong>
+                                            <small>{{ $previousChange !== null ? (($previousChange >= 0 ? '+' : '') . number_format($previousChange, 2) . '% month over month') : 'Comparison unavailable' }}</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Recorded cost</span>
+                                            <strong>PHP {{ number_format($cost, 2) }}</strong>
+                                            <small>{{ number_format($actualRow ?? 0, 2) }} kWh &times; PHP {{ number_format($rate, 2) }}/kWh</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Data source</span>
+                                            <strong>{{ $sourceLabel }}</strong>
+                                            <small>Recorded by {{ $recordedByLabel }}</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Billing period</span>
+                                            <strong>{{ $billingPeriodLabel }}</strong>
+                                            <small>{{ $billImageUrl ? 'Supporting bill attached' : 'No supporting bill attached' }}</small>
+                                        </div>
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Verification</span>
+                                            <strong>{{ $reviewTheme['label'] }}</strong>
+                                            <small>{{ $reviewedAtLabel }}</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="monthly-record-breakdown-actions">
+                                        <a href="{{ $recommendationUrl }}"><i class="fa-solid fa-wand-magic-sparkles"></i> View energy insight</a>
+                                        @if($billImageUrl)
+                                            <a href="{{ $billImageUrl }}" target="_blank" rel="noopener"><i class="fa-solid fa-receipt"></i> Open supporting bill</a>
+                                        @endif
+                                    </div>
+                                </section>
                             </td>
                         </tr>
                     @empty
@@ -2867,6 +3168,36 @@ window.addEventListener('DOMContentLoaded', function () {
             if (icon) {
                 icon.classList.remove('fa-chevron-up', 'fa-chevron-down');
                 icon.classList.add(collapsed ? 'fa-chevron-down' : 'fa-chevron-up');
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-record-breakdown]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const targetId = String(button.getAttribute('data-record-breakdown') || '');
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (!target) return;
+
+            const shouldOpen = target.hidden;
+
+            document.querySelectorAll('[data-record-breakdown]').forEach(function (otherButton) {
+                const otherTargetId = String(otherButton.getAttribute('data-record-breakdown') || '');
+                const otherTarget = otherTargetId ? document.getElementById(otherTargetId) : null;
+                if (otherTarget) otherTarget.hidden = true;
+                otherButton.setAttribute('aria-expanded', 'false');
+                const otherIcon = otherButton.querySelector('i');
+                if (otherIcon) {
+                    otherIcon.classList.remove('fa-chevron-up');
+                    otherIcon.classList.add('fa-chevron-down');
+                }
+            });
+
+            target.hidden = !shouldOpen;
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            const icon = button.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-chevron-down', 'fa-chevron-up');
+                icon.classList.add(shouldOpen ? 'fa-chevron-up' : 'fa-chevron-down');
             }
         });
     });

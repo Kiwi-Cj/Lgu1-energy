@@ -5,15 +5,21 @@
 <style>
     .contact-inbox-page {
         display: grid;
-        gap: 16px;
+        gap: 14px;
+        padding: 20px;
+        border: 1px solid #dce6f2;
+        border-radius: 22px;
+        background: linear-gradient(155deg, #fff 0%, #f8fbff 100%);
+        box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
     }
     .contact-inbox-header {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+        background: radial-gradient(circle at 92% 0%, rgba(37,99,235,.11), transparent 32%), linear-gradient(135deg,#fff,#f7faff);
+        border: 1px solid #d7e3f2;
+        border-radius: 17px;
+        padding: 16px 18px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
     }
+    .contact-inbox-eyebrow { display:inline-flex; align-items:center; gap:7px; margin-bottom:6px; color:#2563eb; font-size:.65rem; font-weight:900; letter-spacing:.11em; text-transform:uppercase; }
     .ci-flash {
         margin-top: 12px;
         border-radius: 12px;
@@ -34,14 +40,17 @@
     }
     .contact-inbox-title {
         margin: 0;
-        font-size: 1.35rem;
+        font-size: 1.55rem;
+        line-height:1.15;
+        letter-spacing:-.035em;
         font-weight: 800;
         color: #0f172a;
     }
     .contact-inbox-subtitle {
         margin: 6px 0 0;
         color: #64748b;
-        font-size: 0.9rem;
+        font-size: 0.84rem;
+        line-height:1.45;
     }
     .contact-tab-row {
         margin-top: 12px;
@@ -104,8 +113,8 @@
     }
     .contact-inbox-layout {
         display: grid;
-        grid-template-columns: 390px minmax(0, 1fr);
-        gap: 16px;
+        grid-template-columns: 360px minmax(0, 1fr);
+        gap: 14px;
         min-height: 560px;
         height: calc(100vh - 270px);
         max-height: calc(100vh - 210px);
@@ -129,6 +138,9 @@
         border-bottom: 1px solid #eef2f7;
         background: #fcfdff;
     }
+    .contact-list-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .contact-list-heading strong { display:inline-flex; align-items:center; gap:7px; color:#0f172a; font-size:.84rem; }
+    .contact-list-total { display:inline-flex; align-items:center; min-height:24px; padding:3px 8px; border-radius:999px; background:#eaf1ff; color:#1d4ed8; font-size:.65rem; font-weight:900; white-space:nowrap; }
     .contact-search {
         display: grid;
         grid-template-columns: 1fr auto;
@@ -225,7 +237,14 @@
         flex: 1;
         min-height: 0;
         overflow-y: auto;
+        scrollbar-color:#b8c5d6 transparent;
     }
+    .contact-list::-webkit-scrollbar,
+    .thread-scroll-body::-webkit-scrollbar { width:7px; }
+    .contact-list::-webkit-scrollbar-thumb,
+    .thread-scroll-body::-webkit-scrollbar-thumb { border-radius:999px; background:#b8c5d6; }
+    .contact-list::-webkit-scrollbar-button,
+    .thread-scroll-body::-webkit-scrollbar-button { display:none; width:0; height:0; }
     .contact-item {
         display: block;
         text-decoration: none;
@@ -238,9 +257,10 @@
         background: #f8fafc;
     }
     .contact-item.active {
-        background: #eff6ff;
+        background: linear-gradient(90deg,#eaf2ff,#f4f8ff);
         border-left: 3px solid #2563eb;
         padding-left: 9px;
+        box-shadow: inset 0 0 0 1px rgba(147,197,253,.2);
     }
     .contact-item.unread {
         background: #f8fbff;
@@ -409,7 +429,7 @@
         flex-direction: column;
         gap: 12px;
         min-height: 0;
-        overflow: hidden;
+        overflow-y: auto;
         flex: 1;
     }
     .detail-card {
@@ -420,7 +440,7 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-        flex: 1;
+        flex: 0 0 auto;
     }
     .detail-card-head {
         padding: 14px 14px 10px;
@@ -450,8 +470,9 @@
         border-radius: 10px;
         background: #fff;
         color: #334155;
-        padding: 8px 12px;
-        font-size: 0.82rem;
+        min-height:38px;
+        padding: 7px 11px;
+        font-size: 0.76rem;
         font-weight: 700;
         text-decoration: none;
         display: inline-flex;
@@ -488,8 +509,9 @@
         margin-bottom: 10px;
     }
     .thread-scroll-body {
-        flex: 1;
+        flex: 0 1 auto;
         min-height: 0;
+        max-height: 430px;
         overflow-y: auto;
         overflow-x: hidden;
         background: #fff;
@@ -1122,6 +1144,7 @@
     .ci-confirm-btn.confirm.permanent:hover { background: #b91c1c; }
     .ci-confirm-icon.permanent { background: #fee2e2; color: #dc2626; }
     @media (max-width: 1100px) {
+        .contact-inbox-page { padding:16px; }
         .contact-inbox-layout {
             grid-template-columns: 1fr;
             height: auto;
@@ -1155,6 +1178,7 @@
         }
     }
     @media (max-width: 640px) {
+        .contact-inbox-page { padding:12px; border-radius:17px; }
         .contact-inbox-stats {
             grid-template-columns: 1fr;
         }
@@ -1216,6 +1240,13 @@
         background: #0f172a !important;
         border-color: #334155 !important;
     }
+    body.dark-mode .contact-inbox-page {
+        background: linear-gradient(155deg,#0f172a,#111827);
+        border-color:#334155;
+        box-shadow:0 18px 38px rgba(2,6,23,.38);
+    }
+    body.dark-mode .contact-list-heading strong { color:#f8fafc; }
+    body.dark-mode .contact-list-total { background:#1e3a5f; color:#bfdbfe; }
 
     body.dark-mode .contact-inbox-title,
     body.dark-mode .detail-title,
@@ -1438,9 +1469,10 @@
 
 <div class="contact-inbox-page">
     <section class="contact-inbox-header">
+        <div class="contact-inbox-eyebrow"><i class="fa-solid fa-inbox"></i> Website inquiries</div>
         <h1 class="contact-inbox-title">Contact Inbox</h1>
         <p class="contact-inbox-subtitle">
-            Messages submitted from your website Contact form are stored here in the system (DB inbox).
+            Review website inquiries, track replies, and keep every conversation in one workspace.
         </p>
         @if(session('inbox_success'))
             <div class="ci-flash success">{{ session('inbox_success') }}</div>
@@ -1458,6 +1490,10 @@
     <section class="contact-inbox-layout{{ request()->filled('message') ? ' has-mobile-selection' : '' }}">
         <div class="contact-panel contact-list-panel">
             <div class="contact-panel-head">
+                <div class="contact-list-heading">
+                    <strong><i class="fa-solid fa-envelope" style="color:#2563eb;"></i> Messages</strong>
+                    <span class="contact-list-total">{{ number_format($messages->total()) }} total</span>
+                </div>
                 <form method="GET" action="{{ route('modules.contact-messages.index') }}" class="contact-search">
                     <input type="hidden" name="tab" value="inbox">
                     <input type="hidden" name="filter" value="{{ $filter ?? 'all' }}">
@@ -1469,7 +1505,7 @@
                         placeholder="Search messages..."
                         aria-label="Search contact messages"
                     >
-                    <button type="submit">Search</button>
+                    <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                     @if($search !== '')
                         <a href="{{ route('modules.contact-messages.index', array_filter(['tab' => 'inbox', 'filter' => $filter ?? 'all', 'sort' => $sort ?? 'latest_activity'])) }}">Clear</a>
                     @endif
@@ -1538,7 +1574,7 @@
                         </div>
                         <p class="contact-item-preview">{{ $message->email }}</p>
                         <span class="contact-item-status{{ $deliveryWarn ? ' warn' : '' }}">
-                            {{ $isUnread ? 'Unread' : 'Read' }} | {{ $deliveryWarn ? 'Email notify failed' : 'Saved in system' }}
+                            {{ $isUnread ? 'Unread' : 'Read' }} &middot; {{ $deliveryWarn ? 'Email notify failed' : 'Saved in system' }}
                         </span>
                         @if(($message->replies_count ?? 0) > 0)
                             <span class="contact-item-replies">

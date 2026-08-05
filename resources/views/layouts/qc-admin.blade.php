@@ -212,6 +212,40 @@ body {
     background: #fff;
 }
 
+.user-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.user-avatar[hidden] {
+    display: none !important;
+}
+
+.user-avatar-fallback {
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #bfdbfe;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+    color: #1e40af;
+    font-size: .7rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.user-avatar-fallback:not([hidden]) {
+    display: inline-flex;
+}
+
 .user-name {
     font-size: 0.88rem;
     font-weight: 600;
@@ -1662,6 +1696,462 @@ body.dark-mode .information-header-nav .information-header-cta:hover {
         border-radius: 20px;
     }
 }
+
+/* ===== REFINED APPLICATION SHELL ===== */
+body:not(.information-page-layout) {
+    --shell-sidebar-width: 278px;
+    --shell-header-height: 76px;
+    --shell-blue: #2454d3;
+    --shell-blue-dark: #173fae;
+    --shell-border: #dce6f3;
+    --shell-muted: #64748b;
+}
+
+body:not(.information-page-layout) .top-header {
+    left: var(--shell-sidebar-width);
+    height: var(--shell-header-height);
+    padding: 0 28px;
+    background: rgba(255, 255, 255, .9);
+    border-bottom: 1px solid rgba(203, 213, 225, .72);
+    box-shadow: 0 8px 30px rgba(15, 23, 42, .055);
+}
+
+.header-page-context {
+    min-width: 0;
+}
+
+.header-page-kicker {
+    display: block;
+    margin-bottom: 3px;
+    color: #64748b;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .11em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .header-left h1 {
+    color: #0f172a;
+    font-size: 1.28rem;
+    font-weight: 700;
+    letter-spacing: -.025em;
+}
+
+body:not(.information-page-layout) .header-icon-btn,
+body:not(.information-page-layout) .user-menu-btn {
+    border-color: #d8e3f1;
+    background: rgba(248, 251, 255, .92);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .035);
+}
+
+body:not(.information-page-layout) .header-icon-btn:hover,
+body:not(.information-page-layout) .user-menu-btn:hover {
+    border-color: #b9cff7;
+    background: #edf4ff;
+    transform: translateY(-1px);
+}
+
+body:not(.information-page-layout) .user-menu-btn {
+    height: 46px;
+    padding: 0 13px 0 7px;
+    border-radius: 14px;
+}
+
+body:not(.information-page-layout) .user-avatar {
+    width: 34px;
+    height: 34px;
+}
+
+.user-menu-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
+.user-role-label {
+    max-width: 150px;
+    overflow: hidden;
+    color: #64748b;
+    font-size: .65rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body:not(.information-page-layout) .sidebar-nav {
+    width: var(--shell-sidebar-width);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 0 0, rgba(37, 99, 235, .1), transparent 33%),
+        rgba(255, 255, 255, .97);
+    border-right: 1px solid rgba(203, 213, 225, .75);
+    box-shadow: 12px 0 38px rgba(15, 23, 42, .075);
+}
+
+body:not(.information-page-layout) .sidebar-top {
+    padding: 18px 12px 12px;
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+}
+
+.sidebar-brand {
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    gap: 12px;
+    margin: 0 4px 14px;
+    padding: 9px 10px;
+    border: 1px solid rgba(191, 219, 254, .75);
+    border-radius: 16px;
+    background: rgba(239, 246, 255, .8);
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.sidebar-brand .site-logo {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 5px 14px rgba(30, 64, 175, .13);
+}
+
+.sidebar-brand .site-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sidebar-brand-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.sidebar-brand-copy strong {
+    overflow: hidden;
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-brand-copy small {
+    margin-top: 3px;
+    color: #547097;
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .nav-list {
+    padding: 0 2px;
+}
+
+.nav-section-label {
+    margin: 21px 10px 7px;
+    color: #8a9ab0;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .nav-link {
+    position: relative;
+    min-height: 45px;
+    gap: 12px;
+    margin: 3px 0;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: #334155;
+    font-size: .84rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+body:not(.information-page-layout) .nav-link > i:first-child,
+body:not(.information-page-layout) .nav-link > span > i:first-child {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f0f5fc;
+    color: #4e6d9f;
+    font-size: .78rem;
+}
+
+body:not(.information-page-layout) .nav-link:hover {
+    border-color: #dbeafe;
+    background: #f1f6ff;
+    color: #173fae;
+    transform: translateX(2px);
+}
+
+body:not(.information-page-layout) .nav-link.active {
+    border-color: #2f64dc;
+    background: linear-gradient(135deg, var(--shell-blue-dark), #3475eb);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(36, 84, 211, .22);
+}
+
+body:not(.information-page-layout) .nav-link.active > i:first-child,
+body:not(.information-page-layout) .nav-link.active > span > i:first-child {
+    background: rgba(255, 255, 255, .17);
+    color: #fff;
+}
+
+.nav-count-badge {
+    display: inline-flex;
+    min-width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0 7px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #e11d48;
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+body:not(.information-page-layout) .nav-submenu {
+    margin: 4px 0 8px 15px;
+    padding: 4px 4px 4px 10px;
+    border-left: 1px solid #cbdcf4;
+    border-radius: 0;
+    background: transparent;
+}
+
+body:not(.information-page-layout) .nav-submenu .nav-link {
+    min-height: 39px;
+    padding: 7px 9px;
+    font-size: .78rem;
+}
+
+body:not(.information-page-layout) .nav-submenu .nav-link > i:first-child {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    background: transparent;
+}
+
+.submenu-toggle > .fa-caret-down {
+    transition: transform .2s ease;
+}
+
+.submenu-toggle[aria-expanded="true"] > .fa-caret-down {
+    transform: rotate(180deg);
+}
+
+.sidebar-footer {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 14px 14px;
+    padding: 12px;
+    border: 1px solid #dce8f5;
+    border-radius: 13px;
+    background: #f7fafc;
+    color: #334155;
+}
+
+.sidebar-footer > span:last-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.sidebar-footer strong {
+    font-size: .73rem;
+    line-height: 1.2;
+}
+
+.sidebar-footer small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #7a8ba3;
+    font-size: .62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-status-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    margin-top: 3px;
+    border: 2px solid #bbf7d0;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, .1);
+}
+
+body:not(.information-page-layout) .main-content {
+    margin-left: var(--shell-sidebar-width);
+    padding-top: var(--shell-header-height);
+}
+
+body:not(.information-page-layout) .main-content-inner {
+    min-height: calc(100vh - var(--shell-header-height));
+}
+
+body.dark-mode:not(.information-page-layout) .top-header,
+body.dark-mode:not(.information-page-layout) .sidebar-nav {
+    border-color: #263449;
+    background: rgba(15, 23, 42, .96);
+}
+
+body.dark-mode:not(.information-page-layout) .header-left h1 {
+    color: #f8fafc;
+}
+
+body.dark-mode:not(.information-page-layout) .header-icon-btn,
+body.dark-mode:not(.information-page-layout) .user-menu-btn {
+    border-color: #334155;
+    background: #1e293b;
+    color: #dbeafe;
+}
+
+body.dark-mode:not(.information-page-layout) .header-icon-btn:hover,
+body.dark-mode:not(.information-page-layout) .user-menu-btn:hover {
+    border-color: #49617e;
+    background: #26364d;
+}
+
+body.dark-mode .user-avatar-fallback {
+    border-color: #496a9e;
+    background: linear-gradient(135deg, #1e3a8a, #312e81);
+    color: #dbeafe;
+}
+
+body.dark-mode .header-page-kicker,
+body.dark-mode .user-role-label {
+    color: #8fa3bd;
+}
+
+body.dark-mode:not(.information-page-layout) .sidebar-brand {
+    border-color: #2b4268;
+    background: rgba(30, 58, 100, .42);
+    color: #f8fafc;
+}
+
+body.dark-mode .sidebar-brand-copy small,
+body.dark-mode .nav-section-label,
+body.dark-mode .sidebar-footer small {
+    color: #8fa3bd;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link > i:first-child,
+body.dark-mode:not(.information-page-layout) .nav-link > span > i:first-child {
+    background: #1e2c42;
+    color: #9fbcf5;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link:hover {
+    border-color: #334967;
+    background: #1b2a40;
+    color: #dbeafe;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link.active > i:first-child,
+body.dark-mode:not(.information-page-layout) .nav-link.active > span > i:first-child {
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+}
+
+body.dark-mode .nav-submenu {
+    border-color: #334967 !important;
+}
+
+body.dark-mode .sidebar-footer {
+    border-color: #2b3b52;
+    background: #172235;
+    color: #e2e8f0;
+}
+
+@media (max-width: 991px) {
+    body:not(.information-page-layout) .top-header {
+        left: 0;
+        padding-left: 72px;
+    }
+
+    body:not(.information-page-layout) .main-content {
+        margin-left: 0;
+    }
+
+    body:not(.information-page-layout) .sidebar-nav {
+        width: min(var(--shell-sidebar-width), calc(100vw - 46px));
+    }
+
+    body:not(.information-page-layout) .sidebar-hamburger {
+        top: 17px;
+        left: 15px;
+        display: block;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--shell-blue-dark), #3475eb);
+        box-shadow: 0 7px 18px rgba(30, 64, 175, .27);
+    }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 640px) {
+    body:not(.information-page-layout) {
+        --shell-header-height: 68px;
+    }
+
+    body:not(.information-page-layout) .top-header {
+        padding-right: 10px;
+    }
+
+    body:not(.information-page-layout) .sidebar-hamburger {
+        top: 13px;
+    }
+
+    .header-page-kicker {
+        display: none;
+    }
+
+    body:not(.information-page-layout) .header-left h1 {
+        max-width: 34vw;
+        font-size: 1rem;
+    }
+
+    body:not(.information-page-layout) .user-menu-btn {
+        width: 42px;
+        height: 42px;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .user-menu-copy,
+    body:not(.information-page-layout) .user-menu-caret {
+        display: none;
+    }
+}
 </style>
 </head>
 
@@ -1690,6 +2180,30 @@ body.dark-mode .information-header-nav .information-header-cta:hover {
     $currentUserName = $currentUser?->username ?? $currentUser?->name ?? 'User';
     $currentUserRole = ucwords(str_replace('_', ' ', (string) ($currentUser?->role_key ?? $currentUser?->role ?? 'User')));
     $currentUserAvatar = $currentUser?->profile_photo_url ?? asset('img/default-avatar.png');
+    $currentUserAvatarName = $currentUser?->full_name ?? $currentUser?->name ?? $currentUser?->username ?? 'User';
+    $currentUserInitials = collect(preg_split('/\s+/', trim((string) $currentUserAvatarName)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($part) => mb_strtoupper(mb_substr((string) $part, 0, 1)))
+        ->implode('');
+    $currentSection = match (true) {
+        request()->routeIs('dashboard.*') || request()->is('modules/dashboard*') => 'Dashboard',
+        request()->routeIs('modules.facilities.*') || request()->is('modules/facilities*') => 'Facility Registry',
+        request()->routeIs('monthly-record-activity.*') => 'Monthly Record Activity',
+        request()->routeIs('modules.ai-alerts.*') => 'AI Alerts',
+        request()->routeIs('modules.energy-conservation.*') => 'Conservation Program',
+        request()->routeIs('modules.energy-monitoring.*', 'energy.dashboard') => 'Energy Monitoring',
+        request()->routeIs('modules.submeters.*') => 'Submeter Monitoring',
+        request()->routeIs('modules.maintenance.*', 'maintenance.*') || request()->is('modules/maintenance*') => 'Maintenance',
+        request()->routeIs('energy-incidents.*') => 'Energy Incidents',
+        request()->routeIs('modules.reports.*', 'reports.*') || request()->is('modules/reports*') => 'Reports & Analytics',
+        request()->routeIs('modules.users.*') || request()->is('modules/users*') => 'User Management',
+        request()->routeIs('modules.contact-messages.*') => 'Contact Inbox',
+        request()->routeIs('integrations.*') => 'Integrations',
+        request()->is('modules/settings*') => 'System Settings',
+        request()->routeIs('profile.*') => 'My Profile',
+        default => $systemShortName,
+    };
 @endphp
 <script>
 if (document.documentElement.classList.contains('dark-mode')) {
@@ -1699,7 +2213,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
 <div class="sidebar-backdrop" id="backdrop"></div>
 
-<button class="sidebar-hamburger" id="hamburger" aria-label="Menu">
+<button class="sidebar-hamburger" id="hamburger" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
     <span></span><span></span><span></span>
 </button>
 
@@ -1714,9 +2228,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 </span>
             </a>
         @else
-            <div>
-                <h1>{{ $systemShortName }}</h1>
-                <div class="header-sub">{{ $systemOrganization }}</div>
+            <div class="header-page-context">
+                <span class="header-page-kicker">Energy Management</span>
+                <h1>{{ $currentSection }}</h1>
             </div>
         @endif
     </div>
@@ -1735,7 +2249,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             </nav>
         @endif
         @auth
-        <button class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
+        <button type="button" class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
             <i class="fa fa-bell"></i>
             <span id="notifCount" class="notif-count {{ ($unreadNotifCount ?? 0) > 0 ? '' : 'is-hidden' }}">{{ $unreadNotifCount ?? 0 }}</span>
         </button>
@@ -1884,15 +2398,21 @@ if (document.documentElement.classList.contains('dark-mode')) {
         </div>
         @endauth
 
-        <button id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
+        <button type="button" id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
             <i id="darkModeIcon" class="fa fa-moon"></i>
         </button>
 
         @auth
             <div class="header-user user-menu-wrap">
-                <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
-                    <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar" onerror="this.onerror=null;this.src='{{ asset('img/default-avatar.png') }}';">
-                    <span class="user-name">{{ $currentUserName }}</span>
+                <button type="button" id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu" aria-label="Open account menu" aria-haspopup="true" aria-expanded="false">
+                    <span class="user-avatar-wrap">
+                        <img src="{{ $currentUserAvatar }}" alt="{{ $currentUserAvatarName }}" class="user-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">
+                        <span class="user-avatar-fallback" hidden>{{ $currentUserInitials ?: 'U' }}</span>
+                    </span>
+                    <span class="user-menu-copy">
+                        <span class="user-name">{{ $currentUserName }}</span>
+                        <span class="user-role-label">{{ $currentUserRole ?: 'User' }}</span>
+                    </span>
                     <i class="fa fa-caret-down user-menu-caret"></i>
                 </button>
                 <div id="userDropdown" class="user-dropdown">
@@ -1925,10 +2445,15 @@ if (document.documentElement.classList.contains('dark-mode')) {
 @auth
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
-        <div class="site-logo">
-            <img src="{{ $systemLogoUrl }}" alt="Logo" style="border-radius:50%;object-fit:cover;width:60px;height:60px;box-shadow:0 2px 8px rgba(49,46,129,0.10);">
-        </div>
-        <div class="sidebar-divider"></div>
+        <a class="sidebar-brand" href="{{ route('dashboard.index') }}" aria-label="Go to dashboard">
+            <span class="site-logo">
+                <img src="{{ $systemLogoUrl }}" alt="{{ $systemShortName }} logo">
+            </span>
+            <span class="sidebar-brand-copy">
+                <strong>{{ $systemShortName }}</strong>
+                <small>Energy Management</small>
+            </span>
+        </a>
 
         @php
             $user = auth()->user();
@@ -1939,6 +2464,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             }
             $isEnergyMonitoringMenuActive = request()->routeIs('modules.energy-monitoring.*')
                 || request()->routeIs('modules.energy-conservation.*')
+                || request()->routeIs('modules.ai-alerts.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
@@ -1960,9 +2486,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
             @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+                <li class="nav-section-label">Operations</li>
                 @if($canViewFacilities)
-                <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Registry</a></li>
                 @endif
                 @if($canViewMonthlyActivity)
                 <li>
@@ -1970,7 +2496,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <i class="fa-solid fa-clock-rotate-left"></i>
                         Monthly Record Activity
                         @if(($unreadMonthlySubmissionCount ?? 0) > 0)
-                            <span style="margin-left:auto;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#e11d48;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;">
+                            <span class="nav-count-badge">
                                 {{ ($unreadMonthlySubmissionCount ?? 0) > 99 ? '99+' : $unreadMonthlySubmissionCount }}
                             </span>
                         @endif
@@ -1979,16 +2505,17 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 @endif
                 @if($canViewEnergy || $canViewConservation || $canViewSubmeters)
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
-                        <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
+                    <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}" aria-expanded="{{ $isEnergyMonitoringMenuActive ? 'true' : 'false' }}">
+                        <span><i class="fa-solid fa-bolt"></i> Energy Management</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
                         @if($canViewEnergy)
-                        <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                        <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge-high"></i> Main Meter Monitoring</a></li>
+                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Alerts</a></li>
                         @endif
                         @if($canViewConservation)
-                        <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
+                        <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Conservation Program</a></li>
                         @endif
                         @if($canViewSubmeters)
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
@@ -2002,9 +2529,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @endif
 
             @if($canViewReports)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
+                <li class="nav-section-label">Analytics</li>
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
+                    <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}" aria-expanded="{{ $isReportsMenuActive ? 'true' : 'false' }}">
                         <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
@@ -2017,7 +2544,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @endif
 
             @if($canAccessUsers || $canAccessSettings)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
+                <li class="nav-section-label">Administration</li>
                 @if($canAccessUsers)
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
                 @if(in_array($roleKey, ['super_admin', 'admin'], true))
@@ -2032,13 +2559,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
         </ul>
     </div>
 
-    <div class="user-info">
-        Welcome, {{ auth()->user()?->username ?? auth()->user()?->name ?? 'Guest' }}<br>
-        <small style="color:#666;font-size:0.8rem;">{{ ucwords(str_replace('_', ' ', (string) ($role ?: auth()->user()?->role_key ?: 'Guest'))) }}</small>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="logout-btn">Logout</button>
-        </form>
+    <div class="sidebar-footer">
+        <span class="sidebar-status-dot" aria-hidden="true"></span>
+        <span><strong>System online</strong><small>{{ $systemOrganization }}</small></span>
     </div>
 </div>
 @endauth
@@ -2152,15 +2675,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const backdrop = document.getElementById('backdrop');
 
     if (hamburger && sidebar && backdrop) {
-        hamburger.onclick = () => {
-            sidebar.classList.toggle('open');
-            backdrop.classList.toggle('active');
+        const setSidebarOpen = (isOpen) => {
+            sidebar.classList.toggle('open', isOpen);
+            backdrop.classList.toggle('active', isOpen);
+            document.body.classList.toggle('sidebar-open', isOpen);
+            hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            hamburger.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
         };
 
-        backdrop.onclick = () => {
-            sidebar.classList.remove('open');
-            backdrop.classList.remove('active');
-        };
+        hamburger.onclick = () => setSidebarOpen(!sidebar.classList.contains('open'));
+        backdrop.onclick = () => setSidebarOpen(false);
+
+        sidebar.querySelectorAll('a.nav-link:not(.submenu-toggle)').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (window.matchMedia('(max-width: 991px)').matches) setSidebarOpen(false);
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && sidebar.classList.contains('open')) setSidebarOpen(false);
+        });
     }
 
     // 2. Submenu Logic
@@ -2172,12 +2706,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasActiveChild = !!menu.querySelector('.nav-link.active');
         if (hasActiveChild || btn.classList.contains('active')) {
             menu.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
+        } else {
+            btn.setAttribute('aria-expanded', 'false');
         }
 
         btn.onclick = e => {
             e.preventDefault();
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
+            btn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
         };
     });
 
@@ -2608,7 +3146,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (userBtn && userDrop) {
         userBtn.onclick = (e) => {
             e.stopPropagation();
-            userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block';
+            const willOpen = userDrop.style.display !== 'block';
+            userDrop.style.display = willOpen ? 'block' : 'none';
+            userBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
             if (notifDrop) notifDrop.style.display = 'none';
         };
         userDrop.addEventListener('click', (e) => e.stopPropagation());
@@ -2619,6 +3159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block';
             if (userDrop) userDrop.style.display = 'none';
+            if (userBtn) userBtn.setAttribute('aria-expanded', 'false');
             applyNotifFilter();
         };
         notifDrop.addEventListener('click', (e) => e.stopPropagation());
@@ -2626,6 +3167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.addEventListener('click', () => {
         if (userDrop) userDrop.style.display = 'none';
+        if (userBtn) userBtn.setAttribute('aria-expanded', 'false');
         if (notifDrop) notifDrop.style.display = 'none';
     });
 

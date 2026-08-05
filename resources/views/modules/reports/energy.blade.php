@@ -1402,7 +1402,7 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
                                 $monthlyRecordsParams['summary_month'] = $actionMonth;
                             }
                             $monthlyRecordsUrl = route('facilities.monthly-records', $monthlyRecordsParams);
-                            $facilityProfileUrl = route('modules.facilities.energy-profile.index', ['facility' => $rowFacilityId]);
+                            $facilityDetailsUrl = route('modules.facilities.show', ['id' => $rowFacilityId]);
                             $encodeReadingUrl = $actionMonth
                                 ? route('facilities.monthly-records', array_merge($monthlyRecordsParams, [
                                     'open_add' => 1,
@@ -1413,13 +1413,13 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
                         <tr class="energy-row {{ $hasReading ? '' : 'is-awaiting' }}"
                             data-search="{{ strtolower(trim((string)($row['facility'] ?? '') . ' ' . (string)($row['source'] ?? ''))) }}"
                             data-facility-id="{{ $row['facility_id'] ?? '' }}"
-                            data-profile-url="{{ $facilityProfileUrl }}"
+                            data-facility-url="{{ $facilityDetailsUrl }}"
                             data-source="{{ $row['source'] ?? 'local' }}"
                             data-status="{{ $hasReading ? 'recorded' : 'awaiting' }}"
                             data-summary-key="{{ $row['summary_key'] ?? '' }}"
                             tabindex="0"
                             role="link"
-                            aria-label="Open the Energy Profile for {{ $row['facility'] }}">
+                            aria-label="View {{ $row['facility'] }} facility details">
                             <td>
                                 <div class="facility-cell">
                                     <span class="facility-dot"></span>
@@ -1455,7 +1455,7 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
                                         View Report <i class="fa-solid fa-chevron-right"></i>
                                     </button>
                                 @elseif($rowSource === 'cprf')
-                                    <a href="{{ $facilityProfileUrl }}" class="row-action row-action--records" title="Reading is managed through CPRF integration. Open the facility profile.">
+                                    <a href="{{ $facilityDetailsUrl }}" class="row-action row-action--records" title="Reading is managed through CPRF integration. View the facility details.">
                                         <i class="fa-solid fa-building"></i> View Facility
                                     </a>
                                 @elseif($canEncodeMainReadings && $actionMonth)
@@ -1704,15 +1704,15 @@ document.addEventListener('DOMContentLoaded', function () {
     rows.forEach((row) => {
         row.addEventListener('click', (event) => {
             if (event.target.closest('a, button')) return;
-            const profileUrl = row.dataset.profileUrl;
-            if (profileUrl) window.location.assign(profileUrl);
+            const facilityUrl = row.dataset.facilityUrl;
+            if (facilityUrl) window.location.assign(facilityUrl);
         });
         row.addEventListener('keydown', (event) => {
             if (event.target !== row) return;
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                const profileUrl = row.dataset.profileUrl;
-                if (profileUrl) window.location.assign(profileUrl);
+                const facilityUrl = row.dataset.facilityUrl;
+                if (facilityUrl) window.location.assign(facilityUrl);
             }
         });
 

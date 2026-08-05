@@ -723,7 +723,7 @@
                 <div class="summary-card-heading"><i class="fas fa-bolt"></i> Quick Actions</div>
                 <div class="quick-actions-grid">
                     <a href="{{ route('modules.facilities.index') }}" class="quick-action-btn"><i class="fa-solid fa-building"></i> Facilities</a>
-                    <a href="{{ route('energy.dashboard') }}" class="quick-action-btn"><i class="fa-solid fa-bolt"></i> Energy Monitoring</a>
+                    <a href="{{ route('energy.dashboard') }}" class="quick-action-btn"><i class="fa-solid fa-gauge-high"></i> Main Meter Monitoring</a>
                     <a href="{{ route('energy-incidents.index') }}" class="quick-action-btn"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a>
                 </div>
             </div>

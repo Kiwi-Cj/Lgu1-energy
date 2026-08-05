@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\BaselineResolver;
 use Illuminate\Database\Eloquent\Model;
 
 class EnergyIncident extends Model
@@ -129,9 +130,9 @@ class EnergyIncident extends Model
             ];
         }
 
-        $baseline = $this->energyRecord?->baseline_kwh
-            ?? $this->facility?->baseline_kwh
-            ?? null;
+        $baseline = $this->energyRecord
+            ? BaselineResolver::forRecord($this->energyRecord, $this->facility)
+            : BaselineResolver::forFacility($this->facility);
 
         return self::classifySeverity(
             $this->deviation_percent !== null ? (float) $this->deviation_percent : null,

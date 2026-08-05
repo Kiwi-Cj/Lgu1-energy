@@ -8,13 +8,14 @@
         @method('patch')
 
         <div class="profile-photo-row">
-            <img src="{{ $user->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-            <div class="profile-photo-fallback" style="display:none;">
+            <img id="profilePhotoPreview" src="{{ $user->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile photo preview" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div id="profilePhotoFallback" class="profile-photo-fallback" style="display:none;">
                 {{ strtoupper(substr(trim((string) ($user->full_name ?? $user->name ?? 'U')), 0, 1)) }}
             </div>
             <div class="profile-photo-input-wrap">
                 <label for="profile_photo">Profile Photo</label>
                 <input id="profile_photo" name="profile_photo" type="file" accept="image/*">
+                <span class="profile-selected-file" id="profileSelectedFile"><i class="fa-regular fa-image"></i> No new photo selected</span>
                 <p class="profile-field-help">JPG, PNG, GIF, or SVG up to 2MB.</p>
                 <x-input-error class="mt-2" :messages="$errors->get('profile_photo')" />
             </div>
@@ -50,19 +51,23 @@
     display: flex;
     gap: 14px;
     align-items: center;
+    padding: 13px;
+    border: 1px dashed #bfcee1;
+    border-radius: 13px;
+    background: #f8fbff;
 }
 
 .profile-photo-row img {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #dbeafe;
 }
 
 .profile-photo-fallback {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -82,6 +87,16 @@
     margin: 8px 0 0;
     font-size: 0.84rem;
     color: #64748b;
+}
+
+.profile-selected-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 7px;
+    color: #475569;
+    font-size: .76rem;
+    font-weight: 700;
 }
 
 .profile-readonly-grid {
@@ -146,6 +161,11 @@ body.dark-mode .profile-photo-row img {
     border-color: #1e3a8a;
 }
 
+body.dark-mode .profile-photo-row {
+    border-color: #3b4a60;
+    background: #111827;
+}
+
 body.dark-mode .profile-photo-fallback {
     border-color: #1e3a8a;
     background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
@@ -154,6 +174,10 @@ body.dark-mode .profile-photo-fallback {
 
 body.dark-mode .profile-field-help {
     color: #94a3b8;
+}
+
+body.dark-mode .profile-selected-file {
+    color: #cbd5e1;
 }
 
 body.dark-mode .profile-readonly-card {

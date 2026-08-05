@@ -41,7 +41,11 @@ class EnergyRecommendationService
                 ->timeout($this->timeoutSeconds())
                 ->post($baseUrl . '/chat/completions', [
                     'model' => $model,
-                    'temperature' => (float) config('services.ai_recommendations.openai.temperature', 0.2),
+                    'temperature' => trim((string) ($context['insight_variant'] ?? '')) !== ''
+                        ? 0.85
+                        : (float) config('services.ai_recommendations.openai.temperature', 0.2),
+                    'presence_penalty' => trim((string) ($context['insight_variant'] ?? '')) !== '' ? 0.65 : 0,
+                    'frequency_penalty' => trim((string) ($context['insight_variant'] ?? '')) !== '' ? 0.35 : 0,
                     'max_tokens' => (int) config('services.ai_recommendations.openai.max_tokens', 180),
                     'messages' => [
                         [
@@ -92,6 +96,7 @@ class EnergyRecommendationService
         $baselineKwh = $this->toFloat($context['baseline_kwh'] ?? null);
         $lastMaintenance = trim((string) ($context['last_maintenance'] ?? ''));
         $nextMaintenance = trim((string) ($context['next_maintenance'] ?? ''));
+        $insightVariant = trim((string) ($context['insight_variant'] ?? ''));
 
         $primary = match ($alertLevel) {
             'critical' => 'Critical overuse detected. Treat this as an immediate operating issue and validate the highest-load circuits today.',
@@ -126,8 +131,34 @@ class EnergyRecommendationService
         }
 
         $meterPriorityLine = $this->buildMeterPriorityLine((array) ($context['meter_breakdown'] ?? []), $alertLevel);
-        $facilityFocusLine = $this->buildFacilityFocusLine($facilityName, $facilityType, $alertLevel);
+        $facilityFocusLine = $this->buildFacilityFocusLine($facilityName, $facilityType, $alertLevel, $insightVariant);
         $maintenanceLine = $this->buildMaintenanceLine($lastMaintenance, $nextMaintenance, $alertLevel);
+
+        if ($insightVariant !== '' && trim((string) ($context['previous_recommendation'] ?? '')) !== '') {
+            $variantNumber = ctype_digit($insightVariant) ? (int) $insightVariant : abs(crc32($insightVariant));
+            $facilityLabel = $facilityName !== '' ? $facilityName : 'This facility';
+
+            return match ($variantNumber % 3) {
+                0 => implode(' ', array_filter([
+                    "Run a fresh operating review for {$facilityLabel} instead of repeating the previous checklist.",
+                    $facilityFocusLine,
+                    $deltaLine,
+                    $meterPriorityLine,
+                ])),
+                1 => implode(' ', array_filter([
+                    "Use the latest reading from {$facilityLabel} to verify which operating controls changed during this billing period.",
+                    $trendLine,
+                    $meterPriorityLine,
+                    $maintenanceLine,
+                ])),
+                default => implode(' ', array_filter([
+                    "Treat this refresh as a targeted field investigation for {$facilityLabel}.",
+                    $deltaLine,
+                    $facilityFocusLine,
+                    'Record equipment runtime before and after the corrective action so the next reading can confirm its effect.',
+                ])),
+            };
+        }
 
         return implode(' ', array_filter([
             $primary,
@@ -144,6 +175,8 @@ class EnergyRecommendationService
         $sanitized = [
             'facility_name' => (string) ($context['facility_name'] ?? ''),
             'facility_type' => (string) ($context['facility_type'] ?? ''),
+            'insight_variant' => (string) ($context['insight_variant'] ?? ''),
+            'previous_recommendation' => mb_substr(trim((string) ($context['previous_recommendation'] ?? '')), 0, 1200),
             'alert_level' => (string) ($context['alert_level'] ?? ''),
             'trend_percent' => $this->toFloat($context['trend_percent'] ?? null),
             'actual_kwh' => $this->toFloat($context['actual_kwh'] ?? null),
@@ -171,13 +204,15 @@ class EnergyRecommendationService
                 'recommendation' => $fallbackRecommendation,
             ], JSON_UNESCAPED_SLASHES)
             . '. Write 2 or 3 concise sentences.'
+            . ' The insight_variant identifies a user-requested refresh. When it is present, create a genuinely new analysis with a different diagnostic angle, sentence structure, opening, and action plan while keeping every numeric fact unchanged.'
+            . ' If previous_recommendation is present, do not paraphrase it, reuse its sentence pattern, or repeat its main recommended checks. Produce a substantially different replacement insight.'
             . ' Sentence 1 should explain the issue using the supplied numbers when available.'
             . ' Sentence 2 should give facility-type-specific checks or load controls.'
             . ' Sentence 3 may mention maintenance timing or schedule follow-up.'
             . ' Avoid generic filler and do not repeat the baseline wording verbatim.';
     }
 
-    private function buildFacilityFocusLine(string $facilityName, string $facilityType, string $alertLevel): ?string
+    private function buildFacilityFocusLine(string $facilityName, string $facilityType, string $alertLevel, string $insightVariant = ''): ?string
     {
         if ($alertLevel === 'no data') {
             return null;
@@ -196,7 +231,14 @@ class EnergyRecommendationService
             default => ['HVAC runtime', 'lighting schedules', 'continuously energized equipment', 'after-hours base load'],
         };
 
-        $seed = abs(crc32(strtolower($facilityName !== '' ? $facilityName : $facilityType)));
+        $seedValue = strtolower($facilityName !== '' ? $facilityName : $facilityType);
+        if ($insightVariant !== '' && ! ctype_digit($insightVariant)) {
+            $seedValue .= '|' . $insightVariant;
+        }
+        $baseSeed = abs(crc32($seedValue));
+        $seed = ctype_digit($insightVariant)
+            ? $baseSeed + (int) $insightVariant
+            : $baseSeed;
         $first = $seed % count($checks);
         $second = ($first + 1 + ($seed % (count($checks) - 1))) % count($checks);
 

@@ -8,8 +8,13 @@ use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\User;
 use App\Services\RecommendationNotificationService;
+use App\Support\BaselineResolver;
+use App\Support\EnergyCost;
+use App\Support\EnergyAlertRouting;
 use App\Support\RoleAccess;
 use App\Support\SystemSettings;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
@@ -84,6 +89,7 @@ class EnergyRecordObserver
         }
 
         $this->notifyRecipientsOfAlert($record, $facility, $deviation, $alert);
+        $this->notifyRecipientsOfProjectedCost($record, $facility);
 
         // Legacy incident/maintenance automation is only for non-submeter streams.
         if ($this->isSubMeterRecord($record)) {
@@ -128,42 +134,119 @@ class EnergyRecordObserver
 
             $title = 'Energy Alert';
             $message = "Alert: {$scopeLabel} {$meterName} at {$facilityName} ({$periodLabel}) increased{$deviationLabel} [{$level}]";
+            $targetUrl = route('modules.ai-alerts.index', ['month' => sprintf('%04d-%02d', $year, $month)]);
 
-            User::query()
-                ->with('facilities:id')
-                ->get()
-                ->filter(function (User $user) use ($facility) {
-                    $role = RoleAccess::normalize($user);
+            $this->alertRecipients($facility)
+                ->each(function (User $recipient) use ($message, $title, $targetUrl, $alertKey, $facilityName, $periodLabel) {
+                    $notification = $recipient->notifications()->firstOrCreate(
+                        ['type' => 'energy_record_alert', 'message' => $message],
+                        ['title' => $title, 'target_url' => $targetUrl]
+                    );
 
-                    if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
-                        return true;
+                    if ($notification->wasRecentlyCreated
+                        && $alertKey === 'critical'
+                        && in_array(RoleAccess::normalize($recipient), ['energy_officer', 'engineer'], true)
+                        && SystemSettings::emailNotificationsEnabled()
+                        && filter_var($recipient->email, FILTER_VALIDATE_EMAIL)
+                    ) {
+                        try {
+                            Mail::raw(
+                                "A critical energy alert was detected for {$facilityName} ({$periodLabel}).\n\n{$message}\n\nOpen AI Alerts: {$targetUrl}",
+                                fn ($mail) => $mail->to($recipient->email)->subject("Critical Energy Alert - {$facilityName}")
+                            );
+                        } catch (\Throwable $e) {
+                            // The bell alert remains available if email delivery fails.
+                        }
                     }
-
-                    if ($role === 'staff') {
-                        return $user->facilities->contains('id', (int) $facility->id);
-                    }
-
-                    return false;
-                })
-                ->each(function (User $recipient) use ($message, $title) {
-                    $exists = $recipient->notifications()
-                        ->where('type', 'energy_record_alert')
-                        ->where('message', $message)
-                        ->exists();
-
-                    if ($exists) {
-                        return;
-                    }
-
-                    $recipient->notifications()->create([
-                        'title' => $title,
-                        'message' => $message,
-                        'type' => 'energy_record_alert',
-                    ]);
                 });
         } catch (\Throwable $e) {
             // Notification failure must not block monthly record persistence.
         }
+    }
+
+    private function notifyRecipientsOfProjectedCost(EnergyRecord $record, Facility $facility): void
+    {
+        try {
+            if ($this->isSubMeterRecord($record) || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $month = (int) $record->month;
+            $year = (int) $record->year;
+            if ($month < 1 || $month > 12 || $year < 1) {
+                return;
+            }
+
+            $period = Carbon::create($year, $month, 1);
+            $previousPeriod = $period->copy()->subMonth();
+            $scope = static function ($query): void {
+                $query->where(function ($meterScope) {
+                    $meterScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                });
+            };
+
+            $currentRecords = EnergyRecord::query()
+                ->where('facility_id', $facility->id)
+                ->where('year', $year)->where('month', $month)
+                ->tap($scope)->get();
+            $previousRecords = EnergyRecord::query()
+                ->where('facility_id', $facility->id)
+                ->where('year', $previousPeriod->year)->where('month', $previousPeriod->month)
+                ->tap($scope)->get();
+
+            $currentCost = (float) $currentRecords->sum(fn ($item) => EnergyCost::cost($item));
+            $previousCost = (float) $previousRecords->sum(fn ($item) => EnergyCost::cost($item));
+            if ($currentCost <= 0 || $previousCost <= 0) {
+                return;
+            }
+
+            $latestDay = (int) $currentRecords->max('day');
+            $projectedCost = $period->isSameMonth(now()) && $latestDay > 0
+                ? ($currentCost / max(1, $latestDay)) * $period->daysInMonth
+                : $currentCost;
+            if ($projectedCost <= $previousCost) {
+                return;
+            }
+
+            $increase = (($projectedCost - $previousCost) / $previousCost) * 100;
+            $periodLabel = $period->format('M Y');
+            $facilityName = trim((string) ($facility->name ?: 'Unknown Facility'));
+            $message = sprintf(
+                'Projected cost alert: %s (%s) may reach ₱%s, %.1f%% above the previous month budget of ₱%s.',
+                $facilityName,
+                $periodLabel,
+                number_format($projectedCost, 2),
+                $increase,
+                number_format($previousCost, 2)
+            );
+            $targetUrl = route('modules.ai-alerts.index', ['month' => $period->format('Y-m')]);
+
+            $this->alertRecipients($facility)->each(function (User $recipient) use ($message, $targetUrl) {
+                $recipient->notifications()->firstOrCreate(
+                    ['type' => 'ai_cost_alert', 'message' => $message],
+                    ['title' => 'Projected Cost Alert', 'target_url' => $targetUrl]
+                );
+            });
+        } catch (\Throwable $e) {
+            // Cost analysis must not block saving the energy reading.
+        }
+    }
+
+    private function alertRecipients(Facility $facility)
+    {
+        return User::query()
+            ->with('facilities:id')
+            ->get()
+            ->filter(function (User $user) use ($facility) {
+                $role = RoleAccess::normalize($user);
+                if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
+                    return true;
+                }
+
+                return $role === 'staff'
+                    && $user->facilities->contains('id', (int) $facility->id);
+            });
     }
 
     private function notifyReviewersOfSubmission(EnergyRecord $record, bool $isUpdate = false): void
@@ -225,24 +308,7 @@ class EnergyRecordObserver
 
     private function resolveBaseline(EnergyRecord $record, Facility $facility): ?float
     {
-        if (is_numeric($record->baseline_kwh)) {
-            return round((float) $record->baseline_kwh, 2);
-        }
-
-        if ($record->meter && is_numeric($record->meter->baseline_kwh)) {
-            return round((float) $record->meter->baseline_kwh, 2);
-        }
-
-        $profile = $facility->energyProfiles()->latest()->first();
-        if ($profile && is_numeric($profile->baseline_kwh)) {
-            return round((float) $profile->baseline_kwh, 2);
-        }
-
-        if (is_numeric($facility->baseline_kwh)) {
-            return round((float) $facility->baseline_kwh, 2);
-        }
-
-        return null;
+        return BaselineResolver::forRecord($record, $facility);
     }
 
     private function syncIncidentAndMaintenance(
@@ -259,7 +325,7 @@ class EnergyRecordObserver
             default => 'normal',
         };
 
-        if (! in_array($severityKey, ['critical', 'very-high', 'high'], true)) {
+        if (! EnergyAlertRouting::requiresIncident($alert)) {
             return;
         }
 

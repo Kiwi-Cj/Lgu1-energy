@@ -696,3 +696,7 @@ Artisan::command('demo:seed-fake-sensors {--submeters=6 : Number of active subme
 
     $this->info("Seeded fake sensor data. Main rows touched: {$mainCreated}. Submeter rows touched: {$subCreated}.");
 })->purpose('Seed fake IoT sensor readings for main meter and submeter graphs');
+
+Schedule::command('energy:escalate-critical-alerts --minutes=30')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

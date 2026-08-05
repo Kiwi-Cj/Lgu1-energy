@@ -3,6 +3,12 @@
 
 @php
     $user = auth()->user();
+    $profileDisplayName = $user?->full_name ?? $user?->name ?? $user?->username ?? 'User';
+    $profileInitials = collect(preg_split('/\s+/', trim((string) $profileDisplayName)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($part) => mb_strtoupper(mb_substr((string) $part, 0, 1)))
+        ->implode('');
 
     $roleValue = $user?->role;
     $formatRoleText = static function ($value): string {
@@ -169,9 +175,13 @@
 <div class="report-card-container profile-report-card-container">
 <div class="profile-view-page">
     <div class="profile-header-card">
-        <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="Profile Photo" class="profile-avatar">
+        <div class="profile-avatar-wrap">
+            <img src="{{ $user?->profile_photo_url ?? asset('img/default-avatar.png') }}" alt="{{ $profileDisplayName }}" class="profile-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">
+            <span class="profile-avatar-fallback" hidden>{{ $profileInitials ?: 'U' }}</span>
+        </div>
         <div class="profile-header-main">
-            <h1>{{ $user?->full_name ?? $user?->name ?? 'User' }}</h1>
+            <div class="profile-eyebrow"><i class="fa-solid fa-id-card"></i> Account profile</div>
+            <h1>{{ $profileDisplayName }}</h1>
             <p>{{ $user?->email }}</p>
             <div class="profile-meta">
                 <span class="role-pill">{{ $roleLabel }}</span>
@@ -187,7 +197,7 @@
 
     <div class="profile-cards-grid">
         <section class="profile-card">
-            <h3>Basic Information</h3>
+            <h3><span class="profile-section-icon"><i class="fa-solid fa-user"></i></span> Basic Information</h3>
             <div class="info-grid">
                 <div><label>User ID</label><strong>{{ $user?->id }}</strong></div>
                 <div><label>Username</label><strong>{{ $user?->username ?? '-' }}</strong></div>
@@ -199,7 +209,7 @@
         </section>
 
         <section class="profile-card">
-            <h3>Account and Security</h3>
+            <h3><span class="profile-section-icon"><i class="fa-solid fa-shield-halved"></i></span> Account and Security</h3>
             <div class="info-grid">
                 <div><label>Status</label><strong>{{ $statusLabel }}</strong></div>
                 <div><label>Last Login</label><strong>{{ $lastLogin }}</strong></div>
@@ -211,7 +221,7 @@
         </section>
 
         <section class="profile-card">
-            <h3>System Permissions</h3>
+            <h3><span class="profile-section-icon"><i class="fa-solid fa-key"></i></span> System Permissions</h3>
             <div class="permission-list">
                 @foreach($permissionItems as $item)
                     <div><i class="fa {{ $item['icon'] }}"></i> {{ $item['text'] }}</div>
@@ -220,7 +230,7 @@
         </section>
 
         <section class="profile-card">
-            <h3>Assignments</h3>
+            <h3><span class="profile-section-icon"><i class="fa-solid fa-layer-group"></i></span> Assignments</h3>
             <div class="stats-grid">
                 @foreach($assignmentCards as $card)
                     <div>
@@ -236,10 +246,11 @@
 
 <style>
 .report-card-container.profile-report-card-container {
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 2px 12px rgba(31,38,135,0.06);
-    padding: 30px;
+    background: linear-gradient(155deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #dce6f2;
+    border-radius: 22px;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.07);
+    padding: 24px;
     margin-bottom: 2rem;
     font-family: 'Inter', sans-serif;
 }
@@ -250,28 +261,83 @@
 }
 
 .profile-view-page {
-    max-width: 1100px;
+    max-width: 1180px;
     margin: 0 auto;
 }
 
 .profile-header-card {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 24px;
-    border: 1px solid #e2e8f0;
+    gap: 18px;
+    min-height: 170px;
+    padding: 22px 24px;
+    overflow: hidden;
+    border: 1px solid #d7e3f2;
     border-radius: 18px;
-    background: #ffffff;
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-    margin-bottom: 18px;
+    background:
+        radial-gradient(circle at 92% 0%, rgba(37, 99, 235, .13), transparent 32%),
+        linear-gradient(135deg, #ffffff, #f7faff);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+    margin-bottom: 16px;
+}
+
+.profile-header-card::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+    content: '';
+}
+
+.profile-avatar-wrap {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    flex: 0 0 84px;
+    overflow: hidden;
+    border-radius: 50%;
 }
 
 .profile-avatar {
-    width: 92px;
-    height: 92px;
+    position: absolute;
+    inset: 2px;
+    display: block;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #dbeafe;
+    border: 4px solid #fff;
+    outline: 2px solid #bfdbfe;
+    background: #eef4ff;
+    box-shadow: 0 8px 20px rgba(30, 64, 175, .15);
+}
+
+.profile-avatar[hidden] {
+    display: none !important;
+}
+
+.profile-avatar-fallback {
+    position: absolute;
+    inset: 2px;
+    width: 80px;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #fff;
+    outline: 2px solid #bfdbfe;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+    color: #1e40af;
+    font-size: 1.35rem;
+    font-weight: 900;
+    box-shadow: 0 8px 20px rgba(30, 64, 175, .15);
+}
+
+.profile-avatar-fallback:not([hidden]) {
+    display: inline-flex;
 }
 
 .profile-header-main {
@@ -280,13 +346,29 @@
 
 .profile-header-main h1 {
     margin: 0;
-    font-size: 1.6rem;
+    font-size: clamp(1.45rem, 2vw, 1.75rem);
+    line-height: 1.2;
+    letter-spacing: -.035em;
     color: #0f172a;
 }
 
+.profile-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    color: #2563eb;
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+
 .profile-header-main p {
-    margin: 4px 0 0;
+    margin: 5px 0 0;
     color: #64748b;
+    font-size: .88rem;
+    overflow-wrap: anywhere;
 }
 
 .profile-meta {
@@ -301,9 +383,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 999px;
-    font-size: 0.84rem;
+    font-size: 0.76rem;
     font-weight: 700;
 }
 
@@ -328,54 +410,98 @@
     gap: 8px;
     text-decoration: none;
     font-weight: 700;
-    border-radius: 12px;
-    padding: 10px 16px;
+    border-radius: 11px;
+    padding: 10px 15px;
     color: #ffffff;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .22);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.profile-edit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 11px 22px rgba(37, 99, 235, .28);
 }
 
 .profile-cards-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 14px;
 }
 
 .profile-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 18px;
+    border-radius: 15px;
+    padding: 16px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .035);
 }
 
 .profile-card h3 {
-    margin: 0 0 12px;
-    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 13px;
+    font-size: .94rem;
     color: #0f172a;
+}
+
+.profile-section-icon {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: #eaf1ff;
+    color: #2563eb;
+    font-size: .74rem;
 }
 
 .info-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
+}
+
+.info-grid > div {
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid #edf2f7;
+    border-radius: 10px;
+    background: #f8fafc;
 }
 
 .info-grid label {
     display: block;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     color: #64748b;
 }
 
 .info-grid strong {
     display: block;
     margin-top: 2px;
-    font-size: 0.94rem;
+    font-size: 0.84rem;
+    overflow-wrap: anywhere;
     color: #0f172a;
 }
 
 .permission-list {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     color: #334155;
+    font-size: .82rem;
+}
+
+.permission-list > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
+    background: #f8fafc;
 }
 
 .permission-list i {
@@ -392,13 +518,14 @@
 .stats-grid div {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 12px;
+    padding: 11px;
+    background: #fbfdff;
 }
 
 .stats-grid strong {
     display: block;
     color: #1d4ed8;
-    font-size: 1.04rem;
+    font-size: .96rem;
 }
 
 .stats-grid span {
@@ -408,7 +535,7 @@
 
 body.dark-mode .profile-header-card,
 body.dark-mode .profile-card {
-    background: #0f172a;
+    background: linear-gradient(145deg, #0f172a, #111827);
     border-color: #334155;
     box-shadow: none;
 }
@@ -421,6 +548,13 @@ body.dark-mode .profile-report-card-container {
 
 body.dark-mode .profile-avatar {
     border-color: #1e3a8a;
+}
+
+body.dark-mode .profile-avatar-fallback {
+    border-color: #172554;
+    outline-color: #31538c;
+    background: linear-gradient(135deg, #1e3a8a, #312e81);
+    color: #dbeafe;
 }
 
 body.dark-mode .profile-header-main h1,
@@ -456,6 +590,17 @@ body.dark-mode .stats-grid div {
     background: #111827;
 }
 
+body.dark-mode .info-grid > div,
+body.dark-mode .permission-list > div {
+    border-color: #29384d;
+    background: #111827;
+}
+
+body.dark-mode .profile-section-icon {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
 body.dark-mode .stats-grid strong {
     color: #93c5fd;
 }
@@ -468,6 +613,11 @@ body.dark-mode .stats-grid strong {
 
     .profile-header-card {
         flex-wrap: wrap;
+    }
+
+    .profile-edit-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .profile-cards-grid {

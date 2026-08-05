@@ -104,9 +104,6 @@ class DashboardController extends Controller
             ? $selectedStartMonth->format('F')
             : $selectedStartMonth->format('F Y');
         $periodEndLabel = $selectedEndMonth->format('F Y');
-        $isDefaultRange = $periodStartInput === $defaultStartMonth->format('Y-m')
-            && $periodEndInput === $defaultEndMonth->format('Y-m');
-
         $applyEnergyRecordRange = function ($query) use ($periodStartYm, $periodEndYm) {
             return $query->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm]);
         };
@@ -503,46 +500,9 @@ class DashboardController extends Controller
             $kwhTrend = '';
         }
 
-        // Insert alerts as notifications only for default (latest 6 months) view.
-        if ($isDefaultRange) {
-            foreach ($alerts as $alertItem) {
-                $alertMsg = $alertItem['message'] ?? null;
-                if (!$alertMsg) {
-                    continue;
-                }
-                $alertType = (string) ($alertItem['type'] ?? 'alert');
-                $alertTitle = match ($alertType) {
-                    'incident' => 'Incident Alert',
-                    'maintenance' => 'Maintenance Alert',
-                    'consumption' => 'Consumption Alert',
-                    'record' => 'Energy Alert',
-                    default => 'System Alert',
-                };
-                // Avoid duplicates for the same month even if previously marked as read.
-                // This keeps "Mark all read" stable and prevents the badge from reappearing on reload.
-                $existingNotification = $user->notifications()
-                    ->where('message', $alertMsg)
-                    ->whereYear('created_at', now()->year)
-                    ->whereMonth('created_at', now()->month)
-                    ->first();
-                if ($existingNotification) {
-                    $currentTitle = strtolower(trim((string) ($existingNotification->title ?? '')));
-                    $currentType = strtolower(trim((string) ($existingNotification->type ?? '')));
-                    if ($currentTitle === '' || $currentTitle === 'system alert' || $currentType === '' || $currentType === 'alert') {
-                        $existingNotification->update([
-                            'title' => $alertTitle,
-                            'type' => $alertType,
-                        ]);
-                    }
-                } else {
-                    $user->notifications()->create([
-                        'title' => $alertTitle,
-                        'message' => $alertMsg,
-                        'type' => $alertType,
-                    ]);
-                }
-            }
-        }
+        // Alert cards are read-only here. Bell notifications are created by the
+        // record, incident, maintenance, and recommendation event services so
+        // opening the dashboard cannot create duplicate notification rows.
 
         $role = $userRole;
 
