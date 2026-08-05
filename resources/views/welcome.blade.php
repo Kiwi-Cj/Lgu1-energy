@@ -941,12 +941,12 @@
         }
 
         .feature-tags span {
-            padding: 6px 9px;
+            padding: 7px 11px;
             color: #475569;
             border: 1px solid #e2e8f0;
             border-radius: 999px;
             background: rgba(255,255,255,.8);
-            font-size: 0.58rem;
+            font-size: 0.66rem;
             font-weight: 700;
         }
 
@@ -957,17 +957,17 @@
             width: max-content;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             margin-top: 18px;
             color: var(--primary);
             text-decoration: none;
-            font-size: 0.68rem;
+            font-size: 0.76rem;
             font-weight: 800;
         }
 
         .feature-link svg {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             transition: transform 160ms ease;
         }
 
