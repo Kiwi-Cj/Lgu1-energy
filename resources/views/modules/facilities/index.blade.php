@@ -690,12 +690,6 @@ window.addEventListener('DOMContentLoaded', function() {
                     'icon' => 'fa-layer-group',
                     'title' => 'Show all available facilities',
                 ],
-                'local' => [
-                    'label' => 'LGU Facilities',
-                    'count' => $localFacilitiesCount ?? 0,
-                    'icon' => 'fa-landmark',
-                    'title' => 'Facilities managed directly by LGU Energy',
-                ],
             ];
             if ($canManageCprf ?? false) {
                 $sourceTabs['cprf'] = [
