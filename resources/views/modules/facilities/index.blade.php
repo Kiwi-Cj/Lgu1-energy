@@ -164,13 +164,28 @@ window.addEventListener('DOMContentLoaded', function() {
 
     .facility-toolbar { margin:0 0 22px; padding:18px; border:1px solid #e2e8f0; border-radius:16px; background:#f8fafc; }
     .facility-toolbar-top { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
-    .facility-source-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .facility-source-tab {
-        padding:8px 14px; border-radius:999px; border:1px solid #dbe3ef; background:#fff; color:#64748b;
-        font-size:.82rem; font-weight:800; text-decoration:none; transition:.2s ease;
+    .facility-source-tabs {
+        display:inline-flex;
+        align-items:center;
+        gap:5px;
+        flex-wrap:wrap;
+        padding:5px;
+        border:1px solid #dbe3ef;
+        border-radius:14px;
+        background:#fff;
+        box-shadow:0 3px 10px rgba(15,23,42,.04);
     }
-    .facility-source-tab:hover { border-color:#93c5fd; color:#1d4ed8; }
-    .facility-source-tab.is-active { border-color:#2563eb; background:#eff6ff; color:#1d4ed8; }
+    .facility-source-tab {
+        min-height:38px; padding:7px 11px; border-radius:10px; border:1px solid transparent; background:transparent; color:#64748b;
+        display:inline-flex; align-items:center; gap:7px; font-size:.8rem; font-weight:800; text-decoration:none; transition:.2s ease;
+    }
+    .facility-source-tab:hover { background:#f8fafc; color:#1d4ed8; }
+    .facility-source-tab.is-active { border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8; box-shadow:0 2px 7px rgba(37,99,235,.08); }
+    .facility-source-tab-count {
+        min-width:22px; height:22px; padding:0 6px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+        color:#64748b; background:#eef2f7; font-size:.68rem; font-weight:900;
+    }
+    .facility-source-tab.is-active .facility-source-tab-count { color:#fff; background:#2563eb; }
     .facility-sort-wrap { display:flex; align-items:center; gap:8px; color:#475569; font-size:.8rem; font-weight:800; }
     .facility-sort-select { min-height:40px; border:1px solid #cbd5e1; border-radius:10px; background:#fff; color:#1e293b; padding:0 34px 0 11px; font:inherit; outline:none; }
     .facility-sort-select:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
@@ -503,8 +518,12 @@ window.addEventListener('DOMContentLoaded', function() {
         background:#111827;
         border-color:#334155;
     }
+    body.dark-mode .facilities-page .facility-source-tabs,
     body.dark-mode .facilities-page .facility-source-tab,
     body.dark-mode .facilities-page .facility-sort-select { background:#0f172a; border-color:#334155; color:#e2e8f0; }
+    body.dark-mode .facilities-page .facility-source-tab-count { color:#cbd5e1; background:#334155; }
+    body.dark-mode .facilities-page .facility-source-tab.is-active { color:#bfdbfe; border-color:#1d4ed8; background:#172554; }
+    body.dark-mode .facilities-page .facility-source-tab.is-active .facility-source-tab-count { color:#fff; background:#2563eb; }
     body.dark-mode .facilities-page .facility-card-meta-item strong { color:#e2e8f0; }
     body.dark-mode .facilities-page .facility-image-placeholder { background:linear-gradient(145deg,#111827,#172033); }
     body.dark-mode .facilities-page .facility-image-placeholder-icon,
@@ -592,6 +611,8 @@ window.addEventListener('DOMContentLoaded', function() {
         .facilities-page .archive-link .archive-label { display: none; }
         .facility-heading { text-align:left; }
         .facility-toolbar-top { align-items:stretch; }
+        .facility-source-tabs { display:grid; grid-template-columns:1fr; width:100%; }
+        .facility-source-tab { justify-content:space-between; width:100%; }
         .facility-sort-wrap { width:100%; }
         .facility-sort-select { flex:1; }
         .report-card-container { padding:18px; border-radius:16px; }
@@ -663,20 +684,38 @@ window.addEventListener('DOMContentLoaded', function() {
         @php
             $sourceTab = $sourceTab ?? 'all';
             $sourceTabs = [
-                'all' => 'All Facilities',
-                'local' => 'LGU Facilities (' . ($localFacilitiesCount ?? 0) . ')',
+                'all' => [
+                    'label' => 'All Facilities',
+                    'count' => $totalFacilities ?? 0,
+                    'icon' => 'fa-layer-group',
+                    'title' => 'Show all available facilities',
+                ],
+                'local' => [
+                    'label' => 'LGU Facilities',
+                    'count' => $localFacilitiesCount ?? 0,
+                    'icon' => 'fa-landmark',
+                    'title' => 'Facilities managed directly by LGU Energy',
+                ],
             ];
             if ($canManageCprf ?? false) {
-                $sourceTabs['cprf'] = 'Public Facilities — Brgy. Culiat (' . ($publicFacilitiesCount ?? 0) . ')';
+                $sourceTabs['cprf'] = [
+                    'label' => 'CPRF Facilities',
+                    'count' => $publicFacilitiesCount ?? 0,
+                    'icon' => 'fa-building-shield',
+                    'title' => 'Public facilities synchronized from Barangay Culiat CPRF',
+                ];
             }
         @endphp
         <div class="facility-toolbar">
         <div class="facility-toolbar-top">
         <div class="facility-source-tabs" aria-label="Facility source filter">
-            @foreach ($sourceTabs as $tabKey => $tabLabel)
+            @foreach ($sourceTabs as $tabKey => $tab)
                 <a href="{{ route('facilities.index', $tabKey === 'all' ? [] : ['source' => $tabKey]) }}"
-                   class="facility-source-tab {{ $sourceTab === $tabKey ? 'is-active' : '' }}">
-                    {{ $tabLabel }}
+                   class="facility-source-tab {{ $sourceTab === $tabKey ? 'is-active' : '' }}"
+                   title="{{ $tab['title'] }}"
+                   @if($sourceTab === $tabKey) aria-current="page" @endif>
+                    <span><i class="fa-solid {{ $tab['icon'] }}" aria-hidden="true"></i> {{ $tab['label'] }}</span>
+                    <span class="facility-source-tab-count">{{ $tab['count'] }}</span>
                 </a>
             @endforeach
         </div>
