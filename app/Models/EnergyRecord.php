@@ -30,6 +30,8 @@ class EnergyRecord extends Model
         'recorded_by',
         'recorded_by_name',
         'input_source',
+        'external_source',
+        'external_record_id',
         'review_status',
         'reviewed_by',
         'reviewed_at',

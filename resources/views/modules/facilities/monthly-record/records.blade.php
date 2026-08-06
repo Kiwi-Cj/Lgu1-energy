@@ -2263,16 +2263,12 @@
     })->count();
     $tableCoverageCount = $tableRecords->pluck('month')->filter()->unique()->count();
     $isCprfManaged = method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged();
-    $canManageLocalMonthlyRecords = ! $isCprfManaged
-        && \App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings');
+    $canManageLocalMonthlyRecords = \App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings');
 
     $tableFilterResetQuery = request()->except(['table_month', 'table_meter_id']);
     $tableFilterResetUrl = request()->url() . (empty($tableFilterResetQuery) ? '' : ('?' . http_build_query($tableFilterResetQuery)));
     if (! $hasApprovedMainMeter) {
-        if ($isCprfManaged) {
-            $mainMeterNoticeTitle = 'Monthly usage is supplied by CPRF.';
-            $mainMeterNoticeText = 'A local Main Meter is not required for the CPRF facility-level monthly record. Meter profiles may still be maintained for local monitoring context.';
-        } elseif ($totalMainMeterCount === 0) {
+        if ($totalMainMeterCount === 0) {
             $mainMeterNoticeTitle = 'No Main Meter configured yet.';
             $mainMeterNoticeText = 'Add a Main Meter in Energy Profile first, then approve it before encoding monthly records or viewing sub-meter data.';
         } elseif ($pendingMainMeterCount > 0) {
@@ -2303,13 +2299,6 @@
     @if(session('error'))
         <div class="monthly-alert error">
             {{ session('error') }}
-        </div>
-    @endif
-    @if($isCprfManaged)
-        <div class="monthly-alert" style="border-color:#bfdbfe;background:#eff6ff;color:#1e3a8a;">
-            <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
-            <strong>CPRF-managed monthly records.</strong>
-            Consumption data is encoded in CPRF and appears here automatically after synchronization. This page is view-only for monthly record entry.
         </div>
     @endif
     @if($errors->has('duplicate'))
@@ -2489,7 +2478,7 @@
         </div>
 
         <div class="monthly-workflow" aria-label="Monthly record workflow">
-            <div class="monthly-workflow-step"><span class="monthly-workflow-number">1</span><div><div class="monthly-workflow-title">{{ $isCprfManaged ? 'Receive from CPRF' : 'Encode bill' }}</div><div class="monthly-workflow-text">{{ $isCprfManaged ? 'Monthly usage is synchronized from the CPRF system.' : 'Select main meter and enter monthly usage.' }}</div></div></div>
+            <div class="monthly-workflow-step"><span class="monthly-workflow-number">1</span><div><div class="monthly-workflow-title">Encode bill</div><div class="monthly-workflow-text">Select main meter and enter monthly usage in the Energy system.</div></div></div>
             <div class="monthly-workflow-step"><span class="monthly-workflow-number">2</span><div><div class="monthly-workflow-title">Validate record</div><div class="monthly-workflow-text">Review the bill, rate, and meter assignment.</div></div></div>
             <div class="monthly-workflow-step"><span class="monthly-workflow-number">3</span><div><div class="monthly-workflow-title">Evaluate performance</div><div class="monthly-workflow-text">Compare against baseline and threshold settings.</div></div></div>
             <div class="monthly-workflow-step"><span class="monthly-workflow-number">4</span><div><div class="monthly-workflow-title">Review insight</div><div class="monthly-workflow-text">Open recommendations and act on exceptions.</div></div></div>
@@ -2681,7 +2670,10 @@
                             $billingPeriodLabel = ($monthLabels[$recordMonth] ?? ('Month ' . $recordMonth))
                                 . ($record->day ? ' ' . (int) $record->day : '')
                                 . ', ' . $recordYear;
-                            $recordedByLabel = trim((string) ($record->recorded_by_name ?? '')) ?: ($sourceKey === 'cprf' ? 'CPRF integration' : 'System user');
+                            $recordedByLabel = trim((string) ($record->recorded_by_name ?? '')) ?: match ($sourceKey) {
+                                'cprf' => 'CPRF integration',
+                                default => 'System user',
+                            };
                             $reviewedAtLabel = $record->reviewed_at
                                 ? $record->reviewed_at->format('M j, Y g:i A')
                                 : 'Not reviewed yet';

@@ -90,6 +90,11 @@ return [
         'facilities_feed_url' => env('CPRF_FACILITIES_FEED_URL'),
     ],
 
+    'uman_monthly_records' => [
+        'url' => env('UMAN_MONTHLY_RECORDS_URL'),
+        'key' => env('UMAN_INTEGRATION_API_KEY'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),

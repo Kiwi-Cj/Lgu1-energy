@@ -89,6 +89,10 @@ Schedule::command('energy:sync-cprf-facilities')
     ->hourly()
     ->withoutOverlapping();
 
+Schedule::command('energy:sync-uman-monthly-records')
+    ->hourly()
+    ->withoutOverlapping();
+
 Artisan::command('main-meter:backfill-from-energy-records
     {--dry-run : Preview records to be migrated}
     {--approve : Mark migrated records as approved and recompute baseline/alerts}

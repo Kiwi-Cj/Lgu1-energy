@@ -47,8 +47,24 @@ class IntegrationDataController extends Controller
 
     public function facilities(Request $request): JsonResponse
     {
+        return $this->facilitiesResponse($request);
+    }
+
+    /**
+     * CPRF's facility catalog is restricted to rows mirrored from CPRF.
+     */
+    public function cprfFacilities(Request $request): JsonResponse
+    {
+        return $this->facilitiesResponse($request, true);
+    }
+
+    private function facilitiesResponse(Request $request, bool $cprfOnly = false): JsonResponse
+    {
         $query = Facility::query()
             ->withCount(['meters', 'submeters', 'energyRecords'])
+            ->when($cprfOnly, fn (Builder $q) => $q
+                ->where('source', 'cprf')
+                ->whereNotNull('external_ref'))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('status', $request->string('status')))
             ->when($request->filled('search'), function (Builder $q) use ($request) {
                 $search = '%'.addcslashes($request->string('search')->toString(), '%_').'%' ;
@@ -109,8 +125,35 @@ class IntegrationDataController extends Controller
 
     public function energyRecords(Request $request): JsonResponse
     {
+        return $this->energyRecordsResponse($request);
+    }
+
+    /**
+     * Approved Energy-owned reports for facilities mirrored from CPRF.
+     */
+    public function cprfEnergyReports(Request $request): JsonResponse
+    {
+        $request->validate([
+            'facility_id' => ['nullable', 'integer', 'min:1'],
+            'meter_id' => ['nullable', 'integer', 'min:1'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        return $this->energyRecordsResponse($request, true);
+    }
+
+    private function energyRecordsResponse(Request $request, bool $cprfOnly = false): JsonResponse
+    {
         $query = EnergyRecord::query()
             ->with(['facility:id,name', 'meter:id,meter_name,meter_number'])
+            ->when($cprfOnly, fn (Builder $q) => $q
+                ->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery->where('source', 'cprf'))
+                ->where('input_source', 'manual')
+                ->where('review_status', 'approved')
+                ->whereNotNull('meter_id'))
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('meter_id'), fn (Builder $q) => $q->where('meter_id', $request->integer('meter_id')))
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
@@ -300,9 +343,9 @@ class IntegrationDataController extends Controller
     }
 
     /**
-     * Engineer-reviewed energy-saving recommendations for CPRF. The partner
-     * can only receive approved recommendations whose CPRF monthly source
-     * record has also passed this app's monthly-record review workflow.
+     * Engineer-reviewed energy-saving recommendations for CPRF-managed
+     * facilities. The partner can only receive approved recommendations whose
+     * Energy-owned main-meter record passed the monthly-record review workflow.
      */
     public function recommendations(Request $request): JsonResponse
     {
@@ -321,6 +364,7 @@ class IntegrationDataController extends Controller
         $query = EnergySavingRecommendation::query()
             ->with('facility:id,name')
             ->where('status', 'approved')
+            ->whereHas('facility', fn (Builder $q) => $q->where('source', 'cprf'))
             ->whereExists(function ($recordQuery) {
                 $recordQuery
                     ->selectRaw('1')
@@ -328,9 +372,9 @@ class IntegrationDataController extends Controller
                     ->whereColumn('energy_records.facility_id', 'energy_saving_recommendations.facility_id')
                     ->whereColumn('energy_records.year', 'energy_saving_recommendations.year')
                     ->whereColumn('energy_records.month', 'energy_saving_recommendations.month')
-                    ->where('energy_records.input_source', 'cprf')
+                    ->where('energy_records.input_source', 'manual')
                     ->where('energy_records.review_status', 'approved')
-                    ->whereNull('energy_records.meter_id')
+                    ->whereNotNull('energy_records.meter_id')
                     ->whereNull('energy_records.deleted_at');
             })
             ->when($status !== 'all', fn (Builder $q) => $q->where('status', $status))
@@ -357,70 +401,6 @@ class IntegrationDataController extends Controller
             'verified_at' => $reco->verified_at?->toIso8601String(),
             'reviewed_at' => $reco->reviewed_at?->toIso8601String(),
             'updated_at' => $reco->updated_at?->toIso8601String(),
-        ]);
-    }
-
-    /**
-     * Receive implementation progress from the Facilities Reservation system.
-     * Final verification deliberately remains an Energy-side responsibility.
-     */
-    public function updateRecommendationImplementation(
-        Request $request,
-        EnergySavingRecommendation $recommendation
-    ): JsonResponse {
-        $validated = $request->validate([
-            'implementation_status' => ['required', Rule::in(['pending', 'in_progress', 'implemented'])],
-            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
-            'implementation_notes' => ['nullable', 'string', 'max:5000'],
-        ]);
-
-        $isCprfRecommendation = EnergyRecord::query()
-            ->where('facility_id', $recommendation->facility_id)
-            ->where('year', $recommendation->year)
-            ->where('month', $recommendation->month)
-            ->where('input_source', 'cprf')
-            ->where('review_status', 'approved')
-            ->whereNull('meter_id')
-            ->exists();
-
-        if (! $isCprfRecommendation) {
-            return response()->json([
-                'message' => 'The CPRF monthly record must be approved before its recommendation can be managed by Facilities.',
-            ], 409);
-        }
-
-        if ($recommendation->status !== 'approved') {
-            return response()->json([
-                'message' => 'Only approved recommendations can be implemented by Facilities.',
-            ], 409);
-        }
-
-        if (($recommendation->implementation_status ?? 'pending') === 'verified') {
-            return response()->json([
-                'message' => 'This recommendation is already verified and can no longer be changed by Facilities.',
-            ], 409);
-        }
-
-        $implemented = $validated['implementation_status'] === 'implemented';
-        $recommendation->update([
-            'implementation_status' => $validated['implementation_status'],
-            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
-            'implementation_notes' => $validated['implementation_notes'] ?? null,
-            'implemented_at' => $implemented ? ($recommendation->implemented_at ?? now()) : null,
-            'verified_by' => null,
-            'verified_at' => null,
-        ]);
-
-        return response()->json([
-            'message' => 'Recommendation implementation progress updated.',
-            'recommendation' => [
-                'id' => $recommendation->id,
-                'implementation_status' => $recommendation->implementation_status,
-                'actual_savings_kwh' => $this->number($recommendation->actual_savings_kwh),
-                'implementation_notes' => $recommendation->implementation_notes,
-                'implemented_at' => $recommendation->implemented_at?->toIso8601String(),
-                'updated_at' => $recommendation->updated_at?->toIso8601String(),
-            ],
         ]);
     }
 

@@ -12,15 +12,15 @@ meters, baselines, readings, recommendations).
    **Sync from CPRF now** button on the Facilities page's *Public
    Facilities — Brgy. Culiat* tab) pulls CPRF's facilities feed:
    `GET {CPRF_FACILITIES_FEED_URL}` with `Authorization: Bearer
-   {CPRF_INTEGRATION_TOKEN}` (same shared token used by the readings API).
+   {CPRF_INTEGRATION_TOKEN}`.
 2. Rows are upserted into `facilities` with `source='cprf'` and
    `external_ref=<CPRF facility id>` (unique per source). Identity fields
    are overwritten on every run; facilities that disappear from the feed
    are set to `status='inactive'` — never deleted, so reading history
    survives.
-3. `GET /api/v1/cprf/facilities` now returns `source` and `external_ref`,
-   which CPRF uses to **auto-map** its facilities by id (no manual
-   name-matching needed on either side).
+3. `GET /api/v1/cprf/facility-profiles` keys each profile by CPRF's
+   `external_ref`, so CPRF can map Energy-managed profile data without fuzzy
+   name matching.
 
 ## Rules for cprf-sourced facilities
 

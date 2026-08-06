@@ -1547,7 +1547,7 @@
                 <div class="profile-quick-actions">
                     <a href="{{ route('modules.reports.energy', ['facility_id' => $facilityModel->id]) }}" class="profile-quick-action"><i class="fa-solid fa-arrow-left"></i> Back to report</a>
                     <a href="{{ $monthlyRecordsUrl }}" class="profile-quick-action"><i class="fa-solid fa-chart-line"></i> Monthly records</a>
-                    @if(!$isCprfManaged && $canEncodeMainReadings && $mainMeterOptions->isNotEmpty())
+                    @if($canEncodeMainReadings && $mainMeterOptions->isNotEmpty())
                         <a href="{{ $addReadingUrl }}" class="profile-quick-action is-primary"><i class="fa-solid fa-plus"></i> Add reading</a>
                     @endif
                 </div>

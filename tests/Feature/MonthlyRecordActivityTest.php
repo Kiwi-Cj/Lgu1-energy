@@ -135,10 +135,9 @@ test('integrated records show the external encoder and source', function () {
         ->assertSee('CPRF Integration');
 });
 
-test('a record pushed by the cprf endpoint appears in monthly record activity', function () {
+test('the removed cprf reading endpoint cannot create an energy record', function () {
     config(['services.cprf_integration.token' => 'test-token']);
 
-    $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create(['name' => 'Integrated Civic Center']);
 
     $this->withToken('test-token')
@@ -151,13 +150,7 @@ test('a record pushed by the cprf endpoint appears in monthly record activity', 
             'reading_date' => '2026-08-30',
             'recorded_by_name' => 'CPRF Monthly Encoder',
         ])
-        ->assertCreated();
+        ->assertNotFound();
 
-    $this->actingAs($admin)
-        ->get(route('monthly-record-activity.index'))
-        ->assertOk()
-        ->assertSee('CPRF Monthly Encoder')
-        ->assertSee('Integrated Civic Center')
-        ->assertSee('August 2026')
-        ->assertSee('CPRF Integration');
+    expect(EnergyRecord::query()->where('facility_id', $facility->id)->exists())->toBeFalse();
 });

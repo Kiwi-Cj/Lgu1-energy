@@ -48,13 +48,14 @@ class Facility extends Model
         'archive_reason',
         'source',       // 'local' (created here) | 'cprf' (mirrored from CPRF)
         'external_ref', // CPRF facility id when source='cprf'
+        'source_key',   // stable non-numeric identity for integrations such as UMAN
     ];
 
     /**
      * Mirrored from the CPRF facilities reservation system: identity fields
      * (name, address, details, status) are managed by the sync and read-only
-     * here. Monthly facility readings are also supplied by CPRF through the
-     * integration endpoint, while local energy setup remains editable here.
+     * here. Energy setup and monthly readings are owned and managed locally by
+     * the Energy system.
      */
     public function isCprfManaged(): bool
     {

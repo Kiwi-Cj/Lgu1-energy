@@ -122,6 +122,10 @@
     --accent: #15966d;
     --accent-soft: #eaf9f3;
 }
+.system-card.uman {
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+}
 .system-card.sso {
     --accent: #7a55c7;
     --accent-soft: #f3effd;
@@ -172,6 +176,10 @@
 }
 .system-status.off { background: #fff4ed; color: #b54708; }
 .system-status.off::before { background: #f79009; }
+.system-status.error { background: #fef2f2; color: #b42318; }
+.system-status.error::before { background: #f04438; }
+.system-status.waiting { background: #eff6ff; color: #175cd3; }
+.system-status.waiting::before { background: #2e90fa; }
 .system-overview h2 {
     margin: 0 0 6px;
     color: var(--int-text);
@@ -353,7 +361,7 @@ body.dark-mode .process-list li { color: #a1a1aa; }
             </div>
         </div>
         <div class="header-summary" aria-label="Integration summary">
-            <div class="summary-item"><strong>3</strong><span>Systems</span></div>
+            <div class="summary-item"><strong>4</strong><span>Systems</span></div>
             <div class="summary-item"><strong>REST</strong><span>JSON APIs</span></div>
             <div class="summary-item"><strong>Secure</strong><span>Token / HMAC</span></div>
         </div>
@@ -361,7 +369,7 @@ body.dark-mode .process-list li { color: #a1a1aa; }
 
     <div class="security-note">
         <i class="fa-solid fa-shield-halved"></i>
-        <span>Configuration status only—not a live uptime check. Tokens and API secrets are never displayed.</span>
+        <span>UMAN shows the latest real sync result; other badges show configuration status. Tokens and API secrets are never displayed.</span>
     </div>
 
     <main class="integration-directory">
@@ -415,7 +423,7 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                     <span class="system-status{{ $cprfReady ? '' : ' off' }}">{{ $cprfLabel }}</span>
                 </div>
                 <h2>CPRF Facilities Reservation</h2>
-                <p class="system-description">Public facility identities, energy profiles, meter readings, and approved recommendations.</p>
+                <p class="system-description">Public facility profiles, approved recommendations, and approved Energy reports.</p>
                 <div class="system-direction"><i class="fa-solid fa-arrow-right-arrow-left"></i> CPRF Facilities ⇄ Energy Analytics</div>
             </section>
 
@@ -426,13 +434,13 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/facilities</code></div>
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/facility-profiles</code></div>
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/recommendations</code></div>
-                    <div class="endpoint"><span class="method post">POST</span><code>/api/v1/cprf/facility-readings</code></div>
+                    <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/energy-reports</code></div>
                 </div>
                 <div class="api-tags">
                     <span class="api-tag">REST + JSON</span>
                     <span class="api-tag">Bearer Token</span>
                     <span class="api-tag">Hourly pull</span>
-                    <span class="api-tag">Two-way</span>
+                    <span class="api-tag">Energy-owned records</span>
                 </div>
             </section>
 
@@ -440,9 +448,66 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                 <h3 class="section-label"><i class="fa-solid fa-route"></i> Integration process</h3>
                 <ol class="process-list">
                     <li><strong>Facilities are mirrored</strong>Energy pulls CPRF’s public feed hourly using its external ID.</li>
-                    <li><strong>Profiles are shared</strong>CPRF reads mapped Energy profiles and approved recommendations.</li>
-                    <li><strong>Readings are submitted</strong>CPRF posts facility-level meter values and encoder identity.</li>
-                    <li><strong>Energy analyzes usage</strong>Consumption, baseline, cost, deviation, and alerts are calculated.</li>
+                    <li><strong>Energy data is shared</strong>CPRF reads mapped profiles, approved recommendations, and approved energy reports.</li>
+                    <li><strong>Readings pass through UMAN</strong>CPRF submits utility readings to UMAN; Energy pulls UMAN's read-only monthly feed.</li>
+                    <li><strong>Energy analyzes usage</strong>Consumption, baseline, cost, deviation, and alerts are calculated here.</li>
+                </ol>
+            </section>
+        </article>
+
+        @php
+            $umanState = $umanSync['state'] ?? ($statuses['uman'] ? 'waiting' : 'not_configured');
+            $umanBadgeClass = match ($umanState) {
+                'connected' => '',
+                'error', 'partial' => ' error',
+                'waiting' => ' waiting',
+                default => ' off',
+            };
+            $umanBadgeLabel = match ($umanState) {
+                'connected' => 'Connected',
+                'partial' => 'Partial sync',
+                'error' => 'Sync error',
+                'waiting' => 'Waiting for first sync',
+                default => 'Not configured',
+            };
+        @endphp
+        <article class="system-card uman">
+            <section class="system-overview">
+                <div class="system-topline">
+                    <span class="system-icon"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="system-status{{ $umanBadgeClass }}">{{ $umanBadgeLabel }}</span>
+                </div>
+                <h2>UMAN Monthly Energy Records</h2>
+                <p class="system-description">CPRF utility readings stored by UMAN and imported into LGU Energy records.</p>
+                <div class="system-direction"><i class="fa-solid fa-arrow-right"></i> CPRF → UMAN → Energy Records</div>
+                @if(!empty($umanSync['last_attempt_at']))
+                    <p class="system-description" style="margin-top:10px;">
+                        Last attempt: {{ \Carbon\Carbon::parse($umanSync['last_attempt_at'])->diffForHumans() }}<br>
+                        {{ \Illuminate\Support\Str::limit((string) ($umanSync['message'] ?? ''), 150) }}
+                    </p>
+                @endif
+            </section>
+
+            <section class="system-apis">
+                <h3 class="section-label"><i class="fa-solid fa-code"></i> Data source</h3>
+                <div class="endpoint-list">
+                    <div class="endpoint"><span class="method">GET</span><code>UMAN /api/monthly-energy-records.php</code></div>
+                </div>
+                <div class="api-tags">
+                    <span class="api-tag">X-API-Key</span>
+                    <span class="api-tag">Hourly pull</span>
+                    <span class="api-tag">Idempotent import</span>
+                    <span class="api-tag">CPRF records only</span>
+                </div>
+            </section>
+
+            <section class="system-process">
+                <h3 class="section-label"><i class="fa-solid fa-route"></i> Integration process</h3>
+                <ol class="process-list">
+                    <li><strong>CPRF records usage</strong>The facility reading is submitted to UMAN.</li>
+                    <li><strong>UMAN stores consumption</strong>UMAN keeps the utility record and exposes a read-only feed.</li>
+                    <li><strong>Energy pulls hourly</strong>The scheduler imports new or corrected records without duplication.</li>
+                    <li><strong>Energy analyzes records</strong>Imported usage appears in reports, alerts, and recommendations.</li>
                 </ol>
             </section>
         </article>

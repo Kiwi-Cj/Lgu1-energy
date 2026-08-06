@@ -42,6 +42,7 @@ class EnergyRecordObserver
     {
         if (! $record->wasRecentlyCreated
             && strtolower(trim((string) $record->input_source)) === 'cprf'
+            && strtolower(trim((string) $record->external_source)) !== 'uman_cprf'
             && $record->wasChanged([
                 'actual_kwh',
                 'year',
@@ -252,6 +253,12 @@ class EnergyRecordObserver
     private function notifyReviewersOfSubmission(EnergyRecord $record, bool $isUpdate = false): void
     {
         try {
+            // UMAN imports are already approved by the source system and do
+            // not belong in the manual monthly-record review queue.
+            if (strtolower(trim((string) $record->external_source)) === 'uman_cprf') {
+                return;
+            }
+
             if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
                 return;
             }

@@ -226,23 +226,6 @@
             </div>
         </div>
 
-        @php
-            $healthColors = [
-                'healthy' => ['bg' => '#ecfdf5', 'color' => '#047857', 'icon' => 'fa-circle-check'],
-                'waiting' => ['bg' => '#eff6ff', 'color' => '#2563eb', 'icon' => 'fa-clock'],
-                'attention' => ['bg' => '#fff7ed', 'color' => '#c2410c', 'icon' => 'fa-triangle-exclamation'],
-                'not_configured' => ['bg' => '#f1f5f9', 'color' => '#64748b', 'icon' => 'fa-plug-circle-xmark'],
-            ];
-            $healthTheme = $healthColors[$integrationHealth['key']] ?? $healthColors['not_configured'];
-        @endphp
-        <div class="overview-card integration-summary" style="--integration-color:{{ $healthTheme['color'] }};">
-            <div class="overview-icon" style="background:{{ $healthTheme['bg'] }};color:{{ $healthTheme['color'] }};"><i class="fa-solid {{ $healthTheme['icon'] }}"></i></div>
-            <div>
-                <div class="overview-label">CPRF Integration</div>
-                <div class="overview-value" style="color:{{ $healthTheme['color'] }};">{{ $integrationHealth['label'] }}</div>
-                <div class="overview-detail">{{ $integrationHealth['detail'] }}</div>
-            </div>
-        </div>
     </div>
 
     <div class="activity-card">
@@ -260,7 +243,7 @@
                 <select name="source">
                     <option value="">All sources</option>
                     <option value="manual" @selected($source === 'manual')>Manual Entry</option>
-                    <option value="cprf" @selected($source === 'cprf')>Integrated System (CPRF)</option>
+                    <option value="cprf" @selected($source === 'cprf')>Legacy CPRF records</option>
                 </select>
             </label>
             <label class="activity-filter-field">

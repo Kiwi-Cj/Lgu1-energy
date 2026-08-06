@@ -29,8 +29,8 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}', functio
 
     $record = EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
     $facility = Facility::findOrFail($facilityId);
-    if ($facility->isCprfManaged() || strtolower((string) $record->input_source) === 'cprf') {
-        $message = 'CPRF-supplied monthly records are read-only in this system.';
+    if (strtolower((string) $record->input_source) === 'cprf') {
+        $message = 'Legacy CPRF-supplied monthly records are read-only in this system.';
 
         if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
             return response()->json(['message' => $message], 403);
@@ -103,18 +103,6 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}/force-del
 // Store new monthly energy record for a facility (for modal form)
 Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
     $facility = Facility::findOrFail($facilityId);
-    if ($facility->isCprfManaged()) {
-        $message = 'Monthly records for CPRF-managed facilities are received automatically from CPRF and cannot be encoded manually in this system.';
-
-        if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
-            return response()->json(['message' => $message], 403);
-        }
-
-        return redirect()
-            ->route('facilities.monthly-records', ['facility' => $facility->id])
-            ->with('error', $message);
-    }
-
     $validated = $request->validate([
         'date' => 'required|date',
         'meter_id' => 'required|integer',
@@ -129,6 +117,7 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     $validated['day'] = $date->format('j');
     $validated['facility_id'] = $facilityId;
     $validated['recorded_by'] = auth()->id();
+    $validated['input_source'] = 'manual';
     $validated['meter_id'] = (int) $validated['meter_id'];
 
     $latestProfile = $facility ? $facility->energyProfiles()->latest()->first() : null;

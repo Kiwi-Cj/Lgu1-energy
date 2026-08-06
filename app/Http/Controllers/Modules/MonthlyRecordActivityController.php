@@ -88,13 +88,6 @@ class MonthlyRecordActivityController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'department']);
 
-        $lastIntegratedRecord = EnergyRecord::query()
-            ->where('input_source', 'cprf')
-            ->latest('updated_at')
-            ->first(['id', 'updated_at']);
-        $integrationConfigured = filled(config('services.cprf_integration.token'));
-        $integrationHealth = $this->integrationHealth($integrationConfigured, $lastIntegratedRecord?->updated_at);
-
         $user->notifications()
             ->where('type', 'monthly_record_submission')
             ->whereNull('read_at')
@@ -111,9 +104,7 @@ class MonthlyRecordActivityController extends Controller
             'status',
             'reviewCounts',
             'missingMonthlyFacilities',
-            'currentMonth',
-            'integrationHealth',
-            'lastIntegratedRecord'
+            'currentMonth'
         ));
     }
 
@@ -164,20 +155,4 @@ class MonthlyRecordActivityController extends Controller
                 : 'Monthly record returned to the encoder.');
     }
 
-    private function integrationHealth(bool $configured, mixed $lastReceivedAt): array
-    {
-        if (! $configured) {
-            return ['key' => 'not_configured', 'label' => 'Not configured', 'detail' => 'Complete the CPRF integration settings.'];
-        }
-        if (! $lastReceivedAt) {
-            return ['key' => 'waiting', 'label' => 'Connected · Waiting', 'detail' => 'No monthly record has been received yet.'];
-        }
-
-        $lastReceivedAt = Carbon::parse($lastReceivedAt);
-        if ($lastReceivedAt->lt(now()->subDays(45))) {
-            return ['key' => 'attention', 'label' => 'Needs attention', 'detail' => 'Last record received '.$lastReceivedAt->diffForHumans().'.'];
-        }
-
-        return ['key' => 'healthy', 'label' => 'Connected', 'detail' => 'Last record received '.$lastReceivedAt->diffForHumans().'.'];
-    }
 }

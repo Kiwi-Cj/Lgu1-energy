@@ -2,32 +2,44 @@
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\User;
 
-test('energy users cannot manually encode a monthly record for a CPRF-managed facility', function () {
+test('energy users manually encode records for a CPRF-managed facility', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create([
         'source' => 'cprf',
         'external_ref' => 91001,
     ]);
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'Main Meter',
+        'meter_number' => 'CPRF-MAIN-91001',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'baseline_kwh' => 450,
+        'approved_by_user_id' => $admin->id,
+        'approved_at' => now(),
+    ]);
 
     $this->actingAs($admin)
         ->postJson(route('energy-records.store', ['facility' => $facility->id]), [
             'date' => '2026-08-01',
-            'meter_id' => 1,
+            'meter_id' => $meter->id,
             'actual_kwh' => 500,
             'rate_per_kwh' => 12,
         ])
-        ->assertForbidden()
-        ->assertJsonPath(
-            'message',
-            'Monthly records for CPRF-managed facilities are received automatically from CPRF and cannot be encoded manually in this system.'
-        );
+        ->assertRedirect();
 
-    expect(EnergyRecord::query()->where('facility_id', $facility->id)->exists())->toBeFalse();
+    $this->assertDatabaseHas('energy_records', [
+        'facility_id' => $facility->id,
+        'meter_id' => $meter->id,
+        'input_source' => 'manual',
+        'actual_kwh' => 500,
+    ]);
 });
 
-test('CPRF-managed monthly records page is view-only and explains the integration', function () {
+test('CPRF-managed monthly records page provides Energy-owned entry controls', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create([
         'source' => 'cprf',
@@ -37,9 +49,8 @@ test('CPRF-managed monthly records page is view-only and explains the integratio
     $this->actingAs($admin)
         ->get(route('facilities.monthly-records', ['facility' => $facility->id]))
         ->assertOk()
-        ->assertSee('CPRF-managed monthly records')
-        ->assertSee('Consumption data is encoded in CPRF')
-        ->assertDontSee('Add Monthly Record');
+        ->assertDontSee('Consumption data is encoded in CPRF')
+        ->assertSee('Add Monthly Record');
 });
 
 test('energy users cannot archive a CPRF-supplied monthly record', function () {
@@ -62,7 +73,7 @@ test('energy users cannot archive a CPRF-supplied monthly record', function () {
             'record' => $record->id,
         ]), ['archive_reason' => 'Should be rejected'])
         ->assertForbidden()
-        ->assertJsonPath('message', 'CPRF-supplied monthly records are read-only in this system.');
+        ->assertJsonPath('message', 'Legacy CPRF-supplied monthly records are read-only in this system.');
 
     expect($record->fresh())->not->toBeNull();
 });

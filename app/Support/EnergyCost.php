@@ -19,8 +19,6 @@ final class EnergyCost
         // A real electricity rate of exactly 0/kWh never happens in practice
         // — treat it the same as "not provided" and fall back to the
         // default rate, rather than pricing the record at zero cost.
-        // (CprfFacilityReadingController stores 0, not null, for
-        // rate_per_kwh when CPRF doesn't report a rate.)
         return (is_numeric($rawRate) && $rawRate !== '' && (float) $rawRate > 0)
             ? (float) $rawRate
             : $defaultRate;
