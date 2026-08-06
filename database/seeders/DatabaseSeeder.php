@@ -8,13 +8,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
-        $this->call([
-            UsersTableSeeder::class,
-            LguFacilityMeterDemoSeeder::class,
-            FiveFacilitiesEnergySeeder::class,
-            DualMainWithSubMonthlySeeder::class,
-            TenFacilitiesMultiMeterMonthlySeeder::class,
-            CprfPublicFacilitiesEnergyProfileSeeder::class,
-        ]);
+        // Intentionally empty. Production and integration data must be entered
+        // through the application or synchronized from its source systems.
     }
 }
