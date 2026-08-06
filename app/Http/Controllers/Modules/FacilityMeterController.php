@@ -52,12 +52,20 @@ class FacilityMeterController extends Controller
         return $this->canApprove() || $this->canManage();
     }
 
+    private function ensureMeterFeatureIsEnabled(FacilityMeter $meter): void
+    {
+        if (! config('features.submeters_enabled', false) && strtolower((string) $meter->meter_type) === 'sub') {
+            abort(404);
+        }
+    }
+
     private function validateMeter(Request $request, int $facilityId, ?int $meterId = null): array
     {
+        $allowedMeterTypes = config('features.submeters_enabled', false) ? 'main,sub' : 'main';
         $validated = $request->validate([
             'meter_name' => 'required|string|max:255',
             'meter_number' => 'nullable|string|max:255',
-            'meter_type' => 'required|in:main,sub',
+            'meter_type' => 'required|in:'.$allowedMeterTypes,
             'parent_meter_id' => 'nullable|integer',
             'location' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
@@ -193,6 +201,7 @@ class FacilityMeterController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
         $meter = FacilityMeter::where('facility_id', $facility->id)->findOrFail($meterId);
+        $this->ensureMeterFeatureIsEnabled($meter);
 
         $previousName = (string) $meter->meter_name;
         $previousType = (string) $meter->meter_type;
@@ -216,6 +225,7 @@ class FacilityMeterController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
         $meter = FacilityMeter::where('facility_id', $facility->id)->findOrFail($meterId);
+        $this->ensureMeterFeatureIsEnabled($meter);
 
         $meter->deleted_by = auth()->id();
         $meter->archive_reason = $archiveReason;
@@ -234,6 +244,7 @@ class FacilityMeterController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
         $meter = FacilityMeter::where('facility_id', $facility->id)->findOrFail($meterId);
+        $this->ensureMeterFeatureIsEnabled($meter);
 
         if ($meter->approved_at) {
             $meter->approved_by_user_id = null;
@@ -253,7 +264,8 @@ class FacilityMeterController extends Controller
     public function archive(Request $request, $facilityId)
     {
         $facility = Facility::findOrFail($facilityId);
-        $subOnlyMode = (string) $request->query('sub_only', '') === '1';
+        $submetersEnabled = (bool) config('features.submeters_enabled', false);
+        $subOnlyMode = $submetersEnabled && (string) $request->query('sub_only', '') === '1';
         $mainMeterId = (int) $request->query('main_meter_id', 0);
 
         $filters = [
@@ -263,6 +275,8 @@ class FacilityMeterController extends Controller
 
         if ($subOnlyMode) {
             $filters['meter_type'] = 'sub';
+        } elseif (! $submetersEnabled) {
+            $filters['meter_type'] = 'main';
         }
 
         $query = FacilityMeter::onlyTrashed()
@@ -339,7 +353,9 @@ class FacilityMeterController extends Controller
         };
 
         $unapprovedMainMeters = $buildQuery('main')->get();
-        $unapprovedSubMeters = $hasMainMeter ? $buildQuery('sub')->get() : collect();
+        $unapprovedSubMeters = config('features.submeters_enabled', false) && $hasMainMeter
+            ? $buildQuery('sub')->get()
+            : collect();
 
         return view('modules.facilities.meters.unapproved', [
             'facility' => $facility,
@@ -361,6 +377,7 @@ class FacilityMeterController extends Controller
         $meter = FacilityMeter::onlyTrashed()
             ->where('facility_id', $facility->id)
             ->findOrFail($meterId);
+        $this->ensureMeterFeatureIsEnabled($meter);
 
         $meter->restore();
 
@@ -378,6 +395,7 @@ class FacilityMeterController extends Controller
         $meter = FacilityMeter::onlyTrashed()
             ->where('facility_id', $facility->id)
             ->findOrFail($meterId);
+        $this->ensureMeterFeatureIsEnabled($meter);
 
         $meter->forceDelete();
 
@@ -387,6 +405,10 @@ class FacilityMeterController extends Controller
 
     private function syncLinkedSubmeterInventory(FacilityMeter $meter, ?string $previousName = null): void
     {
+        if (! config('features.submeters_enabled', false)) {
+            return;
+        }
+
         $currentType = strtolower((string) ($meter->meter_type ?? ''));
         $currentName = trim((string) ($meter->meter_name ?? ''));
 

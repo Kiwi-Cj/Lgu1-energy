@@ -23,9 +23,10 @@ Route::get('/submeter/sensor-readings', function () {
             'reading_end_kwh' => 620,
         ],
     ]);
-});
+})->middleware('feature:submeters');
 
 Route::post('/submeter/sensor-readings', [SubmeterSensorReadingController::class, 'store'])
+    ->middleware('feature:submeters')
     ->name('api.submeter.sensor-readings.store');
 
 Route::prefix('v1')->middleware(['integration.api', 'throttle:60,1'])->group(function () {

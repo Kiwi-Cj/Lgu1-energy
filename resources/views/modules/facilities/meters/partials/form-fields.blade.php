@@ -1,6 +1,10 @@
 @php
     $prefix = ($mode ?? 'add') === 'edit' ? 'edit' : 'add';
+    $submetersEnabled = (bool) config('features.submeters_enabled', false);
     $forcedMeterType = in_array(($forceMeterType ?? ''), ['main', 'sub'], true) ? (string) $forceMeterType : null;
+    if (! $submetersEnabled) {
+        $forcedMeterType = 'main';
+    }
     $isMeterTypeForced = $forcedMeterType !== null;
     $allowSubMeter = (bool) ($hasApprovedMainForSub ?? false);
     $disableSubOption = ! $isMeterTypeForced && $prefix === 'add' && ! $allowSubMeter;

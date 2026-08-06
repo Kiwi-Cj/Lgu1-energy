@@ -477,9 +477,10 @@ body.dark-mode .facility-show-page .meter-readiness-track { background:#334155; 
 @php
 $imageUrl = $facility->resolved_image_url;
 $profile = $facility->energyProfiles()->with('primaryMeter')->latest()->first();
+$submetersEnabled = (bool) config('features.submeters_enabled', false);
 $facilityMeters = $facility->meters()->get();
 $mainMeters = $facilityMeters->where('meter_type', 'main')->values();
-$subMeters = $facilityMeters->where('meter_type', 'sub')->values();
+$subMeters = $submetersEnabled ? $facilityMeters->where('meter_type', 'sub')->values() : collect();
 $activeApprovedMainMeters = $mainMeters->filter(fn ($meter) => !empty($meter->approved_at) && strtolower((string) $meter->status) === 'active');
 $allMeters = $mainMeters->concat($subMeters);
 $approvedMeterCount = $allMeters->filter(fn ($meter) => !empty($meter->approved_at))->count();
@@ -535,9 +536,11 @@ $displayElectricMeterNumber = $facility->isCprfManaged()
 <i class="fa-solid fa-gauge-high"></i> Main Meters: {{ $mainMeters->count() }}
 </span>
 
-<span class="facility-pill sub">
-<i class="fa-solid fa-network-wired"></i> Sub-meters: {{ $subMeters->count() }}
-</span>
+@if($submetersEnabled)
+    <span class="facility-pill sub">
+    <i class="fa-solid fa-network-wired"></i> Sub-meters: {{ $subMeters->count() }}
+    </span>
+@endif
 
 <span class="facility-pill approved">
 <i class="fa-solid fa-circle-check"></i> Approved: {{ $approvedMeterCount }} / {{ $totalMeterCount }}
@@ -677,9 +680,11 @@ if ($baselineForSize !== null) {
 	<a href="{{ route('facilities.monthly-records', ['facility' => $facility->id, 'record_scope' => 'main']) }}" class="facility-action-link records">
 		<i class="fa-solid fa-chart-line"></i> Monthly Records
 	</a>
-	<a href="{{ route('facilities.monthly-records.submeters', $facility->id) }}" class="facility-action-link submeters">
-		<i class="fa-solid fa-network-wired"></i> Sub-meter Records
-	</a>
+	@if($submetersEnabled)
+		<a href="{{ route('facilities.monthly-records.submeters', $facility->id) }}" class="facility-action-link submeters">
+			<i class="fa-solid fa-network-wired"></i> Sub-meter Records
+		</a>
+	@endif
 	<a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="facility-action-link profile">
 		<i class="fa-solid fa-bolt"></i> Energy Profile
 	</a>

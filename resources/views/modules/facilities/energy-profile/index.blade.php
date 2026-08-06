@@ -5,6 +5,7 @@
     $avgKwh = isset($facilityModel) ? $facilityModel->baseline_kwh : null;
     $user = auth()->user();
     $userRole = strtolower($user->role ?? '');
+    $submetersEnabled = (bool) config('features.submeters_enabled', false);
     $mainMeterOptions = $mainMeterOptions ?? collect();
     $mainMeters = $mainMeters ?? collect();
     $subMeterOptions = $subMeterOptions ?? collect();
@@ -1584,14 +1585,16 @@
         <div class="profile-kpis" aria-label="Facility energy profile summary">
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-gauge-high"></i></span>Main meters</div><strong>{{ $mainMeterOptions->count() }}</strong><small>{{ $activeMainMeterCount }} currently active</small></div>
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-bolt"></i></span>Active meters</div><strong>{{ $activeMeterCount }}</strong><small>Approved monitoring points</small></div>
-            <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-code-branch"></i></span>Sub-meters</div><strong>{{ $subMeterCount }}</strong><small>Linked downstream meters</small></div>
+            @if($submetersEnabled)
+                <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-code-branch"></i></span>Sub-meters</div><strong>{{ $subMeterCount }}</strong><small>Linked downstream meters</small></div>
+            @endif
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-bullseye"></i></span>Baseline</div><strong>{{ is_numeric($resolvedBaseline) ? number_format((float) $resolvedBaseline, 2) : '—' }}</strong><small>{{ is_numeric($resolvedBaseline) ? 'kWh target' : 'Not configured' }}</small></div>
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-chart-column"></i></span>Latest usage</div><strong>{{ $latestActualKwh !== null ? number_format($latestActualKwh, 2) : '—' }}</strong><small>{{ $latestActualKwh !== null ? $latestPeriod.' · kWh' : $latestPeriod }}</small></div>
         </div>
 
         <div class="directory-section-heading">
             <div><span>Meter directory</span><h2>Main meter configuration</h2></div>
-            <p>Review approved monitoring points, linked sub-meters, baselines, and equipment configuration.</p>
+            <p>Review approved main monitoring points, baselines, and equipment configuration.</p>
         </div>
 
         <div class="meter-directory-grid">
@@ -1601,7 +1604,7 @@
                         <span class="meter-directory-title__icon"><i class="fa fa-bolt"></i></span>
                         <div>
                             <strong>Main Meter List</strong>
-                            <small>Primary monitoring points and linked sub-meters</small>
+                            <small>Primary facility monitoring points</small>
                         </div>
                     </div>
                     <div class="meter-head-actions">
@@ -1660,7 +1663,9 @@
                             $approvalState = $meter->approved_at ? 'approved' : 'not_approved';
                             $approvalText = $approvalState === 'approved' ? 'APPROVED' : 'NOT APPROVED';
                             $mainEquipmentUrl = '';
-                            $linkedSubMeters = collect($subMetersByParentMainId->get((int) $meter->id, collect()));
+                            $linkedSubMeters = $submetersEnabled
+                                ? collect($subMetersByParentMainId->get((int) $meter->id, collect()))
+                                : collect();
                             $linkedSubNames = $linkedSubMeters->pluck('meter_name')
                                 ->filter(fn ($name) => trim((string) $name) !== '')
                                 ->values();
@@ -1696,7 +1701,7 @@
                              data-meter-linked-submeter-count="{{ $linkedSubCount }}"
                              data-meter-approved-at="{{ $meter->approved_at ? $meter->approved_at->format('Y-m-d H:i') : 'N/A' }}"
                              data-meter-equipment-url="{{ $mainEquipmentUrl }}"
-                             data-meter-submeters-page-url="{{ route('modules.facilities.meters.main-submeters', [$facilityModel->id, $meter->id]) }}"
+                             data-meter-submeters-page-url="{{ $submetersEnabled ? route('modules.facilities.meters.main-submeters', [$facilityModel->id, $meter->id]) : '' }}"
                              data-meter-scope="main"
                              data-meter-main-id="{{ (int) $meter->id }}"
                              data-meter-submeter-id=""
@@ -1722,9 +1727,11 @@
                                 <span class="meter-meta-item"><i class="fa fa-chart-line"></i> {{ is_numeric($meter->baseline_kwh) ? number_format((float) $meter->baseline_kwh, 2) . ' kWh' : 'N/A' }}</span>
                             </div>
                             <div class="meter-row-footer">
+                                @if($submetersEnabled)
                                 <span class="meter-row-link-count">
                                     <i class="fa fa-diagram-project"></i> Linked Sub-meters: {{ $linkedSubCount > 0 ? $linkedSubCount : 'None' }}
                                 </span>
+                                @endif
                                 @if($canApproveMeters || $canManageMeters)
                                     @php
                                         $editMeterPayload = [
@@ -1843,7 +1850,9 @@
                 <h4 class="meter-detail-group-title"><i class="fa fa-wave-square"></i> Monitoring configuration</h4>
                 <div class="meter-detail-grid is-four">
                     <div class="meter-detail-item"><div class="meter-detail-item-label"><i class="fa fa-code-branch"></i> Parent</div><div id="meterDetailParent" class="meter-detail-item-value">-</div></div>
-                    <div class="meter-detail-item"><div class="meter-detail-item-label"><i class="fa fa-diagram-project"></i> Sub-meters</div><div id="meterDetailSubmeterCount" class="meter-detail-item-value">0</div></div>
+                    @if($submetersEnabled)
+                        <div class="meter-detail-item"><div class="meter-detail-item-label"><i class="fa fa-diagram-project"></i> Sub-meters</div><div id="meterDetailSubmeterCount" class="meter-detail-item-value">0</div></div>
+                    @endif
                     <div class="meter-detail-item is-featured"><div class="meter-detail-item-label"><i class="fa fa-chart-line"></i> Baseline</div><div id="meterDetailBaseline" class="meter-detail-item-value">-</div></div>
                     <div class="meter-detail-item"><div class="meter-detail-item-label"><i class="fa fa-calculator"></i> Multiplier</div><div id="meterDetailMultiplier" class="meter-detail-item-value">-</div></div>
                 </div>
@@ -1864,10 +1873,12 @@
                 </div>
             </section>
             <footer class="meter-detail-modal-footer">
+                @if($submetersEnabled)
                 <div>
                     <a id="meterDetailSubmetersBtn" href="#" class="meter-detail-submeters-btn"><i class="fa fa-diagram-project"></i> View Linked Sub-meters <i class="fa fa-arrow-right"></i></a>
                     <span id="meterDetailNoSubmeterNote" class="meter-detail-footer-note"><i class="fa fa-circle-info"></i> No linked sub-meter directory available.</span>
                 </div>
+                @endif
                 <button type="button" onclick="closeMeterDetailModal()" class="meter-detail-dismiss">Close</button>
             </footer>
         </div>

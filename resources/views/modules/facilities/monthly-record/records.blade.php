@@ -2309,10 +2309,10 @@
     if (! $hasApprovedMainMeter) {
         if ($totalMainMeterCount === 0) {
             $mainMeterNoticeTitle = 'No Main Meter configured yet.';
-            $mainMeterNoticeText = 'Add a Main Meter in Energy Profile first, then approve it before encoding monthly records or viewing sub-meter data.';
+            $mainMeterNoticeText = 'Add a Main Meter in Energy Profile first, then approve it before encoding monthly records.';
         } elseif ($pendingMainMeterCount > 0) {
             $mainMeterNoticeTitle = $pendingMainMeterCount . ' Main Meter pending approval.';
-            $mainMeterNoticeText = 'Approve at least one Main Meter in Energy Profile before encoding monthly records or viewing sub-meter data.';
+            $mainMeterNoticeText = 'Approve at least one Main Meter in Energy Profile before encoding monthly records.';
         } else {
             $mainMeterNoticeTitle = 'No approved Main Meter found for this facility.';
             $mainMeterNoticeText = 'Check the Main Meter list in Energy Profile and approve an eligible meter first.';

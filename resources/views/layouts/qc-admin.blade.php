@@ -2475,7 +2475,8 @@ if (document.documentElement.classList.contains('dark-mode')) {
             $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
             $canViewMonthlyActivity = \App\Support\RoleAccess::can($user, 'view_monthly_record_activity');
             $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
-            $canViewSubmeters = \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
+            $canViewSubmeters = config('features.submeters_enabled', false)
+                && \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
             $canViewMaintenance = \App\Support\RoleAccess::can($user, 'view_maintenance');
             $canViewReports = \App\Support\RoleAccess::can($user, 'access_reports');
             $canAccessUsers = \App\Support\RoleAccess::can($user, 'access_users');

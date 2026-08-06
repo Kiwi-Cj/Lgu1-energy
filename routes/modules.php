@@ -51,17 +51,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/facilities/{facility}/meters/{meter}/toggle-approval', [FacilityMeterController::class, 'toggleApproval'])->name('modules.facilities.meters.toggle-approval');
     Route::get('/modules/facilities/{facility}/meters/unapproved', [FacilityMeterController::class, 'unapproved'])->name('modules.facilities.meters.unapproved');
     Route::get('/modules/facilities/{facility}/meters/archive', [FacilityMeterController::class, 'archive'])->name('modules.facilities.meters.archive');
-    Route::get('/modules/facilities/{facility}/meters/{meter}/submeters', [FacilityMeterController::class, 'mainSubmeters'])->name('modules.facilities.meters.main-submeters');
+    Route::get('/modules/facilities/{facility}/meters/{meter}/submeters', [FacilityMeterController::class, 'mainSubmeters'])->middleware('feature:submeters')->name('modules.facilities.meters.main-submeters');
     Route::post('/modules/facilities/{facility}/meters/{meter}/restore', [FacilityMeterController::class, 'restore'])->name('modules.facilities.meters.restore');
     Route::delete('/modules/facilities/{facility}/meters/{meter}/force-delete', [FacilityMeterController::class, 'forceDelete'])->name('modules.facilities.meters.force-delete');
 
     // Submeter Monitoring and Alerts
-    Route::get('/modules/submeters/monitoring', [SubmeterMonitoringController::class, 'index'])->name('modules.submeters.monitoring');
-    Route::post('/modules/submeters/readings', [SubmeterMonitoringController::class, 'store'])->name('modules.submeters.readings.store');
-    Route::post('/modules/submeters/readings/{reading}/approve', [SubmeterMonitoringController::class, 'approve'])->name('modules.submeters.readings.approve');
-    Route::get('/modules/submeters/alerts', [SubmeterMonitoringController::class, 'alerts'])->name('modules.submeters.alerts');
-    Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
-    Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
+    Route::middleware('feature:submeters')->group(function () {
+        Route::get('/modules/submeters/monitoring', [SubmeterMonitoringController::class, 'index'])->name('modules.submeters.monitoring');
+        Route::post('/modules/submeters/readings', [SubmeterMonitoringController::class, 'store'])->name('modules.submeters.readings.store');
+        Route::post('/modules/submeters/readings/{reading}/approve', [SubmeterMonitoringController::class, 'approve'])->name('modules.submeters.readings.approve');
+        Route::get('/modules/submeters/alerts', [SubmeterMonitoringController::class, 'alerts'])->name('modules.submeters.alerts');
+        Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
+        Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
+    });
     Route::get('/modules/ai-alerts', [AiAlertsController::class, 'index'])->name('modules.ai-alerts.index');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
     Route::post('/modules/energy-conservation/daily-checklist', [EnergyConservationController::class, 'updateDailyChecklist'])->name('modules.energy-conservation.daily-checklist.update');
@@ -867,7 +869,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'totalCost',
             'totalRecords'
         ));
-    })->name('facilities.monthly-records.submeters');
+    })->middleware('feature:submeters')->name('facilities.monthly-records.submeters');
 
     Route::get('/modules/facilities/{facility}/monthly-records/archive', function ($facilityId) {
         $facility = \App\Models\Facility::find($facilityId);
@@ -945,6 +947,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->with('error', 'Facility not found.');
         }
         $user = auth()->user();
+        $submetersEnabled = (bool) config('features.submeters_enabled', false);
         $energyProfiles = $facilityModel->energyProfiles()->with('primaryMeter')->get();
         $mainMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
             ->where('meter_type', 'main')
@@ -957,24 +960,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
             ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
-        $subMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
-            ->where('meter_type', 'sub')
-            ->whereNotNull('approved_at')
-            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
-            ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
+        $subMeterOptions = $submetersEnabled
+            ? \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+                ->where('meter_type', 'sub')
+                ->whereNotNull('approved_at')
+                ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+                ->orderBy('meter_name')
+                ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at'])
+            : collect();
         $subMetersByParentMainId = $subMeterOptions
             ->filter(fn ($meter) => ! empty($meter->parent_meter_id))
             ->groupBy(fn ($meter) => (int) $meter->parent_meter_id);
         $normalizeName = function (string $name): string {
             return strtolower((string) preg_replace('/\s+/', ' ', trim($name)));
         };
-        $submeterNameToIdMap = \App\Models\Submeter::where('facility_id', $facilityModel->id)
-            ->where('status', 'active')
-            ->get(['id', 'submeter_name'])
-            ->mapWithKeys(function ($submeter) use ($normalizeName) {
-                return [$normalizeName((string) $submeter->submeter_name) => (int) $submeter->id];
-            });
+        $submeterNameToIdMap = $submetersEnabled
+            ? \App\Models\Submeter::where('facility_id', $facilityModel->id)
+                ->where('status', 'active')
+                ->get(['id', 'submeter_name'])
+                ->mapWithKeys(function ($submeter) use ($normalizeName) {
+                    return [$normalizeName((string) $submeter->submeter_name) => (int) $submeter->id];
+                })
+            : collect();
         $subMeterEntityIdMap = $subMeterOptions->mapWithKeys(function ($meter) use ($submeterNameToIdMap, $normalizeName) {
             $nameKey = $normalizeName((string) $meter->meter_name);
             $linkedSubmeterId = $submeterNameToIdMap->get($nameKey);
@@ -1058,6 +1065,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderBy('meter_name')
             ->get(['id', 'meter_name', 'meter_type']);
         $activeMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
             ->where('status', 'active')
             ->whereNotNull('approved_at')
             ->count();
@@ -1066,14 +1074,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where('status', 'active')
             ->whereNotNull('approved_at')
             ->count();
-        $subMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
-            ->where('meter_type', 'sub')
-            ->whereNotNull('approved_at')
-            ->count();
+        $subMeterCount = $submetersEnabled
+            ? \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+                ->where('meter_type', 'sub')
+                ->whereNotNull('approved_at')
+                ->count()
+            : 0;
         $unapprovedMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
             ->whereNull('approved_at')
             ->count();
-        $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()->where('facility_id', $facilityModel->id)->count();
+        $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()
+            ->where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
+            ->count();
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
         $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');

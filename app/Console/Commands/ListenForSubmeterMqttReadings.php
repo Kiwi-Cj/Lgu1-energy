@@ -26,6 +26,12 @@ class ListenForSubmeterMqttReadings extends Command
 
     public function handle(): int
     {
+        if (! config('features.submeters_enabled', false)) {
+            $this->warn('Submeter telemetry is currently disabled.');
+
+            return self::FAILURE;
+        }
+
         $host = (string) config('services.mqtt.host', '127.0.0.1');
         $port = (int) config('services.mqtt.port', 1883);
         $clientId = (string) config('services.mqtt.client_id', 'lgu-energy-laravel-subscriber');
