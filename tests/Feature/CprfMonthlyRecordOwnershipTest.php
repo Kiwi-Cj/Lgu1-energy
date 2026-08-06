@@ -4,6 +4,7 @@ use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 test('energy users manually encode records for a CPRF-managed facility', function () {
     $admin = User::factory()->create(['role' => 'admin']);
@@ -51,6 +52,27 @@ test('CPRF-managed monthly records page provides Energy-owned entry controls', f
         ->assertOk()
         ->assertDontSee('Consumption data is encoded in CPRF')
         ->assertSee('Add Monthly Record');
+});
+
+test('monthly records header displays the current UMAN integration badge', function () {
+    config()->set('services.uman_monthly_records.url', 'https://uman.test/api/monthly-energy-records.php');
+    config()->set('services.uman_monthly_records.key', 'test-key');
+    Cache::put('integrations.uman_monthly_records', [
+        'state' => 'connected',
+        'message' => 'Monthly records synchronized.',
+    ]);
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create([
+        'source' => 'cprf',
+        'external_ref' => 91004,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('facilities.monthly-records', ['facility' => $facility->id]))
+        ->assertOk()
+        ->assertSee('UMAN Connected')
+        ->assertSee('UMAN integration status: UMAN Connected', false);
 });
 
 test('energy users cannot archive a CPRF-supplied monthly record', function () {

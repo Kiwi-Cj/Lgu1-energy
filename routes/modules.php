@@ -529,6 +529,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $oldMeterId = (string) old('meter_id', $primaryBillingMeterId > 0 ? $primaryBillingMeterId : '');
 
         $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
+        $umanConfigured = filled(config('services.uman_monthly_records.url'))
+            && filled(config('services.uman_monthly_records.key'));
+        $umanSync = \Illuminate\Support\Facades\Cache::get('integrations.uman_monthly_records', []);
 
         return view('modules.facilities.monthly-record.records', compact(
             'facility',
@@ -565,7 +568,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'billingSourceLabel',
             'primaryBillingMeter',
             'oldMeterId',
-            'archivedCount'
+            'archivedCount',
+            'umanConfigured',
+            'umanSync'
         ));
     })->name('facilities.monthly-records');
 
