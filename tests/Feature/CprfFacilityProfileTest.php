@@ -87,6 +87,23 @@ test('CPRF facility details show the registered main meter number instead of the
         ->assertSee('CPRF-MTR-DETAIL-001');
 });
 
+test('CPRF energy profile identifies both facility and energy-reading integration sources', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = makeCprfMappedFacility(['external_ref' => 502]);
+    makeMainMeter($facility, [
+        'meter_number' => 'CPRF-MTR-SOURCE-001',
+        'approved_at' => now(),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('modules.facilities.energy-profile.index', $facility->id))
+        ->assertOk()
+        ->assertSee('Facility source:')
+        ->assertSee('CPRF')
+        ->assertSee('Energy readings:')
+        ->assertSee('via UMAN');
+});
+
 test('facility-profiles shows engineer_approved false when the main meter is not yet approved', function () {
     config(['services.cprf_integration.token' => 'test-token']);
 

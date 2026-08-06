@@ -131,7 +131,11 @@
     .profile-overview__grid { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(280px,.65fr); align-items: center; gap: 40px; }
     .facility-identity { display: flex; align-items: flex-start; gap: 17px; }
     .facility-identity__icon { width: 62px; height: 62px; flex: 0 0 auto; display: grid; place-items: center; color: #2563eb; border: 3px solid rgba(255,255,255,.25); border-radius: 18px; background: #fff; box-shadow: 0 14px 28px rgba(15,23,42,.2); font-size: 1.3rem; }
-    .facility-source { width: max-content; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 5px 8px; color: #bfdbfe; border: 1px solid rgba(191,219,254,.22); border-radius: 999px; background: rgba(255,255,255,.07); font-size: .61rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .facility-source-badges { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+    .facility-source { width: max-content; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; color: #dbeafe; border: 1px solid rgba(191,219,254,.3); border-radius: 999px; background: rgba(255,255,255,.1); font-size: .61rem; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+    .facility-source strong { color:#fff; font-weight:950; }
+    .facility-source.is-uman { color:#d1fae5; border-color:rgba(167,243,208,.32); background:rgba(5,150,105,.18); }
+    .facility-source.is-local { color:#e0e7ff; border-color:rgba(224,231,255,.3); }
     .facility-identity h1 { margin: 0; color: #fff; font-size: clamp(1.65rem,3vw,2.35rem); line-height: 1.15; letter-spacing: -.045em; }
     .facility-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; color: rgba(226,232,240,.76); font-size: .75rem; }
     .facility-meta span { display: inline-flex; align-items: center; gap: 6px; }
@@ -186,7 +190,7 @@
         .profile-quick-actions { width: 100%; }
         .profile-quick-action { flex: 1; }
         .facility-identity { align-items: center; flex-direction: column; text-align: center; }
-        .facility-source { margin-right: auto; margin-left: auto; }
+        .facility-source-badges { justify-content:center; }
         .facility-meta { justify-content: center; }
         .readiness-list { grid-template-columns: 1fr; }
         .profile-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); padding: 16px; }
@@ -1558,7 +1562,25 @@
                 <div class="facility-identity">
                     <span class="facility-identity__icon"><i class="fa-solid fa-building"></i></span>
                     <div>
-                        <span class="facility-source"><i class="fa-solid {{ $isCprfManaged ? 'fa-arrows-rotate' : 'fa-location-dot' }}"></i> {{ $isCprfManaged ? 'CPRF Integrated' : 'Local Facility' }}</span>
+                        <div class="facility-source-badges" aria-label="Facility integration sources">
+                            @if($isCprfManaged)
+                                <span class="facility-source"
+                                      title="Facility identity synchronized from the CPRF Facilities Reservation System{{ filled($facilityModel->external_ref) ? ' (External reference '.$facilityModel->external_ref.')' : '' }}">
+                                    <i class="fa-solid fa-building-circle-arrow-right"></i>
+                                    Facility source: <strong>CPRF</strong>
+                                </span>
+                                <span class="facility-source is-uman"
+                                      title="Monthly electricity readings are imported from CPRF through UMAN">
+                                    <i class="fa-solid fa-bolt"></i>
+                                    Energy readings: <strong>via UMAN</strong>
+                                </span>
+                            @else
+                                <span class="facility-source is-local" title="Facility is managed directly in LGU Energy">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    Facility source: <strong>LGU Energy</strong>
+                                </span>
+                            @endif
+                        </div>
                         <h1 id="facilityProfileTitle">{{ $facilityModel->name ?? 'Facility Details' }}</h1>
                         <div class="facility-meta">
                             <span><i class="fa-solid fa-layer-group"></i> {{ $facilityModel->type ?: 'Facility' }}</span>
