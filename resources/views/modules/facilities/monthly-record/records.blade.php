@@ -92,8 +92,8 @@
     }
 
     .monthly-integration-badge {
-        min-height: 34px;
-        padding: 7px 11px;
+        min-height: 28px;
+        padding: 5px 10px;
         border: 1px solid #86efac;
         border-radius: 999px;
         display: inline-flex;
@@ -101,7 +101,7 @@
         gap: 7px;
         color: #166534;
         background: #f0fdf4;
-        font-size: .72rem;
+        font-size: .68rem;
         font-weight: 850;
         white-space: nowrap;
     }
@@ -2375,16 +2375,16 @@
                             <span class="monthly-context-chip"><i class="fa-solid fa-building"></i> {{ $facility->name }}</span>
                             <span class="monthly-context-chip"><i class="fa-solid fa-plug-circle-bolt"></i> {{ $billingSourceLabel }}</span>
                             <span class="monthly-context-chip"><i class="fa-solid fa-calendar"></i> {{ $selectedYear }}</span>
+                            <span class="monthly-integration-badge {{ $umanBadgeClass }}"
+                                  title="{{ $umanBadgeTitle ?: 'CPRF readings are imported through the UMAN monthly energy feed.' }}"
+                                  aria-label="UMAN integration status: {{ $umanBadgeLabel }}">
+                                <i class="fa-solid {{ $umanState === 'connected' ? 'fa-circle-check' : ($umanState === 'error' ? 'fa-circle-exclamation' : 'fa-arrows-rotate') }}"></i>
+                                {{ $umanBadgeLabel }}
+                            </span>
                         </div>
                     </div>
                 </div>
                 <div class="monthly-actions">
-                    <span class="monthly-integration-badge {{ $umanBadgeClass }}"
-                          title="{{ $umanBadgeTitle ?: 'CPRF readings are imported through the UMAN monthly energy feed.' }}"
-                          aria-label="UMAN integration status: {{ $umanBadgeLabel }}">
-                        <i class="fa-solid {{ $umanState === 'connected' ? 'fa-circle-check' : ($umanState === 'error' ? 'fa-circle-exclamation' : 'fa-arrows-rotate') }}"></i>
-                        {{ $umanBadgeLabel }}
-                    </span>
                     <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="monthly-action-btn is-info">
                         <i class="fa fa-bolt"></i> Energy Profile
                     </a>
