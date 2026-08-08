@@ -9,9 +9,9 @@
 <style>
     .ai-shell{position:relative;overflow:hidden;padding:32px;border:1px solid #dbe5f3;border-radius:26px;background:#f6f8fc;box-shadow:0 18px 50px rgba(30,64,175,.11);display:grid;gap:22px}.ai-shell:before{content:"";position:absolute;inset:0 0 auto;height:210px;background:radial-gradient(circle at 12% 0,rgba(99,102,241,.13),transparent 48%),radial-gradient(circle at 88% 5%,rgba(6,182,212,.1),transparent 38%);pointer-events:none}.ai-head,.ai-summary,.ai-toolbar,.ai-list{position:relative}.ai-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap}.ai-kicker{display:inline-flex;align-items:center;gap:8px;color:#4f46e5;font-size:.73rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.ai-title{margin:8px 0 5px;color:#0f172a;font-size:clamp(1.8rem,3vw,2.75rem);line-height:1;font-weight:950;letter-spacing:-.04em}.ai-sub{color:#64748b;max-width:760px;line-height:1.55}.ai-live{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 10px;border:1px solid #bbf7d0;border-radius:999px;background:#f0fdf4;color:#15803d;font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.ai-live:before{content:"";width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.13)}
     .ai-period{display:flex;gap:9px;align-items:end;padding:12px;border:1px solid #dbe4f0;border-radius:16px;background:rgba(255,255,255,.82);box-shadow:0 8px 24px rgba(15,23,42,.06);backdrop-filter:blur(10px)}.ai-period label{display:grid;gap:6px;color:#475569;font-size:.72rem;font-weight:900}.ai-period input{min-width:176px;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font:inherit}.ai-period button{padding:12px 17px;border:0;border-radius:10px;background:linear-gradient(135deg,#4f46e5,#4338ca);box-shadow:0 7px 15px rgba(79,70,229,.25);color:#fff;font-weight:900;cursor:pointer}.ai-period button:hover{transform:translateY(-1px)}
-    .ai-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.ai-stat{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;padding:18px;border:1px solid #dbe4f0;border-radius:18px;background:#fff;box-shadow:0 7px 20px rgba(15,23,42,.045)}.ai-stat-icon{flex:0 0 44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#e0e7ff;color:#4338ca;font-size:1.05rem}.ai-stat-copy{min-width:0}.ai-stat-label{display:block;color:#64748b;font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.ai-stat strong{display:block;margin-top:4px;color:#0f172a;font-size:1.7rem;line-height:1}.ai-stat small{display:block;margin-top:5px;color:#94a3b8;font-size:.68rem}.ai-stat.danger .ai-stat-icon{background:#fee2e2;color:#dc2626}.ai-stat.danger strong{color:#dc2626}.ai-stat.warn .ai-stat-icon{background:#fef3c7;color:#d97706}.ai-stat.warn strong{color:#d97706}.ai-stat.good .ai-stat-icon{background:#d1fae5;color:#059669}.ai-stat.good strong{color:#059669}
+    .ai-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}.ai-stat{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;padding:18px;border:1px solid #dbe4f0;border-radius:18px;background:#fff;box-shadow:0 7px 20px rgba(15,23,42,.045)}.ai-stat-icon{flex:0 0 44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#e0e7ff;color:#4338ca;font-size:1.05rem}.ai-stat-copy{min-width:0}.ai-stat-label{display:block;color:#64748b;font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.ai-stat strong{display:block;margin-top:4px;color:#0f172a;font-size:1.7rem;line-height:1}.ai-stat small{display:block;margin-top:5px;color:#94a3b8;font-size:.68rem}.ai-stat.danger .ai-stat-icon{background:#fee2e2;color:#dc2626}.ai-stat.danger strong{color:#dc2626}.ai-stat.warn .ai-stat-icon{background:#fef3c7;color:#d97706}.ai-stat.warn strong{color:#d97706}.ai-stat.good .ai-stat-icon{background:#d1fae5;color:#059669}.ai-stat.good strong{color:#059669}
     .ai-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #dbe4f0;border-radius:16px;background:#fff}.ai-search{position:relative;flex:1;max-width:380px}.ai-search i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8}.ai-search input{width:100%;padding:10px 12px 10px 37px;border:1px solid #d7deea;border-radius:10px;color:#0f172a;background:#f8fafc}.ai-filter-tabs{display:flex;gap:7px;flex-wrap:wrap}.ai-filter-btn{padding:8px 12px;border:1px solid #dbe4f0;border-radius:999px;background:#fff;color:#64748b;font-size:.72rem;font-weight:900;cursor:pointer}.ai-filter-btn:hover,.ai-filter-btn.active{border-color:#a5b4fc;background:#eef2ff;color:#4338ca}.ai-visible-count{color:#94a3b8;font-size:.72rem;font-weight:800;white-space:nowrap}
-    .ai-list{display:grid;gap:16px}.ai-card{position:relative;overflow:hidden;padding:21px;border:1px solid #dbe4f0;border-radius:21px;background:#fff;box-shadow:0 9px 26px rgba(15,23,42,.055);transition:transform .18s ease,box-shadow .18s ease}.ai-card:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:#10b981}.ai-card.is-risk:before{background:#ef4444}.ai-card.is-cost:before{background:#f59e0b}.ai-card:hover{transform:translateY(-2px);box-shadow:0 15px 34px rgba(15,23,42,.09)}.ai-card-top{display:flex;justify-content:space-between;gap:16px;align-items:start}.ai-facility{display:flex;gap:11px;align-items:center}.ai-facility-icon{flex:0 0 42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#eef2ff;color:#4f46e5}.ai-card h2{margin:0;color:#0f172a;font-size:1.05rem;font-weight:950}.ai-facility-meta{display:flex;align-items:center;gap:7px;margin-top:4px;color:#64748b;font-size:.74rem}.ai-facility-meta span+span:before{content:"•";margin-right:7px;color:#cbd5e1}.ai-badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}.ai-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid #bbf7d0;border-radius:999px;font-size:.68rem;font-weight:900;background:#f0fdf4;color:#166534}.ai-badge.danger{border-color:#fecaca;background:#fef2f2;color:#b91c1c}.ai-badge.warn{border-color:#fde68a;background:#fffbeb;color:#a16207}.ai-badge.muted{border-color:#e2e8f0;background:#f8fafc;color:#64748b}
+    .ai-list{display:grid;gap:16px}.ai-card{position:relative;overflow:hidden;padding:21px;border:1px solid #dbe4f0;border-radius:21px;background:#fff;box-shadow:0 9px 26px rgba(15,23,42,.055);transition:transform .18s ease,box-shadow .18s ease}.ai-card:before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:#10b981}.ai-card.is-risk:before{background:#ef4444}.ai-card.is-drop:before,.ai-card.is-cost:before{background:#f59e0b}.ai-card:hover{transform:translateY(-2px);box-shadow:0 15px 34px rgba(15,23,42,.09)}.ai-card-top{display:flex;justify-content:space-between;gap:16px;align-items:start}.ai-facility{display:flex;gap:11px;align-items:center}.ai-facility-icon{flex:0 0 42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#eef2ff;color:#4f46e5}.ai-card h2{margin:0;color:#0f172a;font-size:1.05rem;font-weight:950}.ai-facility-meta{display:flex;align-items:center;gap:7px;margin-top:4px;color:#64748b;font-size:.74rem;flex-wrap:wrap}.ai-facility-meta span+span:before{content:"•";margin-right:7px;color:#cbd5e1}.ai-badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}.ai-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid #bbf7d0;border-radius:999px;font-size:.68rem;font-weight:900;background:#f0fdf4;color:#166534}.ai-badge.danger{border-color:#fecaca;background:#fef2f2;color:#b91c1c}.ai-badge.warn{border-color:#fde68a;background:#fffbeb;color:#a16207}.ai-badge.muted{border-color:#e2e8f0;background:#f8fafc;color:#64748b}
     .ai-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:17px}.ai-metric{padding:14px;border:1px solid #edf1f6;border-radius:15px;background:#f8fafc}.ai-metric-head{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#64748b;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.035em}.ai-metric-icon{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:#e0e7ff;color:#4f46e5}.ai-metric-value{display:block;margin-top:8px;color:#172554;font-size:1.02rem;font-weight:950}.ai-metric-note{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:#64748b;font-size:.7rem}.ai-delta{font-weight:900}.ai-delta.up{color:#dc2626}.ai-delta.down{color:#059669}.ai-progress{overflow:hidden;height:5px;margin-top:10px;border-radius:999px;background:#e2e8f0}.ai-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#6366f1,#818cf8)}.ai-progress.cost span{background:linear-gradient(90deg,#f59e0b,#ef4444)}
     .ai-tip{display:flex;gap:12px;margin-top:14px;padding:15px 16px;border:1px solid #c7d2fe;border-radius:16px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);color:#3730a3;line-height:1.5;font-size:.83rem}.ai-tip-main-icon{flex:0 0 31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#4f46e5;color:#fff}.ai-tip-copy{flex:1;min-width:0}.ai-tip-title{display:block;margin-bottom:2px;color:#312e81;font-size:.72rem;font-weight:950;text-transform:uppercase;letter-spacing:.05em}.ai-tip-meta{display:flex;align-items:center;gap:7px;margin-top:9px;color:#6366f1;font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.ai-tip-meta.is-loading>i{animation:ai-spin .8s linear infinite}.ai-refresh{margin-left:auto;padding:5px 9px;border:1px solid #c7d2fe;border-radius:8px;background:rgba(255,255,255,.55);color:#4f46e5;font:inherit;cursor:pointer}.ai-refresh:disabled{opacity:.65;cursor:wait}.ai-empty{text-align:center;padding:42px;color:#64748b}.ai-empty i{display:block;margin-bottom:10px;font-size:1.7rem}.ai-hidden{display:none!important}@keyframes ai-spin{to{transform:rotate(360deg)}}
     .ai-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}.ai-card-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#475569;text-decoration:none;font-size:.72rem;font-weight:900}.ai-card-action:hover{border-color:#a5b4fc;background:#f8fafc;color:#4338ca}.ai-card-action.primary{border-color:#4f46e5;background:#4f46e5;color:#fff}.ai-card-action.primary:hover{background:#4338ca;color:#fff}.ai-routing-note{display:inline-flex;align-items:center;gap:6px;color:#9a3412;font-size:.7rem;font-weight:850}
@@ -24,8 +24,8 @@
         <div>
             <div class="ai-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> Smart Energy Intelligence</div>
             <h1 class="ai-title">AI Alerts</h1>
-            <div class="ai-sub">Live facility risk detection, monthly bill forecasting, and data-driven energy recommendations in one operational view.</div>
-            <span class="ai-live">Live data analysis</span>
+            <div class="ai-sub">Review monthly usage exceptions, verified baseline comparisons, cost changes, and on-demand AI guidance before choosing the correct workflow.</div>
+            <span class="ai-live">Monthly records connected</span>
         </div>
         <form class="ai-period" method="GET">
             <label>Billing month<input type="month" name="month" value="{{ $periodInput }}" required></label>
@@ -35,18 +35,20 @@
 
     <div class="ai-summary">
         <article class="ai-stat"><span class="ai-stat-icon"><i class="fa-solid fa-building-circle-check"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Facilities analyzed</span><strong>{{ $summary['facilities'] }}</strong><small>With available meter data</small></span></article>
-        <article class="ai-stat danger"><span class="ai-stat-icon"><i class="fa-solid fa-bolt"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">High usage alerts</span><strong>{{ $summary['high_usage'] }}</strong><small>Require consumption review</small></span></article>
-        <article class="ai-stat warn"><span class="ai-stat-icon"><i class="fa-solid fa-peso-sign"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Projected cost alerts</span><strong>{{ $summary['cost'] }}</strong><small>May exceed prior month</small></span></article>
+        <article class="ai-stat danger"><span class="ai-stat-icon"><i class="fa-solid fa-bolt"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Usage exceptions</span><strong>{{ $summary['usage_exceptions'] }}</strong><small>High or unusually low usage</small></span></article>
+        <article class="ai-stat warn"><span class="ai-stat-icon"><i class="fa-solid fa-peso-sign"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Cost increase alerts</span><strong>{{ $summary['cost'] }}</strong><small>Above previous month</small></span></article>
         <article class="ai-stat good"><span class="ai-stat-icon"><i class="fa-solid fa-shield-halved"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Within expected range</span><strong>{{ $summary['normal'] }}</strong><small>No active risk detected</small></span></article>
+        <article class="ai-stat warn"><span class="ai-stat-icon"><i class="fa-solid fa-chart-line"></i></span><span class="ai-stat-copy"><span class="ai-stat-label">Baseline pending</span><strong>{{ $summary['baseline_pending'] }}</strong><small>Need 3–6 approved readings</small></span></article>
     </div>
 
     <div class="ai-toolbar">
         <label class="ai-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search facility..." value="{{ request('facility', '') }}" data-ai-search></label>
         <div class="ai-filter-tabs" aria-label="Alert filters">
             <button class="ai-filter-btn active" type="button" data-ai-filter="all">All</button>
-            <button class="ai-filter-btn" type="button" data-ai-filter="usage">High usage</button>
-            <button class="ai-filter-btn" type="button" data-ai-filter="cost">Cost risk</button>
+            <button class="ai-filter-btn" type="button" data-ai-filter="usage">Usage exceptions</button>
+            <button class="ai-filter-btn" type="button" data-ai-filter="cost">Cost increase</button>
             <button class="ai-filter-btn" type="button" data-ai-filter="normal">Normal</button>
+            <button class="ai-filter-btn" type="button" data-ai-filter="baseline-pending">No baseline</button>
             <button class="ai-filter-btn" type="button" data-ai-filter="no-data">No data</button>
         </div>
         <span class="ai-visible-count" data-ai-count>{{ $alerts->count() }} facilities</span>
@@ -56,19 +58,23 @@
         @forelse($alerts as $alert)
             @php
                 $usagePercent = $alert['baseline_kwh'] && $alert['baseline_kwh'] > 0 ? ($alert['actual_kwh'] / $alert['baseline_kwh']) * 100 : 0;
-                $costPercent = $alert['previous_cost'] > 0 ? ($alert['projected_cost'] / $alert['previous_cost']) * 100 : 0;
-                $status = !$alert['has_data'] ? 'no-data' : ($alert['usage_alert'] ? 'usage' : ($alert['cost_alert'] ? 'cost' : 'normal'));
-                $cardClass = $alert['usage_alert'] ? 'is-risk' : ($alert['cost_alert'] ? 'is-cost' : '');
+                $costPercent = $alert['previous_cost'] > 0 ? ($alert['current_cost'] / $alert['previous_cost']) * 100 : 0;
+                $isDrop = str_starts_with($alert['usage_level'], 'Drop');
+                $isUsageWarning = $alert['usage_level'] === 'Warning';
+                $isNoBaseline = $alert['has_data'] && $alert['usage_level'] === 'No Data';
+                $status = !$alert['has_data'] ? 'no-data' : ($isNoBaseline ? 'baseline-pending' : ($alert['usage_alert'] ? 'usage' : ($alert['cost_alert'] ? 'cost' : 'normal')));
+                $cardClass = ($isDrop || $isUsageWarning) ? 'is-drop' : ($alert['usage_alert'] ? 'is-risk' : ($alert['cost_alert'] ? 'is-cost' : ''));
+                $usageBadgeClass = ($isDrop || $isUsageWarning) ? 'warn' : ($alert['usage_alert'] ? 'danger' : ($isNoBaseline ? 'muted' : ''));
             @endphp
             <article class="ai-card {{ $cardClass }}" data-ai-card data-status="{{ $status }}" data-usage-alert="{{ $alert['usage_alert'] ? '1' : '0' }}" data-cost-alert="{{ $alert['cost_alert'] ? '1' : '0' }}" data-search="{{ strtolower($alert['facility']->name.' '.($alert['facility']->type ?? '').' '.($alert['facility']->department ?? '')) }}">
                 <div class="ai-card-top">
-                    <div class="ai-facility"><span class="ai-facility-icon"><i class="fa-solid fa-building"></i></span><div><h2>{{ $alert['facility']->name }}</h2><div class="ai-facility-meta"><span>{{ $period->format('F Y') }}</span>@if($alert['facility']->type)<span>{{ $alert['facility']->type }}</span>@endif</div></div></div>
+                    <div class="ai-facility"><span class="ai-facility-icon"><i class="fa-solid fa-building"></i></span><div><h2>{{ $alert['facility']->name }}</h2><div class="ai-facility-meta"><span>{{ $period->format('F Y') }}</span>@if($alert['facility']->type)<span>{{ $alert['facility']->type }}</span>@endif<span>{{ $alert['source_label'] }}</span><span>Record: {{ $alert['review_status'] }}</span></div></div></div>
                     <div class="ai-badges">
                         @if(!$alert['has_data'])
                             <span class="ai-badge muted"><i class="fa-solid fa-circle-minus"></i> No energy data</span>
                         @else
-                            <span class="ai-badge {{ $alert['usage_alert'] ? 'danger' : '' }}"><i class="fa-solid {{ $alert['usage_alert'] ? 'fa-triangle-exclamation' : 'fa-circle-check' }}"></i> Usage: {{ $alert['usage_level'] }}</span>
-                            <span class="ai-badge {{ $alert['cost_alert'] ? 'warn' : '' }}"><i class="fa-solid fa-wallet"></i> {{ $alert['cost_alert'] ? 'May exceed budget' : 'Cost within budget' }}</span>
+                            <span class="ai-badge {{ $usageBadgeClass }}"><i class="fa-solid {{ $alert['usage_alert'] ? 'fa-triangle-exclamation' : ($isNoBaseline ? 'fa-circle-info' : 'fa-circle-check') }}"></i> Usage: {{ $isNoBaseline ? 'Baseline pending' : $alert['usage_level'] }}</span>
+                            <span class="ai-badge {{ $alert['cost_alert'] ? 'warn' : '' }}"><i class="fa-solid fa-wallet"></i> {{ $alert['cost_alert'] ? 'Cost increased' : 'No cost increase' }}</span>
                         @endif
                     </div>
                 </div>
@@ -81,9 +87,9 @@
                         <div class="ai-progress"><span style="width:{{ min(100, max(0, $usagePercent)) }}%"></span></div>
                     </div>
                     <div class="ai-metric">
-                        <div class="ai-metric-head"><span>Projected monthly bill</span><span class="ai-metric-icon"><i class="fa-solid fa-chart-line"></i></span></div>
-                        <strong class="ai-metric-value">₱{{ number_format($alert['projected_cost'], 2) }}</strong>
-                        <div class="ai-metric-note"><span>Forecast for {{ $period->format('M Y') }}</span>@if($alert['cost_variance'] !== null)<span class="ai-delta {{ $alert['cost_variance'] > 0 ? 'up' : 'down' }}">{{ $alert['cost_variance'] >= 0 ? '+' : '' }}{{ number_format($alert['cost_variance'], 1) }}%</span>@endif</div>
+                        <div class="ai-metric-head"><span>Monthly energy cost</span><span class="ai-metric-icon"><i class="fa-solid fa-chart-line"></i></span></div>
+                        <strong class="ai-metric-value">₱{{ number_format($alert['current_cost'], 2) }}</strong>
+                        <div class="ai-metric-note"><span>Recorded for {{ $period->format('M Y') }}</span>@if($alert['cost_variance'] !== null)<span class="ai-delta {{ $alert['cost_variance'] > 0 ? 'up' : 'down' }}">{{ $alert['cost_variance'] >= 0 ? '+' : '' }}{{ number_format($alert['cost_variance'], 1) }}%</span>@endif</div>
                         <div class="ai-progress cost"><span style="width:{{ min(100, max(0, $costPercent)) }}%"></span></div>
                     </div>
                     <div class="ai-metric">
@@ -99,7 +105,7 @@
                     <div class="ai-tip-copy">
                         <span class="ai-tip-title">Recommended next action</span>
                         <span data-ai-tip>{{ $alert['tip'] }}</span>
-                        <div class="ai-tip-meta is-loading" data-ai-meta><i class="fa-solid fa-arrows-rotate"></i><span>Analyzing live facility data...</span><button class="ai-refresh" type="button" data-ai-refresh hidden><i class="fa-solid fa-rotate"></i> Refresh insight</button></div>
+                        <div class="ai-tip-meta" data-ai-meta><i class="fa-solid fa-chart-line"></i><span>Computed assessment · generate AI insight when needed</span><button class="ai-refresh" type="button" data-ai-refresh><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI insight</button></div>
                     </div>
                 </div>
                 @if($alert['has_data'])
@@ -113,10 +119,13 @@
                             </a>
                         @elseif(($alert['action_owner'] ?? 'monitor') === \App\Support\EnergyAlertRouting::INCIDENT)
                             <span class="ai-routing-note"><i class="fa-solid fa-shield-halved"></i> Escalated to authorized incident reviewers</span>
-                        @elseif($canAccessConservation && ($alert['action_owner'] ?? 'monitor') === \App\Support\EnergyAlertRouting::CONSERVATION)
-                            <a class="ai-card-action primary" href="{{ route('modules.energy-conservation.feature', ['feature' => 'energy-saving-tips', 'facility_id' => $alert['facility']->id, 'month' => $periodInput]) }}">
-                                <i class="fa-solid fa-user-check"></i> Review &amp; assign action
+                        @elseif($canAccessConservation)
+                            <a class="ai-card-action primary" href="{{ route('modules.energy-conservation.feature', array_filter(['feature' => 'energy-saving-tips', 'facility_id' => $alert['facility']->id, 'record_id' => $alert['record_id'], 'month' => $periodInput])) }}">
+                                <i class="fa-solid fa-user-check"></i> Review recommendation
                             </a>
+                        @endif
+                        @if(! $alert['review_ready'])
+                            <span class="ai-routing-note"><i class="fa-solid fa-clock"></i> Monthly record is awaiting approval; CPRF publishing remains locked.</span>
                         @endif
                     </div>
                 @endif
@@ -196,9 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     insightCards.forEach(card => card.querySelector('[data-ai-refresh]')?.addEventListener('click', () => loadInsight(card)));
-    const queue = insightCards.slice();
-    const worker = async () => { while (queue.length) await loadInsight(queue.shift()); };
-    Promise.all(Array.from({length:Math.min(2, queue.length)}, worker));
 });
 </script>
 @endsection

@@ -175,14 +175,33 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertSee('July 21, 2026')
         ->assertSee('Health Office Main Meter')
         ->assertSee('Back to Monthly Records')
+        ->assertSee('Monthly Record Assessment')
+        ->assertSee('Actual Usage')
+        ->assertSee('Approved Baseline')
+        ->assertSee('+340.00 kWh')
+        ->assertSee('+5.56%')
+        ->assertSee('This assessment is automatically attached to the saved and published recommendation.')
         ->assertSee('Add Recommendation')
-        ->assertSee('Manual Recommendation')
-        ->assertSee('Review for Approval')
-        ->assertSee('Preview only. This will not be published to Facilities until you select Approve', escape: false)
+        ->assertSee('<label>Recommendation</label>', escape: false)
+        ->assertSee('does not create or assign an implementation task')
+        ->assertSee('Publish Recommendation')
+        ->assertDontSee('Assignment &amp; Handoff', escape: false)
+        ->assertSee('Use AI Alerts Suggestion')
+        ->assertSee('Open AI Alerts')
+        ->assertSee('AI Alerts suggestion is only a draft')
+        ->assertSee('AI Alerts suggestion')
+        ->assertSee('Reviewer approval')
+        ->assertSee('Facility recommendation')
         ->assertSee('System-Generated Recommendation')
         ->assertSee('Added Recommendations')
         ->assertSee('Recommendation Details')
+        ->assertSee('Save Changes')
         ->assertSee('Delete Recommendation')
+        ->assertDontSee('Progress Status')
+        ->assertDontSee('Target Date')
+        ->assertDontSee('Expected Savings')
+        ->assertDontSee('Actual Savings')
+        ->assertDontSee('Implementation Notes')
         ->assertDontSee('<label>Select Facility</label>', escape: false)
         ->assertDontSee('id="recommendation_month"', escape: false)
         ->assertDontSee('<option value="0">All facilities</option>', escape: false);
@@ -206,8 +225,12 @@ test('monthly records show recommendation status and the matching recommendation
         ]))
         ->assertOk()
         ->assertSee('Move pre-cooling thirty minutes later.')
-        ->assertSee('Save Progress')
-        ->assertSee('Final verification is completed by the assigned reviewer.')
+        ->assertSee('Published To')
+        ->assertSee('Approval Status')
+        ->assertDontSee('Save Progress')
+        ->assertDontSee('Progress Status')
+        ->assertDontSee('Target Date')
+        ->assertDontSee('Implementation Notes')
         ->assertDontSee('Update Recommendation')
         ->assertDontSee('Delete Recommendation');
 
@@ -255,22 +278,11 @@ test('monthly records show recommendation status and the matching recommendation
             'facility_id' => $facility->id,
             'period' => '2026-07',
             'status' => 'approved',
-            'engineer_recommendation' => 'A native Energy recommendation still requires an owner.',
+            'engineer_recommendation' => 'A facility recommendation can be published without creating a task.',
             'implementation_status' => 'pending',
         ])
-        ->assertSessionHasErrors('assigned_to');
-
-    $this->actingAs($admin)
-        ->from(route('modules.energy-conservation.feature', ['feature' => 'energy-saving-tips']))
-        ->post(route('modules.energy-conservation.tips.review'), [
-            'facility_id' => $facility->id,
-            'period' => '2026-07',
-            'status' => 'approved',
-            'engineer_recommendation' => 'This should not be assigned to an administrator.',
-            'assigned_to' => $admin->id,
-            'implementation_status' => 'pending',
-        ])
-        ->assertSessionHasErrors('assigned_to');
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
 
     $this->actingAs($admin)
         ->post(route('modules.energy-conservation.tips.review'), [
@@ -290,17 +302,17 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertSessionHas('success');
 
     $julyNotification->refresh();
-    expect($julyNotification->read_at)->toBeNull()
-        ->and($julyNotification->title)->toBe('New Action Recommendation')
-        ->and($julyNotification->message)->toContain('A new action recommendation was assigned to you');
+    expect($julyNotification->read_at)->not->toBeNull()
+        ->and($julyNotification->title)->toBe('Energy Recommendation');
 
     $this->assertDatabaseHas('energy_saving_recommendations', [
         'facility_id' => $facility->id,
         'year' => 2026,
         'month' => 7,
-        'assigned_to' => $staff->id,
-        'implementation_status' => 'in_progress',
-        'actual_savings_kwh' => 42.5,
+        'assigned_to' => null,
+        'implementation_status' => 'pending',
+        'actual_savings_kwh' => null,
+        'implementation_notes' => null,
     ]);
 
     $addedRecommendation = EnergySavingRecommendation::query()->latest('id')->firstOrFail();
@@ -318,7 +330,7 @@ test('monthly records show recommendation status and the matching recommendation
     $this->assertDatabaseHas('energy_saving_recommendations', [
         'id' => $addedRecommendation->id,
         'engineer_recommendation' => 'Updated action from the recommendation details modal.',
-        'implementation_status' => 'implemented',
+        'implementation_status' => 'pending',
     ]);
 
     $this->actingAs($admin)
@@ -378,6 +390,29 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         'recorded_by_name' => 'CPRF Meter Recorder',
     ]);
 
+    $otherFacility = Facility::create([
+        'name' => 'Other Reporting Facility',
+        'type' => 'Office',
+        'status' => 'active',
+    ]);
+    $otherMeter = FacilityMeter::create([
+        'facility_id' => $otherFacility->id,
+        'meter_name' => 'Other Main Meter',
+        'meter_number' => 'OTHER-REC-001',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'baseline_kwh' => 500,
+        'approved_at' => now(),
+    ]);
+    EnergyRecord::create([
+        'facility_id' => $otherFacility->id,
+        'meter_id' => $otherMeter->id,
+        'year' => 2026,
+        'month' => 7,
+        'actual_kwh' => 1000,
+        'rate_per_kwh' => 10,
+    ]);
+
     $this->actingAs($admin)
         ->get(route('modules.energy-conservation.feature', [
             'feature' => 'energy-saving-tips',
@@ -388,11 +423,20 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         ->assertOk()
         ->assertSee('Selected monthly record context')
         ->assertSee('CPRF Recommendation Main Meter')
-        ->assertSee('CPRF Integration')
-        ->assertSee('Managed in CPRF for this integrated reading.')
-        ->assertSee('<label>Assigned To</label>', escape: false)
+        ->assertSee('CPRF via UMAN')
+        ->assertSee('4,800.00')
+        ->assertSee('Monthly Record Assessment')
+        ->assertSee('Very high consumption')
+        ->assertSee('+800.00 kWh')
+        ->assertSee('+20.00%')
+        ->assertSee('PHP 10,000.00')
+        ->assertDontSee('5,800.00')
+        ->assertSee('publishes advice to the CPRF recommendation list')
+        ->assertSee('Publish to CPRF')
         ->assertDontSee('<select name="assigned_to">', escape: false)
-        ->assertSee('Review for Approval')
+        ->assertSee('Use AI Alerts Suggestion')
+        ->assertSee('Open AI Alerts')
+        ->assertSee('CPRF recommendation')
         ->assertSee('System-Generated Recommendation')
         ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
 
@@ -404,7 +448,9 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
             'status' => 'approved',
             'engineer_recommendation' => 'Review CPRF facility operating schedules.',
             'assigned_to' => $recorder->id,
-            'implementation_status' => 'pending',
+            'implementation_status' => 'implemented',
+            'actual_savings_kwh' => 999,
+            'implementation_notes' => 'This must not be accepted from the Energy create form.',
         ])
         ->assertRedirect()
         ->assertSessionHasNoErrors();
@@ -416,5 +462,101 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         'engineer_recommendation' => 'Review CPRF facility operating schedules.',
         'status' => 'approved',
         'assigned_to' => null,
+        'implementation_status' => 'pending',
+        'actual_savings_kwh' => null,
+        'implementation_notes' => null,
     ]);
+
+    $publishedRecommendation = EnergySavingRecommendation::query()->latest('id')->firstOrFail();
+    expect($publishedRecommendation->generated_message)
+        ->toContain('Monthly record assessment for CPRF Recommendation Facility, July 2026')
+        ->toContain('Actual usage 4,800.00 kWh')
+        ->toContain('Status: Very high consumption')
+        ->toContain('Approved baseline 4,000.00 kWh')
+        ->toContain('800.00 kWh (20.00%) above baseline')
+        ->toContain('Estimated avoidable cost: PHP 10,000.00');
+});
+
+test('recommendation summary requires a baseline before showing avoidable cost', function () {
+    $admin = User::factory()->create(['role' => 'super_admin']);
+    $staff = User::factory()->create(['role' => 'staff', 'status' => 'active']);
+    $facility = Facility::create([
+        'name' => 'No Baseline Facility',
+        'type' => 'Office',
+        'status' => 'active',
+    ]);
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'No Baseline Main Meter',
+        'meter_number' => 'NO-BASELINE-001',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'approved_at' => now(),
+    ]);
+    $record = EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => $meter->id,
+        'year' => 2026,
+        'month' => 8,
+        'actual_kwh' => 4000,
+        'rate_per_kwh' => 14.83,
+    ]);
+    $staff->facilities()->attach($facility->id);
+
+    $this->actingAs($admin)
+        ->get(route('modules.energy-conservation.feature', [
+            'feature' => 'energy-saving-tips',
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'month' => '2026-08',
+        ]))
+        ->assertOk()
+        ->assertSee('Baseline required')
+        ->assertSee('Monthly Record Assessment')
+        ->assertSee('No baseline yet')
+        ->assertSee('Not available')
+        ->assertSee('Monthly Energy Cost')
+        ->assertSee('PHP 59,320.00')
+        ->assertSee('does not create or assign an implementation task')
+        ->assertSee('baseline is still being established from 3–6 approved monthly readings')
+        ->assertSee('Set an approved baseline before estimating excess cost.');
+
+    $this->actingAs($admin)
+        ->post(route('modules.energy-conservation.tips.review'), [
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'period' => '2026-08',
+            'status' => 'approved',
+            'engineer_recommendation' => 'Begin an operational shutdown checklist while the baseline is being established.',
+            'expected_savings_kwh' => 999,
+            'assigned_to' => $staff->id,
+            'implementation_status' => 'implemented',
+            'actual_savings_kwh' => 888,
+            'implementation_notes' => 'Must not be accepted during recommendation creation.',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('energy_saving_recommendations', [
+        'facility_id' => $facility->id,
+        'year' => 2026,
+        'month' => 8,
+        'expected_savings_kwh' => null,
+        'implementation_status' => 'pending',
+        'actual_savings_kwh' => null,
+        'implementation_notes' => null,
+    ]);
+
+    $meter->update(['baseline_kwh' => 2688.36]);
+
+    $this->actingAs($admin)
+        ->get(route('modules.energy-conservation.feature', [
+            'feature' => 'energy-saving-tips',
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'month' => '2026-08',
+        ]))
+        ->assertOk()
+        ->assertDontSee('Baseline required')
+        ->assertSee('PHP 19,451.62');
 });

@@ -959,7 +959,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNotNull('approved_at')
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
         $subMeterOptions = $submetersEnabled
             ? \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
                 ->where('meter_type', 'sub')
@@ -1101,6 +1101,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->first(['id', 'facility_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'input_source']);
+        $baselineEstablishmentService = app(\App\Services\MainMeterBaselineEstablishmentService::class);
+        $baselinePlans = $mainMeters->mapWithKeys(
+            fn ($meter) => [(int) $meter->id => $baselineEstablishmentService->summary($meter)]
+        );
         // 3-Month average update logic removed
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
@@ -1121,7 +1125,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'canManageEnergyProfile',
             'canApproveMeters',
             'canEncodeMainReadings',
-            'latestEnergyRecord'
+            'latestEnergyRecord',
+            'baselinePlans'
         ));
     })->name('modules.facilities.energy-profile.index');
 
@@ -1134,6 +1139,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Toggle engineer approval for energy profile
     Route::post('/modules/facilities/{facility}/energy-profile/{profile}/toggle-approval', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'toggleEngineerApproval'])->name('energy-profile.toggle-approval');
+
+    Route::post('/modules/facilities/{facility}/meters/{meter}/baseline/establish', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'establishBaseline'])
+        ->name('modules.facilities.meters.baseline.establish');
 
     // Delete energy profile (controller, like monthly record)
     Route::delete('/modules/facilities/{facility}/energy-profile/{profile}', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'destroy'])

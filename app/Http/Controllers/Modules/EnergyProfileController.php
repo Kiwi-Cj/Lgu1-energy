@@ -5,13 +5,19 @@ use App\Http\Controllers\Controller;
 use App\Models\EnergyProfile;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Services\MainMeterBaselineEstablishmentService;
 use App\Support\RoleAccess;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 
 class EnergyProfileController extends Controller
 {
+    public function __construct(private readonly MainMeterBaselineEstablishmentService $baselineEstablishment)
+    {
+    }
+
     private function resolvePrimaryMainMeterId(Request $request, int $facilityId): ?int
     {
         $value = $request->input('primary_meter_id');
@@ -59,7 +65,7 @@ class EnergyProfileController extends Controller
             'electric_meter_no' => 'required',
             'utility_provider' => 'required',
             'contract_account_no' => 'required',
-            'baseline_kwh' => 'required|numeric',
+            'baseline_kwh' => 'nullable|numeric|min:0',
             'main_energy_source' => 'required',
             'backup_power' => 'required',
             'number_of_meters' => 'required|integer',
@@ -201,6 +207,54 @@ class EnergyProfileController extends Controller
         $profile->engineer_approved = !$profile->engineer_approved;
         $profile->save();
         return redirect()->back()->with('success', 'Engineer approval status updated.');
+    }
+
+    public function establishBaseline(Request $request, $facilityId, $meterId)
+    {
+        $this->ensureEnergyProfileApprovalAccess();
+
+        $facility = Facility::findOrFail((int) $facilityId);
+        $meter = FacilityMeter::query()
+            ->where('facility_id', $facility->id)
+            ->where('meter_type', 'main')
+            ->findOrFail((int) $meterId);
+
+        $validated = $request->validate([
+            'baseline_months' => ['required', 'integer', 'min:3', 'max:6'],
+        ]);
+        $result = $this->baselineEstablishment->establish($meter, (int) $validated['baseline_months']);
+
+        DB::transaction(function () use ($facility, $meter, $result) {
+            $meter->update(['baseline_kwh' => $result['baseline_kwh']]);
+
+            $profile = EnergyProfile::query()
+                ->where('facility_id', $facility->id)
+                ->where(function ($query) use ($meter) {
+                    $query->where('primary_meter_id', $meter->id)
+                        ->orWhereNull('primary_meter_id');
+                })
+                ->latest('id')
+                ->first();
+
+            if ($profile) {
+                $profile->update([
+                    'baseline_kwh' => $result['baseline_kwh'],
+                    'baseline_locked' => true,
+                    'baseline_source' => 'computed_'.$result['months'].'_month_average',
+                    'engineer_approved' => true,
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('modules.facilities.energy-profile.index', $facility->id)
+            ->with('success', sprintf(
+                '%d-month baseline approved at %s kWh using %s to %s readings.',
+                $result['months'],
+                number_format($result['baseline_kwh'], 2),
+                $result['start_period'],
+                $result['end_period'],
+            ));
     }
 }
 

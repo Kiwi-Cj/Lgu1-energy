@@ -63,5 +63,6 @@ Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->gro
     Route::get('/facilities', [IntegrationDataController::class, 'cprfFacilities']);
     Route::get('/energy-reports', [IntegrationDataController::class, 'cprfEnergyReports']);
     Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
+    Route::patch('/recommendations/{recommendation}/implementation', [IntegrationDataController::class, 'updateRecommendationImplementation']);
     Route::get('/facility-profiles', [CprfFacilityProfileController::class, 'index']);
 });

@@ -392,6 +392,8 @@ class IntegrationDataController extends Controller
             'month' => $reco->month,
             'generated_message' => $reco->generated_message,
             'engineer_recommendation' => $reco->engineer_recommendation,
+            'monthly_record_assessment' => $reco->generated_message,
+            'recommendation' => $reco->engineer_recommendation,
             'status' => $reco->status,
             'expected_savings_kwh' => $this->number($reco->expected_savings_kwh),
             'target_date' => $reco->target_date?->toDateString(),
@@ -402,6 +404,73 @@ class IntegrationDataController extends Controller
             'verified_at' => $reco->verified_at?->toIso8601String(),
             'reviewed_at' => $reco->reviewed_at?->toIso8601String(),
             'updated_at' => $reco->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Accept implementation progress from CPRF while keeping approval and
+     * final verification under Energy's control.
+     */
+    public function updateRecommendationImplementation(
+        Request $request,
+        EnergySavingRecommendation $recommendation
+    ): JsonResponse {
+        $validated = $request->validate([
+            'implementation_status' => ['required', Rule::in(['pending', 'in_progress', 'implemented'])],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $isCprfOwned = $recommendation->status === 'approved'
+            && $recommendation->facility()->where('source', 'cprf')->exists()
+            && EnergyRecord::query()
+                ->where('facility_id', $recommendation->facility_id)
+                ->where('year', $recommendation->year)
+                ->where('month', $recommendation->month)
+                ->whereIn('input_source', ['manual', 'cprf'])
+                ->where('review_status', 'approved')
+                ->whereNotNull('meter_id')
+                ->exists();
+
+        if (! $isCprfOwned) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved CPRF recommendation not found for this reporting period.',
+            ], 404);
+        }
+
+        if ($recommendation->implementation_status === 'verified') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Verified recommendations are locked in Energy.',
+            ], 409);
+        }
+
+        $isImplemented = $validated['implementation_status'] === 'implemented';
+        $notes = isset($validated['implementation_notes'])
+            ? trim((string) $validated['implementation_notes'])
+            : null;
+
+        $recommendation->update([
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $notes !== '' ? $notes : null,
+            'implemented_at' => $isImplemented ? ($recommendation->implemented_at ?? now()) : null,
+        ]);
+
+        $recommendation->refresh();
+
+        return response()->json([
+            'success' => true,
+            'recommendation' => [
+                'id' => $recommendation->id,
+                'implementation_status' => $recommendation->implementation_status,
+                'actual_savings_kwh' => $this->number($recommendation->actual_savings_kwh),
+                'implementation_notes' => $recommendation->implementation_notes,
+                'implemented_at' => $recommendation->implemented_at?->toIso8601String(),
+                'verified_at' => $recommendation->verified_at?->toIso8601String(),
+                'updated_at' => $recommendation->updated_at?->toIso8601String(),
+            ],
         ]);
     }
 

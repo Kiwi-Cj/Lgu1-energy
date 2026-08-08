@@ -23,6 +23,8 @@
     $canManageEnergyProfile = $canManageEnergyProfile ?? false;
     $canApproveMeters = $canApproveMeters ?? false;
     $canEncodeMainReadings = $canEncodeMainReadings ?? false;
+    $baselinePlans = $baselinePlans ?? collect();
+    $canApproveBaseline = \App\Support\RoleAccess::can($user, 'approve_energy_profile');
     $latestEnergyRecord = $latestEnergyRecord ?? null;
     $hasApprovedMainForSub = $mainMeterOptions->isNotEmpty();
     $isCprfManaged = isset($facilityModel) && method_exists($facilityModel, 'isCprfManaged') && $facilityModel->isCprfManaged();
@@ -1539,6 +1541,36 @@
     body.dark-mode .meter-modal-overlay .meter-modal-subtitle { color:#94a3b8 !important; }
     body.dark-mode .meter-modal-overlay .meter-manage-form,
     body.dark-mode .meter-modal-overlay .meter-modal-card { scrollbar-color:#64748b #111827; }
+    .baseline-builder { padding: 20px 24px; border-bottom: 1px solid #dbe5f1; background: #fff; }
+    .baseline-builder__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+    .baseline-builder__eyebrow { color:#2563eb; font-size:.7rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .baseline-builder__head h2 { margin:4px 0 3px; color:#0f172a; font-size:1.08rem; }
+    .baseline-builder__head p { margin:0; color:#64748b; font-size:.76rem; line-height:1.5; }
+    .baseline-builder__reading-link { display:inline-flex; align-items:center; gap:7px; padding:9px 12px; border:1px solid #bfdbfe; border-radius:10px; color:#1d4ed8; font-size:.72rem; font-weight:900; text-decoration:none; white-space:nowrap; }
+    .baseline-builder__list { display:grid; gap:10px; }
+    .baseline-plan { display:grid; grid-template-columns:minmax(180px,.8fr) minmax(260px,1.3fr) auto; align-items:center; gap:14px; padding:14px; border:1px solid #dbe5f1; border-radius:14px; background:#f8fbff; }
+    .baseline-plan__meter strong { display:block; color:#172554; font-size:.82rem; }
+    .baseline-plan__meter span { display:block; margin-top:3px; color:#64748b; font-size:.68rem; }
+    .baseline-plan__status { display:flex; align-items:flex-start; gap:10px; }
+    .baseline-plan__icon { display:grid; place-items:center; flex:0 0 auto; width:35px; height:35px; border-radius:10px; background:#dbeafe; color:#2563eb; }
+    .baseline-plan__status strong { display:block; color:#1e3a8a; font-size:.76rem; }
+    .baseline-plan__status small { display:block; margin-top:3px; color:#64748b; font-size:.66rem; line-height:1.45; }
+    .baseline-plan__months { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+    .baseline-plan__month { padding:3px 6px; border-radius:999px; background:#e2e8f0; color:#475569; font-size:.6rem; font-weight:800; }
+    .baseline-plan__action { display:flex; align-items:end; gap:7px; }
+    .baseline-plan__action label { display:block; margin-bottom:4px; color:#64748b; font-size:.62rem; font-weight:900; text-transform:uppercase; }
+    .baseline-plan__action select { min-width:112px; padding:8px 9px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; color:#0f172a; }
+    .baseline-plan__button { border:0; border-radius:9px; padding:9px 11px; background:#16a34a; color:#fff; font-size:.68rem; font-weight:900; cursor:pointer; white-space:nowrap; }
+    .baseline-plan__value { color:#166534; font-size:1rem; font-weight:900; white-space:nowrap; }
+    .baseline-builder__empty { padding:14px; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b; font-size:.74rem; }
+    body.dark-mode .baseline-builder { background:#0f172a; border-bottom-color:#29384d; }
+    body.dark-mode .baseline-builder__head h2 { color:#f8fafc; }
+    body.dark-mode .baseline-plan { background:#111c2f; border-color:#334155; }
+    body.dark-mode .baseline-plan__meter strong,
+    body.dark-mode .baseline-plan__status strong { color:#dbeafe; }
+    body.dark-mode .baseline-plan__action select { background:#0b1220; color:#e2e8f0; border-color:#475569; }
+    @media (max-width:900px) { .baseline-plan { grid-template-columns:1fr; } .baseline-plan__action { justify-content:flex-start; } }
+    @media (max-width:620px) { .baseline-builder { padding:16px; } .baseline-builder__head { flex-direction:column; } .baseline-plan__action { align-items:stretch; flex-direction:column; } .baseline-plan__button { width:100%; } }
 </style>
 
 @section('content')
@@ -1636,6 +1668,85 @@
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-bullseye"></i></span>Baseline</div><strong>{{ is_numeric($resolvedBaseline) ? number_format((float) $resolvedBaseline, 2) : '—' }}</strong><small>{{ is_numeric($resolvedBaseline) ? 'kWh target' : 'Not configured' }}</small></div>
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-chart-column"></i></span>Latest usage</div><strong>{{ $latestActualKwh !== null ? number_format($latestActualKwh, 2) : '—' }}</strong><small>{{ $latestActualKwh !== null ? $latestPeriod.' · kWh' : $latestPeriod }}</small></div>
         </div>
+
+        <section class="baseline-builder" aria-labelledby="baselineBuilderTitle">
+            <div class="baseline-builder__head">
+                <div>
+                    <span class="baseline-builder__eyebrow">Baseline establishment</span>
+                    <h2 id="baselineBuilderTitle">Build a baseline from approved readings</h2>
+                    <p>New facilities may submit readings immediately. A baseline becomes available after 3–6 approved monthly readings and reviewer approval.</p>
+                </div>
+                <a class="baseline-builder__reading-link" href="{{ $addReadingUrl }}"><i class="fa-solid fa-plus"></i> Add monthly reading</a>
+            </div>
+
+            @error('baseline_months')
+                <div class="alert alert-danger" style="margin-bottom:12px;">{{ $message }}</div>
+            @enderror
+
+            <div class="baseline-builder__list">
+                @forelse($mainMeters as $meter)
+                    @php
+                        $plan = $baselinePlans->get((int) $meter->id, []);
+                        $planStatus = $plan['status'] ?? 'collecting';
+                        $availableMonths = (int) ($plan['usable_reading_count'] ?? 0);
+                        $suggestedMonths = (int) ($plan['suggested_months'] ?? 0);
+                    @endphp
+                    <article class="baseline-plan">
+                        <div class="baseline-plan__meter">
+                            <strong>{{ $meter->meter_name }}</strong>
+                            <span>{{ $meter->meter_number ?: 'No meter number' }} · Approved main meter</span>
+                        </div>
+                        <div class="baseline-plan__status">
+                            <span class="baseline-plan__icon"><i class="fa-solid {{ $planStatus === 'established' ? 'fa-circle-check' : ($availableMonths >= 3 ? 'fa-calculator' : 'fa-hourglass-half') }}"></i></span>
+                            <div>
+                                @if($planStatus === 'established')
+                                    <strong>Official baseline established</strong>
+                                    <small>New readings and performance checks use this approved main-meter baseline.</small>
+                                @elseif($planStatus === 'recommended_ready')
+                                    <strong>Recommended 6-month baseline is ready</strong>
+                                    <small>Candidate average: {{ number_format((float) ($plan['candidate_kwh'] ?? 0), 2) }} kWh. Review and approve it below.</small>
+                                @elseif($planStatus === 'preliminary_ready')
+                                    <strong>Preliminary baseline is ready</strong>
+                                    <small>{{ $availableMonths }} approved months are available. You may approve now or wait for 6 months for a stronger baseline.</small>
+                                @else
+                                    <strong>Collecting baseline data: {{ $availableMonths }}/3 minimum</strong>
+                                    <small>Readings are accepted, but variance, alerts, and avoidable cost remain unavailable until a baseline is approved.</small>
+                                @endif
+                                @if(!empty($plan['periods']))
+                                    <div class="baseline-plan__months">
+                                        @foreach($plan['periods'] as $period)
+                                            <span class="baseline-plan__month">{{ $period['label'] }} · {{ number_format((float) $period['actual_kwh'], 2) }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        @if($planStatus === 'established')
+                            <div class="baseline-plan__value">{{ number_format((float) $plan['current_baseline'], 2) }} kWh</div>
+                        @elseif(($plan['can_establish'] ?? false) && $canApproveBaseline)
+                            <form class="baseline-plan__action" method="POST" action="{{ route('modules.facilities.meters.baseline.establish', [$facilityModel->id, $meter->id]) }}" onsubmit="return confirm('Approve this computed baseline? It will be used for future readings and recommendations.')">
+                                @csrf
+                                <div>
+                                    <label for="baselineMonths{{ $meter->id }}">Average window</label>
+                                    <select id="baselineMonths{{ $meter->id }}" name="baseline_months">
+                                        @for($months = 3; $months <= min(6, $availableMonths); $months++)
+                                            <option value="{{ $months }}" @selected($months === $suggestedMonths)>{{ $months }} months</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <button class="baseline-plan__button" type="submit"><i class="fa-solid fa-check"></i> Approve baseline</button>
+                            </form>
+                        @elseif($plan['can_establish'] ?? false)
+                            <div class="baseline-plan__value" style="color:#475569;font-size:.72rem;">Awaiting engineer/admin approval</div>
+                        @else
+                            <div class="baseline-plan__value" style="color:#64748b;font-size:.72rem;">{{ max(0, 3 - $availableMonths) }} more {{ Str::plural('month', max(0, 3 - $availableMonths)) }} needed</div>
+                        @endif
+                    </article>
+                @empty
+                    <div class="baseline-builder__empty"><i class="fa-solid fa-circle-info"></i> Register and approve a Main Meter first. Monthly readings can then be collected for baseline establishment.</div>
+                @endforelse
+            </div>
+        </section>
 
         <section class="energy-details" aria-labelledby="energyDetailsTitle">
             <div class="energy-details__head">

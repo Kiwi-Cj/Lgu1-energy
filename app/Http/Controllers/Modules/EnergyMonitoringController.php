@@ -10,6 +10,7 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
 use App\Models\Setting;
 use App\Services\EnergyRecommendationService;
+use App\Support\BaselineResolver;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -302,7 +303,7 @@ class EnergyMonitoringController extends Controller
             ->orderByRaw("CASE WHEN approved_at IS NOT NULL THEN 0 ELSE 1 END")
             ->orderByRaw("CASE WHEN LOWER(COALESCE(status, '')) = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
-            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'status', 'approved_at'])
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'status', 'baseline_kwh', 'approved_at'])
             ->groupBy('facility_id')
             ->map(fn (Collection $rows) => $rows->values());
     }
@@ -317,6 +318,10 @@ class EnergyMonitoringController extends Controller
         $startYm = (int) Carbon::create($currentYear, $currentMonth, 1)->subMonths(5)->format('Ym');
 
         return EnergyRecord::query()
+            ->with([
+                'meter:id,facility_id,meter_name,meter_type,baseline_kwh',
+                'facility.energyProfiles:id,facility_id,baseline_kwh',
+            ])
             ->whereIn('facility_id', $facilityIds)
             ->where(function ($q) {
                 $q->whereHas('meter', function ($meterQuery) {
@@ -377,7 +382,9 @@ class EnergyMonitoringController extends Controller
             ->map(function (FacilityMeter $meter) use ($meterSnapshots) {
                 $snapshot = $meterSnapshots->get($meter->id, collect());
                 $meter->current_month_kwh = is_numeric($snapshot->get('actual_kwh')) ? (float) $snapshot->get('actual_kwh') : null;
-                $meter->current_month_baseline_kwh = is_numeric($snapshot->get('baseline_kwh')) ? (float) $snapshot->get('baseline_kwh') : null;
+                $meter->current_month_baseline_kwh = is_numeric($snapshot->get('baseline_kwh'))
+                    ? (float) $snapshot->get('baseline_kwh')
+                    : (is_numeric($meter->baseline_kwh) ? (float) $meter->baseline_kwh : null);
                 $meter->current_month_energy_cost = is_numeric($snapshot->get('energy_cost')) ? (float) $snapshot->get('energy_cost') : null;
                 $meter->current_month_alert_level = $this->resolveCurrentMonthMainMeterAlertLevel(
                     $meter->current_month_kwh,
@@ -623,8 +630,17 @@ class EnergyMonitoringController extends Controller
                 $first = $group->first();
                 $actualKwh = (float) $group->sum(fn ($row) => (float) ($row->actual_kwh ?? 0));
                 $baselineKwh = (float) $group->sum(function ($row) {
-                    return is_numeric($row->baseline_kwh ?? null) ? (float) $row->baseline_kwh : 0.0;
+                    if (is_numeric($row->baseline_kwh ?? null) && (float) $row->baseline_kwh > 0) {
+                        return (float) $row->baseline_kwh;
+                    }
+
+                    return is_numeric($row->meter?->baseline_kwh)
+                        ? (float) $row->meter->baseline_kwh
+                        : 0.0;
                 });
+                if ($baselineKwh <= 0) {
+                    $baselineKwh = (float) (BaselineResolver::forFacility($first?->facility) ?? 0);
+                }
                 $energyCost = (float) $group->sum(function ($row) {
                     return is_numeric($row->energy_cost ?? null) ? (float) $row->energy_cost : 0.0;
                 });
@@ -746,7 +762,18 @@ class EnergyMonitoringController extends Controller
 
     private function resolveAlertLevel(Facility $facility, $record, ?float $trendPercent): string
     {
-        if (! $record || $trendPercent === null) {
+        if (! $record) {
+            return 'No Data';
+        }
+
+        $actualKwh = is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : null;
+        $baselineKwh = $this->resolveSpikeBaseline($facility, $record);
+        $baselineDeviation = EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
+        if ($baselineDeviation !== null) {
+            return EnergyRecord::resolveAlertLevel($baselineDeviation, $baselineKwh) ?: 'Normal';
+        }
+
+        if ($trendPercent === null) {
             return 'No Data';
         }
 
