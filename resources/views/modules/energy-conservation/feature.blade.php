@@ -1600,8 +1600,11 @@
                                         <div class="tip-review-grid">
                                             @if($isCprfIntegrationPeriod)
                                             <div class="tip-review-field">
-                                                <label>Implementation Owner</label>
-                                                <div class="tip-field-help">Managed in the Facilities Reservation system for this integrated reading.</div>
+                                                <label>Assigned To</label>
+                                                <select disabled aria-label="Assigned To">
+                                                    <option selected>CPRF Integration</option>
+                                                </select>
+                                                <div class="tip-field-help">Managed in CPRF for this integrated reading.</div>
                                             </div>
                                             @else
                                             <div class="tip-review-field">
@@ -1686,7 +1689,7 @@
                                                 @else
                                                     <i class="fa-solid fa-user"></i>
                                                 @endif
-                                                {{ $recommendation->assignee?->full_name ?: ($recommendation->assignee?->username ?? 'Unassigned') }}
+                                                {{ $isCprfIntegrationPeriod ? 'CPRF Integration' : ($recommendation->assignee?->full_name ?: ($recommendation->assignee?->username ?? 'Unassigned')) }}
                                             </span>
                                             <span class="recommendation-pill {{ $progressClass }}">
                                                 {{ ucwords(str_replace('_', ' ', $recommendation->implementation_status ?? 'pending')) }}
@@ -1744,8 +1747,11 @@
                                         <div class="tip-review-grid">
                                             @if($isCprfIntegrationPeriod)
                                             <div class="tip-review-field">
-                                                <label>Implementation Owner</label>
-                                                <div class="tip-field-help">Managed in the Facilities Reservation system for this integrated reading.</div>
+                                                <label>Assigned To</label>
+                                                <select disabled aria-label="Assigned To">
+                                                    <option selected>CPRF Integration</option>
+                                                </select>
+                                                <div class="tip-field-help">Managed in CPRF for this integrated reading.</div>
                                             </div>
                                             @else
                                             <div class="tip-review-field">

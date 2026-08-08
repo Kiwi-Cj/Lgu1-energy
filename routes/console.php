@@ -90,7 +90,7 @@ Schedule::command('energy:sync-cprf-facilities')
     ->withoutOverlapping();
 
 Schedule::command('energy:sync-uman-monthly-records')
-    ->hourly()
+    ->everyFiveMinutes()
     ->withoutOverlapping();
 
 Artisan::command('main-meter:backfill-from-energy-records

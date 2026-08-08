@@ -499,7 +499,6 @@ class EnergyConservationController extends Controller
         }
 
         return $query
-            ->whereNull('meter_id')
             ->whereRaw('LOWER(input_source) = ?', ['cprf'])
             ->exists();
     }

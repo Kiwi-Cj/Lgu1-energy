@@ -345,7 +345,8 @@ class IntegrationDataController extends Controller
     /**
      * Engineer-reviewed energy-saving recommendations for CPRF-managed
      * facilities. The partner can only receive approved recommendations whose
-     * Energy-owned main-meter record passed the monthly-record review workflow.
+     * linked main-meter period is approved, whether the reading was encoded in
+     * Energy or imported from CPRF through UMAN.
      */
     public function recommendations(Request $request): JsonResponse
     {
@@ -372,7 +373,7 @@ class IntegrationDataController extends Controller
                     ->whereColumn('energy_records.facility_id', 'energy_saving_recommendations.facility_id')
                     ->whereColumn('energy_records.year', 'energy_saving_recommendations.year')
                     ->whereColumn('energy_records.month', 'energy_saving_recommendations.month')
-                    ->where('energy_records.input_source', 'manual')
+                    ->whereIn('energy_records.input_source', ['manual', 'cprf'])
                     ->where('energy_records.review_status', 'approved')
                     ->whereNotNull('energy_records.meter_id')
                     ->whereNull('energy_records.deleted_at');

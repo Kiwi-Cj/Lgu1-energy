@@ -340,7 +340,7 @@ test('monthly records show recommendation status and the matching recommendation
     ]);
 });
 
-test('a cprf facility-level monthly record can generate and save a recommendation', function () {
+test('a meter-linked cprf monthly record is assigned to cprf integration', function () {
     $admin = User::factory()->create(['role' => 'super_admin']);
     $recorder = User::factory()->create([
         'role' => 'staff',
@@ -356,9 +356,17 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         'external_ref' => 501,
     ]);
     $recorder->facilities()->attach($facility->id);
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'CPRF Recommendation Main Meter',
+        'meter_number' => 'CPRF-REC-501',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'approved_at' => now(),
+    ]);
     $record = EnergyRecord::create([
         'facility_id' => $facility->id,
-        'meter_id' => null,
+        'meter_id' => $meter->id,
         'year' => 2026,
         'month' => 7,
         'day' => 22,
@@ -379,9 +387,11 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
         ]))
         ->assertOk()
         ->assertSee('Selected monthly record context')
-        ->assertSee('Facility-Level (CPRF)')
-        ->assertSee('Managed in the Facilities Reservation system for this integrated reading.')
-        ->assertDontSee('<label>Assigned To</label>', escape: false)
+        ->assertSee('CPRF Recommendation Main Meter')
+        ->assertSee('CPRF Integration')
+        ->assertSee('Managed in CPRF for this integrated reading.')
+        ->assertSee('<label>Assigned To</label>', escape: false)
+        ->assertDontSee('<select name="assigned_to">', escape: false)
         ->assertSee('Review for Approval')
         ->assertSee('System-Generated Recommendation')
         ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
@@ -393,6 +403,7 @@ test('a cprf facility-level monthly record can generate and save a recommendatio
             'period' => '2026-07',
             'status' => 'approved',
             'engineer_recommendation' => 'Review CPRF facility operating schedules.',
+            'assigned_to' => $recorder->id,
             'implementation_status' => 'pending',
         ])
         ->assertRedirect()

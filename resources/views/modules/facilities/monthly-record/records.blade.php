@@ -2051,12 +2051,6 @@
     .monthly-performance-card.approved { --monthly-accent:#059669; --monthly-soft:#ecfdf5; }
     .monthly-performance-card.pending { --monthly-accent:#f59e0b; --monthly-soft:#fffbeb; }
     .monthly-performance-card.attention { --monthly-accent:#e11d48; --monthly-soft:#fff1f2; }
-    .monthly-workflow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; border-top:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; background:#f8fafc; }
-    .monthly-workflow-step { display:flex; align-items:center; gap:9px; min-height:62px; padding:11px 14px; border-right:1px solid #e2e8f0; }
-    .monthly-workflow-step:last-child { border-right:0; }
-    .monthly-workflow-number { width:28px; height:28px; flex:0 0 28px; display:grid; place-items:center; border-radius:9px; color:#1d4ed8; background:#dbeafe; font-size:.72rem; font-weight:950; }
-    .monthly-workflow-title { color:#334155; font-size:.72rem; font-weight:900; }
-    .monthly-workflow-text { margin-top:2px; color:#64748b; font-size:.61rem; line-height:1.3; font-weight:650; }
     .monthly-record-comparison { display:grid; gap:5px; }
     .monthly-record-metric { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .monthly-record-metric span:first-child { color:#94a3b8; font-size:.61rem; font-weight:800; text-transform:uppercase; }
@@ -2084,11 +2078,6 @@
     body.dark-mode .monthly-integration-badge.is-waiting { color:#fde68a; border-color:#92400e; background:rgba(146,64,14,.18); }
     body.dark-mode .monthly-integration-badge.is-off { color:#cbd5e1; border-color:#475569; background:#111827; }
     body.dark-mode .monthly-performance-value { color:#f1f5f9; }
-    body.dark-mode .monthly-workflow { background:#0f172a; border-color:#334155; }
-    body.dark-mode .monthly-workflow-step { border-color:#334155; }
-    body.dark-mode .monthly-workflow-title { color:#e2e8f0; }
-    body.dark-mode .monthly-workflow-text { color:#94a3b8; }
-    body.dark-mode .monthly-workflow-number { color:#bfdbfe; border:1px solid #334b70; background:rgba(37,99,235,.16); }
     body.dark-mode .monthly-table-title { color:#f1f5f9; }
     body.dark-mode .monthly-table-subtitle { color:#8fa0b5; }
     body.dark-mode .monthly-record-table-filter { border-color:#334155; background:#0f192a; }
@@ -2108,7 +2097,7 @@
     body.dark-mode .monthly-performance-icon { color:var(--monthly-accent,#60a5fa); background:rgba(37,99,235,.12); }
     body.dark-mode .monthly-context-chip { color:#cbd5e1; }
     body.dark-mode .monthly-reset-btn { color:#cbd5e1; }
-    @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-workflow-step:nth-child(2) { border-right:0; } .monthly-record-table-filter { align-items:stretch; flex-direction:column; gap:8px; } .monthly-filter-heading { padding-bottom:0; } }
+    @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-record-table-filter { align-items:stretch; flex-direction:column; gap:8px; } .monthly-filter-heading { padding-bottom:0; } }
     @media (max-width:760px) {
         .monthly-table-wrap { overflow:visible; padding:10px; border-top:0; }
         .monthly-table, .monthly-table tbody { display:block; width:100%; min-width:0; }
@@ -2125,7 +2114,7 @@
         .monthly-record-breakdown-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
         body.dark-mode .monthly-table tbody tr { background:#111827; border-color:#334155; }
     }
-    @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-workflow,.monthly-record-breakdown-grid { grid-template-columns:1fr; } .monthly-workflow-step { border-right:0; border-bottom:1px solid #e2e8f0; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } .monthly-record-breakdown-head { flex-direction:column; gap:8px; } .monthly-record-breakdown-actions { justify-content:stretch; } .monthly-record-breakdown-actions a { flex:1 1 auto; justify-content:center; } }
+    @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-record-breakdown-grid { grid-template-columns:1fr; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } .monthly-record-breakdown-head { flex-direction:column; gap:8px; } .monthly-record-breakdown-actions { justify-content:stretch; } .monthly-record-breakdown-actions a { flex:1 1 auto; justify-content:center; } }
 </style>
 
 @php
@@ -2537,13 +2526,6 @@
                     <i class="fa fa-archive"></i> Archive
                 </a>
             </div>
-        </div>
-
-        <div class="monthly-workflow" aria-label="Monthly record workflow">
-            <div class="monthly-workflow-step"><span class="monthly-workflow-number">1</span><div><div class="monthly-workflow-title">Encode bill</div><div class="monthly-workflow-text">Select main meter and enter monthly usage in the Energy system.</div></div></div>
-            <div class="monthly-workflow-step"><span class="monthly-workflow-number">2</span><div><div class="monthly-workflow-title">Validate record</div><div class="monthly-workflow-text">Review the bill, rate, and meter assignment.</div></div></div>
-            <div class="monthly-workflow-step"><span class="monthly-workflow-number">3</span><div><div class="monthly-workflow-title">Evaluate performance</div><div class="monthly-workflow-text">Compare against baseline and threshold settings.</div></div></div>
-            <div class="monthly-workflow-step"><span class="monthly-workflow-number">4</span><div><div class="monthly-workflow-title">Review insight</div><div class="monthly-workflow-text">Open recommendations and act on exceptions.</div></div></div>
         </div>
 
         <div class="monthly-record-table-filter">

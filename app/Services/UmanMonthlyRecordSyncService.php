@@ -150,22 +150,40 @@ class UmanMonthlyRecordSyncService
             );
         }
 
-        $meter = FacilityMeter::withTrashed()->firstOrNew([
-            'facility_id' => $facility->id,
-            'meter_number' => 'UMAN-'.strtoupper(substr(hash('sha256', $facilityKey), 0, 16)),
-        ]);
-        $meter->fill([
-            'meter_name' => 'CPRF Integrated Main Meter',
-            'meter_type' => 'main',
-            'location' => trim((string) ($row['location'] ?? '')) ?: $facilityName,
-            'status' => 'active',
-            'multiplier' => 1,
-            'notes' => 'Automatically managed by the UMAN monthly-record integration.',
-            'approved_at' => $meter->approved_at ?? now(),
-        ]);
-        $meter->save();
-        if ($meter->trashed()) {
-            $meter->restore();
+        $primaryMeterId = (int) ($facility->energyProfiles()->value('primary_meter_id') ?? 0);
+        $meter = FacilityMeter::query()
+            ->where('facility_id', $facility->id)
+            ->where('meter_type', 'main')
+            ->whereNotNull('approved_at')
+            ->when(
+                $primaryMeterId > 0,
+                fn ($query) => $query->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$primaryMeterId])
+            )
+            ->orderBy('id')
+            ->first();
+
+        // UMAN readings belong to the facility's approved billing meter. Only
+        // create an integration-managed meter when the facility genuinely has
+        // no approved main meter yet; creating a second one makes the Monthly
+        // Records table require an unnecessary meter selection.
+        if (! $meter) {
+            $meter = FacilityMeter::withTrashed()->firstOrNew([
+                'facility_id' => $facility->id,
+                'meter_number' => 'UMAN-'.strtoupper(substr(hash('sha256', $facilityKey), 0, 16)),
+            ]);
+            $meter->fill([
+                'meter_name' => 'CPRF Integrated Main Meter',
+                'meter_type' => 'main',
+                'location' => trim((string) ($row['location'] ?? '')) ?: $facilityName,
+                'status' => 'active',
+                'multiplier' => 1,
+                'notes' => 'Automatically managed by the UMAN monthly-record integration.',
+                'approved_at' => $meter->approved_at ?? now(),
+            ]);
+            $meter->save();
+            if ($meter->trashed()) {
+                $meter->restore();
+            }
         }
 
         $record = EnergyRecord::withTrashed()

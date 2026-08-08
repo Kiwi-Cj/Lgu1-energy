@@ -16,7 +16,7 @@ function makeRecommendation(Facility $facility, array $overrides = []): EnergySa
     ], $overrides));
 }
 
-function makeEnergyOwnedRecord(Facility $facility, int $month = 6, string $reviewStatus = 'approved'): EnergyRecord
+function makeEnergyOwnedRecord(Facility $facility, int $month = 6, string $reviewStatus = 'approved', string $inputSource = 'manual'): EnergyRecord
 {
     $meter = FacilityMeter::create([
         'facility_id' => $facility->id,
@@ -34,7 +34,7 @@ function makeEnergyOwnedRecord(Facility $facility, int $month = 6, string $revie
         'month' => $month,
         'day' => 28,
         'actual_kwh' => 1200,
-        'input_source' => 'manual',
+        'input_source' => $inputSource,
         'review_status' => $reviewStatus,
     ]);
 }
@@ -59,6 +59,21 @@ test('recommendations default to approved status only', function () {
     expect($response->json('data'))->toHaveCount(1)
         ->and($response->json('data.0.status'))->toBe('approved')
         ->and($response->json('data.0.facility.id'))->toBe($facility->id);
+});
+
+test('approved recommendations for UMAN imported CPRF readings are exposed to CPRF', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create(['source' => 'cprf']);
+    makeEnergyOwnedRecord($facility, 8, 'approved', 'cprf');
+    makeRecommendation($facility, [
+        'month' => 8,
+        'engineer_recommendation' => 'Reduce lighting use outside booked hours.',
+    ]);
+
+    $response = $this->withToken('test-token')->getJson('/api/v1/cprf/recommendations?month=8');
+
+    $response->assertOk()
+        ->assertJsonPath('data.0.engineer_recommendation', 'Reduce lighting use outside booked hours.');
 });
 
 test('cprf recommendation integration is read only', function () {
