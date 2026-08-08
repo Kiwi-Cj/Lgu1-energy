@@ -27,8 +27,10 @@ meters, baselines, readings, recommendations).
 - Identity fields are **read-only** in the UI and server-side
   (`FacilityController@update` allows only a photo change;
   `@destroy` refuses to archive them).
-- Energy profiles, meters, submeters, and readings work exactly like on
-  local facilities — that is the whole point.
+- Each facility has one LGU-managed energy profile. Meters, submeters, and
+  readings work exactly like on local facilities. Approved Main Meters are
+  authoritative for meter number, active meter count, and available baseline;
+  the profile owns billing and power-setup fields.
 - Locally created facilities keep `source='local'` and are unaffected.
 
 ## Configuration (.env)

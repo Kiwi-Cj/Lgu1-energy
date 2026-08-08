@@ -1089,6 +1089,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
             ->count();
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
+        $canManageEnergyProfile = \App\Support\RoleAccess::can($user, 'manage_energy_profile');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
         $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
         $latestEnergyRecord = \App\Models\EnergyRecord::query()
@@ -1117,6 +1118,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'unapprovedMeterCount',
             'archivedMeterCount',
             'canManageMeters',
+            'canManageEnergyProfile',
             'canApproveMeters',
             'canEncodeMainReadings',
             'latestEnergyRecord'

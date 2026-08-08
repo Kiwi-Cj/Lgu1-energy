@@ -78,7 +78,7 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 			<div style="display:flex;gap:14px;">
 				<div style="flex:1;">
 					<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Electric Meter No.</label>
-					<input type="text" name="electric_meter_no" required style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+					<input type="text" name="electric_meter_no" required {{ $requiresPrimaryMainMeter ? 'readonly' : '' }} style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
 				</div>
 				<div style="flex:1;">
 					<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Utility Provider</label>
@@ -99,6 +99,7 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 				<div style="flex:1;">
                     <label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Baseline kWh</label>
                     <input type="number" name="baseline_kwh" step="0.01" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+                    <div style="font-size:.78rem;color:#64748b;margin-top:4px;">An available Main Meter baseline takes priority.</div>
                 </div>
 			</div>
 			<div style="display:flex;gap:14px;">
@@ -138,7 +139,7 @@ body.dark-mode #deleteEnergyProfileModal .energy-modal-btn.cancel {
 				</div>
 				<div style="flex:1;">
 					<label style="font-weight:500;margin-bottom:0.4rem;display:block;color:#222;">Number of Meters</label>
-					<input type="number" name="number_of_meters" required style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
+					<input type="number" name="number_of_meters" required {{ $requiresPrimaryMainMeter ? 'readonly' : '' }} style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;">
 				</div>
 			</div>
 			<div>

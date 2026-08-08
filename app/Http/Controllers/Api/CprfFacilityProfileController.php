@@ -17,11 +17,10 @@ class CprfFacilityProfileController extends Controller
      * meter are omitted from the response, not returned as an error.
      *
      * "engineer_approved" and "baseline_kwh" are sourced from the
-     * facility's main meter, NOT the EnergyProfile record — the
-     * EnergyProfile approval/edit UI has no reachable entry point in this
-     * app (its modal exists but nothing opens it), so it can never
-     * reflect real engineer sign-off. Meter approval is the workflow this
-     * team actually uses, so CPRF reflects that instead. The remaining
+     * facility's main meter, NOT the EnergyProfile record. Main Meter
+     * approval is the authoritative engineer sign-off workflow, while the
+     * Energy Profile holds the facility's LGU-managed billing and power
+     * setup. The remaining
      * fields (utility provider, contract account, energy source, etc.)
      * have no meter equivalent and still come from EnergyProfile as-is.
      */

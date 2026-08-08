@@ -7,6 +7,7 @@ use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Support\RoleAccess;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 
 class EnergyProfileController extends Controller
@@ -86,6 +87,11 @@ class EnergyProfileController extends Controller
             $validated['electric_meter_no'] = (string) $meter->meter_number;
         }
 
+        if (is_numeric($meter->baseline_kwh)) {
+            $validated['baseline_kwh'] = round((float) $meter->baseline_kwh, 2);
+            $validated['baseline_source'] = 'main_meter';
+        }
+
         $activeMainMeterCount = FacilityMeter::where('facility_id', $facilityId)
             ->where('meter_type', 'main')
             ->where('status', 'active')
@@ -123,6 +129,8 @@ class EnergyProfileController extends Controller
     {
         $this->ensureEnergyProfileWriteAccess();
         $facilityId = (int) $facilityId;
+        Facility::findOrFail($facilityId);
+        $profile = EnergyProfile::where('facility_id', $facilityId)->findOrFail($profileId);
 
         $validated = $request->validate($this->energyProfileValidationRules($facilityId), [
             'primary_meter_id.required' => 'Primary Main Meter is required because this facility already has a main meter.',
@@ -130,7 +138,6 @@ class EnergyProfileController extends Controller
         $validated['primary_meter_id'] = $this->resolvePrimaryMainMeterId($request, $facilityId);
         $validated = $this->applyPrimaryMeterSync($validated, $facilityId);
 
-        $profile = \App\Models\EnergyProfile::findOrFail($profileId);
         $profile->update($validated);
 
         return redirect()->route('modules.facilities.energy-profile.index', $facilityId)
@@ -140,6 +147,14 @@ class EnergyProfileController extends Controller
     {
         $this->ensureEnergyProfileWriteAccess();
         $facilityId = (int) $facilityId;
+
+        Facility::findOrFail($facilityId);
+
+        if (EnergyProfile::where('facility_id', $facilityId)->exists()) {
+            return redirect()
+                ->route('modules.facilities.energy-profile.index', $facilityId)
+                ->with('error', 'This facility already has an Energy Profile. Use Edit Profile to update it.');
+        }
 
         \Log::info('EnergyProfileController@store called', ['facilityId' => $facilityId, 'request' => $request->all()]);
         $validated = $request->validate($this->energyProfileValidationRules($facilityId), [
@@ -151,18 +166,17 @@ class EnergyProfileController extends Controller
         $validated['facility_id'] = $facilityId;
         \Log::info('EnergyProfileController@store validated', ['validated' => $validated]);
 
-        // Duplicate check: same facility, meter no, or contract account no
-        $duplicate = EnergyProfile::where('facility_id', $facilityId)
-            ->where(function($q) use ($validated) {
-                $q->where('electric_meter_no', $validated['electric_meter_no'])
-                  ->orWhere('contract_account_no', $validated['contract_account_no']);
-            })
-            ->first();
-        if ($duplicate) {
-            return redirect()->back()->withErrors(['duplicate' => 'Duplicate energy profile for this facility (meter no or contract account no already exists).']);
-        }
+        try {
+            $profile = EnergyProfile::create($validated);
+        } catch (QueryException $exception) {
+            if (EnergyProfile::where('facility_id', $facilityId)->exists()) {
+                return redirect()
+                    ->route('modules.facilities.energy-profile.index', $facilityId)
+                    ->with('error', 'This facility already has an Energy Profile. Use Edit Profile to update it.');
+            }
 
-        $profile = EnergyProfile::create($validated);
+            throw $exception;
+        }
         \Log::info('EnergyProfileController@store created', ['profile' => $profile]);
 
         return redirect()->back()->with('success', 'Energy Profile added!');
@@ -171,7 +185,7 @@ class EnergyProfileController extends Controller
     {
         $this->ensureEnergyProfileDeleteAccess();
 
-        $profile = EnergyProfile::findOrFail($profileId);
+        $profile = EnergyProfile::where('facility_id', (int) $facilityId)->findOrFail($profileId);
         $profile->delete();
         return redirect()->route('modules.facilities.show', $facilityId)
             ->with('success', 'Energy profile deleted successfully!');
@@ -183,7 +197,7 @@ class EnergyProfileController extends Controller
     {
         $this->ensureEnergyProfileApprovalAccess();
 
-        $profile = EnergyProfile::findOrFail($profileId);
+        $profile = EnergyProfile::where('facility_id', (int) $facilityId)->findOrFail($profileId);
         $profile->engineer_approved = !$profile->engineer_approved;
         $profile->save();
         return redirect()->back()->with('success', 'Engineer approval status updated.');

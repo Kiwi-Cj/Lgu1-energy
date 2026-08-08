@@ -76,6 +76,11 @@ class Facility extends Model
         return $this->hasMany(\App\Models\EnergyProfile::class);
     }
 
+    public function energyProfile()
+    {
+        return $this->hasOne(\App\Models\EnergyProfile::class)->latestOfMany();
+    }
+
     public function energyRecords()
     {
         return $this->hasMany(\App\Models\EnergyRecord::class);

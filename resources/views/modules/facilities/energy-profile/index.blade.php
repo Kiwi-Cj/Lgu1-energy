@@ -20,17 +20,20 @@
     $unapprovedMeterCount = $unapprovedMeterCount ?? 0;
     $archivedMeterCount = $archivedMeterCount ?? 0;
     $canManageMeters = $canManageMeters ?? false;
+    $canManageEnergyProfile = $canManageEnergyProfile ?? false;
     $canApproveMeters = $canApproveMeters ?? false;
     $canEncodeMainReadings = $canEncodeMainReadings ?? false;
     $latestEnergyRecord = $latestEnergyRecord ?? null;
     $hasApprovedMainForSub = $mainMeterOptions->isNotEmpty();
     $isCprfManaged = isset($facilityModel) && method_exists($facilityModel, 'isCprfManaged') && $facilityModel->isCprfManaged();
+    $energyProfile = collect($energyProfiles ?? [])->sortByDesc('id')->first();
     $resolvedBaseline = isset($facilityModel) ? $facilityModel->resolveBaselineKwh() : null;
     $latestActualKwh = is_numeric($latestEnergyRecord?->actual_kwh) ? (float) $latestEnergyRecord->actual_kwh : null;
     $latestPeriod = $latestEnergyRecord
         ? \Carbon\Carbon::create((int) $latestEnergyRecord->year, (int) $latestEnergyRecord->month, 1)->format('M Y')
         : 'No reading yet';
     $readinessChecks = [
+        'Energy profile completed' => $energyProfile !== null,
         'Approved main meter' => $mainMeterOptions->isNotEmpty(),
         'Active main meter' => $activeMainMeterCount > 0,
         'Baseline configured' => is_numeric($resolvedBaseline) && (float) $resolvedBaseline > 0,
@@ -161,6 +164,17 @@
     .directory-section-heading h2 { margin: 0; color: var(--report-text); font-size: 1.3rem; letter-spacing: -.03em; }
     .directory-section-heading p { max-width: 460px; margin: 0; color: var(--report-subtext); font-size: .72rem; line-height: 1.55; }
     .profile-shell > .meter-directory-grid { margin: 0; padding: 0 24px 24px; }
+    .energy-details { padding: 22px 24px; border-bottom: 1px solid #e2e8f0; background: var(--report-bg); }
+    .energy-details__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+    .energy-details__eyebrow { color:#2563eb; font-size:.65rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+    .energy-details__head h2 { margin:4px 0 0; color:var(--report-text); font-size:1.18rem; }
+    .energy-details__head p { margin:5px 0 0; color:var(--report-subtext); font-size:.72rem; }
+    .energy-details__action { display:inline-flex; align-items:center; gap:7px; flex:0 0 auto; padding:9px 13px; border:0; border-radius:10px; background:#2563eb; color:#fff; cursor:pointer; font-size:.72rem; font-weight:850; }
+    .energy-details__grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .energy-details__item { min-width:0; padding:12px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc; }
+    .energy-details__item span { display:block; color:#64748b; font-size:.62rem; font-weight:850; letter-spacing:.04em; text-transform:uppercase; }
+    .energy-details__item strong { display:block; overflow:hidden; margin-top:5px; color:#0f172a; font-size:.82rem; text-overflow:ellipsis; white-space:nowrap; }
+    .energy-details__empty { padding:16px; border:1px dashed #93c5fd; border-radius:12px; background:#eff6ff; color:#1e40af; font-size:.76rem; line-height:1.5; }
 
     body.dark-mode .energy-profile-page .profile-shell { border-color: #29384d; background: #0f172a; }
     body.dark-mode .energy-profile-page .profile-kpis { border-bottom-color: #29384d; background: #0f192a; }
@@ -178,10 +192,16 @@
     body.dark-mode .energy-profile-page .profile-quick-action.is-primary { color: #1d4ed8; background: #fff; }
     body.dark-mode .energy-profile-page .profile-breadcrumb,
     body.dark-mode .energy-profile-page .profile-breadcrumb a { color: rgba(219,234,254,.72); }
+    body.dark-mode .energy-profile-page .energy-details { border-bottom-color:#29384d; }
+    body.dark-mode .energy-profile-page .energy-details__item { border-color:#334155; background:#111827; }
+    body.dark-mode .energy-profile-page .energy-details__item span { color:#94a3b8; }
+    body.dark-mode .energy-profile-page .energy-details__item strong { color:#f1f5f9; }
+    body.dark-mode .energy-profile-page .energy-details__empty { border-color:#1d4ed8; background:#172554; color:#bfdbfe; }
 
     @media (max-width: 1080px) {
         .profile-overview__grid { grid-template-columns: 1fr; gap: 24px; }
         .profile-kpis { grid-template-columns: repeat(3,minmax(0,1fr)); }
+        .energy-details__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     }
 
     @media (max-width: 700px) {
@@ -196,12 +216,15 @@
         .profile-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); padding: 16px; }
         .directory-section-heading { align-items: flex-start; flex-direction: column; padding: 20px 16px 13px; }
         .profile-shell > .meter-directory-grid { padding: 0 16px 16px; }
+        .energy-details { padding:18px 16px; }
+        .energy-details__head { flex-direction:column; }
     }
 
     @media (max-width: 430px) {
         .profile-quick-actions { align-items: stretch; flex-direction: column; }
         .profile-quick-action { width: 100%; }
         .profile-kpis { grid-template-columns: 1fr; }
+        .energy-details__grid { grid-template-columns:1fr; }
     }
 
     .meter-directory-grid {
@@ -1613,6 +1636,50 @@
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-bullseye"></i></span>Baseline</div><strong>{{ is_numeric($resolvedBaseline) ? number_format((float) $resolvedBaseline, 2) : '—' }}</strong><small>{{ is_numeric($resolvedBaseline) ? 'kWh target' : 'Not configured' }}</small></div>
             <div class="profile-kpi"><div class="profile-kpi__top"><span class="profile-kpi__icon"><i class="fa-solid fa-chart-column"></i></span>Latest usage</div><strong>{{ $latestActualKwh !== null ? number_format($latestActualKwh, 2) : '—' }}</strong><small>{{ $latestActualKwh !== null ? $latestPeriod.' · kWh' : $latestPeriod }}</small></div>
         </div>
+
+        <section class="energy-details" aria-labelledby="energyDetailsTitle">
+            <div class="energy-details__head">
+                <div>
+                    <span class="energy-details__eyebrow">LGU-managed information</span>
+                    <h2 id="energyDetailsTitle">Energy account profile</h2>
+                    <p>Billing and power setup are maintained in LGU Energy. Facility identity remains sourced from {{ $isCprfManaged ? 'CPRF' : 'the local facility registry' }}.</p>
+                </div>
+                @if($canManageEnergyProfile)
+                    @if($energyProfile)
+                        <button type="button" class="energy-details__action" onclick="openEditEnergyProfileModal({{ Js::from($energyProfile) }})">
+                            <i class="fa fa-edit"></i> Edit Profile
+                        </button>
+                    @else
+                        <button type="button" class="energy-details__action" onclick="openAddEnergyProfileModal({{ $facilityModel->id }})">
+                            <i class="fa fa-plus"></i> Add Profile
+                        </button>
+                    @endif
+                @endif
+            </div>
+
+            @if($energyProfile)
+                @php
+                    $linkedMeterNumber = trim((string) ($energyProfile->primaryMeter?->meter_number ?? ''));
+                    $profileMeterNumber = $linkedMeterNumber !== '' ? $linkedMeterNumber : ($energyProfile->electric_meter_no ?: 'Not set');
+                    $profileMeterCount = $activeMainMeterCount > 0 ? $activeMainMeterCount : ($energyProfile->number_of_meters ?? 0);
+                @endphp
+                <div class="energy-details__grid">
+                    <div class="energy-details__item"><span>Utility provider</span><strong>{{ $energyProfile->utility_provider ?: 'Not set' }}</strong></div>
+                    <div class="energy-details__item"><span>Contract account</span><strong>{{ $energyProfile->contract_account_no ?: 'Not set' }}</strong></div>
+                    <div class="energy-details__item"><span>Primary meter no.</span><strong>{{ $profileMeterNumber }}</strong></div>
+                    <div class="energy-details__item"><span>Active main meters</span><strong>{{ $profileMeterCount }}</strong></div>
+                    <div class="energy-details__item"><span>Main energy source</span><strong>{{ $energyProfile->main_energy_source ?: 'Not set' }}</strong></div>
+                    <div class="energy-details__item"><span>Backup power</span><strong>{{ $energyProfile->backup_power ?: 'Not set' }}</strong></div>
+                    <div class="energy-details__item"><span>Transformer capacity</span><strong>{{ $energyProfile->transformer_capacity ?: 'Not set' }}</strong></div>
+                    <div class="energy-details__item"><span>Baseline source</span><strong>{{ str($energyProfile->baseline_source ?: 'Not set')->replace('_', ' ')->title() }}</strong></div>
+                </div>
+            @else
+                <div class="energy-details__empty">
+                    <i class="fa fa-circle-info"></i>
+                    No Energy Profile yet. Add the LGU-verified utility account and power setup; meter number, meter count, and an available meter baseline will be synchronized from the selected approved Main Meter.
+                </div>
+            @endif
+        </section>
 
         <div class="directory-section-heading">
             <div><span>Meter directory</span><h2>Main meter configuration</h2></div>
