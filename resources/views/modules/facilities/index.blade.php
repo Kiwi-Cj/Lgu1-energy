@@ -722,19 +722,11 @@ window.addEventListener('DOMContentLoaded', function() {
                     <option value="status">Status</option>
                 </select>
             </label>
-            @if($sourceTab === 'cprf' && ($canSyncCprf ?? false))
-                <form method="POST" action="{{ route('facilities.sync-cprf') }}" style="margin-left:auto;">
-                    @csrf
-                    <button type="submit" class="btn-gradient" style="padding:8px 18px; border-radius:999px; font-size:0.85rem; font-weight:800;">
-                        <i class="fas fa-rotate"></i> Sync from CPRF now
-                    </button>
-                </form>
-            @endif
         </div>
         @if($sourceTab === 'cprf' && ($canManageCprf ?? false))
             <div style="background:#f5f3ff; border:1px solid #ddd6fe; color:#5b21b6; border-radius:12px; padding:10px 16px; font-size:0.85rem; font-weight:600; margin-bottom:1.25rem;">
                 <i class="fas fa-circle-info"></i>
-                These public facilities are synced automatically every 5 minutes from the Barangay Culiat Facilities Reservation System (CPRF).
+                <strong>Auto-sync active:</strong> These public facilities are synchronized every 5 minutes from the Barangay Culiat Facilities Reservation System (CPRF).
                 Their names, addresses, and details are managed by CPRF and are read-only here — energy profiles, meters, and readings remain fully manageable.
             </div>
         @endif
