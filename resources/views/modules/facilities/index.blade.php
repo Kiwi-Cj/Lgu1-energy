@@ -723,14 +723,6 @@ window.addEventListener('DOMContentLoaded', function() {
                 </select>
             </label>
         </div>
-        @if($sourceTab === 'cprf' && ($canManageCprf ?? false))
-            <div style="background:#f5f3ff; border:1px solid #ddd6fe; color:#5b21b6; border-radius:12px; padding:10px 16px; font-size:0.85rem; font-weight:600; margin-bottom:1.25rem;">
-                <i class="fas fa-circle-info"></i>
-                <strong>Auto-sync active:</strong> These public facilities are synchronized every 5 minutes from the Barangay Culiat Facilities Reservation System (CPRF).
-                Their names, addresses, and details are managed by CPRF and are read-only here — energy profiles, meters, and readings remain fully manageable.
-            </div>
-        @endif
-
         <div class="facility-search-wrap">
             <label for="facilityLiveSearch" class="facility-search-label">Live Search</label>
             <div class="facility-search-input-wrap">
