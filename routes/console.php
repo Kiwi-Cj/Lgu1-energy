@@ -82,11 +82,11 @@ Schedule::command('archive:prune-expired --days=30')
     ->dailyAt('01:30')
     ->withoutOverlapping();
 
-// Mirror CPRF (facilities reservation) public facilities hourly. Manual
+// Mirror CPRF (facilities reservation) public facilities every five minutes. Manual
 // "Sync now" button on the Facilities page's Public Facilities tab runs
 // the same service on demand.
 Schedule::command('energy:sync-cprf-facilities')
-    ->hourly()
+    ->everyFiveMinutes()
     ->withoutOverlapping();
 
 Schedule::command('energy:sync-uman-monthly-records')
