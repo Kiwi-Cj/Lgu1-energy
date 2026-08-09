@@ -84,6 +84,20 @@ class CprfFacilitySyncService
                 'status' => self::STATUS_MAP[strtolower((string) ($row['status'] ?? ''))] ?? 'inactive',
             ];
 
+            // CPRF returns an absolute URL so Energy can display the original
+            // uploaded photo without copying files between the two systems.
+            // Keep an existing local upload as a fallback while CPRF has no
+            // photo. If a previously synced remote photo is removed in CPRF,
+            // clear the stale URL instead of leaving a broken image behind.
+            if (array_key_exists('image_url', $row)) {
+                $remoteImageUrl = trim((string) ($row['image_url'] ?? ''));
+                if ($remoteImageUrl !== '') {
+                    $identity['image_path'] = $remoteImageUrl;
+                } elseif ($facility !== null && preg_match('#^https?://#i', (string) $facility->image_path)) {
+                    $identity['image_path'] = null;
+                }
+            }
+
             if ($facility === null) {
                 $facility = Facility::create($identity + [
                     'source' => 'cprf',
