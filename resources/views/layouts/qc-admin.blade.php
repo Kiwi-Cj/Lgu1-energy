@@ -2200,6 +2200,7 @@ body.dark-mode .sidebar-footer {
         request()->routeIs('modules.users.*') || request()->is('modules/users*') => 'User Management',
         request()->routeIs('modules.contact-messages.*') => 'Contact Inbox',
         request()->routeIs('integrations.*') => 'Integrations',
+        request()->routeIs('modules.audit.*') => 'Audit Logs',
         request()->is('modules/settings*') => 'System Settings',
         request()->routeIs('profile.*') => 'My Profile',
         default => $systemShortName,
@@ -2481,6 +2482,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             $canViewReports = \App\Support\RoleAccess::can($user, 'access_reports');
             $canAccessUsers = \App\Support\RoleAccess::can($user, 'access_users');
             $canAccessSettings = \App\Support\RoleAccess::can($user, 'access_settings');
+            $canAccessAuditLogs = \App\Support\RoleAccess::can($user, 'access_audit_logs');
         @endphp
 
         <ul class="nav-list">
@@ -2538,19 +2540,22 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     </a>
                     <ul class="nav-submenu">
                         <li><a href="{{ $p('modules/reports/energy') }}" class="nav-link{{ (request()->routeIs('modules.reports.energy') || request()->routeIs('reports.energy') || request()->is('modules/reports/energy')) ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
-                        <li><a href="{{ $p('modules/reports/efficiency-summary') }}" class="nav-link{{ request()->routeIs('reports.efficiency-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                        <li><a href="{{ route('reports.performance-summary') }}" class="nav-link{{ request()->routeIs('reports.performance-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Performance Summary</a></li>
                         <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
             @endif
 
-            @if($canAccessUsers || $canAccessSettings)
+            @if($canAccessUsers || $canAccessSettings || $canAccessAuditLogs)
                 <li class="nav-section-label">Administration</li>
                 @if($canAccessUsers)
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
                 @if(in_array($roleKey, ['super_admin', 'admin'], true))
                 <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
                 @endif
+                @endif
+                @if($canAccessAuditLogs)
+                <li><a href="{{ route('modules.audit.index') }}" class="nav-link{{ request()->routeIs('modules.audit.*') ? ' active' : '' }}"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a></li>
                 @endif
                 @if($canAccessSettings)
                 <li><a href="{{ route('integrations.index') }}" class="nav-link{{ request()->routeIs('integrations.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Integrations</a></li>

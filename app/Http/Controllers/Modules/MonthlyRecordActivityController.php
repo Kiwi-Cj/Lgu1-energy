@@ -22,7 +22,7 @@ class MonthlyRecordActivityController extends Controller
 
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'source' => ['nullable', 'in:manual,cprf'],
+            'source' => ['nullable', 'in:manual,cprf,dataset'],
             'month' => ['nullable', 'date_format:Y-m'],
             'status' => ['nullable', 'in:for_review,approved,returned'],
         ]);
@@ -56,7 +56,14 @@ class MonthlyRecordActivityController extends Controller
                         });
                 });
             })
-            ->when($source !== '', fn ($query) => $query->where('input_source', $source))
+            ->when($source === 'cprf', fn ($query) => $query->where('input_source', 'cprf'))
+            ->when($source === 'dataset', fn ($query) => $query->where('external_source', 'qc_lgu_dataset'))
+            ->when($source === 'manual', fn ($query) => $query
+                ->where('input_source', 'manual')
+                ->where(function ($manualQuery) {
+                    $manualQuery->whereNull('external_source')
+                        ->orWhere('external_source', '!=', 'qc_lgu_dataset');
+                }))
             ->when($status !== '', fn ($query) => $query->where('review_status', $status))
             ->when($month !== '', function ($query) use ($month) {
                 [$year, $monthNumber] = array_map('intval', explode('-', $month));

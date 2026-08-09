@@ -45,7 +45,7 @@
         <div class="conservation-entry-actions">
             <a class="conservation-entry-action primary" href="{{ route('modules.ai-alerts.index', ['month' => $selectedMonth]) }}"><i class="fa-solid fa-triangle-exclamation"></i> Start from AI Alerts</a>
             @if($canViewReports)
-                <a class="conservation-entry-action" href="{{ route('reports.efficiency-summary') }}"><i class="fa-solid fa-chart-column"></i> View verified results</a>
+                <a class="conservation-entry-action" href="{{ route('reports.performance-summary') }}"><i class="fa-solid fa-chart-column"></i> View performance summary</a>
             @endif
         </div>
     </header>

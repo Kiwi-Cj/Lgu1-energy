@@ -27,4 +27,9 @@ final class EnergyAlertRouting
     {
         return self::owner($usageLevel) === self::INCIDENT;
     }
+
+    public static function requiresMaintenance(?string $usageLevel): bool
+    {
+        return strtolower(trim((string) $usageLevel)) === 'critical';
+    }
 }

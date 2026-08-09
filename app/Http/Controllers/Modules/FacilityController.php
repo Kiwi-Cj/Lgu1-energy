@@ -265,6 +265,7 @@ class FacilityController extends Controller
         if ($sourceTab === 'cprf' && ! $canManageCprf) {
             $sourceTab = 'all';
         }
+        $allFacilitiesCount = $facilities->count();
         $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
         $localFacilitiesCount = $facilities->count() - $publicFacilitiesCount;
         $cprfIntegrationActive = filled(config('services.cprf_integration.facilities_feed_url'))
@@ -332,6 +333,7 @@ class FacilityController extends Controller
             'maintenanceFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'maintenance')->count(),
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
             'sourceTab' => $sourceTab,
+            'allFacilitiesCount' => $allFacilitiesCount,
             'localFacilitiesCount' => $localFacilitiesCount,
             'publicFacilitiesCount' => $publicFacilitiesCount,
             'cprfIntegrationActive' => $cprfIntegrationActive,
@@ -438,14 +440,6 @@ class FacilityController extends Controller
         if ($highKwhRec) $recommendations[] = $highKwhRec;
         if (empty($recommendations)) $recommendations[] = 'Energy consumption within acceptable range. Continue regular monitoring.';
 
-        // EUI
-        $monthlyEui = $annualEui = null;
-        if ($facility->floor_area && $energyRecords->count()) {
-            $latestKwh = $energyRecords->first()->actual_kwh;
-            $monthlyEui = round($latestKwh / $facility->floor_area, 2);
-            $annualEui = round(($latestKwh * 12) / $facility->floor_area, 2);
-        }
-
         // MAINTENANCE
         $lastMaint = Maintenance::where('facility_id', $facility->id)
             ->whereNotNull('completed_date')
@@ -468,8 +462,6 @@ class FacilityController extends Controller
                 'trend_data' => $trendData,
                 'trend_analysis' => $trendAnalysis,
                 'usage' => $usageRows,
-                'monthly_eui' => $monthlyEui,
-                'annual_eui' => $annualEui,
                 'last_maintenance' => $lastMaint ? $lastMaint->completed_date : null,
                 'next_maintenance' => $nextMaint ? $nextMaint->scheduled_date : null,
                 'recommendations' => $recommendations,

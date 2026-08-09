@@ -1235,6 +1235,35 @@ body.dark-mode .annual-month-label { color: #cbd5e1; }
 
 body.dark-mode .energy-table td:first-child { background:#111827; }
 body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first-child { background:#101a2c; }
+
+/* Keep the facility table aligned with the page and avoid nested scrolling. */
+.energy-table-scroll-shell {
+    width: 100%;
+    margin-right: 0;
+}
+.energy-table-scroll-cap {
+    display: none;
+}
+.energy-table-wrap {
+    width: 100%;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-gutter: auto;
+}
+.energy-table {
+    min-width: 1040px;
+}
+.energy-table th {
+    position: static;
+}
+.energy-table th:first-child,
+.energy-table td:first-child {
+    position: static !important;
+    left: auto !important;
+    box-shadow: none !important;
+}
 </style>
 
 <div class="energy-report-page">
@@ -1365,7 +1394,6 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
             <button type="button" class="row-filter-button" data-row-filter="cprf">CPRF <span>{{ $cprfFacilityCount }}</span></button>
         </div>
         <div class="energy-table-scroll-shell">
-            <div class="energy-table-scroll-cap" aria-hidden="true"></div>
             <div class="energy-table-wrap">
                 <table class="energy-table" id="energyTable">
                 <thead>
@@ -1559,6 +1587,7 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('tableSearch');
+    const tableWrap = document.querySelector('.energy-table-wrap');
     const rows = Array.from(document.querySelectorAll('.energy-row'));
     const noMatch = document.getElementById('energyNoMatch');
     const resultCount = document.getElementById('tableResultCount');
@@ -1584,6 +1613,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const annualDownloadPdf = document.getElementById('annualDownloadPdf');
     let annualTrigger = null;
     let activeRowFilter = 'all';
+
+    const resetTablePosition = () => {
+        if (tableWrap) tableWrap.scrollLeft = 0;
+    };
+    resetTablePosition();
+    window.addEventListener('pageshow', resetTablePosition);
 
     const numberFormatter = new Intl.NumberFormat('en-PH', {
         minimumFractionDigits: 2,

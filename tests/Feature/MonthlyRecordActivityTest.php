@@ -3,6 +3,7 @@
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\User;
+use Database\Seeders\QcLguFacilityDatasetSeeder;
 
 test('review roles can view who submitted the latest monthly records', function (string $role) {
     $reviewer = User::factory()->create(['role' => $role]);
@@ -133,6 +134,21 @@ test('integrated records show the external encoder and source', function () {
         ->assertOk()
         ->assertSee('CPRF Staff Account')
         ->assertSee('CPRF Integration');
+});
+
+test('QC dataset records are identified as system records and are not reviewable', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $this->seed(QcLguFacilityDatasetSeeder::class);
+    $datasetRecord = EnergyRecord::where('external_source', 'qc_lgu_dataset')->firstOrFail();
+
+    $this->actingAs($admin)
+        ->get(route('monthly-record-activity.index', ['source' => 'dataset']))
+        ->assertOk()
+        ->assertSee('QC Energy Management Office')
+        ->assertSee('System-generated dataset')
+        ->assertSee('QC Dataset')
+        ->assertDontSee('User account unavailable')
+        ->assertDontSee('data-return-url="'.route('monthly-record-activity.review', $datasetRecord).'"', false);
 });
 
 test('the removed cprf reading endpoint cannot create an energy record', function () {

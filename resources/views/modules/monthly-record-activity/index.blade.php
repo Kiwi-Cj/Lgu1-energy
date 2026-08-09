@@ -38,37 +38,38 @@
     .filter-btn.primary:hover { background:#244bb5; transform:translateY(-1px); }
     .filter-btn.reset { background:#e2e8f0; color:#334155; }
     .filter-btn.reset:hover { background:#d6dee9; }
-    .activity-table-wrap { overflow-x:auto; scrollbar-color:#b8c5d6 transparent; }
-    .activity-table { width:100%; border-collapse:collapse; min-width:1180px; }
+    .activity-table-wrap { width:100%; overflow-x:auto; overflow-y:hidden; scrollbar-color:#b8c5d6 transparent; }
+    .activity-table { width:100%; min-width:1120px; table-layout:fixed; border-collapse:collapse; }
     .activity-table th { padding:12px 14px; text-align:left; color:#64748b; background:#fff; border-bottom:1px solid #dfe7f1; font-size:.67rem; text-transform:uppercase; letter-spacing:.065em; white-space:nowrap; }
-    .activity-table td { padding:12px 14px; border-bottom:1px solid #edf2f7; vertical-align:middle; background:#fff; font-size:.86rem; transition:background .15s; }
+    .activity-table td { padding:13px 14px; border-bottom:1px solid #edf2f7; vertical-align:middle; background:#fff; font-size:.82rem; line-height:1.42; overflow-wrap:anywhere; transition:background .15s; }
     .activity-table tr:last-child td { border-bottom:0; }
     .activity-table tbody tr:hover td { background:#f8fbff; }
-    .activity-table th:last-child, .activity-table td:last-child { position:sticky; right:0; z-index:2; min-width:210px; box-shadow:-10px 0 18px rgba(15,23,42,.035); }
-    .activity-table th:last-child { z-index:3; }
+    .activity-table td:nth-child(3), .activity-table td:nth-child(6) { white-space:nowrap; overflow-wrap:normal; }
+    .activity-table th:last-child, .activity-table td:last-child { min-width:0; }
     .encoder { display:flex; align-items:center; gap:10px; }
     .encoder-avatar { width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:#e0e7ff; color:#3730a3; font-size:.78rem; font-weight:900; flex:0 0 auto; }
-    .encoder-name { font-weight:800; color:#1e293b; }
+    .encoder-name { font-weight:800; color:#1e293b; line-height:1.35; }
     .muted { color:#64748b; font-size:.8rem; margin-top:3px; }
     .activity-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border-radius:999px; font-size:.74rem; font-weight:800; white-space:nowrap; }
     .activity-badge.latest { background:#dcfce7; color:#166534; }
     .activity-badge.manual { background:#dbeafe; color:#1d4ed8; }
     .activity-badge.cprf { background:#f3e8ff; color:#7e22ce; }
+    .activity-badge.dataset { background:#ecfdf5; color:#047857; }
     .activity-badge.for-review { background:#fff7ed; color:#c2410c; }
     .activity-badge.approved { background:#dcfce7; color:#166534; }
     .activity-badge.returned { background:#fee2e2; color:#b91c1c; }
-    .record-actions { display:flex; align-items:center; gap:7px; flex-wrap:nowrap; min-width:max-content; }
+    .record-actions { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
     .record-actions form { display:inline-flex; margin:0; }
     .record-link, .review-btn {
         min-height:36px;
-        padding:8px 11px;
+        padding:8px 9px;
         border:1px solid transparent;
         border-radius:9px;
         display:inline-flex;
         align-items:center;
         justify-content:center;
         gap:6px;
-        font-size:.75rem;
+        font-size:.72rem;
         line-height:1;
         font-weight:800;
         text-decoration:none;
@@ -142,7 +143,6 @@
     body.dark-mode .activity-filters input, body.dark-mode .activity-filters select { background:#0f172a; color:#e2e8f0; border-color:#475569; }
     body.dark-mode .activity-table td, body.dark-mode .activity-table th, body.dark-mode .activity-pagination { border-color:#334155; }
     body.dark-mode .activity-table tbody tr:hover td { background:#1d2a3d; }
-    body.dark-mode .activity-table th:last-child, body.dark-mode .activity-table td:last-child { box-shadow:-10px 0 18px rgba(2,6,23,.2); }
     body.dark-mode .encoder-name { color:#f1f5f9; }
     body.dark-mode .activity-pager-summary, body.dark-mode .activity-pager-summary strong { color:#cbd5e1; }
     body.dark-mode .activity-page-link { color:#cbd5e1; background:#18181b; border-color:#475569; }
@@ -244,6 +244,7 @@
                     <option value="">All sources</option>
                     <option value="manual" @selected($source === 'manual')>Manual Entry</option>
                     <option value="cprf" @selected($source === 'cprf')>Legacy CPRF records</option>
+                    <option value="dataset" @selected($source === 'dataset')>QC Dataset</option>
                 </select>
             </label>
             <label class="activity-filter-field">
@@ -267,6 +268,7 @@
 
         <div class="activity-table-wrap">
             <table class="activity-table">
+                <colgroup><col style="width:16%"><col style="width:17%"><col style="width:11%"><col style="width:12%"><col style="width:15%"><col style="width:10%"><col style="width:19%"></colgroup>
                 <thead>
                     <tr>
                         <th>Submitted by</th>
@@ -284,6 +286,7 @@
                             $name = $displayName($record);
                             $initial = mb_strtoupper(mb_substr($name, 0, 1));
                             $isCprf = strtolower((string) ($record->input_source ?? 'manual')) === 'cprf';
+                            $isDataset = strtolower((string) ($record->external_source ?? '')) === 'qc_lgu_dataset';
                             $periodLabel = ($record->month && $record->year)
                                 ? \Carbon\Carbon::create((int) $record->year, (int) $record->month, 1)->format('F Y')
                                 : 'Unknown period';
@@ -301,7 +304,7 @@
                                                 <span class="activity-badge latest">Latest</span>
                                             @endif
                                         </div>
-                                        <div class="muted">{{ $record->recordedBy?->role ? ucwords(str_replace('_', ' ', $record->recordedBy->role)) : ($isCprf ? 'External system' : 'User account unavailable') }}</div>
+                                        <div class="muted">{{ $record->recordedBy?->role ? ucwords(str_replace('_', ' ', $record->recordedBy->role)) : ($isDataset ? 'System-generated dataset' : ($isCprf ? 'External system' : 'User account unavailable')) }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -313,9 +316,9 @@
                             </td>
                             <td>{{ $periodLabel }}</td>
                             <td>
-                                <span class="activity-badge {{ $isCprf ? 'cprf' : 'manual' }}">
-                                    <i class="fa-solid {{ $isCprf ? 'fa-plug' : 'fa-keyboard' }}"></i>
-                                    {{ $isCprf ? 'CPRF Integration' : 'Manual Entry' }}
+                                <span class="activity-badge {{ $isDataset ? 'dataset' : ($isCprf ? 'cprf' : 'manual') }}">
+                                    <i class="fa-solid {{ $isDataset ? 'fa-database' : ($isCprf ? 'fa-plug' : 'fa-keyboard') }}"></i>
+                                    {{ $isDataset ? 'QC Dataset' : ($isCprf ? 'CPRF Integration' : 'Manual Entry') }}
                                 </span>
                             </td>
                             <td>
@@ -344,7 +347,7 @@
                                             View <i class="fa-solid fa-arrow-right"></i>
                                         </a>
                                     @endif
-                                    @if($reviewStatus === 'for_review' || $reviewStatus === 'returned')
+                                    @if(!$isDataset && ($reviewStatus === 'for_review' || $reviewStatus === 'returned'))
                                         <form method="POST" action="{{ route('monthly-record-activity.review', $record) }}">
                                             @csrf
                                             @method('PATCH')
@@ -352,7 +355,7 @@
                                             <button class="review-btn approve" type="submit"><i class="fa-solid fa-check"></i> Approve</button>
                                         </form>
                                     @endif
-                                    @if($reviewStatus !== 'returned')
+                                    @if(!$isDataset && $reviewStatus !== 'returned')
                                         <button
                                             class="review-btn return"
                                             type="button"
@@ -406,6 +409,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const tableWrap = document.querySelector('.activity-table-wrap');
+    const resetTablePosition = () => {
+        if (tableWrap) tableWrap.scrollLeft = 0;
+    };
+    resetTablePosition();
+    window.addEventListener('pageshow', resetTablePosition);
+
     const dialog = document.getElementById('returnRecordDialog');
     const form = document.getElementById('returnRecordForm');
     const label = document.getElementById('returnRecordLabel');

@@ -42,6 +42,43 @@ test('critical usage is routed to one linked incident and maintenance workflow',
         ->and((int) $maintenance->energy_incident_id)->toBe((int) $incident->id);
 });
 
+test('very high usage creates an incident but is not auto-flagged for maintenance', function () {
+    $facility = Facility::factory()->create(['baseline_kwh' => 1000]);
+
+    EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'year' => 2026,
+        'month' => 8,
+        'actual_kwh' => 1300,
+        'baseline_kwh' => 1000,
+        'input_source' => 'manual',
+    ]);
+
+    expect(EnergyIncident::where('facility_id', $facility->id)->exists())->toBeTrue()
+        ->and(Maintenance::where('facility_id', $facility->id)->exists())->toBeFalse();
+});
+
+test('an unassigned auto maintenance flag closes when its reading no longer qualifies', function () {
+    $facility = Facility::factory()->create(['baseline_kwh' => 1000]);
+    $record = EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'year' => 2026,
+        'month' => 8,
+        'actual_kwh' => 1400,
+        'baseline_kwh' => 1000,
+        'input_source' => 'manual',
+    ]);
+
+    expect(Maintenance::where('facility_id', $facility->id)->exists())->toBeTrue();
+
+    $facility->forceFill(['baseline_kwh' => null])->saveQuietly();
+    $record->unsetRelation('facility')->unsetRelation('meter');
+    $record->forceFill(['baseline_kwh' => null])->save();
+
+    expect(Maintenance::where('facility_id', $facility->id)->exists())->toBeFalse()
+        ->and(EnergyIncident::where('facility_id', $facility->id)->value('status'))->toBe('Resolved');
+});
+
 test('AI alerts expose only the action owned by each severity workflow', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $highFacility = Facility::factory()->create(['name' => 'High Usage Office', 'baseline_kwh' => 1000]);

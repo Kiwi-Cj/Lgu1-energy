@@ -2,6 +2,7 @@
 
 use App\Models\EnergyRecord;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\User;
 
 test('energy report shows CPRF facilities that are still awaiting their first reading', function () {
@@ -64,4 +65,46 @@ test('energy report also shows local facilities awaiting a reading', function ()
         ->assertSee('Awaiting Reading')
         ->assertSee('1,750.00')
         ->assertDontSee('CPRF Integrated');
+});
+
+test('energy report falls back to the approved main meter baseline for synced readings', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create([
+        'name' => 'Bernardo Baseline Court',
+        'source' => 'cprf',
+        'external_ref' => 504,
+        'baseline_kwh' => 1800,
+    ]);
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'Bernardo Main Meter',
+        'meter_number' => 'BER-REPORT-001',
+        'meter_type' => 'main',
+        'baseline_kwh' => 1800,
+        'status' => 'active',
+        'approved_at' => now(),
+    ]);
+
+    EnergyRecord::withoutEvents(fn () => EnergyRecord::create([
+        'facility_id' => $facility->id,
+        'meter_id' => $meter->id,
+        'year' => 2026,
+        'month' => 8,
+        'actual_kwh' => 1000,
+        'baseline_kwh' => 0,
+        'review_status' => 'approved',
+        'input_source' => 'cprf',
+        'external_source' => 'uman_cprf',
+    ]));
+
+    $this->actingAs($admin)
+        ->get(route('modules.reports.energy', [
+            'facility_id' => $facility->id,
+            'year' => 2026,
+            'month' => 8,
+        ]))
+        ->assertOk()
+        ->assertSee('Bernardo Baseline Court')
+        ->assertSee('1,800.00')
+        ->assertSee('-800.00');
 });

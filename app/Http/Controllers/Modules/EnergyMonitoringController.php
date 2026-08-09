@@ -35,6 +35,10 @@ class EnergyMonitoringController extends Controller
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
         $search = trim((string) request('search', ''));
+        $sourceFilter = strtolower(trim((string) request('source', 'all')));
+        if (! in_array($sourceFilter, ['all', 'cprf', 'local'], true)) {
+            $sourceFilter = 'all';
+        }
         [$currentYear, $currentMonth, $selectedMonthInput, $selectedPeriodLabel] = $this->resolveSelectedMonth(
             (string) request('month', '')
         );
@@ -51,6 +55,26 @@ class EnergyMonitoringController extends Controller
                     ->orWhere('type', 'like', "%{$search}%")
                     ->orWhere('address', 'like', "%{$search}%")
                     ->orWhere('barangay', 'like', "%{$search}%");
+            });
+        }
+
+        $allFacilitiesCount = (clone $facilityQuery)->count();
+        $cprfFacilitiesCount = (clone $facilityQuery)
+            ->where('source', 'cprf')
+            ->count();
+        $localFacilitiesCount = (clone $facilityQuery)
+            ->where(function ($query) {
+                $query->whereNull('source')
+                    ->orWhere('source', '!=', 'cprf');
+            })
+            ->count();
+
+        if ($sourceFilter === 'cprf') {
+            $facilityQuery->where('source', 'cprf');
+        } elseif ($sourceFilter === 'local') {
+            $facilityQuery->where(function ($query) {
+                $query->whereNull('source')
+                    ->orWhere('source', '!=', 'cprf');
             });
         }
 
@@ -126,6 +150,17 @@ class EnergyMonitoringController extends Controller
 
             $facility->trend_percent = $trendPercent;
             $facility->trend_analysis = $trendDisplay;
+            $currentActualKwh = is_numeric($currentMonthRecord?->actual_kwh)
+                ? (float) $currentMonthRecord->actual_kwh
+                : null;
+            $currentBaselineKwh = $this->resolveSpikeBaseline($facility, $currentMonthRecord);
+            $facility->baseline_variance_kwh = $currentActualKwh !== null && $currentBaselineKwh !== null
+                ? round($currentActualKwh - $currentBaselineKwh, 2)
+                : null;
+            $facility->baseline_variance_percent = EnergyRecord::calculateDeviation(
+                $currentActualKwh,
+                $currentBaselineKwh
+            );
             $facility->trend_spike_detected = $trendSpikeDetected;
             $facility->trend_spike_threshold = $spikeThreshold;
             $facility->trend_spike_size_label = $this->sizeLabelFromKey($spikeSizeKey);
@@ -141,7 +176,6 @@ class EnergyMonitoringController extends Controller
                 'trend_spike_detected' => $trendSpikeDetected,
                 'actual_kwh' => $currentMonthRecord?->actual_kwh,
                 'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
-                'floor_area' => $facility->floor_area,
                 'last_maintenance' => $lastMaintenance?->completed_date,
                 'next_maintenance' => $nextMaintenance?->scheduled_date,
                 'meter_breakdown' => $mainMeters->map(fn ($meter) => [
@@ -172,7 +206,11 @@ class EnergyMonitoringController extends Controller
             'totalEnergyCost',
             'totalConsumptionKwh',
             'selectedMonthInput',
-            'selectedPeriodLabel'
+            'selectedPeriodLabel',
+            'sourceFilter',
+            'allFacilitiesCount',
+            'cprfFacilitiesCount',
+            'localFacilitiesCount'
         ) + ['role' => $role, 'user' => $user]);
     }
 
@@ -243,7 +281,6 @@ class EnergyMonitoringController extends Controller
             'trend_spike_detected' => $trendSpikeDetected,
             'actual_kwh' => $currentMonthRecord?->actual_kwh,
             'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
-            'floor_area' => $facility->floor_area,
             'last_maintenance' => $lastMaintenance?->completed_date,
             'next_maintenance' => $nextMaintenance?->scheduled_date,
             'meter_breakdown' => $mainMeters->map(fn ($meter) => [

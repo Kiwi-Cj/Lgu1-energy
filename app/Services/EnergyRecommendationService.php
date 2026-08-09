@@ -181,7 +181,6 @@ class EnergyRecommendationService
             'trend_percent' => $this->toFloat($context['trend_percent'] ?? null),
             'actual_kwh' => $this->toFloat($context['actual_kwh'] ?? null),
             'baseline_kwh' => $this->toFloat($context['baseline_kwh'] ?? null),
-            'floor_area' => $this->toFloat($context['floor_area'] ?? null),
             'last_maintenance' => (string) ($context['last_maintenance'] ?? ''),
             'next_maintenance' => (string) ($context['next_maintenance'] ?? ''),
             'trend_spike_detected' => (bool) ($context['trend_spike_detected'] ?? false),

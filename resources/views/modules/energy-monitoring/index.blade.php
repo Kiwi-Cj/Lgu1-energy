@@ -183,6 +183,103 @@
         padding: 0 7px;
     }
 
+    .energy-monitor-page .monitor-table-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    .energy-monitor-page .monitor-source-tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+        padding: 5px;
+        border: 1px solid #dbe3ef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, .04);
+    }
+
+    .energy-monitor-page .monitor-source-tab {
+        min-height: 38px;
+        padding: 7px 11px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: transparent;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: .8rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: .2s ease;
+    }
+
+    .energy-monitor-page .monitor-source-tab:hover {
+        background: #f8fafc;
+        color: #1d4ed8;
+    }
+
+    .energy-monitor-page .monitor-source-tab.is-active {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+        box-shadow: 0 2px 7px rgba(37, 99, 235, .08);
+    }
+
+    .energy-monitor-page .monitor-source-count {
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2f7;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 900;
+    }
+
+    .energy-monitor-page .monitor-source-tab.is-active .monitor-source-count {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .energy-monitor-page .monitor-sort-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-size: .8rem;
+        font-weight: 800;
+    }
+
+    .energy-monitor-page .monitor-sort-select {
+        min-height: 40px;
+        padding: 0 34px 0 11px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #1e293b;
+        font: inherit;
+        outline: none;
+    }
+
+    .energy-monitor-page .monitor-sort-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
     .energy-monitor-page .overview-cards {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -282,7 +379,7 @@
         height: 570px;
         max-height: 570px;
         overflow-y: auto;
-        overflow-x: hidden;
+        overflow-x: auto;
         overscroll-behavior: contain;
         scrollbar-gutter: stable;
         border: 1px solid #e2e8f0;
@@ -294,7 +391,7 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 100%;
+        min-width: 1120px;
         font-size: 0.86rem;
     }
 
@@ -368,6 +465,28 @@
         margin-top: 3px;
         font-size: 0.72rem;
         color: #64748b;
+    }
+
+    .energy-monitor-page .monitor-row-source {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 3px 8px;
+        border: 1px solid #dbeafe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: .66rem;
+        font-weight: 850;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+    }
+
+    .energy-monitor-page .monitor-row-source.source-cprf {
+        border-color: #ddd6fe;
+        background: #f5f3ff;
+        color: #6d28d9;
     }
 
     .energy-monitor-page .cell-meter-alert-summary {
@@ -995,6 +1114,39 @@
         background: rgba(15, 23, 42, .7);
     }
 
+    body.dark-mode .energy-monitor-page .monitor-table-toolbar,
+    body.dark-mode .energy-monitor-page .monitor-source-tabs {
+        border-color: #334155;
+        background: #0f172a;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab,
+    body.dark-mode .energy-monitor-page .monitor-sort-wrap {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab.is-active {
+        border-color: #1d4ed8;
+        background: #172554;
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-count {
+        background: #334155;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab.is-active .monitor-source-count {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-sort-select {
+        border-color: #334155;
+        background: #0b1220;
+        color: #e2e8f0;
+    }
+
     body.dark-mode .energy-monitor-page .filter-label {
         color: #94a3b8;
     }
@@ -1351,6 +1503,11 @@
         .energy-monitor-page .search-input { width: 100%; }
         .energy-monitor-page .search-btn { width: 100%; }
         .energy-monitor-page .clear-link { width: 100%; justify-content: center; }
+        .energy-monitor-page .monitor-table-toolbar { align-items: stretch; }
+        .energy-monitor-page .monitor-source-tabs { display:grid; grid-template-columns:1fr; width:100%; }
+        .energy-monitor-page .monitor-source-tab { justify-content:space-between; width:100%; }
+        .energy-monitor-page .monitor-sort-wrap { justify-content:space-between; width:100%; }
+        .energy-monitor-page .monitor-sort-select { flex:1; min-width:0; }
         .energy-monitor-page .metric-card { min-height: 140px; }
         .energy-monitor-page .monitor-table-wrap {
             height: 62vh;
@@ -1441,6 +1598,42 @@
             <div class="metric-meta">For the selected billing period</div>
         </div>
     </div>
+    @php
+        $sourceFilter = $sourceFilter ?? 'all';
+        $sourceTabs = [
+            'all' => ['label' => 'All Facilities', 'count' => $allFacilitiesCount ?? $totalFacilities ?? 0, 'icon' => 'fa-layer-group'],
+            'cprf' => ['label' => 'CPRF', 'count' => $cprfFacilitiesCount ?? 0, 'icon' => 'fa-building-shield'],
+            'local' => ['label' => 'Local', 'count' => $localFacilitiesCount ?? 0, 'icon' => 'fa-building'],
+        ];
+    @endphp
+    <div class="monitor-table-toolbar">
+        <nav class="monitor-source-tabs" aria-label="Facility source filter">
+            @foreach($sourceTabs as $sourceKey => $sourceTab)
+                @php
+                    $sourceQuery = request()->except('source');
+                    if ($sourceKey !== 'all') {
+                        $sourceQuery['source'] = $sourceKey;
+                    }
+                @endphp
+                <a href="{{ route('modules.energy-monitoring.index', $sourceQuery) }}"
+                   class="monitor-source-tab {{ $sourceFilter === $sourceKey ? 'is-active' : '' }}"
+                   @if($sourceFilter === $sourceKey) aria-current="page" @endif>
+                    <span><i class="fa-solid {{ $sourceTab['icon'] }}" aria-hidden="true"></i> {{ $sourceTab['label'] }}</span>
+                    <span class="monitor-source-count">{{ $sourceTab['count'] }}</span>
+                </a>
+            @endforeach
+        </nav>
+        <label class="monitor-sort-wrap" for="monitorTableSort">
+            <span><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i> Sort by</span>
+            <select id="monitorTableSort" class="monitor-sort-select">
+                <option value="default">Default order</option>
+                <option value="name-asc">Facility name (A-Z)</option>
+                <option value="name-desc">Facility name (Z-A)</option>
+                <option value="consumption-desc">Highest consumption</option>
+                <option value="condition">Condition priority</option>
+            </select>
+        </label>
+    </div>
     <div class="monitor-table-wrap">
         <table id="main-content" class="monitor-table">
             <thead>
@@ -1449,13 +1642,12 @@
                     <th>Main Meter</th>
                     <th>Consumption</th>
                     <th>Baseline</th>
-                    <th>Variance</th>
-                    <th>EUI</th>
+                    <th>Baseline Variance</th>
                     <th>Condition</th>
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="monitorTableBody">
             @forelse($facilities as $facility)
                 @php 
                     $record = $facility->currentMonthRecord;
@@ -1499,13 +1691,11 @@
                     $facilityNameRaw = (string) ($facility->name ?? '');
                     $isSeededDualMain = \Illuminate\Support\Str::startsWith($facilityNameRaw, '[Seeder 2M]');
                     $facilityNameDisplay = $isSeededDualMain ? trim((string) preg_replace('/^\[Seeder 2M\]\s*/', '', $facilityNameRaw)) : $facilityNameRaw;
-                    $eui = null;
                 @endphp
                 @php
-                    $actualKwh = $record->actual_kwh ?? 0;
-                    $floorArea = $facility->floor_area;
-                    $eui = ($record && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
                     $baselineKwh = $record->baseline_kwh ?? null;
+                    $baselineVarianceKwh = $facility->baseline_variance_kwh ?? null;
+                    $baselineVariancePercent = $facility->baseline_variance_percent ?? null;
                     $hasApprovedMainMeter = collect($facility->main_meters ?? [])->contains(fn ($meter) => !empty($meter->approved_at));
                     $hasCurrentReading = $record && is_numeric($record->actual_kwh ?? null);
                     $isCprfManaged = method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged();
@@ -1529,11 +1719,34 @@
                     $facilityDetailsUrl = route('modules.facilities.show', ['id' => $facility->id]);
                     $createIncidentUrl = route('energy-incidents.index', ['report' => 1, 'facility_id' => $facility->id]);
                     $aiAlertsUrl = route('modules.ai-alerts.index', ['month' => $selectedMonthInput, 'facility' => $facility->name]);
+                    $facilitySource = strtolower((string) ($facility->source ?? 'local')) === 'cprf' ? 'cprf' : 'local';
+                    $conditionRank = match ($alertLevel) {
+                        'Critical', 'Drop Critical' => 0,
+                        'Very High' => 1,
+                        'High', 'Drop High' => 2,
+                        'Warning', 'Drop Warning' => 3,
+                        'Normal' => 4,
+                        default => 5,
+                    };
                 @endphp
-                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}" data-facility-url="{{ $facilityDetailsUrl }}" tabindex="0" role="link" aria-label="View {{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }} facility details">
+                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}"
+                    data-facility-row
+                    data-facility-id="{{ (int) $facility->id }}"
+                    data-facility-url="{{ $facilityDetailsUrl }}"
+                    data-original-order="{{ $loop->index }}"
+                    data-name="{{ strtolower($facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw) }}"
+                    data-consumption="{{ $record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : -1 }}"
+                    data-condition-rank="{{ $conditionRank }}"
+                    tabindex="0"
+                    role="link"
+                    aria-label="View {{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }} facility details">
                     <td class="cell-facility">
                         <div>{{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }}</div>
                         <div class="cell-meter-meta">{{ $facility->type ?: 'Facility' }}</div>
+                        <span class="monitor-row-source source-{{ $facilitySource }}">
+                            <i class="fa-solid {{ $facilitySource === 'cprf' ? 'fa-link' : 'fa-building' }}" aria-hidden="true"></i>
+                            {{ strtoupper($facilitySource) }}
+                        </span>
                         @if($isSeededDualMain)
                             <div class="seeded-facility-badge">Sample: 2 Main Meters</div>
                         @endif
@@ -1563,15 +1776,22 @@
                     <td class="cell-baseline">
                         {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
                     </td>
-                    <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
-                        {{ $trendAnalysis }}
+                    <td class="trend-value {{ is_numeric($baselineVarianceKwh) && (float) $baselineVarianceKwh > 0 ? 'trend-positive' : 'trend-normal' }}">
+                        @if(is_numeric($baselineVarianceKwh) && is_numeric($baselineVariancePercent))
+                            {{ (float) $baselineVarianceKwh > 0 ? '+' : '' }}{{ number_format((float) $baselineVarianceKwh, 2) }} kWh
+                            <div class="cell-reading-note">{{ (float) $baselineVariancePercent > 0 ? '+' : '' }}{{ number_format((float) $baselineVariancePercent, 2) }}% vs baseline</div>
+                        @else
+                            -
+                        @endif
+                        @if($trendAnalysis !== '-')
+                            <div class="cell-reading-note">Recent trend: {{ $trendAnalysis }}</div>
+                        @endif
                         @if($trendSpikeDetected)
                             <div class="trend-spike-badge" title="Three consecutive increases, at least {{ number_format($trendSpikeThreshold, 2) }}% total growth, and at least {{ number_format($trendSpikeThreshold, 2) }}% above baseline." style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
                                 3-Month Spike · {{ $trendSpikeSizeLabel }} ≥{{ number_format($trendSpikeThreshold, 2) }}%
                             </div>
                         @endif
                     </td>
-                    <td>{{ $eui ?? '-' }}</td>
                     <td>
                         <div class="facility-status-cluster">
                             <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" data-alert-pill>
@@ -1938,6 +2158,36 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const recommendationModal = document.getElementById('recommendationModal');
     const meterBreakdownModal = document.getElementById('meterBreakdownModal');
+    const tableBody = document.getElementById('monitorTableBody');
+    const tableSort = document.getElementById('monitorTableSort');
+    const facilityRows = Array.from(document.querySelectorAll('[data-facility-row]'));
+
+    const sortFacilityRows = () => {
+        if (!tableBody || !tableSort) return;
+
+        const mode = tableSort.value;
+        const orderedRows = [...facilityRows].sort((left, right) => {
+            const leftName = left.dataset.name || '';
+            const rightName = right.dataset.name || '';
+            const originalDifference = Number(left.dataset.originalOrder || 0) - Number(right.dataset.originalOrder || 0);
+
+            if (mode === 'name-asc') return leftName.localeCompare(rightName) || originalDifference;
+            if (mode === 'name-desc') return rightName.localeCompare(leftName) || originalDifference;
+            if (mode === 'consumption-desc') {
+                return Number(right.dataset.consumption || -1) - Number(left.dataset.consumption || -1)
+                    || leftName.localeCompare(rightName);
+            }
+            if (mode === 'condition') {
+                return Number(left.dataset.conditionRank || 5) - Number(right.dataset.conditionRank || 5)
+                    || leftName.localeCompare(rightName);
+            }
+            return originalDifference;
+        });
+
+        orderedRows.forEach((row) => tableBody.appendChild(row));
+    };
+
+    tableSort?.addEventListener('change', sortFacilityRows);
 
     if (recommendationModal) {
         recommendationModal.addEventListener('click', (event) => {
@@ -1955,7 +2205,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.querySelectorAll('[data-facility-row][data-facility-url]').forEach((row) => {
+    facilityRows.filter((row) => row.dataset.facilityUrl).forEach((row) => {
         const openFacility = () => { window.location.href = row.dataset.facilityUrl; };
         row.addEventListener('click', (event) => {
             if (event.target.closest('a, button, input, select, textarea, form, [role="button"]')) return;

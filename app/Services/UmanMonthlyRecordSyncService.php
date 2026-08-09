@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EnergyRecord;
+use App\Support\BaselineResolver;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use Carbon\Carbon;
@@ -202,16 +203,7 @@ class UmanMonthlyRecordSyncService
             ? Carbon::parse((string) $row['recorded_at'])
             : Carbon::create($year, $month, 1);
 
-        $baseline = EnergyRecord::query()
-            ->where('meter_id', $meter->id)
-            ->where(function ($query) use ($year, $month) {
-                $query->where('year', '<', $year)
-                    ->orWhere(fn ($period) => $period->where('year', $year)->where('month', '<', $month));
-            })
-            ->latest('year')
-            ->latest('month')
-            ->value('actual_kwh');
-        $baseline = is_numeric($baseline) ? (float) $baseline : null;
+        $baseline = BaselineResolver::forFacility($facility, $meter);
 
         $record->fill([
             'facility_id' => $facility->id,

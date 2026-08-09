@@ -15,6 +15,7 @@ use App\Support\RoleAccess;
 use App\Support\SystemSettings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
@@ -333,6 +334,7 @@ class EnergyRecordObserver
         };
 
         if (! EnergyAlertRouting::requiresIncident($alert)) {
+            $this->closeUnqualifiedPendingAutoMaintenance($record, $facility);
             return;
         }
 
@@ -392,7 +394,64 @@ class EnergyRecordObserver
             $incident->save();
         }
 
-        $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $incident, $severityKey);
+        if (EnergyAlertRouting::requiresMaintenance($alert)) {
+            $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $incident, $severityKey);
+        } else {
+            $this->closeUnqualifiedPendingAutoMaintenance($record, $facility, false);
+        }
+    }
+
+    private function closeUnqualifiedPendingAutoMaintenance(
+        EnergyRecord $record,
+        Facility $facility,
+        bool $resolveIncident = true
+    ): void
+    {
+        if (! Schema::hasTable('maintenance')) {
+            return;
+        }
+
+        $month = (int) ($record->month ?? 0);
+        $year = (int) ($record->year ?? 0);
+        if ($month < 1 || $month > 12 || $year < 1) {
+            return;
+        }
+
+        $triggerMonth = date('M Y', mktime(0, 0, 0, $month, 1, $year));
+        $maintenanceRows = Maintenance::query()
+            ->where('facility_id', $facility->id)
+            ->where('trigger_month', $triggerMonth)
+            ->where('issue_type', 'like', 'Auto-flagged:%')
+            ->where('maintenance_status', 'Pending')
+            ->whereNull('scheduled_date')
+            ->whereNull('assigned_to')
+            ->get();
+
+        if ($maintenanceRows->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($maintenanceRows, $facility, $record, $month, $year, $resolveIncident): void {
+            foreach ($maintenanceRows as $maintenance) {
+                $maintenance->delete();
+            }
+
+            if (! $resolveIncident) {
+                return;
+            }
+
+            EnergyIncident::query()
+                ->where('facility_id', $facility->id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->whereNotIn('status', ['Resolved', 'Closed'])
+                ->update([
+                    'status' => 'Resolved',
+                    'resolved_at' => now(),
+                    'description' => 'Auto-generated incident closed because the current reading no longer has a valid Very High or Critical alert.',
+                    'updated_at' => now(),
+                ]);
+        });
     }
 
     private function upsertMaintenanceFromIncidentSeverity(

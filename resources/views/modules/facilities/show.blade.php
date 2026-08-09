@@ -584,17 +584,23 @@ if ($baselineForSize <= 0) {
 if ($baselineForSize !== null) {
 	$sizeLabel = \App\Models\Facility::resolveSizeLabelFromBaseline($baselineForSize) ?? '-';
 }
-@endphp
 
-@foreach([
+$facilityInfoCards = [
 	['<i class="fa-solid fa-location-dot"></i>','Address',$facility->address],
 	['<i class="fa-solid fa-map-location-dot"></i>','Barangay',$facility->barangay],
-	['<i class="fa-solid fa-maximize"></i>','Floor Area',is_numeric($facility->floor_area) ? number_format((float) $facility->floor_area, 2).' sqm' : '-'],
-	['<i class="fa-solid fa-building"></i>','Floors',$facility->floors],
-	['<i class="fa-solid fa-calendar-days"></i>','Year Built',$facility->year_built],
-	['<i class="fa-solid fa-clock"></i>','Operating Hours',$facility->operating_hours],
-	['<i class="fa-solid fa-chart-simple"></i>','Facility Size',$sizeLabel]
-] as $info)
+];
+
+if (!$facility->isCprfManaged()) {
+	$facilityInfoCards[] = ['<i class="fa-solid fa-maximize"></i>','Floor Area',is_numeric($facility->floor_area) ? number_format((float) $facility->floor_area, 2).' sqm' : '-'];
+	$facilityInfoCards[] = ['<i class="fa-solid fa-building"></i>','Floors',$facility->floors];
+	$facilityInfoCards[] = ['<i class="fa-solid fa-calendar-days"></i>','Year Built',$facility->year_built];
+}
+
+$facilityInfoCards[] = ['<i class="fa-solid fa-clock"></i>','Operating Hours',$facility->operating_hours];
+$facilityInfoCards[] = ['<i class="fa-solid fa-chart-simple"></i>','Facility Size',$sizeLabel];
+@endphp
+
+@foreach($facilityInfoCards as $info)
 	<div class="facility-info-card">
 		<div class="facility-info-icon">
 			{!! $info[0] !!}

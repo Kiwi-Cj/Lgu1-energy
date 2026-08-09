@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Support\RoleAccess;
+use App\Support\BaselineResolver;
 use App\Support\SystemSettings;
 use App\Services\EnergyTrendService;
 use Illuminate\Http\Request;
@@ -129,7 +130,7 @@ class EnergyController extends Controller
         $reportYear = (int) ($year ?: date('Y'));
         $facilities = Facility::query()->orderBy('name')->get();
 
-        $query = EnergyRecord::with('facility');
+        $query = EnergyRecord::with(['facility.energyProfiles', 'meter']);
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
                 ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
@@ -155,7 +156,7 @@ class EnergyController extends Controller
 
         foreach ($records as $record) {
             $facility = $record->facility;
-            $baseline = $record->baseline_kwh;
+            $baseline = BaselineResolver::forRecord($record, $facility);
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
             $trend = $trendByRecordId[$record->id] ?? 'insufficient';
@@ -331,7 +332,7 @@ class EnergyController extends Controller
         $facilityIds = $selectedRecords->pluck('facility_id')->map(fn ($id) => (int) $id)->unique()->values();
         $years = $selectedRecords->pluck('year')->map(fn ($year) => (int) $year)->unique()->values();
 
-        $annualRecords = EnergyRecord::with('facility:id,name')
+        $annualRecords = EnergyRecord::with(['facility.energyProfiles', 'meter'])
             ->whereIn('facility_id', $facilityIds)
             ->whereIn('year', $years)
             ->where(function ($mainScope) {
@@ -360,8 +361,8 @@ class EnergyController extends Controller
                     ->pluck('actual_kwh')
                     ->filter(fn ($value) => is_numeric($value));
                 $baselineValues = $monthRecords
-                    ->pluck('baseline_kwh')
-                    ->filter(fn ($value) => is_numeric($value));
+                    ->map(fn ($record) => BaselineResolver::forRecord($record, $record->facility))
+                    ->filter(fn ($value) => $value !== null);
                 $costValues = $monthRecords
                     ->pluck('energy_cost')
                     ->filter(fn ($value) => is_numeric($value));

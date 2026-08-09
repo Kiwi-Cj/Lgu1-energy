@@ -4,11 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Models\AuditLog;
 use App\Models\Setting;
+use App\Services\AuditLogRetentionService;
 use App\Support\RoleAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuditTrailMiddleware
@@ -38,7 +38,8 @@ class AuditTrailMiddleware
                     'POST',
                     (string) optional($request->route())->getName(),
                     trim($request->path(), '/'),
-                    $request
+                    $request,
+                    $response->getStatusCode()
                 );
             }
 
@@ -52,7 +53,8 @@ class AuditTrailMiddleware
                     'POST',
                     (string) optional($request->route())->getName(),
                     trim($request->path(), '/'),
-                    $request
+                    $request,
+                    $response->getStatusCode()
                 );
             }
         }
@@ -91,7 +93,8 @@ class AuditTrailMiddleware
             $method,
             $routeName,
             $path,
-            $request
+            $request,
+            $response->getStatusCode()
         );
 
         return $response;
@@ -189,20 +192,27 @@ class AuditTrailMiddleware
 
     private function buildDescription(string $method, string $routeName, string $path, string $module): string
     {
-        if ($method === 'GET') {
-            $target = $routeName !== ''
-                ? str_replace('.', ' / ', $routeName)
-                : '/' . $path;
-
-            return sprintf('Viewed %s (%s)', $target, $module);
+        if (str_contains(strtolower($routeName), 'otp')) {
+            return 'Verified the one-time password for secure access.';
         }
 
-        return sprintf(
-            '%s %s%s',
-            $method,
-            '/' . $path,
-            $routeName !== '' ? ' (' . $routeName . ')' : ''
-        );
+        $resource = ucwords(str_replace(['-', '_'], ' ', $module !== '' ? $module : 'system'));
+        $action = strtolower((string) collect(explode('.', $routeName))->last());
+
+        $verb = match (true) {
+            $method === 'DELETE' || str_contains($action, 'delete') || str_contains($action, 'destroy') => 'Deleted',
+            str_contains($action, 'archive') => 'Archived',
+            str_contains($action, 'restore') => 'Restored',
+            str_contains($action, 'approve') || str_contains($action, 'approval') => 'Changed approval for',
+            str_contains($action, 'sync') => 'Synchronized',
+            str_contains($action, 'update') || str_contains($action, 'edit') => 'Updated',
+            str_contains($action, 'store') || str_contains($action, 'create') => 'Created',
+            $method === 'POST' => 'Submitted an action for',
+            $method === 'PUT' || $method === 'PATCH' => 'Updated',
+            default => 'Viewed',
+        };
+
+        return sprintf('%s %s%s', $verb, $resource, $routeName !== '' ? ' via '.$routeName.'.' : '.');
     }
 
     private function resolveModule(string $routeName, string $path): string
@@ -232,7 +242,8 @@ class AuditTrailMiddleware
         string $method,
         string $routeName,
         string $path,
-        Request $request
+        Request $request,
+        int $responseStatus
     ): void {
         try {
             AuditLog::query()->create([
@@ -247,15 +258,10 @@ class AuditTrailMiddleware
                 'ip_address' => $request->ip(),
                 'user_agent' => substr((string) $request->userAgent(), 0, 255),
                 'metadata' => [
-                    'query' => $request->query(),
-                    'payload_keys' => array_values(array_keys($request->except([
-                        'password',
-                        'password_confirmation',
-                        'current_password',
-                        'otp',
-                        'otp_code',
-                        '_token',
-                    ]))),
+                    'query' => $this->safeValues($request->query()),
+                    'route_parameters' => $this->routeParameters($request),
+                    'changed_fields' => $this->safePayload($request),
+                    'response_status' => $responseStatus,
                 ],
             ]);
 
@@ -265,41 +271,55 @@ class AuditTrailMiddleware
         }
     }
 
+    private function routeParameters(Request $request): array
+    {
+        $parameters = optional($request->route())->parameters() ?? [];
+
+        return collect($parameters)->map(function ($value) {
+            if (is_object($value) && method_exists($value, 'getKey')) {
+                return $value->getKey();
+            }
+
+            return is_scalar($value) || $value === null ? $value : '[complex value]';
+        })->take(20)->all();
+    }
+
+    private function safePayload(Request $request): array
+    {
+        return $this->safeValues($request->all());
+    }
+
+    private function safeValues(array $values): array
+    {
+        return collect($values)
+            ->reject(fn ($value, $key) => $key === '_token' || preg_match('/password|otp|token|secret|api[_-]?key/i', (string) $key) === 1)
+            ->take(30)
+            ->map(function ($value) {
+                if ($value instanceof \Illuminate\Http\UploadedFile) {
+                    return '[uploaded file: '.$value->getClientOriginalName().']';
+                }
+
+                if (is_array($value)) {
+                    return '[array with '.count($value).' item(s)]';
+                }
+
+                if (is_bool($value)) {
+                    return $value ? 'true' : 'false';
+                }
+
+                if ($value === null) {
+                    return null;
+                }
+
+                return substr((string) $value, 0, 200);
+            })
+            ->all();
+    }
+
     private function maybePruneOldAuditLogs(): void
     {
-        if (! self::$hasSettingsTable) {
-            return;
-        }
-
         try {
-            $settings = Setting::getMany([
-                'retention_period',
-                'audit_last_pruned_at',
-            ], [
-                'retention_period' => '3',
-                'audit_last_pruned_at' => null,
-            ]);
-
-            $retentionMonths = (int) ($settings['retention_period'] ?? 12);
-            if ($retentionMonths < 1) {
-                $retentionMonths = 1;
-            }
-
-            $lastPrunedAt = trim((string) ($settings['audit_last_pruned_at'] ?? ''));
-            if ($lastPrunedAt !== '') {
-                $lastPruned = Carbon::parse($lastPrunedAt);
-                if ($lastPruned->greaterThan(now()->subDay())) {
-                    return;
-                }
-            }
-
-            $cutoff = now()->subMonthsNoOverflow($retentionMonths)->startOfDay();
-
-            AuditLog::query()
-                ->where('created_at', '<', $cutoff)
-                ->delete();
-
-            Setting::setValue('audit_last_pruned_at', now()->toDateTimeString());
+            app(AuditLogRetentionService::class)->prune();
         } catch (\Throwable $e) {
             // Pruning failures must not block user requests.
         }

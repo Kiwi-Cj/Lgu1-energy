@@ -10,8 +10,9 @@ final class BaselineResolver
 {
     public static function forRecord(EnergyRecord $record, ?Facility $facility = null): ?float
     {
-        if (is_numeric($record->baseline_kwh)) {
-            return self::normalize($record->baseline_kwh);
+        $recordBaseline = self::normalize($record->baseline_kwh);
+        if ($recordBaseline !== null) {
+            return $recordBaseline;
         }
 
         $meter = $record->relationLoaded('meter')
@@ -23,8 +24,9 @@ final class BaselineResolver
 
     public static function forFacility(?Facility $facility, ?FacilityMeter $meter = null): ?float
     {
-        if ($meter && is_numeric($meter->baseline_kwh)) {
-            return self::normalize($meter->baseline_kwh);
+        $meterBaseline = self::normalize($meter?->baseline_kwh);
+        if ($meterBaseline !== null) {
+            return $meterBaseline;
         }
 
         if (! $facility) {
@@ -35,17 +37,20 @@ final class BaselineResolver
             ? $facility->energyProfiles->sortByDesc('id')->first()
             : $facility->energyProfiles()->latest()->first();
 
-        if ($profile && is_numeric($profile->baseline_kwh)) {
-            return self::normalize($profile->baseline_kwh);
+        $profileBaseline = self::normalize($profile?->baseline_kwh);
+        if ($profileBaseline !== null) {
+            return $profileBaseline;
         }
 
-        return is_numeric($facility->baseline_kwh)
-            ? self::normalize($facility->baseline_kwh)
-            : null;
+        return self::normalize($facility->baseline_kwh);
     }
 
-    private static function normalize(mixed $value): float
+    private static function normalize(mixed $value): ?float
     {
+        if (! is_numeric($value) || (float) $value <= 0) {
+            return null;
+        }
+
         return round((float) $value, 2);
     }
 }

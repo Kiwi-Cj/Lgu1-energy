@@ -354,7 +354,6 @@ class SubmeterMonitoringController extends Controller
             'trend_percent' => $increasePercent,
             'actual_kwh' => $actualKwh,
             'baseline_kwh' => $baselineKwh,
-            'floor_area' => null,
             'last_maintenance' => '',
             'next_maintenance' => '',
         ];

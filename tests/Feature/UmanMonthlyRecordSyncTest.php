@@ -23,6 +23,7 @@ test('it imports CPRF records from UMAN idempotently into the matching mirrored 
         'status' => 'active',
         'source' => 'cprf',
         'external_ref' => 42,
+        'baseline_kwh' => 1800,
     ]);
 
     $consumption = 1250.5;
@@ -65,6 +66,7 @@ test('it imports CPRF records from UMAN idempotently into the matching mirrored 
         ->and($record->facility_id)->toBe($facility->id)
         ->and($record->meter_id)->toBe($meter->id)
         ->and((float) $record->actual_kwh)->toBe(1250.5)
+        ->and((float) $record->baseline_kwh)->toBe(1800.0)
         ->and($record->input_source)->toBe('cprf')
         ->and($record->recorded_by_name)->toBe('CPRF via UMAN')
         ->and($record->review_status)->toBe('approved');

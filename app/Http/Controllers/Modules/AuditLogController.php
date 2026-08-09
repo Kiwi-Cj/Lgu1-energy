@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\RoleAccess;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,10 +44,14 @@ class AuditLogController extends Controller
             'date_from' => trim((string) $request->query('date_from', '')),
             'date_to' => trim((string) $request->query('date_to', '')),
             'scope' => trim((string) $request->query('scope', 'essential')),
+            'per_page' => (int) $request->query('per_page', 25),
         ];
 
         if (! in_array($filters['scope'], ['essential', 'all'], true)) {
             $filters['scope'] = 'essential';
+        }
+        if (! in_array($filters['per_page'], [25, 50, 100], true)) {
+            $filters['per_page'] = 25;
         }
 
         if ($filters['date_from'] !== '' && $filters['date_to'] !== '' && $filters['date_from'] > $filters['date_to']) {
@@ -69,6 +74,8 @@ class AuditLogController extends Controller
                     ->orWhere('module', 'like', $needle)
                     ->orWhere('description', 'like', $needle)
                     ->orWhere('path', 'like', $needle)
+                    ->orWhere('route_name', 'like', $needle)
+                    ->orWhere('ip_address', 'like', $needle)
                     ->orWhereHas('user', function ($userQuery) use ($needle, $hasFullNameColumn, $hasNameColumn) {
                         $userQuery
                             ->where('username', 'like', $needle)
@@ -103,7 +110,7 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 
-        $logs = $query->orderByDesc('created_at')->paginate(25)->withQueryString();
+        $logs = $query->orderByDesc('created_at')->paginate($filters['per_page'])->withQueryString();
 
         $baseOptionsQuery = AuditLog::query();
         if ($filters['scope'] === 'essential') {
@@ -111,6 +118,7 @@ class AuditLogController extends Controller
         }
         $moduleOptions = (clone $baseOptionsQuery)->whereNotNull('module')->select('module')->distinct()->orderBy('module')->pluck('module');
         $actionOptions = (clone $baseOptionsQuery)->select('action')->distinct()->orderBy('action')->limit(150)->pluck('action');
+        $methodOptions = (clone $baseOptionsQuery)->whereNotNull('method')->select('method')->distinct()->orderBy('method')->pluck('method');
         $userOptionColumns = ['id', 'username'];
         if ($hasFullNameColumn) {
             $userOptionColumns[] = 'full_name';
@@ -131,6 +139,22 @@ class AuditLogController extends Controller
         $totalLogs = (clone $statsQuery)->count();
         $todayLogs = (clone $statsQuery)->whereDate('created_at', now()->toDateString())->count();
         $activeUsers = (clone $statsQuery)->whereDate('created_at', '>=', now()->subDays(30)->toDateString())->distinct('user_id')->count('user_id');
+        $destructiveActions = (clone $statsQuery)
+            ->whereDate('created_at', '>=', now()->subDays(30)->toDateString())
+            ->where(function (Builder $query) {
+                $query->where('method', 'DELETE')
+                    ->orWhere('action', 'like', '%delete%')
+                    ->orWhere('action', 'like', '%archive%')
+                    ->orWhere('action', 'like', '%status%');
+            })
+            ->count();
+        $lastEventAt = (clone $statsQuery)->max('created_at');
+        $auditSettings = Setting::getMany(['enable_audit_logs', 'retention_period'], [
+            'enable_audit_logs' => '0',
+            'retention_period' => '3',
+        ]);
+        $auditEnabled = (string) ($auditSettings['enable_audit_logs'] ?? '0') === '1';
+        $retentionMonths = max(1, (int) ($auditSettings['retention_period'] ?? 3));
 
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
@@ -140,10 +164,15 @@ class AuditLogController extends Controller
             'filters',
             'moduleOptions',
             'actionOptions',
+            'methodOptions',
             'userOptions',
             'totalLogs',
             'todayLogs',
             'activeUsers',
+            'destructiveActions',
+            'lastEventAt',
+            'auditEnabled',
+            'retentionMonths',
             'role',
             'user'
         ));

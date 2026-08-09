@@ -34,7 +34,7 @@ class EnergyConservationController extends Controller
             return redirect()->route('modules.ai-alerts.index', ['month' => $request->query('month')]);
         }
         if (in_array($feature, ['estimated-savings', 'conservation-reports'], true)) {
-            return redirect()->route('reports.efficiency-summary');
+            return redirect()->route('reports.performance-summary');
         }
         if ($feature === 'suggestions-box') {
             return redirect()->route('landing.contact');

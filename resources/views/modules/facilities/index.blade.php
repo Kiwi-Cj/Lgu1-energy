@@ -686,7 +686,7 @@ window.addEventListener('DOMContentLoaded', function() {
             $sourceTabs = [
                 'all' => [
                     'label' => 'All Facilities',
-                    'count' => $totalFacilities ?? 0,
+                    'count' => $allFacilitiesCount ?? $totalFacilities ?? 0,
                     'icon' => 'fa-layer-group',
                     'title' => 'Show all available facilities',
                 ],
@@ -699,6 +699,12 @@ window.addEventListener('DOMContentLoaded', function() {
                     'title' => 'Public facilities synchronized from Barangay Culiat CPRF',
                 ];
             }
+            $sourceTabs['local'] = [
+                'label' => 'Local Facilities',
+                'count' => $localFacilitiesCount ?? 0,
+                'icon' => 'fa-building',
+                'title' => 'Facilities managed locally in the Energy system',
+            ];
         @endphp
         <div class="facility-toolbar">
         <div class="facility-toolbar-top">
