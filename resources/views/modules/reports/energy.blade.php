@@ -392,12 +392,16 @@
 }
 
 .energy-row {
-    cursor: pointer;
+    cursor: default;
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.energy-row:hover,
-.energy-row:focus-visible {
+.energy-row.is-report-row {
+    cursor: pointer;
+}
+
+.energy-row.is-report-row:hover,
+.energy-row.is-report-row:focus-visible {
     background: #eff6ff;
     box-shadow: inset 4px 0 0 #2563eb;
     outline: none;
@@ -446,12 +450,6 @@
 
 .energy-row.is-awaiting {
     background: #fcfdff;
-}
-
-.energy-row.is-awaiting:hover,
-.energy-row.is-awaiting:focus-visible {
-    background: #eff6ff;
-    box-shadow: inset 4px 0 0 #2563eb;
 }
 
 .energy-table th.num,
@@ -1438,16 +1436,18 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
                                 ]))
                                 : $monthlyRecordsUrl;
                         @endphp
-                        <tr class="energy-row {{ $hasReading ? '' : 'is-awaiting' }}"
+                        <tr class="energy-row {{ $hasReading ? 'is-report-row' : 'is-awaiting' }}"
                             data-search="{{ strtolower(trim((string)($row['facility'] ?? '') . ' ' . (string)($row['source'] ?? ''))) }}"
                             data-facility-id="{{ $row['facility_id'] ?? '' }}"
-                            data-facility-url="{{ $facilityDetailsUrl }}"
+                            data-has-reading="{{ $hasReading ? '1' : '0' }}"
                             data-source="{{ $row['source'] ?? 'local' }}"
                             data-status="{{ $hasReading ? 'recorded' : 'awaiting' }}"
                             data-summary-key="{{ $row['summary_key'] ?? '' }}"
-                            tabindex="0"
-                            role="link"
-                            aria-label="View {{ $row['facility'] }} facility details">
+                            @if($hasReading)
+                                tabindex="0"
+                                role="button"
+                                aria-label="View annual energy report for {{ $row['facility'] }}"
+                            @endif>
                             <td>
                                 <div class="facility-cell">
                                     <span class="facility-dot"></span>
@@ -1739,15 +1739,15 @@ document.addEventListener('DOMContentLoaded', function () {
     rows.forEach((row) => {
         row.addEventListener('click', (event) => {
             if (event.target.closest('a, button')) return;
-            const facilityUrl = row.dataset.facilityUrl;
-            if (facilityUrl) window.location.assign(facilityUrl);
+            if (row.dataset.hasReading !== '1') return;
+            openAnnualSummary(row, row);
         });
         row.addEventListener('keydown', (event) => {
             if (event.target !== row) return;
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                const facilityUrl = row.dataset.facilityUrl;
-                if (facilityUrl) window.location.assign(facilityUrl);
+                if (row.dataset.hasReading !== '1') return;
+                openAnnualSummary(row, row);
             }
         });
 

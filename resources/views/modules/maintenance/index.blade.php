@@ -228,7 +228,8 @@
     }
     .maint-table {
         width: 100%;
-        min-width: 1120px;
+        min-width: 1040px;
+        table-layout: fixed;
         border-collapse: separate;
         border-spacing: 0;
         background: #fff;
@@ -264,14 +265,14 @@
         background: #f8fbff;
         box-shadow: inset 3px 0 0 #93c5fd;
     }
-    .maint-table th:nth-child(1) { width: 22%; }
-    .maint-table th:nth-child(2) { width: 21%; }
+    .maint-table th:nth-child(1) { width: 18%; }
+    .maint-table th:nth-child(2) { width: 18%; }
     .maint-table th:nth-child(3) { width: 11%; }
     .maint-table th:nth-child(4) { width: 10%; }
     .maint-table th:nth-child(5) { width: 17%; }
-    .maint-table th:nth-child(6) { width: 22%; }
-    .maint-table th:last-child,
-    .maint-table td:last-child { text-align: center; }
+    .maint-table th:nth-child(6) { width: 16%; }
+    .maint-table th:nth-child(7) { width: 10%; }
+    .maint-table .action-cell { text-align: center; }
     .table-toolbar {
         display: flex;
         align-items: center;
@@ -353,6 +354,15 @@
         line-clamp: 3;
         line-height: 1.45;
     }
+    .remarks-label {
+        display:block;
+        margin-bottom:4px;
+        color:#94a3b8;
+        font-size:.62rem;
+        font-weight:850;
+        letter-spacing:.05em;
+        text-transform:uppercase;
+    }
     .facility-cell {
         font-weight: 700;
     }
@@ -406,8 +416,26 @@
     .date-stack > span { display:inline-flex; align-items:center; gap:6px; }
     .date-stack i { width:13px; color:#94a3b8; }
     .assignee-name { color:#64748b; font-size:.75rem; font-weight:700; }
+    .work-plan-stack { display:grid; gap:7px; }
+    .work-plan-item { display:flex; align-items:center; gap:8px; min-width:0; }
+    .work-plan-icon {
+        width:27px;
+        height:27px;
+        flex:0 0 27px;
+        display:grid;
+        place-items:center;
+        border-radius:8px;
+        background:#eff6ff;
+        color:#2563eb;
+        font-size:.7rem;
+    }
+    .work-plan-item.is-awaiting .work-plan-icon { background:#fff7ed; color:#d97706; }
+    .work-plan-copy { min-width:0; display:grid; gap:1px; }
+    .work-plan-copy small { color:#94a3b8; font-size:.61rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .work-plan-copy strong { overflow:hidden; color:#334155; font-size:.76rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+    .work-plan-item.is-awaiting .work-plan-copy strong { color:#92400e; }
     .schedule-btn {
-        min-width: 104px;
+        min-width: 92px;
         min-height: 36px;
         display: inline-flex !important;
         align-items: center !important;
@@ -415,7 +443,7 @@
         gap: 7px !important;
         border: 1px solid #bfdbfe !important;
         border-radius: 9px !important;
-        padding: 8px 12px !important;
+        padding: 8px 10px !important;
         background: #eff6ff !important;
         color: #1d4ed8 !important;
         font-size: .76rem !important;
@@ -644,11 +672,29 @@
     .maintenance-form-section-title i { color:#2563eb; }
     .maintenance-form .field-group { display: flex; flex-direction: column; gap: 6px; }
     .maintenance-form .field-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         font-size: 0.78rem;
         color: #64748b;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+    }
+    .field-required,
+    .field-optional {
+        font-size: .58rem;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: none;
+    }
+    .field-required { color:#dc2626; }
+    .field-optional { color:#94a3b8; }
+    .field-help {
+        color:#64748b;
+        font-size:.68rem;
+        line-height:1.45;
     }
     .maintenance-form .field-control {
         width: 100%;
@@ -682,6 +728,21 @@
         grid-template-columns: 1.4fr 1fr;
         gap: 8px;
     }
+    .assignment-note {
+        display:flex;
+        align-items:flex-start;
+        gap:10px;
+        padding:11px 12px;
+        border:1px solid #99f6e4;
+        border-radius:11px;
+        background:#f0fdfa;
+        color:#0f766e;
+        font-size:.72rem;
+        line-height:1.45;
+    }
+    .assignment-note i { margin-top:2px; color:#0d9488; }
+    .assignment-note strong { color:#115e59; }
+    #manualAssignmentFields.is-disabled { opacity:.58; }
     .maintenance-modal-actions {
         position: sticky;
         z-index: 4;
@@ -753,6 +814,21 @@
     body.dark-mode .maintenance-page .remarks-muted {
         color: #94a3b8;
     }
+    body.dark-mode .maintenance-page .field-required { color:#fca5a5; }
+    body.dark-mode .maintenance-page .field-optional,
+    body.dark-mode .maintenance-page .field-help { color:#94a3b8; }
+    body.dark-mode .maintenance-page .assignment-note {
+        background:rgba(13,148,136,.12);
+        border-color:rgba(45,212,191,.3);
+        color:#99f6e4;
+    }
+    body.dark-mode .maintenance-page .assignment-note strong { color:#ccfbf1; }
+    body.dark-mode .maintenance-page .remarks-label,
+    body.dark-mode .maintenance-page .work-plan-copy small { color:#64748b; }
+    body.dark-mode .maintenance-page .work-plan-copy strong { color:#cbd5e1; }
+    body.dark-mode .maintenance-page .work-plan-icon { background:#1e3a5f; color:#93c5fd; }
+    body.dark-mode .maintenance-page .work-plan-item.is-awaiting .work-plan-icon { background:rgba(146,64,14,.25); color:#fbbf24; }
+    body.dark-mode .maintenance-page .work-plan-item.is-awaiting .work-plan-copy strong { color:#fcd34d; }
     body.dark-mode .maintenance-page .filter-section {
         background: #111827;
         border-color: #334155;
@@ -1143,6 +1219,10 @@
                     $issueCount = $facilityIssues->count();
                     $statusKey = strtolower((string) ($row['maintenance_status'] ?? ''));
                     $statusClass = str_contains($statusKey, 'complete') ? 'completed' : (str_contains($statusKey, 'ongoing') ? 'ongoing' : 'pending');
+                    $scheduledDateText = trim((string) ($row['scheduled_date'] ?? ''));
+                    $hasScheduledDate = $scheduledDateText !== '' && $scheduledDateText !== '-';
+                    $assigneeText = trim((string) ($row['assigned_to'] ?? ''));
+                    $hasAssignee = $assigneeText !== '' && $assigneeText !== '-';
                     $searchText = strtolower($facilityIssues->map(fn ($issue) => implode(' ', [
                         $issue['facility'] ?? '', $issue['issue_type'] ?? '', $issue['trigger_date'] ?? $issue['trigger_month'] ?? '',
                         $issue['maintenance_status'] ?? '', $issue['scheduled_date'] ?? '', $issue['assigned_to'] ?? '', $issue['remarks'] ?? '',
@@ -1210,22 +1290,29 @@
                     <!-- Efficiency value removed -->
                     <td data-label="Status"><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
                     <td data-label="Work Plan">
-                        <div class="date-stack">
-                            <span><i class="fa-regular fa-calendar-check"></i>{{ $row['scheduled_date'] ?: 'Not scheduled' }}</span>
-                            <span class="assignee-name"><i class="fa-regular fa-user"></i>{{ filled($row['assigned_to'] ?? null) ? $row['assigned_to'] : 'Unassigned' }}</span>
+                        <div class="work-plan-stack">
+                            <div class="work-plan-item {{ $hasScheduledDate ? '' : 'is-awaiting' }}">
+                                <span class="work-plan-icon"><i class="fa-regular fa-calendar-check"></i></span>
+                                <span class="work-plan-copy"><small>Schedule</small><strong>{{ $hasScheduledDate ? $scheduledDateText : 'Awaiting CIMM' }}</strong></span>
+                            </div>
+                            <div class="work-plan-item {{ $hasAssignee ? '' : 'is-awaiting' }}">
+                                <span class="work-plan-icon"><i class="fa-regular fa-user"></i></span>
+                                <span class="work-plan-copy"><small>Assignee</small><strong>{{ $hasAssignee ? $assigneeText : 'CIMM to assign' }}</strong></span>
+                            </div>
                         </div>
                         @if($row['is_overdue'] ?? false)
                             <span class="overdue-label"><i class="fa fa-clock"></i> {{ $row['overdue_days'] }} day(s) overdue</span>
                         @endif
                     </td>
                     <td class="remarks-muted" data-label="Remarks">
+                        <span class="remarks-label">Latest update</span>
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
                         @if(!empty($row['proof_photo_url']))
                             <a class="proof-link" href="{{ $row['proof_photo_url'] }}" target="_blank" rel="noopener"><i class="fa fa-image"></i> View proof</a>
                         @endif
                     </td>
                     @if($userRole !== 'staff')
-                    <td data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
+                    <td class="action-cell" data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
                     @endif
                 </tr>
                 @if($issueCount > 1)
@@ -1301,7 +1388,7 @@
 
                 <div class="maintenance-form-section-title"><i class="fa-solid fa-clipboard-list"></i> Work Details</div>
                 <div class="field-group">
-                    <label for="modalFacility" class="field-label">Facility</label>
+                    <label for="modalFacility" class="field-label">Facility <span class="field-required">Required</span></label>
                     <select id="modalFacility" class="field-control">
                         <option value="" disabled selected>Select Facility</option>
                         @foreach($facilities as $facility)
@@ -1312,7 +1399,7 @@
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalTriggerMonth" class="field-label">Trigger Month and Year</label>
+                        <label for="modalTriggerMonth" class="field-label">Trigger Month and Year <span class="field-required">Required</span></label>
                         <div class="trigger-grid">
                             <select id="modalTriggerMonth" class="field-control">
                                 @foreach(range(1,12) as $m)
@@ -1329,7 +1416,7 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalIssueType" class="field-label">Issue Type</label>
+                        <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
                         <select id="modalIssueType" class="field-control">
                             <option value="" disabled selected>Select Issue</option>
                             <option value="Electrical - Power Outage">Electrical - Power Outage</option>
@@ -1351,7 +1438,7 @@
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalMaintType" class="field-label">Maintenance Type</label>
+                        <label for="modalMaintType" class="field-label">Maintenance Type <span class="field-required">Required</span></label>
                         <select id="modalMaintType" class="field-control">
                             <option value="Preventive">Preventive</option>
                             <option value="Corrective">Corrective</option>
@@ -1359,15 +1446,27 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalScheduleDate" class="field-label">Scheduled Date</label>
+                        <label for="modalScheduleDate" class="field-label">Scheduled Date <span class="field-optional">Optional</span></label>
                         <input type="date" id="modalScheduleDate" class="field-control">
+                        <small class="field-help">CIMM may set the schedule later when left blank.</small>
                     </div>
                 </div>
 
                 <div class="maintenance-form-section-title"><i class="fa-solid fa-user-gear"></i> Assignment</div>
-                <div class="maintenance-form-grid">
+                <div class="field-group">
+                    <label for="modalAssignmentMode" class="field-label">Assignment Method</label>
+                    <select id="modalAssignmentMode" class="field-control">
+                        <option value="cimm">Let CIMM assign (Recommended)</option>
+                        <option value="manual">Assign now</option>
+                    </select>
+                    <div id="cimmAssignmentNote" class="assignment-note">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <span><strong>Forward without an assignee.</strong> CIMM can select the responsible person and sync the assignment back here.</span>
+                    </div>
+                </div>
+                <div class="maintenance-form-grid" id="manualAssignmentFields">
                     <div class="field-group">
-                        <label for="modalAssigneeRole" class="field-label">Assignee Category</label>
+                        <label for="modalAssigneeRole" class="field-label">Assignee Category <span class="field-required">Required when assigning</span></label>
                         <select id="modalAssigneeRole" class="field-control">
                             <option value="">Select category</option>
                             <option value="engineer">Engineer</option>
@@ -1376,12 +1475,12 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalAssignedTo" class="field-label">Assigned To</label>
+                        <label for="modalAssignedTo" class="field-label">Assigned To <span class="field-required">Required when assigning</span></label>
                         <select id="modalAssignedTo" class="field-control" disabled>
                             <option value="">Select a category first</option>
                             @foreach($assignableUsers ?? collect() as $assignableUser)
                                 <option value="{{ $assignableUser['name'] }}" data-role="{{ $assignableUser['role'] }}">
-                                    {{ $assignableUser['name'] }}
+                                    {{ $assignableUser['name'] }}{{ ($assignableUser['is_self'] ?? false) ? ' (You)' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -1389,8 +1488,9 @@
                 </div>
 
                 <div class="field-group">
-                    <label for="modalRemarks" class="field-label">Remarks</label>
+                    <label for="modalRemarks" class="field-label">Remarks <span class="field-optional">Optional</span></label>
                     <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
+                    <small class="field-help">Useful for the exact location, affected equipment, access instructions, or safety concerns.</small>
                 </div>
 
                 <div class="maintenance-form-section-title"><i class="fa-solid fa-circle-check"></i> Completion &amp; Evidence</div>
@@ -1403,7 +1503,7 @@
                         </select>
                     </div>
                     <div class="field-group">
-                        <label for="modalProofPhoto" class="field-label">Proof Photo</label>
+                        <label for="modalProofPhoto" class="field-label">Proof Photo <span class="field-optional">Optional until completion</span></label>
                         <input type="file" id="modalProofPhoto" class="field-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                         <a id="modalExistingProof" class="proof-link" href="#" target="_blank" rel="noopener" style="display:none;"><i class="fa fa-image"></i> View existing proof</a>
                     </div>
@@ -1411,7 +1511,7 @@
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalStatus" class="field-label">Status</label>
+                        <label for="modalStatus" class="field-label">Status <span class="field-required">Required</span></label>
                         <select id="modalStatus" class="field-control">
                             <option value="Pending">Pending</option>
                             <option value="Ongoing">Ongoing</option>
@@ -1422,7 +1522,7 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalCompletedDate" class="field-label">Completed Date</label>
+                        <label for="modalCompletedDate" class="field-label">Completed Date <span class="field-optional">Required only when completed</span></label>
                         <input type="date" id="modalCompletedDate" class="field-control" disabled>
                     </div>
                 </div>
@@ -1453,8 +1553,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalIssueType = document.getElementById('modalIssueType');
     const modalMaintType = document.getElementById('modalMaintType');
     const modalScheduleDate = document.getElementById('modalScheduleDate');
+    const modalAssignmentMode = document.getElementById('modalAssignmentMode');
     const modalAssigneeRole = document.getElementById('modalAssigneeRole');
     const modalAssignedTo = document.getElementById('modalAssignedTo');
+    const manualAssignmentFields = document.getElementById('manualAssignmentFields');
+    const cimmAssignmentNote = document.getElementById('cimmAssignmentNote');
     const modalRemarks = document.getElementById('modalRemarks');
     const modalPhotoRequirement = document.getElementById('modalPhotoRequirement');
     const modalProofPhoto = document.getElementById('modalProofPhoto');
@@ -1487,11 +1590,22 @@ document.addEventListener('DOMContentLoaded', function() {
             modalAssignedTo.add(new Option(option.label, option.value));
         });
 
-        modalAssignedTo.disabled = !role || matchingUsers.length === 0;
+        const isManualAssignment = modalAssignmentMode?.value === 'manual';
+        modalAssignedTo.disabled = !isManualAssignment || !role || matchingUsers.length === 0;
         modalAssignedTo.value = matchingUsers.some((option) => option.value === selectedName)
             ? selectedName
             : '';
     };
+
+    const updateAssignmentMode = () => {
+        const isManualAssignment = modalAssignmentMode?.value === 'manual';
+        if (manualAssignmentFields) manualAssignmentFields.classList.toggle('is-disabled', !isManualAssignment);
+        if (cimmAssignmentNote) cimmAssignmentNote.hidden = isManualAssignment;
+        if (modalAssigneeRole) modalAssigneeRole.disabled = !isManualAssignment;
+        filterAssignees(modalAssigneeRole?.value || '', modalAssignedTo?.value || '');
+    };
+
+    modalAssignmentMode?.addEventListener('change', updateAssignmentMode);
 
     if (modalAssigneeRole) {
         modalAssigneeRole.addEventListener('change', () => {
@@ -1499,7 +1613,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    filterAssignees('');
+    updateAssignmentMode();
 
     const updateCompletedDateState = () => {
         if (!modalStatus || !modalCompletedDate) return;
@@ -1633,6 +1747,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const assignedTo = row.getAttribute('data-assigned_to') || '';
                 const matchingAssignee = assigneeOptions.find((option) => option.value === assignedTo);
 
+                if (modalAssignmentMode) {
+                    modalAssignmentMode.value = assignedTo ? 'manual' : 'cimm';
+                }
+                updateAssignmentMode();
+
                 if (modalAssigneeRole) {
                     modalAssigneeRole.value = matchingAssignee?.role || '';
                 }
@@ -1679,8 +1798,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTriggerMonth) modalTriggerMonth.disabled = false;
             if (modalTriggerYear) modalTriggerYear.disabled = false;
             if (modalStatus) modalStatus.value = 'Pending';
+            if (modalAssignmentMode) modalAssignmentMode.value = 'cimm';
             if (modalAssigneeRole) modalAssigneeRole.value = '';
-            filterAssignees('');
+            updateAssignmentMode();
             if (modalPhotoRequirement) modalPhotoRequirement.value = 'Optional';
             if (modalProofPhoto) modalProofPhoto.value = '';
             if (modalExistingProof) {
@@ -1714,6 +1834,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.alert('Please upload the required proof photo before completing this maintenance task.');
                 return false;
             }
+            if (modalAssignmentMode?.value === 'manual' && !modalAssignedTo?.value) {
+                window.alert('Select an assignee or choose “Let CIMM assign”.');
+                modalAssignedTo?.focus();
+                return false;
+            }
 
             const monthNum = modalTriggerMonth?.value;
             const yearVal = modalTriggerYear?.value;
@@ -1729,7 +1854,8 @@ document.addEventListener('DOMContentLoaded', function() {
             payload.append('issue_type', modalIssueType?.value || '');
             payload.append('maintenance_type', modalMaintType?.value || '');
             payload.append('scheduled_date', modalScheduleDate?.value || '');
-            payload.append('assigned_to', modalAssignedTo?.value || '');
+            payload.append('assignment_mode', modalAssignmentMode?.value || 'cimm');
+            payload.append('assigned_to', modalAssignmentMode?.value === 'manual' ? (modalAssignedTo?.value || '') : '');
             payload.append('remarks', modalRemarks?.value || '');
             payload.append('maintenance_status', status || '');
             payload.append('completed_date', completedDate || '');

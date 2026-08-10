@@ -175,7 +175,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::share([
             'systemLogoUrl' => $brandingUrl($logoPath) ?? asset('img/logocityhall.jpg'),
-            'systemFaviconUrl' => $brandingUrl($faviconPath) ?? asset('img/logocityhall.jpg'),
+            'systemFaviconUrl' => $brandingUrl($faviconPath) ?? asset('assets/favicon.ico'),
             'systemName' => SystemSettings::string('system_name', 'LGU Energy Monitoring System'),
             'systemShortName' => SystemSettings::string('short_name', 'LGU EMS'),
             'systemOrganization' => SystemSettings::string('org_name', 'Local Government Unit'),

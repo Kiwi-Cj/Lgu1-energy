@@ -109,5 +109,6 @@ test('performance summary page is available to an authenticated user', function 
         ->get(route('reports.performance-summary'))
         ->assertOk()
         ->assertSee('Energy Performance Summary')
-        ->assertSee('No floor area required');
+        ->assertDontSee('No floor area required')
+        ->assertDontSee('Assessment readiness');
 });

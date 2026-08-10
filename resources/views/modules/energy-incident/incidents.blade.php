@@ -273,10 +273,17 @@
                 </div>
 
                 <div id="incident-modal-{{ $incident->id }}" class="incident-modal" style="display:none;" aria-hidden="true">
-                    <div class="incident-modal-content">
+                    <div class="incident-modal-content" role="dialog" aria-modal="true" aria-labelledby="incident-modal-title-{{ $incident->id }}">
                         <button class="incident-modal-close" onclick="closeIncidentModal({{ $incident->id }})" aria-label="Close modal">&times;</button>
                         <div class="modal-top">
-                            <h3>Energy Incident Report</h3>
+                            <div class="modal-title-group">
+                                <span class="modal-title-icon"><i class="fa-solid fa-bolt"></i></span>
+                                <div>
+                                    <span class="modal-eyebrow">Incident #{{ $incident->id }}</span>
+                                    <h3 id="incident-modal-title-{{ $incident->id }}">Energy Incident Report</h3>
+                                    <p>{{ $facilityName }} &bull; Detected {{ $dateDetected }}</p>
+                                </div>
+                            </div>
                             <div class="modal-chip-group">
                                 <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
                                 <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
@@ -288,56 +295,66 @@
                             </div>
                         </div>
 
-                        <div class="detail-grid">
-                            <div class="detail-item"><span>Facility</span><strong>{{ $facilityName }}</strong></div>
-                            <div class="detail-item"><span>Month/Year</span><strong>{{ $monthLabel }}/{{ $yearNum ?? '-' }}</strong></div>
-                            <div class="detail-item"><span>Deviation</span><strong>{{ $deviationText }}</strong></div>
-                            <div class="detail-item"><span>Date Detected</span><strong>{{ $dateDetected }}</strong></div>
-                            <div class="detail-item"><span>Actual Reading</span><strong>{{ $actualKwh }}</strong></div>
-                            <div class="detail-item"><span>Baseline</span><strong>{{ $baselineKwh }}</strong></div>
-                            <div class="detail-item"><span>Data Source</span><strong>{{ $sourceLabel }}</strong></div>
-                            <div class="detail-item"><span>Action Owner</span><strong>CIMM Maintenance Integration</strong></div>
-                            <div class="detail-item"><span>Category</span><strong>{{ $categoryLabel }}</strong></div>
-                            <div class="detail-item"><span>Affected Asset</span><strong>{{ $incident->affected_asset ?: 'Not specified' }}</strong></div>
-                        </div>
+                        <div class="incident-modal-body">
+                            <section class="incident-detail-section">
+                                <h4 class="incident-section-title"><i class="fa-solid fa-chart-simple"></i> Incident snapshot</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item"><span>Facility</span><strong>{{ $facilityName }}</strong></div>
+                                    <div class="detail-item"><span>Reporting Period</span><strong>{{ $monthLabel }}/{{ $yearNum ?? '-' }}</strong></div>
+                                    <div class="detail-item is-deviation"><span>Deviation</span><strong>{{ $deviationText }}</strong></div>
+                                    <div class="detail-item"><span>Date Detected</span><strong>{{ $dateDetected }}</strong></div>
+                                    <div class="detail-item"><span>Actual Reading</span><strong>{{ $actualKwh }}</strong></div>
+                                    <div class="detail-item"><span>Baseline</span><strong>{{ $baselineKwh }}</strong></div>
+                                    <div class="detail-item"><span>Data Source</span><strong>{{ $sourceLabel }}</strong></div>
+                                    <div class="detail-item"><span>Action Owner</span><strong>CIMM Maintenance Integration</strong></div>
+                                    <div class="detail-item"><span>Category</span><strong>{{ $categoryLabel }}</strong></div>
+                                    <div class="detail-item"><span>Affected Asset</span><strong>{{ $incident->affected_asset ?: 'Not specified' }}</strong></div>
+                                </div>
+                            </section>
 
-                        <div class="detail-block"><span>Description</span><p>{{ $descriptionText }}</p></div>
-                        <div class="detail-block"><span>Probable Cause</span><p>{{ $probableCause }}</p></div>
-                        <div class="detail-block"><span>Immediate Action</span><p>{{ $immediateAction }}</p></div>
-                        <div class="detail-block"><span>Resolution</span><p>{{ $resolutionSummary }}</p></div>
-                        <div class="detail-block"><span>Preventive Recommendation</span><p>{{ $preventiveRecommendation }}</p></div>
+                            <section class="incident-detail-section">
+                                <h4 class="incident-section-title"><i class="fa-solid fa-clipboard-check"></i> Assessment and response</h4>
+                                <div class="incident-narrative-grid">
+                                    <div class="detail-block is-wide"><span>Description</span><p>{{ $descriptionText }}</p></div>
+                                    <div class="detail-block"><span>Probable Cause</span><p>{{ $probableCause }}</p></div>
+                                    <div class="detail-block"><span>Immediate Action</span><p>{{ $immediateAction }}</p></div>
+                                    <div class="detail-block"><span>Resolution</span><p>{{ $resolutionSummary }}</p></div>
+                                    <div class="detail-block"><span>Preventive Recommendation</span><p>{{ $preventiveRecommendation }}</p></div>
+                                </div>
+                            </section>
 
-                        @if($incident->evidence_path)
-                            <div class="detail-block">
-                                <span>Reporter Evidence</span>
-                                <p><a href="{{ asset('storage/' . ltrim($incident->evidence_path, '/')) }}" target="_blank" rel="noopener">View attached photo</a></p>
-                            </div>
-                        @endif
+                            @if($incident->evidence_path)
+                                <div class="detail-block attachment-block">
+                                    <span>Reporter Evidence</span>
+                                    <p><a href="{{ asset('storage/' . ltrim($incident->evidence_path, '/')) }}" target="_blank" rel="noopener"><i class="fa-solid fa-image"></i> View attached photo</a></p>
+                                </div>
+                            @endif
 
-                        @if(count($attachments))
-                            <div class="detail-block">
-                                <span>Attachments</span>
-                                <ul class="attachment-list">
-                                    @foreach($attachments as $attachment)
-                                        @if(is_string($attachment) && trim($attachment) !== '')
-                                            <li>
-                                                <a href="{{ asset('storage/' . ltrim($attachment, '/')) }}" target="_blank" rel="noopener">
-                                                    {{ basename($attachment) }}
-                                                </a>
-                                            </li>
-                                        @endif
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                            @if(count($attachments))
+                                <div class="detail-block attachment-block">
+                                    <span>Attachments</span>
+                                    <ul class="attachment-list">
+                                        @foreach($attachments as $attachment)
+                                            @if(is_string($attachment) && trim($attachment) !== '')
+                                                <li>
+                                                    <a href="{{ asset('storage/' . ltrim($attachment, '/')) }}" target="_blank" rel="noopener">
+                                                        <i class="fa-solid fa-paperclip"></i> {{ basename($attachment) }}
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
 
-                        <div class="modal-actions">
-                            <a href="{{ route('modules.maintenance.index') }}?facility_id={{ $incident->facility->id ?? '' }}" class="maintenance-btn">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> View CIMM Maintenance
-                            </a>
-                            <div class="cimm-managed-note">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                                Status updates automatically from CIMM
+                            <div class="modal-actions">
+                                <a href="{{ route('modules.maintenance.index') }}?facility_id={{ $incident->facility->id ?? '' }}" class="maintenance-btn">
+                                    View CIMM Maintenance <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                                <div class="cimm-managed-note">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                    <span><strong>CIMM synchronized</strong>Status updates automatically</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -933,57 +950,111 @@ document.addEventListener('DOMContentLoaded', function () {
 .incident-modal {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.35);
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 1200;
 }
 
 .incident-modal-content {
-    width: min(760px, 94vw);
-    max-height: 88vh;
-    overflow-y: auto;
+    width: min(940px, 100%);
+    max-height: calc(100dvh - 48px);
+    overflow: hidden;
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.22);
-    padding: 22px 20px 18px;
+    border: 1px solid rgba(255, 255, 255, .72);
+    border-radius: 22px;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.34);
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .incident-modal-close {
     position: absolute;
-    top: 10px;
-    right: 14px;
-    border: none;
-    background: none;
-    font-size: 2rem;
+    top: 18px;
+    right: 18px;
+    z-index: 3;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    background: #f8fafc;
+    font-size: 1.65rem;
+    line-height: 1;
     color: #64748b;
     cursor: pointer;
+    transition: .16s ease;
 }
 
 .incident-modal-close:hover {
-    color: #dc2626;
+    color: #be123c;
+    border-color: #fecdd3;
+    background: #fff1f2;
+    transform: rotate(4deg);
 }
 
 .modal-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    padding-right: 20px;
-    margin-bottom: 14px;
+    gap: 18px;
+    flex: 0 0 auto;
+    padding: 20px 68px 18px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #ffffff 35%, #f8fbff);
+}
+
+.modal-title-group {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.modal-title-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #dc2626, #f97316);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(220, 38, 38, .22);
+}
+
+.modal-eyebrow {
+    display: block;
+    margin-bottom: 2px;
+    color: #dc2626;
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
 }
 
 .modal-top h3 {
     margin: 0;
     color: #0f172a;
-    font-size: 1.25rem;
+    font-size: 1.22rem;
     font-weight: 900;
+}
+
+.modal-top p {
+    margin: 3px 0 0;
+    color: #64748b;
+    font-size: .75rem;
 }
 
 .modal-chip-group {
     display: flex;
+    align-items: center;
+    justify-content: flex-end;
     gap: 8px;
     flex-wrap: wrap;
 }
@@ -996,25 +1067,64 @@ document.addEventListener('DOMContentLoaded', function () {
     border-radius: 999px;
     background: #fff1f2;
     color: #be123c;
-    padding: 5px 10px;
+    min-height: 32px;
+    padding: 6px 11px;
     font-size: 0.7rem;
     font-weight: 900;
     text-decoration: none;
     text-transform: uppercase;
 }
 
+.incident-modal-body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 20px 24px 22px;
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+}
+
+.incident-detail-section + .incident-detail-section {
+    margin-top: 20px;
+}
+
+.incident-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 11px;
+    color: #334155;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.incident-section-title i {
+    color: #2563eb;
+}
+
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 9px;
 }
 
 .detail-item {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 10px 12px;
+    min-width: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 11px 13px;
     background: #f8fafc;
+}
+
+.detail-item.is-deviation {
+    border-color: #fecdd3;
+    background: #fff7f7;
+}
+
+.detail-item.is-deviation strong {
+    color: #be123c;
 }
 
 .detail-item span {
@@ -1028,11 +1138,29 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 .detail-item strong {
+    display: block;
     color: #0f172a;
+    font-size: .91rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.incident-narrative-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .detail-block {
-    margin-bottom: 12px;
+    min-width: 0;
+    padding: 13px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.detail-block.is-wide {
+    grid-column: 1 / -1;
 }
 
 .detail-block span {
@@ -1042,14 +1170,19 @@ document.addEventListener('DOMContentLoaded', function () {
     text-transform: uppercase;
     letter-spacing: 0.3px;
     font-weight: 800;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 }
 
 .detail-block p {
     margin: 0;
     color: #475569;
-    line-height: 1.45;
-    font-size: 0.94rem;
+    line-height: 1.55;
+    font-size: 0.88rem;
+}
+
+.attachment-block {
+    margin-top: 10px;
+    background: #f8fafc;
 }
 
 .attachment-list {
@@ -1068,9 +1201,11 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 .modal-actions {
-    margin-top: 16px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
@@ -1084,9 +1219,29 @@ document.addEventListener('DOMContentLoaded', function () {
     border-radius: 10px;
     background: #f0fdfa;
     color: #0f766e;
-    padding: 9px 12px;
+    padding: 8px 11px;
     font-size: 0.78rem;
     font-weight: 800;
+}
+
+.cimm-managed-note > i {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #ccfbf1;
+}
+
+.cimm-managed-note span {
+    display: grid;
+    gap: 1px;
+    font-size: .69rem;
+}
+
+.cimm-managed-note strong {
+    color: #115e59;
+    font-size: .74rem;
 }
 
 .maintenance-btn {
@@ -1095,10 +1250,12 @@ document.addEventListener('DOMContentLoaded', function () {
     gap: 8px;
     text-decoration: none;
     font-weight: 800;
-    padding: 10px 14px;
-    border-radius: 10px;
+    min-height: 42px;
+    padding: 10px 15px;
+    border-radius: 11px;
     color: #fff;
     background: linear-gradient(90deg, #2563eb, #6366f1);
+    box-shadow: 0 7px 16px rgba(37, 99, 235, .2);
 }
 
 .incident-pagination {
@@ -1249,7 +1406,16 @@ body.dark-mode .incident-page .incident-modal-content {
     background: #111827;
     border: 1px solid #334155;
 }
+body.dark-mode .incident-page .modal-top {
+    border-color: #334155;
+    background: linear-gradient(135deg, #111827 35%, #0f172a);
+}
+body.dark-mode .incident-page .modal-top p {
+    color: #94a3b8;
+}
 body.dark-mode .incident-page .incident-modal-close {
+    background: #0f172a;
+    border-color: #334155;
     color: #94a3b8;
 }
 body.dark-mode .incident-page .incident-modal-close:hover {
@@ -1258,6 +1424,37 @@ body.dark-mode .incident-page .incident-modal-close:hover {
 body.dark-mode .incident-page .detail-item {
     background: #0f172a;
     border-color: #334155;
+}
+body.dark-mode .incident-page .detail-item.is-deviation {
+    background: rgba(190, 24, 93, .12);
+    border-color: rgba(251, 113, 133, .35);
+}
+body.dark-mode .incident-page .detail-item.is-deviation strong {
+    color: #fda4af;
+}
+body.dark-mode .incident-page .incident-section-title {
+    color: #cbd5e1;
+}
+body.dark-mode .incident-page .incident-section-title i {
+    color: #60a5fa;
+}
+body.dark-mode .incident-page .detail-block {
+    background: #0f172a;
+    border-color: #334155;
+}
+body.dark-mode .incident-page .modal-actions {
+    border-color: #334155;
+}
+body.dark-mode .incident-page .cimm-managed-note {
+    background: rgba(13, 148, 136, .12);
+    border-color: rgba(45, 212, 191, .3);
+    color: #99f6e4;
+}
+body.dark-mode .incident-page .cimm-managed-note > i {
+    background: rgba(13, 148, 136, .2);
+}
+body.dark-mode .incident-page .cimm-managed-note strong {
+    color: #ccfbf1;
 }
 body.dark-mode .incident-page .attachment-list a {
     color: #93c5fd;
@@ -1431,16 +1628,39 @@ body.dark-mode .report-cancel {
     .incident-modal-content {
         width: 100%;
         max-height: calc(100dvh - 24px);
-        padding: 20px 16px 16px;
         border-radius: 14px;
+    }
+    .incident-modal-close {
+        top: 13px;
+        right: 13px;
+    }
+    .incident-modal-body {
+        padding: 16px;
     }
     .detail-grid {
         grid-template-columns: 1fr;
     }
+    .incident-narrative-grid {
+        grid-template-columns: 1fr;
+    }
+    .detail-block.is-wide {
+        grid-column: auto;
+    }
     .modal-top {
         flex-direction: column;
         align-items: flex-start;
-        padding-right: 22px;
+        padding: 16px 58px 15px 16px;
+    }
+    .modal-chip-group {
+        justify-content: flex-start;
+    }
+    .modal-actions,
+    .cimm-managed-note,
+    .maintenance-btn {
+        width: 100%;
+    }
+    .maintenance-btn {
+        justify-content: center;
     }
 }
 </style>

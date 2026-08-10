@@ -94,3 +94,53 @@ test('maintenance page reconciles stale completed rows into history', function (
         'completed_date' => '2026-07-23 00:00:00',
     ]);
 });
+
+test('manual maintenance can leave assignment to CIMM', function () {
+    $user = User::factory()->create(['role' => 'super admin']);
+    $facility = Facility::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('modules.maintenance.schedule'), [
+            'facility_id' => $facility->id,
+            'trigger_month' => 'August 2026',
+            'issue_type' => 'General - Preventive Check',
+            'maintenance_type' => 'Preventive',
+            'scheduled_date' => null,
+            'assignment_mode' => 'cimm',
+            'assigned_to' => 'Should Be Cleared',
+            'remarks' => null,
+            'maintenance_status' => 'Pending',
+            'completed_date' => null,
+            'photo_requirement' => 'Optional',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $this->assertDatabaseHas('maintenance', [
+        'facility_id' => $facility->id,
+        'assigned_to' => null,
+        'maintenance_status' => 'Pending',
+    ]);
+});
+
+test('assign now requires a selected assignee', function () {
+    $user = User::factory()->create(['role' => 'super admin']);
+    $facility = Facility::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('modules.maintenance.schedule'), [
+            'facility_id' => $facility->id,
+            'trigger_month' => 'August 2026',
+            'issue_type' => 'General - Preventive Check',
+            'maintenance_type' => 'Preventive',
+            'scheduled_date' => null,
+            'assignment_mode' => 'manual',
+            'assigned_to' => null,
+            'remarks' => null,
+            'maintenance_status' => 'Pending',
+            'completed_date' => null,
+            'photo_requirement' => 'Optional',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('assigned_to');
+});

@@ -101,6 +101,7 @@ class MaintenanceController extends Controller
         $rules = [
             'maintenance_type' => ['required', 'string', Rule::in(['Preventive', 'Corrective'])],
             'scheduled_date' => 'nullable|date',
+            'assignment_mode' => ['nullable', 'string', Rule::in(['cimm', 'manual'])],
             'assigned_to' => 'nullable|string|max:255',
             'remarks' => 'nullable|string|max:5000',
             'maintenance_status' => ['required', 'string', Rule::in(['Pending', 'Ongoing', 'Completed'])],
@@ -131,6 +132,24 @@ class MaintenanceController extends Controller
             }
             throw $e;
         }
+
+        $assignmentMode = $validated['assignment_mode']
+            ?? (filled($validated['assigned_to'] ?? null) ? 'manual' : 'cimm');
+        if ($assignmentMode === 'manual' && blank($validated['assigned_to'] ?? null)) {
+            $errors = ['assigned_to' => ['Select an assignee or choose “Let CIMM assign”.']];
+            if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $errors,
+                    'message' => 'Please select an assignee.',
+                ], 422);
+            }
+
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+        $validated['assigned_to'] = $assignmentMode === 'cimm'
+            ? null
+            : trim((string) $validated['assigned_to']);
 
         $existingMaintenance = $isUpdate
             ? \App\Models\Maintenance::findOrFail($validated['maintenance_id'])
@@ -349,7 +368,7 @@ public function index()
             ['engineer', 'energy_officer'],
             true
         ))
-        ->map(function (User $candidate) {
+        ->map(function (User $candidate) use ($user) {
             $displayName = trim((string) (
                 $candidate->full_name
                 ?: $candidate->name
@@ -360,6 +379,7 @@ public function index()
             return [
                 'name' => $displayName,
                 'role' => RoleAccess::normalize($candidate),
+                'is_self' => (int) $candidate->id === (int) $user->id,
             ];
         })
         ->filter(fn (array $candidate) => $candidate['name'] !== '')

@@ -1,6 +1,6 @@
 
 @php
-    $faviconUrl = trim((string) ($systemFaviconUrl ?? asset('img/logocityhall.jpg')));
+    $faviconUrl = trim((string) ($systemFaviconUrl ?? asset('assets/favicon.ico')));
     $faviconPath = (string) (parse_url($faviconUrl, PHP_URL_PATH) ?? '');
     $faviconExtension = strtolower((string) pathinfo($faviconPath, PATHINFO_EXTENSION));
     $faviconMime = match ($faviconExtension) {
