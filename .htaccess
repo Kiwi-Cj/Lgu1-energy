@@ -1,6 +1,18 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
+
+    # No explicit RewriteBase: letting mod_rewrite use its default (the
+    # physical directory this .htaccess lives in, relative to DocumentRoot)
+    # keeps rule 2 below pointed at THIS folder's index.php in every
+    # deployment shape. An explicit "RewriteBase /" broke this whenever the
+    # app isn't the vhost's own document root (e.g. nested locally under a
+    # shared htdocs, as http://localhost/Lgu1-energy/...) — the relative
+    # "index.php" substitution in rule 2 resolved against the *server* root
+    # instead of this folder, silently landing on a same-named index.php one
+    # level up (XAMPP's own htdocs/index.php here) instead of this app's.
+    # On the real domain, where this folder already IS the document root,
+    # the auto-detected base is already "/" — identical to before, so this
+    # is a no-op there.
 
     # Serve files that physically exist under /public (built assets, css, js, images, storage link)
     RewriteCond %{REQUEST_URI} !^/index\.php$
