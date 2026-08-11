@@ -10,6 +10,7 @@ class MaintenanceHistory extends Model
     use HasFactory;
     protected $table = 'maintenance_history';
     protected $fillable = [
+        'original_maintenance_id',
         'facility_id',
         'issue_type',
         'trigger_month',
@@ -21,8 +22,6 @@ class MaintenanceHistory extends Model
         'scheduled_date',
         'assigned_to',
         'completed_date',
-        'proof_photo_path',
-        'photo_requirement',
         'remarks',
     ];
 
