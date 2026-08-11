@@ -8,6 +8,7 @@ use App\Models\Submeter;
 use App\Models\SubmeterReading;
 use App\Models\User;
 use App\Services\ArchivePruneService;
+use App\Services\AuditLogRetentionService;
 use App\Services\MainMeterBaselineAlertService;
 use App\Services\SubmeterBaselineAlertService;
 use Carbon\Carbon;
@@ -80,6 +81,36 @@ Artisan::command('archive:prune-expired
 
 Schedule::command('archive:prune-expired --days=30')
     ->dailyAt('01:30')
+    ->withoutOverlapping();
+
+Artisan::command('audit:prune {--force : Run even if cleanup already ran in the last 24 hours}', function () {
+    $result = app(AuditLogRetentionService::class)->prune((bool) $this->option('force'));
+
+    if ($result['skipped']) {
+        $this->line('Audit cleanup skipped: '.$result['reason'].'.');
+        return;
+    }
+
+    $this->info(sprintf(
+        'Deleted %d audit log(s) older than %d month(s).',
+        $result['deleted'],
+        $result['retention_months']
+    ));
+})->purpose('Delete audit logs outside the configured retention period');
+
+Schedule::command('audit:prune')
+    ->dailyAt('02:00')
+    ->withoutOverlapping();
+
+// Mirror CPRF (facilities reservation) public facilities every five minutes. Manual
+// "Sync now" button on the Facilities page's Public Facilities tab runs
+// the same service on demand.
+Schedule::command('energy:sync-cprf-facilities')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('energy:sync-uman-monthly-records')
+    ->everyFiveMinutes()
     ->withoutOverlapping();
 
 Artisan::command('main-meter:backfill-from-energy-records
@@ -689,3 +720,7 @@ Artisan::command('demo:seed-fake-sensors {--submeters=6 : Number of active subme
 
     $this->info("Seeded fake sensor data. Main rows touched: {$mainCreated}. Submeter rows touched: {$subCreated}.");
 })->purpose('Seed fake IoT sensor readings for main meter and submeter graphs');
+
+Schedule::command('energy:escalate-critical-alerts --minutes=30')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();

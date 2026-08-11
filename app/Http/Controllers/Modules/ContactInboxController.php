@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
 use App\Models\ContactMessageReply;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -33,7 +34,7 @@ class ContactInboxController extends Controller
 
         $search = trim((string) $request->query('q', ''));
         $filter = strtolower(trim((string) $request->query('filter', 'all')));
-        $allowedFilters = ['all', 'unread', 'replied', 'failed'];
+        $allowedFilters = ['all', 'unread', 'replied', 'failed', 'archived'];
         if (! in_array($filter, $allowedFilters, true)) {
             $filter = 'all';
         }
@@ -45,6 +46,11 @@ class ContactInboxController extends Controller
         $messagesQuery = ContactMessage::query()
             ->withCount('replies')
             ->withMax('replies', 'created_at')
+            ->when($filter === 'archived', function ($query) {
+                $query->whereNotNull('archived_at');
+            }, function ($query) {
+                $query->whereNull('archived_at');
+            })
             ->when($filter === 'unread', function ($query) {
                 $query->whereNull('read_at');
             })
@@ -83,12 +89,19 @@ class ContactInboxController extends Controller
         $selectedId = (int) $request->query('message', 0);
         $selectedMessage = null;
         if ($tab === 'inbox') {
+            $selectedMessageQuery = ContactMessage::with(['replies.sender', 'readBy'])
+                ->when($filter === 'archived', function ($query) {
+                    $query->whereNotNull('archived_at');
+                }, function ($query) {
+                    $query->whereNull('archived_at');
+                });
+
             $selectedMessage = $selectedId > 0
-                ? ContactMessage::with(['replies.sender', 'readBy'])->find($selectedId)
+                ? (clone $selectedMessageQuery)->find($selectedId)
                 : null;
 
             if (! $selectedMessage && $messages->count() > 0) {
-                $selectedMessage = ContactMessage::with(['replies.sender', 'readBy'])->find($messages->first()->id);
+                $selectedMessage = (clone $selectedMessageQuery)->find($messages->first()->id);
             }
         }
 
@@ -130,22 +143,24 @@ class ContactInboxController extends Controller
             ->paginate(15, ['*'], 'sent_page')
             ->withQueryString();
 
+        $activeMessages = ContactMessage::query()->whereNull('archived_at');
         $stats = [
-            'total' => ContactMessage::count(),
-            'today' => ContactMessage::whereDate('created_at', today())->count(),
-            'email_failed' => ContactMessage::whereNotNull('email_error')->count(),
-            'unread' => ContactMessage::whereNull('read_at')->count(),
+            'total' => (clone $activeMessages)->count(),
+            'today' => (clone $activeMessages)->whereDate('created_at', today())->count(),
+            'email_failed' => (clone $activeMessages)->whereNotNull('email_error')->count(),
+            'unread' => (clone $activeMessages)->whereNull('read_at')->count(),
         ];
         $filterCounts = [
-            'all' => ContactMessage::count(),
-            'unread' => ContactMessage::whereNull('read_at')->count(),
-            'replied' => ContactMessage::has('replies')->count(),
-            'failed' => ContactMessage::where(function ($q) {
+            'all' => ContactMessage::whereNull('archived_at')->count(),
+            'unread' => ContactMessage::whereNull('archived_at')->whereNull('read_at')->count(),
+            'replied' => ContactMessage::whereNull('archived_at')->has('replies')->count(),
+            'failed' => ContactMessage::whereNull('archived_at')->where(function ($q) {
                 $q->whereNotNull('email_error')
                     ->orWhereHas('replies', function ($replyQuery) {
                         $replyQuery->where('send_status', 'failed');
                     });
             })->count(),
+            'archived' => ContactMessage::whereNotNull('archived_at')->count(),
         ];
         $tabCounts = [
             'inbox' => $filterCounts['all'] ?? ContactMessage::count(),
@@ -189,12 +204,77 @@ class ContactInboxController extends Controller
             'read_by_user_id' => null,
         ])->save();
 
-        return back()->with('inbox_success', 'Message marked as unread.');
+        return redirect()
+            ->route('modules.contact-messages.index', array_filter([
+                'filter' => $request->input('return_filter', 'all'),
+                'sort' => $request->input('return_sort', 'latest_activity'),
+                'q' => $request->input('return_q'),
+            ]))
+            ->with('inbox_success', 'Message marked as unread.');
+    }
+
+    public function archive(Request $request, ContactMessage $contactMessage): RedirectResponse
+    {
+        $this->ensureAdminAccess($request);
+
+        $contactMessage->forceFill(['archived_at' => now()])->save();
+
+        return redirect()
+            ->route('modules.contact-messages.index', array_filter([
+                'filter' => $request->input('return_filter', 'all'),
+                'sort' => $request->input('return_sort', 'latest_activity'),
+                'q' => $request->input('return_q'),
+            ]))
+            ->with('inbox_success', 'Message archived. You can restore it from the Archived filter.');
+    }
+
+    public function restore(Request $request, ContactMessage $contactMessage): RedirectResponse
+    {
+        $this->ensureAdminAccess($request);
+
+        $contactMessage->forceFill(['archived_at' => null])->save();
+
+        return redirect()
+            ->route('modules.contact-messages.index', ['filter' => 'archived'])
+            ->with('inbox_success', 'Message restored to the inbox.');
+    }
+
+    public function destroy(Request $request, ContactMessage $contactMessage): RedirectResponse
+    {
+        $this->ensureAdminAccess($request);
+
+        if (! RoleAccess::is($request->user(), 'super_admin')) {
+            abort(403, 'Only Super Admin can permanently delete contact messages.');
+        }
+
+        if (! $contactMessage->archived_at) {
+            return redirect()
+                ->route('modules.contact-messages.index')
+                ->with('reply_error', 'Archive the message before permanently deleting it.');
+        }
+
+        $messageId = $contactMessage->id;
+        $contactMessage->delete();
+
+        // Replies are removed by the database cascade; remove their stored files as well.
+        Storage::disk('public')->deleteDirectory('contact-replies/' . $messageId);
+
+        return redirect()
+            ->route('modules.contact-messages.index', ['filter' => 'archived'])
+            ->with('inbox_success', 'Message and its reply history were permanently deleted.');
     }
 
     public function reply(Request $request, ContactMessage $contactMessage): RedirectResponse
     {
         $this->ensureAdminAccess($request);
+
+        if ($contactMessage->archived_at) {
+            return back()->with('reply_error', 'Restore this message before sending a reply.');
+        }
+
+        if (! SystemSettings::emailNotificationsEnabled()) {
+            return back()->with('reply_error', 'Email delivery is disabled in System Settings. Enable it before sending a reply.');
+        }
 
         $validated = $request->validate([
             'reply_subject' => ['required', 'string', 'max:190'],

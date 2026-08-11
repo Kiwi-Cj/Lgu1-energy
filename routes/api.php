@@ -2,11 +2,8 @@
 
 use App\Http\Controllers\Api\SubmeterSensorReadingController;
 use App\Http\Controllers\Api\IntegrationDataController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Api\CprfFacilityProfileController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/settings', [SettingsController::class, 'index']);
-Route::post('/settings', [SettingsController::class, 'update']);
 
 Route::get('/submeter/sensor-readings', function () {
     return response()->json([
@@ -26,9 +23,10 @@ Route::get('/submeter/sensor-readings', function () {
             'reading_end_kwh' => 620,
         ],
     ]);
-});
+})->middleware('feature:submeters');
 
 Route::post('/submeter/sensor-readings', [SubmeterSensorReadingController::class, 'store'])
+    ->middleware('feature:submeters')
     ->name('api.submeter.sensor-readings.store');
 
 Route::prefix('v1')->middleware(['integration.api', 'throttle:60,1'])->group(function () {
@@ -52,4 +50,19 @@ Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 
     Route::get('/maintenance', [IntegrationDataController::class, 'maintenance']);
     Route::get('/maintenance-history', [IntegrationDataController::class, 'maintenanceHistory']);
     Route::post('/maintenance/{id}/sync', [IntegrationDataController::class, 'updateMaintenance']);
+});
+
+// CPRF (facilities reservation) <-> Energy integration. CPRF facility
+// identities are mirrored separately, while CPRF pulls facilities, Energy-managed
+// profiles, approved recommendations, and approved energy reports out. Monthly
+// energy records are entered and owned by the Energy system.
+// Same
+// per-partner token pattern as the CIMM group above (services.cprf_integration).
+// GET endpoints reuse IntegrationDataController methods -- only the auth differs.
+Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->group(function () {
+    Route::get('/facilities', [IntegrationDataController::class, 'cprfFacilities']);
+    Route::get('/energy-reports', [IntegrationDataController::class, 'cprfEnergyReports']);
+    Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
+    Route::patch('/recommendations/{recommendation}/implementation', [IntegrationDataController::class, 'updateRecommendationImplementation']);
+    Route::get('/facility-profiles', [CprfFacilityProfileController::class, 'index']);
 });

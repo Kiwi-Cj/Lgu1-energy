@@ -11,7 +11,7 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $filter = strtolower((string) $request->query('filter', 'all'));
-        if (! in_array($filter, ['all', 'unread', 'critical'], true)) {
+        if (! in_array($filter, ['all', 'unread', 'critical', 'unacknowledged', 'acknowledged'], true)) {
             $filter = 'all';
         }
 
@@ -32,11 +32,14 @@ class NotificationController extends Controller
             'unread' => (clone $oneMonthNotifications)->whereNull('read_at')->count(),
             'high' => (clone $oneMonthNotifications)->tap($highOrAbove)->count(),
             'read' => (clone $oneMonthNotifications)->whereNotNull('read_at')->count(),
+            'acknowledged' => (clone $oneMonthNotifications)->whereNotNull('acknowledged_at')->count(),
         ];
 
         $notifications = $oneMonthNotifications
             ->when($filter === 'unread', fn ($query) => $query->whereNull('read_at'))
             ->when($filter === 'critical', $highOrAbove)
+            ->when($filter === 'unacknowledged', fn ($query) => $query->whereNull('acknowledged_at'))
+            ->when($filter === 'acknowledged', fn ($query) => $query->whereNotNull('acknowledged_at'))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -66,5 +69,23 @@ class NotificationController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
         return response()->json(['success' => true]);
+    }
+
+    public function acknowledge(Request $request, Notification $notification)
+    {
+        $user = $request->user();
+        if (! $user || (int) $notification->user_id !== (int) $user->id) {
+            abort(403);
+        }
+
+        $notification->update([
+            'read_at' => $notification->read_at ?? now(),
+            'acknowledged_at' => $notification->acknowledged_at ?? now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'acknowledged_at' => $notification->acknowledged_at?->toIso8601String(),
+        ]);
     }
 }

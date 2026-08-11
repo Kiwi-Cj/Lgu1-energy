@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\BaselineResolver;
 use Illuminate\Database\Eloquent\Model;
 
 class EnergyIncident extends Model
@@ -11,6 +12,12 @@ class EnergyIncident extends Model
         'month',
         'year',
         'deviation_percent',
+        'category',
+        'source',
+        'affected_asset',
+        'evidence_path',
+        'detected_at',
+        'severity',
         'description',
         'status',
         'date_detected',
@@ -21,6 +28,7 @@ class EnergyIncident extends Model
     protected $casts = [
         'date_detected' => 'date',
         'resolved_at' => 'datetime',
+        'detected_at' => 'datetime',
     ];
 
     public function facility()
@@ -31,6 +39,11 @@ class EnergyIncident extends Model
     public function energyRecord()
     {
         return $this->belongsTo(EnergyRecord::class, 'energy_record_id');
+    }
+
+    public function maintenance()
+    {
+        return $this->hasOne(Maintenance::class, 'energy_incident_id');
     }
 
     public function creator()
@@ -109,9 +122,17 @@ class EnergyIncident extends Model
 
     protected function resolveSeverity(): array
     {
-        $baseline = $this->energyRecord?->baseline_kwh
-            ?? $this->facility?->baseline_kwh
-            ?? null;
+        $reportedSeverity = strtolower(trim((string) ($this->attributes['severity'] ?? '')));
+        if (in_array($reportedSeverity, ['critical', 'very-high', 'high', 'warning'], true)) {
+            return [
+                'key' => $reportedSeverity,
+                'label' => $reportedSeverity === 'very-high' ? 'Very High' : ucwords(str_replace('-', ' ', $reportedSeverity)),
+            ];
+        }
+
+        $baseline = $this->energyRecord
+            ? BaselineResolver::forRecord($this->energyRecord, $this->facility)
+            : BaselineResolver::forFacility($this->facility);
 
         return self::classifySeverity(
             $this->deviation_percent !== null ? (float) $this->deviation_percent : null,

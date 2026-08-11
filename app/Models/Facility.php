@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\BaselineResolver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -45,7 +46,21 @@ class Facility extends Model
         'engineer_approved', // <-- Added for engineer approval
         'deleted_by',
         'archive_reason',
+        'source',       // 'local' (created here) | 'cprf' (mirrored from CPRF)
+        'external_ref', // CPRF facility id when source='cprf'
+        'source_key',   // stable non-numeric identity for integrations such as UMAN
     ];
+
+    /**
+     * Mirrored from the CPRF facilities reservation system: identity fields
+     * (name, address, details, status) are managed by the sync and read-only
+     * here. Energy setup and monthly readings are owned and managed locally by
+     * the Energy system.
+     */
+    public function isCprfManaged(): bool
+    {
+        return ($this->source ?? 'local') === 'cprf';
+    }
 
     /* =======================
      | RELATIONSHIPS
@@ -59,6 +74,11 @@ class Facility extends Model
     public function energyProfiles()
     {
         return $this->hasMany(\App\Models\EnergyProfile::class);
+    }
+
+    public function energyProfile()
+    {
+        return $this->hasOne(\App\Models\EnergyProfile::class)->latestOfMany();
     }
 
     public function energyRecords()
@@ -94,6 +114,12 @@ class Facility extends Model
     public function auditLogs()
     {
         return $this->hasMany(FacilityAuditLog::class);
+    }
+
+    /** Baseline fallback for facility-level readings without a specific meter. */
+    public function resolveBaselineKwh(): ?float
+    {
+        return BaselineResolver::forFacility($this);
     }
 
     /* =======================
@@ -166,21 +192,12 @@ class Facility extends Model
             return null;
         }
 
-        $baseline = (float) $baseline;
-
-        if ($baseline < 3000) {
-            return 'Small';
-        }
-
-        if ($baseline < 10000) {
-            return 'Medium';
-        }
-
-        if ($baseline < 30000) {
-            return 'Large';
-        }
-
-        return 'Extra Large';
+        return match (EnergyRecord::resolveSizeKeyFromBaseline((float) $baseline)) {
+            'medium' => 'Medium',
+            'large' => 'Large',
+            'xlarge' => 'Extra Large',
+            default => 'Small',
+        };
     }
 
     // Removed: getAverageMonthlyKwhAttribute (use baseline_kwh instead)

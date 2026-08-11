@@ -23,6 +23,14 @@ class EnergyProfile extends Model
         'number_of_meters',
         'bill_image', // allow saving bill_image if present
         'baseline_source',
+        'baseline_locked',
+        'engineer_approved',
+    ];
+
+    protected $casts = [
+        'baseline_kwh' => 'decimal:2',
+        'baseline_locked' => 'boolean',
+        'engineer_approved' => 'boolean',
     ];
 
 

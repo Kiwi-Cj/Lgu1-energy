@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password | Energy System</title>
-    <link rel="icon" href="{{ $systemFaviconUrl }}">
+    <title>Reset Password | {{ $systemName }}</title>
+    @include('partials.favicon')
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {

@@ -164,26 +164,142 @@
         text-decoration: none;
     }
 
-    /* Table Styling */
-    .maint-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
-    .maint-table { width: 100%; border-collapse: collapse; background: #fff; text-align: center; }
-    .maint-table thead { background: #f1f5f9; }
-    .maint-table th { padding: 15px; font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
-    .maint-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
-    .maint-table tr:hover { background-color: #f8fafc; }
+    /* Maintenance work queue */
+    .maintenance-table-card {
+        overflow: hidden;
+        border: 1px solid #dbe5f2;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .055);
+    }
+    .maintenance-table-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e7edf5;
+        background: linear-gradient(135deg, #fbfdff 0%, #f5f8ff 100%);
+    }
+    .maintenance-table-title {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: #0f172a;
+        font-size: 1.03rem;
+        font-weight: 850;
+    }
+    .maintenance-table-title-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 38px;
+        border: 1px solid #bfdbfe;
+        border-radius: 11px;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+    .maintenance-table-subtitle {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: .8rem;
+        font-weight: 600;
+    }
+    .table-count-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border: 1px solid #dbe5f2;
+        border-radius: 999px;
+        padding: 7px 11px;
+        background: #fff;
+        color: #475569;
+        font-size: .78rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .maint-table-wrapper {
+        max-height: 610px;
+        overflow: auto;
+        scrollbar-gutter: stable;
+        overscroll-behavior: contain;
+    }
+    .maint-table {
+        width: 100%;
+        min-width: 1040px;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #fff;
+        text-align: left;
+    }
+    .maint-table thead { background: #f8fafc; }
+    .maint-table th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        padding: 12px 16px;
+        border-bottom: 1px solid #dbe5f2;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: .72rem;
+        font-weight: 850;
+        letter-spacing: .055em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .maint-table td {
+        padding: 15px 16px;
+        border-bottom: 1px solid #edf2f7;
+        color: #334155;
+        font-size: .9rem;
+        vertical-align: middle;
+    }
+    .maint-table tbody tr[data-maintenance-row] {
+        position: relative;
+        transition: background-color .18s ease, box-shadow .18s ease;
+    }
+    .maint-table tbody tr[data-maintenance-row]:hover {
+        background: #f8fbff;
+        box-shadow: inset 3px 0 0 #93c5fd;
+    }
+    .maint-table th:nth-child(1) { width: 18%; }
+    .maint-table th:nth-child(2) { width: 18%; }
+    .maint-table th:nth-child(3) { width: 11%; }
+    .maint-table th:nth-child(4) { width: 10%; }
+    .maint-table th:nth-child(5) { width: 17%; }
+    .maint-table th:nth-child(6) { width: 16%; }
+    .maint-table th:nth-child(7) { width: 10%; }
+    .maint-table .action-cell { text-align: center; }
     .table-toolbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 10px;
+        padding: 14px 20px;
+        border-bottom: 1px solid #edf2f7;
+        background: #fff;
         flex-wrap: wrap;
     }
+    .table-search-wrap {
+        position: relative;
+        width: min(460px, 100%);
+    }
+    .table-search-wrap > i {
+        position: absolute;
+        top: 50%;
+        left: 13px;
+        color: #94a3b8;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
     .table-search {
-        width: min(420px, 100%);
+        width: 100%;
         border: 1px solid #cbd5e1;
-        border-radius: 9px;
-        padding: 8px 12px;
+        border-radius: 10px;
+        padding: 10px 13px 10px 38px;
         font-size: 0.92rem;
         color: #1e293b;
         background: #fff;
@@ -202,22 +318,68 @@
         display: inline-flex;
         align-items: center;
         border-radius: 999px;
-        padding: 4px 10px;
-        font-size: 0.8rem;
-        font-weight: 700;
+        gap: 7px;
+        padding: 5px 10px;
+        font-size: 0.76rem;
+        font-weight: 800;
         border: 1px solid transparent;
     }
     .status-pill.pending { background: #fffbeb; color: #a16207; border-color: #fde68a; }
     .status-pill.ongoing { background: #ecfeff; color: #0e7490; border-color: #bae6fd; }
     .status-pill.completed { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .status-pill::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        flex: 0 0 7px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 3px rgba(100, 116, 139, .12);
+    }
+    .priority-pill { display:inline-flex; margin-top:5px; padding:3px 7px; border-radius:999px; font-size:.67rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+    .priority-pill.normal { background:#f1f5f9; color:#475569; }
+    .priority-pill.high { background:#fff7ed; color:#c2410c; }
+    .priority-pill.critical { background:#fee2e2; color:#b91c1c; }
+    .overdue-label { display:block; margin-top:4px; color:#dc2626; font-size:.7rem; font-weight:800; white-space:nowrap; }
+    .proof-link { display:inline-flex; align-items:center; gap:5px; margin-top:5px; color:#2563eb; font-size:.72rem; font-weight:800; text-decoration:none; }
     .remarks-cell {
         color: #64748b;
-        max-width: 300px;
+        max-width: 330px;
         margin: 0 auto;
         text-align: left;
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        line-height: 1.45;
+    }
+    .remarks-label {
+        display:block;
+        margin-bottom:4px;
+        color:#94a3b8;
+        font-size:.62rem;
+        font-weight:850;
+        letter-spacing:.05em;
+        text-transform:uppercase;
     }
     .facility-cell {
         font-weight: 700;
+    }
+    .facility-name {
+        display: block;
+        color: #0f172a;
+        font-size: .94rem;
+        font-weight: 850;
+        line-height: 1.3;
+    }
+    .facility-record-id {
+        display: block;
+        margin-top: 4px;
+        color: #94a3b8;
+        font-size: .69rem;
+        font-weight: 750;
+        letter-spacing: .03em;
     }
     .facility-identity {
         display: flex;
@@ -233,6 +395,63 @@
         border-radius: 10px;
         border: 1px solid #dbeafe;
     }
+    .issue-cell {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+    }
+    .issue-cell-icon {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+        border-radius: 9px;
+        background: #fff7ed;
+        color: #ea580c;
+    }
+    .issue-name { color:#1e293b; font-weight:800; line-height:1.35; }
+    .date-stack { display:grid; gap:4px; color:#334155; font-weight:700; }
+    .date-stack > span { display:inline-flex; align-items:center; gap:6px; }
+    .date-stack i { width:13px; color:#94a3b8; }
+    .assignee-name { color:#64748b; font-size:.75rem; font-weight:700; }
+    .work-plan-stack { display:grid; gap:7px; }
+    .work-plan-item { display:flex; align-items:center; gap:8px; min-width:0; }
+    .work-plan-icon {
+        width:27px;
+        height:27px;
+        flex:0 0 27px;
+        display:grid;
+        place-items:center;
+        border-radius:8px;
+        background:#eff6ff;
+        color:#2563eb;
+        font-size:.7rem;
+    }
+    .work-plan-item.is-awaiting .work-plan-icon { background:#fff7ed; color:#d97706; }
+    .work-plan-copy { min-width:0; display:grid; gap:1px; }
+    .work-plan-copy small { color:#94a3b8; font-size:.61rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .work-plan-copy strong { overflow:hidden; color:#334155; font-size:.76rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+    .work-plan-item.is-awaiting .work-plan-copy strong { color:#92400e; }
+    .schedule-btn {
+        min-width: 92px;
+        min-height: 36px;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 7px !important;
+        border: 1px solid #bfdbfe !important;
+        border-radius: 9px !important;
+        padding: 8px 10px !important;
+        background: #eff6ff !important;
+        color: #1d4ed8 !important;
+        font-size: .76rem !important;
+        font-weight: 850 !important;
+        box-shadow: none !important;
+    }
+    .schedule-btn:hover { border-color:#93c5fd !important; background:#dbeafe !important; }
+    tr[data-status="ongoing"] .schedule-btn { border-color:#a7f3d0 !important; background:#ecfdf5 !important; color:#047857 !important; }
     .facility-thumbnail {
         display: block;
         object-fit: cover;
@@ -264,10 +483,12 @@
     .facility-issues-row.hidden-row { display: none; }
     .facility-issues-cell { padding: 0 !important; background: #f8fafc; }
     .facility-issues-panel {
-        padding: 14px 18px 18px;
+        padding: 16px 20px 20px;
         display: grid;
-        gap: 9px;
+        gap: 10px;
+        border-left: 3px solid #bfdbfe;
     }
+    .facility-issues-heading-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .facility-issues-heading {
         color: #475569;
         font-size: .78rem;
@@ -276,21 +497,60 @@
         text-transform: uppercase;
         letter-spacing: .04em;
     }
+    .facility-issues-count {
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        padding:5px 9px;
+        border:1px solid #dbe5f2;
+        border-radius:999px;
+        background:#fff;
+        color:#64748b;
+        font-size:.7rem;
+        font-weight:800;
+    }
     .facility-issue-item {
         display: grid;
-        grid-template-columns: minmax(190px, 1.25fr) minmax(90px, .55fr) minmax(90px, .55fr) minmax(220px, 1.5fr) auto;
+        grid-template-columns: minmax(230px, 1.25fr) minmax(105px, .5fr) minmax(110px, .55fr) minmax(240px, 1.4fr) auto;
         align-items: center;
-        gap: 12px;
-        padding: 11px 12px;
+        gap: 14px;
+        padding: 13px 14px;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
+        border-radius: 12px;
         background: #fff;
         text-align: left;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
     }
+    .facility-issue-item:hover { border-color:#bfdbfe; box-shadow:0 7px 18px rgba(15,23,42,.055); transform:translateY(-1px); }
+    .facility-issue-main { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+    .facility-issue-icon {
+        width:32px;
+        height:32px;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        flex:0 0 32px;
+        border-radius:9px;
+        background:#fff7ed;
+        color:#ea580c;
+    }
+    .facility-issue-name { display:block; color:#1e293b; font-size:.86rem; line-height:1.35; }
     .facility-issue-period,
     .facility-issue-remarks { color: #64748b; font-size: .86rem; }
-    .facility-issue-remarks { overflow-wrap: anywhere; }
+    .facility-issue-period { display:inline-flex; align-items:center; gap:6px; font-weight:700; }
+    .facility-issue-period i { color:#94a3b8; }
+    .facility-issue-remarks {
+        display:-webkit-box;
+        overflow:hidden;
+        overflow-wrap:anywhere;
+        -webkit-box-orient:vertical;
+        -webkit-line-clamp:2;
+        line-clamp:2;
+        line-height:1.45;
+    }
     @media (max-width: 900px) {
+        .facility-issues-heading-row { align-items:flex-start; flex-wrap:wrap; }
+        .facility-issues-panel { padding:14px; }
         .facility-issue-item { grid-template-columns: 1fr; }
     }
     .remarks-muted {
@@ -323,47 +583,118 @@
         padding: 16px;
     }
     .maintenance-modal {
-        width: min(560px, 95vw);
+        width: min(760px, calc(100vw - 24px));
         background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
-        max-height: 92vh;
-        overflow-y: auto;
+        border: 1px solid #dbe5f2;
+        border-radius: 22px;
+        box-shadow: 0 28px 80px rgba(15,23,42,.30);
+        max-height: calc(100vh - 24px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
     .maintenance-modal-header {
-        padding: 20px 22px;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
+        flex: 0 0 auto;
+        padding: 22px 68px 20px 24px;
+        background: linear-gradient(135deg,#f8fbff 0%,#eef2ff 100%);
+        border-bottom: 1px solid #dbe5f2;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        border-radius: 18px 18px 0 0;
+        gap: 14px;
+        position: relative;
+    }
+    .maintenance-modal-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg,#2563eb,#6366f1);
+        color: #fff;
+        box-shadow: 0 9px 20px rgba(79,70,229,.20);
+    }
+    .maintenance-modal-heading {
+        min-width: 0;
+    }
+    .maintenance-modal-subtitle {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.4;
     }
     .maintenance-modal-title {
         margin: 0;
-        font-size: 1.2rem;
-        font-weight: 800;
-        color: #1e293b;
+        font-size: 1.25rem;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -.02em;
     }
     .maintenance-modal-close {
-        background: none;
-        border: none;
-        font-size: 1.6rem;
-        color: #94a3b8;
+        position: absolute;
+        z-index: 5;
+        top: 18px;
+        right: 18px;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.9);
+        border: 1px solid #dbe5f2;
+        border-radius: 11px;
+        font-size: 1rem;
+        color: #64748b;
         cursor: pointer;
-        line-height: 1;
-        padding: 2px 6px;
     }
-    .maintenance-modal-close:hover { color: #334155; }
-    .maintenance-modal-body { padding: 20px 22px; }
+    .maintenance-modal-close:hover { color:#e11d48; background:#fff1f2; border-color:#fecdd3; }
+    .maintenance-modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 20px 26px 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
     .maintenance-form { display: flex; flex-direction: column; gap: 14px; }
+    .maintenance-form-section-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 5px 0 -2px;
+        color: #475569;
+        font-size: .73rem;
+        font-weight: 850;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+    .maintenance-form-section-title i { color:#2563eb; }
     .maintenance-form .field-group { display: flex; flex-direction: column; gap: 6px; }
     .maintenance-form .field-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         font-size: 0.78rem;
         color: #64748b;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+    }
+    .field-required,
+    .field-optional {
+        font-size: .58rem;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: none;
+    }
+    .field-required { color:#dc2626; }
+    .field-optional { color:#94a3b8; }
+    .field-help {
+        color:#64748b;
+        font-size:.68rem;
+        line-height:1.45;
     }
     .maintenance-form .field-control {
         width: 100%;
@@ -397,11 +728,33 @@
         grid-template-columns: 1.4fr 1fr;
         gap: 8px;
     }
+    .assignment-note {
+        display:flex;
+        align-items:flex-start;
+        gap:10px;
+        padding:11px 12px;
+        border:1px solid #99f6e4;
+        border-radius:11px;
+        background:#f0fdfa;
+        color:#0f766e;
+        font-size:.72rem;
+        line-height:1.45;
+    }
+    .assignment-note i { margin-top:2px; color:#0d9488; }
+    .assignment-note strong { color:#115e59; }
+    #manualAssignmentFields.is-disabled { opacity:.58; }
     .maintenance-modal-actions {
+        position: sticky;
+        z-index: 4;
+        bottom: 0;
         display: flex;
         justify-content: flex-end;
         gap: 10px;
-        margin-top: 4px;
+        margin: 20px -26px 0;
+        padding: 14px 26px;
+        border-top: 1px solid #e2e8f0;
+        background: rgba(255,255,255,.97);
+        backdrop-filter: blur(8px);
     }
     .maintenance-btn-cancel,
     .maintenance-btn-save {
@@ -418,6 +771,19 @@
     .maintenance-btn-save {
         background: #2563eb;
         color: #fff;
+        min-width: 170px;
+        box-shadow: 0 7px 16px rgba(37,99,235,.20);
+    }
+
+    @media (max-width: 600px) {
+        .modal-overlay { padding: 6px; }
+        .maintenance-modal { width:calc(100vw - 12px); max-height:calc(100vh - 12px); border-radius:17px; }
+        .maintenance-modal-header { padding:17px 55px 16px 16px; }
+        .maintenance-modal-icon { width:42px; height:42px; flex-basis:42px; border-radius:12px; }
+        .maintenance-modal-body { padding:16px 16px 0; }
+        .maintenance-form-grid { grid-template-columns:1fr; }
+        .maintenance-modal-actions { margin:18px -16px 0; padding:12px 16px; }
+        .maintenance-btn-cancel, .maintenance-btn-save { flex:1; }
     }
 
     body.dark-mode .maintenance-page .report-card {
@@ -448,6 +814,21 @@
     body.dark-mode .maintenance-page .remarks-muted {
         color: #94a3b8;
     }
+    body.dark-mode .maintenance-page .field-required { color:#fca5a5; }
+    body.dark-mode .maintenance-page .field-optional,
+    body.dark-mode .maintenance-page .field-help { color:#94a3b8; }
+    body.dark-mode .maintenance-page .assignment-note {
+        background:rgba(13,148,136,.12);
+        border-color:rgba(45,212,191,.3);
+        color:#99f6e4;
+    }
+    body.dark-mode .maintenance-page .assignment-note strong { color:#ccfbf1; }
+    body.dark-mode .maintenance-page .remarks-label,
+    body.dark-mode .maintenance-page .work-plan-copy small { color:#64748b; }
+    body.dark-mode .maintenance-page .work-plan-copy strong { color:#cbd5e1; }
+    body.dark-mode .maintenance-page .work-plan-icon { background:#1e3a5f; color:#93c5fd; }
+    body.dark-mode .maintenance-page .work-plan-item.is-awaiting .work-plan-icon { background:rgba(146,64,14,.25); color:#fbbf24; }
+    body.dark-mode .maintenance-page .work-plan-item.is-awaiting .work-plan-copy strong { color:#fcd34d; }
     body.dark-mode .maintenance-page .filter-section {
         background: #111827;
         border-color: #334155;
@@ -470,10 +851,32 @@
         border-color: #475569;
     }
     body.dark-mode .maintenance-page .maint-table-wrapper,
-    body.dark-mode .maintenance-page .maint-table {
+    body.dark-mode .maintenance-page .maint-table,
+    body.dark-mode .maintenance-page .maintenance-table-card {
         background: #0f172a;
         border-color: #334155;
     }
+    body.dark-mode .maintenance-page .maintenance-table-head,
+    body.dark-mode .maintenance-page .table-toolbar {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-page .maintenance-table-title { color:#e2e8f0; }
+    body.dark-mode .maintenance-page .maintenance-table-title-icon { background:#172554; border-color:#1e40af; color:#93c5fd; }
+    body.dark-mode .maintenance-page .maintenance-table-subtitle { color:#94a3b8; }
+    body.dark-mode .maintenance-page .table-count-chip { background:#0f172a; border-color:#334155; color:#cbd5e1; }
+    body.dark-mode .maintenance-page .facility-name,
+    body.dark-mode .maintenance-page .issue-name { color:#e2e8f0; }
+    body.dark-mode .maintenance-page .facility-record-id,
+    body.dark-mode .maintenance-page .assignee-name { color:#94a3b8; }
+    body.dark-mode .maintenance-page .issue-cell-icon { background:#431407; color:#fdba74; }
+    body.dark-mode .maintenance-page .facility-issues-count { background:#0f172a; border-color:#334155; color:#94a3b8; }
+    body.dark-mode .maintenance-page .facility-issue-name { color:#e2e8f0; }
+    body.dark-mode .maintenance-page .facility-issue-icon { background:#431407; color:#fdba74; }
+    body.dark-mode .maintenance-page .facility-issues-cell,
+    body.dark-mode .maintenance-page .facility-issues-panel { background:#111827; border-color:#334155; }
+    body.dark-mode .maintenance-page .facility-issue-item { background:#0f172a; border-color:#334155; }
+    body.dark-mode .maintenance-page .facility-issue-item:hover { border-color:#475569; box-shadow:none; }
     body.dark-mode .maintenance-page .maint-table thead {
         background: #111827;
     }
@@ -482,6 +885,7 @@
         border-color: #334155;
     }
     body.dark-mode .maintenance-page .maint-table th {
+        background: #111827;
         color: #94a3b8;
     }
     body.dark-mode .maintenance-page .maint-table tr:hover {
@@ -535,11 +939,15 @@
         border: 1px solid #334155;
     }
     body.dark-mode .maintenance-page .maintenance-modal-header {
-        background: #0f172a;
+        background: linear-gradient(135deg,#111827,#172033);
         border-bottom-color: #334155;
     }
+    body.dark-mode .maintenance-page .maintenance-modal-subtitle { color:#94a3b8; }
+    body.dark-mode .maintenance-page .maintenance-form-section-title { color:#cbd5e1; }
     body.dark-mode .maintenance-page .maintenance-modal-close {
         color: #94a3b8;
+        background: #111827;
+        border-color: #334155;
     }
     body.dark-mode .maintenance-page .maintenance-modal-close:hover {
         color: #e2e8f0;
@@ -554,6 +962,10 @@
     }
     body.dark-mode .maintenance-page .maintenance-btn-save {
         background: #1d4ed8;
+    }
+    body.dark-mode .maintenance-page .maintenance-modal-actions {
+        background: rgba(15,23,42,.97);
+        border-color: #334155;
     }
     body.dark-mode .maintenance-page .empty-row-cell {
         color: #94a3b8;
@@ -571,7 +983,12 @@
         .report-card { padding: 16px; }
         .table-toolbar { align-items: stretch; }
         .table-search { width: 100%; }
-        .maint-table-wrapper { overflow: visible; border: 0; background: transparent; }
+        .maintenance-table-head { align-items:flex-start; padding:15px; }
+        .maintenance-table-subtitle { max-width:280px; }
+        .table-count-chip { padding:6px 9px; }
+        .table-toolbar { padding:12px 15px; }
+        .result-count { display:none; }
+        .maint-table-wrapper { max-height:none; overflow: visible; border: 0; background: transparent; padding:12px; }
         .maint-table,
         .maint-table tbody { display: block; width: 100%; }
         .maint-table thead { display: none; }
@@ -635,6 +1052,8 @@
         .is-expanded .mobile-row-toggle i { transform: rotate(180deg); }
         .maint-table .remarks-cell { max-width: none; margin: 0; }
         .maint-table tbody tr:not([data-maintenance-row]) { display: block; }
+        .maint-table tbody tr.facility-issues-row.hidden-row,
+        .maint-table tbody tr#maintenanceNoMatchRow.hidden-row { display: none; }
         .maint-table .empty-row-cell { display: block; width: 100%; border: 1px solid #dbe4f2; border-radius: 12px; }
         body.dark-mode .maintenance-page .maint-table tbody tr[data-maintenance-row] {
             background: #111827;
@@ -675,7 +1094,7 @@
                 title="CIMM maintenance synchronization API {{ $cimmIntegrationEnabled ? 'is configured' : 'is not configured' }}"
             >
                 <span class="cimm-status-dot" aria-hidden="true"></span>
-                CIMM Integration · {{ $cimmIntegrationEnabled ? 'Active' : 'Not Configured' }}
+                CIMM Integration &middot; {{ $cimmIntegrationEnabled ? 'Active' : 'Not Configured' }}
             </span>
         </div>
         <div class="header-actions">
@@ -690,19 +1109,19 @@
 
     <div class="stats-grid">
         <div class="stat-box stat-needing">
-            <div class="stat-label">🔴 Needing Maint.</div>
+            <div class="stat-label"><i class="fa fa-triangle-exclamation"></i> Needing Maint.</div>
             <div class="stat-value">{{ $needingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-pending">
-            <div class="stat-label">🟡 Pending</div>
+            <div class="stat-label"><i class="fa fa-clock"></i> Pending</div>
             <div class="stat-value">{{ $pendingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-ongoing">
-            <div class="stat-label">🔧 Ongoing</div>
+            <div class="stat-label"><i class="fa fa-screwdriver-wrench"></i> Ongoing</div>
             <div class="stat-value">{{ $ongoingCount ?? 0 }}</div>
         </div>
         <div class="stat-box stat-completed">
-            <div class="stat-label">✅ Completed</div>
+            <div class="stat-label"><i class="fa fa-circle-check"></i> Completed</div>
             <div class="stat-value">{{ $completedCount ?? 0 }}</div>
         </div>
     </div>
@@ -711,7 +1130,7 @@
         <div class="filter-group">
             <label>Facility</label>
             <select name="facility_id" id="facility_id">
-                <option value="" disabled selected>Select Facility</option>
+                <option value="" @selected(!request()->filled('facility_id'))>All Facilities</option>
                 @foreach($facilities as $facility)
                     <option value="{{ $facility->id }}" @if(request('facility_id') == $facility->id) selected @endif>{{ $facility->name }}</option>
                 @endforeach
@@ -720,7 +1139,7 @@
         <div class="filter-group">
             <label>Month</label>
             <select name="month" id="month">
-                <option value="" disabled selected>Select Month</option>
+                <option value="" @selected(!request()->filled('month'))>All Months</option>
                 @foreach(range(1,12) as $m)
                     <option value="{{ str_pad($m,2,'0',STR_PAD_LEFT) }}" @if(request('month') == str_pad($m,2,'0',STR_PAD_LEFT)) selected @endif>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
                 @endforeach
@@ -747,32 +1166,48 @@
         <a href="{{ route('modules.maintenance.index') }}" class="btn-filter btn-reset">Reset</a>
     </form>
 
-    <div class="table-toolbar">
-        <input
-            type="text"
-            id="maintenanceSearch"
-            class="table-search"
-            placeholder="Quick search: facility, issue type, status, remarks..."
-        >
-        @php
-            $maintenanceGroups = collect($maintenanceRows ?? [])->groupBy('facility_id');
-        @endphp
-        <div class="result-count">Visible facilities: <span id="maintenanceVisibleCount">{{ $maintenanceGroups->count() }}</span></div>
-    </div>
+    @php
+        $maintenanceGroups = collect($maintenanceRows ?? [])->groupBy('facility_id');
+    @endphp
+    <section class="maintenance-table-card" aria-labelledby="maintenanceQueueTitle">
+        <div class="maintenance-table-head">
+            <div>
+                <div class="maintenance-table-title" id="maintenanceQueueTitle">
+                    <span class="maintenance-table-title-icon"><i class="fa-solid fa-list-check"></i></span>
+                    <span>Maintenance Work Queue</span>
+                </div>
+                <div class="maintenance-table-subtitle">Review facility issues, schedules, assignments, and current work status.</div>
+            </div>
+            <span class="table-count-chip"><i class="fa-solid fa-building-circle-exclamation"></i> <span id="maintenanceVisibleCount">{{ $maintenanceGroups->count() }}</span> facilities</span>
+        </div>
+        <div class="table-toolbar">
+            <div class="table-search-wrap">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input
+                    type="search"
+                    id="maintenanceSearch"
+                    class="table-search"
+                    placeholder="Search facility, issue, status, assignee, or remarks..."
+                    autocomplete="off"
+                    aria-label="Search maintenance work queue"
+                >
+            </div>
+            <div class="result-count"><i class="fa-solid fa-circle-info"></i> Use "View issues" to inspect multiple records under one facility.</div>
+        </div>
 
-    <div class="maint-table-wrapper">
+        <div class="maint-table-wrapper">
         <table class="maint-table">
             <thead>
                 <tr>
-                    <th>Facility</th>
-                    <th>Issue Type</th>
-                    <th>Trigger Date</th>
+                    <th scope="col">Facility</th>
+                    <th scope="col">Issue Type</th>
+                    <th scope="col">Reported</th>
                     <!-- Efficiency column removed -->
-                    <th>Status</th>
-                    <th>Scheduled</th>
-                    <th>Remarks</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Work Plan</th>
+                    <th scope="col">Remarks</th>
                     @if($userRole !== 'staff')
-                    <th>Action</th>
+                    <th scope="col">Action</th>
                     @endif
                 </tr>
             </thead>
@@ -784,12 +1219,16 @@
                     $issueCount = $facilityIssues->count();
                     $statusKey = strtolower((string) ($row['maintenance_status'] ?? ''));
                     $statusClass = str_contains($statusKey, 'complete') ? 'completed' : (str_contains($statusKey, 'ongoing') ? 'ongoing' : 'pending');
+                    $scheduledDateText = trim((string) ($row['scheduled_date'] ?? ''));
+                    $hasScheduledDate = $scheduledDateText !== '' && $scheduledDateText !== '-';
+                    $assigneeText = trim((string) ($row['assigned_to'] ?? ''));
+                    $hasAssignee = $assigneeText !== '' && $assigneeText !== '-';
                     $searchText = strtolower($facilityIssues->map(fn ($issue) => implode(' ', [
                         $issue['facility'] ?? '', $issue['issue_type'] ?? '', $issue['trigger_date'] ?? $issue['trigger_month'] ?? '',
-                        $issue['maintenance_status'] ?? '', $issue['scheduled_date'] ?? '', $issue['remarks'] ?? '',
+                        $issue['maintenance_status'] ?? '', $issue['scheduled_date'] ?? '', $issue['assigned_to'] ?? '', $issue['remarks'] ?? '',
                     ]))->implode(' '));
                 @endphp
-                <tr data-id="{{ $row['id'] ?? $i }}"
+                <tr class="maintenance-row" data-id="{{ $row['id'] ?? $i }}"
                     data-maintenance-row
                     data-maintenance-item
                     data-facility_name="{{ $row['facility'] ?? '' }}"
@@ -801,7 +1240,9 @@
                     data-maintenance_type="{{ $row['maintenance_type'] ?? '' }}" 
                     data-scheduled_date="{{ $row['scheduled_date'] ?? '' }}" 
                     data-assigned_to="{{ $row['assigned_to'] ?? '' }}" 
-                    data-completed_date="{{ $row['completed_date'] ?? '' }}">
+                    data-completed_date="{{ $row['completed_date'] ?? '' }}"
+                    data-photo_requirement="{{ $row['photo_requirement'] ?? 'Optional' }}"
+                    data-proof_photo_url="{{ $row['proof_photo_url'] ?? '' }}">
                     <td class="facility-cell">
                         <div class="facility-identity">
                             @if(!empty($row['facility_image_url']))
@@ -821,10 +1262,11 @@
                                 </span>
                             @endif
                             <div>
-                                <span>{{ $row['facility'] }}</span>
+                                <span class="facility-name">{{ $row['facility'] }}</span>
+                                <span class="facility-record-id">FACILITY #{{ $facilityId }}</span>
                                 @if($issueCount > 1)
-                                    <button type="button" class="facility-issues-toggle" data-issues-target="facility-issues-{{ $facilityId }}" data-issue-count="{{ $issueCount }}" aria-expanded="false">
-                                        <span>View {{ $issueCount }} issues</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                    <button type="button" class="facility-issues-toggle" data-issues-target="facility-issues-{{ $facilityId }}" data-issue-count="{{ $issueCount - 1 }}" aria-expanded="false">
+                                        <span>View {{ $issueCount - 1 }} more</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 @endif
                             </div>
@@ -833,24 +1275,55 @@
                             <span>Details</span><i class="fa fa-chevron-down" aria-hidden="true"></i>
                         </button>
                     </td>
-                    <td data-label="Issue Type">{{ $row['issue_type'] }}</td>
-                    <td data-label="Trigger Date">{{ $row['trigger_date'] ?? $row['trigger_month'] }}</td>
+                    <td data-label="Issue Type">
+                        <div class="issue-cell">
+                            <span class="issue-cell-icon" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                            <div>
+                                <div class="issue-name">{{ $row['issue_type'] }}</div>
+                                <span class="priority-pill {{ strtolower($row['priority'] ?? 'Normal') }}">{{ $row['priority'] ?? 'Normal' }} priority</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Reported">
+                        <div class="date-stack"><span><i class="fa-regular fa-calendar"></i>{{ $row['trigger_date'] ?? $row['trigger_month'] }}</span></div>
+                    </td>
                     <!-- Efficiency value removed -->
                     <td data-label="Status"><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
-                    <td data-label="Scheduled">{{ $row['scheduled_date'] }}</td>
+                    <td data-label="Work Plan">
+                        <div class="work-plan-stack">
+                            <div class="work-plan-item {{ $hasScheduledDate ? '' : 'is-awaiting' }}">
+                                <span class="work-plan-icon"><i class="fa-regular fa-calendar-check"></i></span>
+                                <span class="work-plan-copy"><small>Schedule</small><strong>{{ $hasScheduledDate ? $scheduledDateText : 'Awaiting CIMM' }}</strong></span>
+                            </div>
+                            <div class="work-plan-item {{ $hasAssignee ? '' : 'is-awaiting' }}">
+                                <span class="work-plan-icon"><i class="fa-regular fa-user"></i></span>
+                                <span class="work-plan-copy"><small>Assignee</small><strong>{{ $hasAssignee ? $assigneeText : 'CIMM to assign' }}</strong></span>
+                            </div>
+                        </div>
+                        @if($row['is_overdue'] ?? false)
+                            <span class="overdue-label"><i class="fa fa-clock"></i> {{ $row['overdue_days'] }} day(s) overdue</span>
+                        @endif
+                    </td>
                     <td class="remarks-muted" data-label="Remarks">
+                        <span class="remarks-label">Latest update</span>
                         <div class="remarks-cell" title="{{ $row['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($row['remarks'] ?? '-'), 95) }}</div>
+                        @if(!empty($row['proof_photo_url']))
+                            <a class="proof-link" href="{{ $row['proof_photo_url'] }}" target="_blank" rel="noopener"><i class="fa fa-image"></i> View proof</a>
+                        @endif
                     </td>
                     @if($userRole !== 'staff')
-                    <td data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
+                    <td class="action-cell" data-label="Action">{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $row['action']) !!}</td>
                     @endif
                 </tr>
                 @if($issueCount > 1)
                     <tr id="facility-issues-{{ $facilityId }}" class="facility-issues-row hidden-row">
                         <td colspan="{{ $userRole === 'staff' ? 6 : 7 }}" class="facility-issues-cell">
                             <div class="facility-issues-panel">
-                                <div class="facility-issues-heading">All maintenance issues — latest first</div>
-                                @foreach($facilityIssues as $issue)
+                                <div class="facility-issues-heading-row">
+                                    <div class="facility-issues-heading">Additional maintenance issues &mdash; latest first</div>
+                                    <span class="facility-issues-count"><i class="fa-solid fa-layer-group"></i> {{ $issueCount - 1 }} more</span>
+                                </div>
+                                @foreach($facilityIssues->skip(1) as $issue)
                                     @php
                                         $issueStatusKey = strtolower((string) ($issue['maintenance_status'] ?? ''));
                                         $issueStatusClass = str_contains($issueStatusKey, 'complete') ? 'completed' : (str_contains($issueStatusKey, 'ongoing') ? 'ongoing' : 'pending');
@@ -865,11 +1338,19 @@
                                         data-scheduled_date="{{ $issue['scheduled_date'] ?? '' }}"
                                         data-assigned_to="{{ $issue['assigned_to'] ?? '' }}"
                                         data-completed_date="{{ $issue['completed_date'] ?? '' }}"
+                                        data-photo_requirement="{{ $issue['photo_requirement'] ?? 'Optional' }}"
+                                        data-proof_photo_url="{{ $issue['proof_photo_url'] ?? '' }}"
                                         data-remarks="{{ $issue['remarks'] ?? '' }}">
-                                        <strong>{{ $issue['issue_type'] ?? '-' }}</strong>
-                                        <span class="facility-issue-period">{{ $issue['trigger_date'] ?? $issue['trigger_month'] ?? '-' }}</span>
+                                        <div class="facility-issue-main">
+                                            <span class="facility-issue-icon" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                                            <div>
+                                                <strong class="facility-issue-name">{{ $issue['issue_type'] ?? '-' }}</strong>
+                                                <span class="priority-pill {{ strtolower($issue['priority'] ?? 'Normal') }}">{{ $issue['priority'] ?? 'Normal' }} priority</span>
+                                            </div>
+                                        </div>
+                                        <span class="facility-issue-period"><i class="fa-regular fa-calendar"></i>{{ $issue['trigger_date'] ?? $issue['trigger_month'] ?? '-' }}</span>
                                         <span><span class="status-pill {{ $issueStatusClass }}">{{ $issue['maintenance_status'] ?? '-' }}</span></span>
-                                        <span class="facility-issue-remarks">{{ \Illuminate\Support\Str::limit((string) ($issue['remarks'] ?? '-'), 120) }}</span>
+                                        <span class="facility-issue-remarks" title="{{ $issue['remarks'] ?? '-' }}">{{ \Illuminate\Support\Str::limit((string) ($issue['remarks'] ?? '-'), 145) }}</span>
                                         @if($userRole !== 'staff')
                                             <span>{!! str_replace('btn btn-sm', 'btn btn-sm schedule-btn', $issue['action']) !!}</span>
                                         @endif
@@ -887,21 +1368,27 @@
                 </tr>
             </tbody>
         </table>
-    </div>
+        </div>
+</section>
 </div>
 
 <div id="scheduleModal" class="modal-overlay">
     <div class="maintenance-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="maintenance-modal-header">
-            <h3 id="modalTitle" class="maintenance-modal-title">Schedule Maintenance</h3>
-            <button type="button" onclick="closeScheduleModal()" class="maintenance-modal-close" aria-label="Close modal">&times;</button>
+            <div class="maintenance-modal-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+            <div class="maintenance-modal-heading">
+                <h3 id="modalTitle" class="maintenance-modal-title">Schedule Maintenance</h3>
+                <p class="maintenance-modal-subtitle">Set the work schedule, assignee, requirements, and completion status.</p>
+            </div>
+            <button type="button" onclick="closeScheduleModal()" class="maintenance-modal-close" aria-label="Close maintenance form"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="maintenance-modal-body">
             <form id="scheduleForm" class="maintenance-form">
                 <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
 
+                <div class="maintenance-form-section-title"><i class="fa-solid fa-clipboard-list"></i> Work Details</div>
                 <div class="field-group">
-                    <label for="modalFacility" class="field-label">Facility</label>
+                    <label for="modalFacility" class="field-label">Facility <span class="field-required">Required</span></label>
                     <select id="modalFacility" class="field-control">
                         <option value="" disabled selected>Select Facility</option>
                         @foreach($facilities as $facility)
@@ -912,7 +1399,7 @@
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalTriggerMonth" class="field-label">Trigger Month and Year</label>
+                        <label for="modalTriggerMonth" class="field-label">Trigger Month and Year <span class="field-required">Required</span></label>
                         <div class="trigger-grid">
                             <select id="modalTriggerMonth" class="field-control">
                                 @foreach(range(1,12) as $m)
@@ -929,7 +1416,7 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalIssueType" class="field-label">Issue Type</label>
+                        <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
                         <select id="modalIssueType" class="field-control">
                             <option value="" disabled selected>Select Issue</option>
                             <option value="Electrical - Power Outage">Electrical - Power Outage</option>
@@ -951,7 +1438,7 @@
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalMaintType" class="field-label">Maintenance Type</label>
+                        <label for="modalMaintType" class="field-label">Maintenance Type <span class="field-required">Required</span></label>
                         <select id="modalMaintType" class="field-control">
                             <option value="Preventive">Preventive</option>
                             <option value="Corrective">Corrective</option>
@@ -959,24 +1446,72 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalScheduleDate" class="field-label">Scheduled Date</label>
+                        <label for="modalScheduleDate" class="field-label">Scheduled Date <span class="field-optional">Optional</span></label>
                         <input type="date" id="modalScheduleDate" class="field-control">
+                        <small class="field-help">CIMM may set the schedule later when left blank.</small>
+                    </div>
+                </div>
+
+                <div class="maintenance-form-section-title"><i class="fa-solid fa-user-gear"></i> Assignment</div>
+                <div class="field-group">
+                    <label for="modalAssignmentMode" class="field-label">Assignment Method</label>
+                    <select id="modalAssignmentMode" class="field-control">
+                        <option value="cimm">Let CIMM assign (Recommended)</option>
+                        <option value="manual">Assign now</option>
+                    </select>
+                    <div id="cimmAssignmentNote" class="assignment-note">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <span><strong>Forward without an assignee.</strong> CIMM can select the responsible person and sync the assignment back here.</span>
+                    </div>
+                </div>
+                <div class="maintenance-form-grid" id="manualAssignmentFields">
+                    <div class="field-group">
+                        <label for="modalAssigneeRole" class="field-label">Assignee Category <span class="field-required">Required when assigning</span></label>
+                        <select id="modalAssigneeRole" class="field-control">
+                            <option value="">Select category</option>
+                            <option value="engineer">Engineer</option>
+                            <option value="energy_officer">Energy Officer</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="modalAssignedTo" class="field-label">Assigned To <span class="field-required">Required when assigning</span></label>
+                        <select id="modalAssignedTo" class="field-control" disabled>
+                            <option value="">Select a category first</option>
+                            @foreach($assignableUsers ?? collect() as $assignableUser)
+                                <option value="{{ $assignableUser['name'] }}" data-role="{{ $assignableUser['role'] }}">
+                                    {{ $assignableUser['name'] }}{{ ($assignableUser['is_self'] ?? false) ? ' (You)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
 
                 <div class="field-group">
-                    <label for="modalAssignedTo" class="field-label">Assigned To</label>
-                    <input type="text" id="modalAssignedTo" class="field-control" placeholder="e.g. Engr. Cruz">
+                    <label for="modalRemarks" class="field-label">Remarks <span class="field-optional">Optional</span></label>
+                    <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
+                    <small class="field-help">Useful for the exact location, affected equipment, access instructions, or safety concerns.</small>
                 </div>
 
-                <div class="field-group">
-                    <label for="modalRemarks" class="field-label">Remarks</label>
-                    <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
+                <div class="maintenance-form-section-title"><i class="fa-solid fa-circle-check"></i> Completion &amp; Evidence</div>
+                <div class="maintenance-form-grid">
+                    <div class="field-group">
+                        <label for="modalPhotoRequirement" class="field-label">Completion Photo</label>
+                        <select id="modalPhotoRequirement" class="field-control">
+                            <option value="Optional">Optional</option>
+                            <option value="Required">Required</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="modalProofPhoto" class="field-label">Proof Photo <span class="field-optional">Optional until completion</span></label>
+                        <input type="file" id="modalProofPhoto" class="field-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <a id="modalExistingProof" class="proof-link" href="#" target="_blank" rel="noopener" style="display:none;"><i class="fa fa-image"></i> View existing proof</a>
+                    </div>
                 </div>
 
                 <div class="maintenance-form-grid">
                     <div class="field-group">
-                        <label for="modalStatus" class="field-label">Status</label>
+                        <label for="modalStatus" class="field-label">Status <span class="field-required">Required</span></label>
                         <select id="modalStatus" class="field-control">
                             <option value="Pending">Pending</option>
                             <option value="Ongoing">Ongoing</option>
@@ -987,14 +1522,14 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="modalCompletedDate" class="field-label">Completed Date</label>
+                        <label for="modalCompletedDate" class="field-label">Completed Date <span class="field-optional">Required only when completed</span></label>
                         <input type="date" id="modalCompletedDate" class="field-control" disabled>
                     </div>
                 </div>
 
                 <div class="maintenance-modal-actions">
                     <button type="button" onclick="closeScheduleModal()" class="maintenance-btn-cancel">Cancel</button>
-                    <button type="submit" class="maintenance-btn-save">Save Maintenance</button>
+                    <button type="submit" class="maintenance-btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Maintenance</button>
                 </div>
             </form>
         </div>
@@ -1018,14 +1553,67 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalIssueType = document.getElementById('modalIssueType');
     const modalMaintType = document.getElementById('modalMaintType');
     const modalScheduleDate = document.getElementById('modalScheduleDate');
+    const modalAssignmentMode = document.getElementById('modalAssignmentMode');
+    const modalAssigneeRole = document.getElementById('modalAssigneeRole');
     const modalAssignedTo = document.getElementById('modalAssignedTo');
+    const manualAssignmentFields = document.getElementById('manualAssignmentFields');
+    const cimmAssignmentNote = document.getElementById('cimmAssignmentNote');
     const modalRemarks = document.getElementById('modalRemarks');
+    const modalPhotoRequirement = document.getElementById('modalPhotoRequirement');
+    const modalProofPhoto = document.getElementById('modalProofPhoto');
+    const modalExistingProof = document.getElementById('modalExistingProof');
     const modalStatus = document.getElementById('modalStatus');
     const modalCompletedDate = document.getElementById('modalCompletedDate');
     const maintenanceSearch = document.getElementById('maintenanceSearch');
     const visibleCountEl = document.getElementById('maintenanceVisibleCount');
     const noMatchRow = document.getElementById('maintenanceNoMatchRow');
     const tableRows = Array.from(document.querySelectorAll('.maint-table tbody tr[data-search]'));
+    const assigneeOptions = modalAssignedTo
+        ? Array.from(modalAssignedTo.querySelectorAll('option[data-role]')).map((option) => ({
+            value: option.value,
+            label: option.textContent.trim(),
+            role: option.dataset.role || ''
+        }))
+        : [];
+
+    const filterAssignees = (role, selectedName = '') => {
+        if (!modalAssignedTo) return;
+
+        modalAssignedTo.replaceChildren();
+        const matchingUsers = assigneeOptions.filter((option) => option.role === role);
+        const placeholder = !role
+            ? 'Select a category first'
+            : (matchingUsers.length ? 'Select a name' : 'No active users in this category');
+        modalAssignedTo.add(new Option(placeholder, ''));
+
+        matchingUsers.forEach((option) => {
+            modalAssignedTo.add(new Option(option.label, option.value));
+        });
+
+        const isManualAssignment = modalAssignmentMode?.value === 'manual';
+        modalAssignedTo.disabled = !isManualAssignment || !role || matchingUsers.length === 0;
+        modalAssignedTo.value = matchingUsers.some((option) => option.value === selectedName)
+            ? selectedName
+            : '';
+    };
+
+    const updateAssignmentMode = () => {
+        const isManualAssignment = modalAssignmentMode?.value === 'manual';
+        if (manualAssignmentFields) manualAssignmentFields.classList.toggle('is-disabled', !isManualAssignment);
+        if (cimmAssignmentNote) cimmAssignmentNote.hidden = isManualAssignment;
+        if (modalAssigneeRole) modalAssigneeRole.disabled = !isManualAssignment;
+        filterAssignees(modalAssigneeRole?.value || '', modalAssignedTo?.value || '');
+    };
+
+    modalAssignmentMode?.addEventListener('change', updateAssignmentMode);
+
+    if (modalAssigneeRole) {
+        modalAssigneeRole.addEventListener('change', () => {
+            filterAssignees(modalAssigneeRole.value);
+        });
+    }
+
+    updateAssignmentMode();
 
     const updateCompletedDateState = () => {
         if (!modalStatus || !modalCompletedDate) return;
@@ -1066,6 +1654,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const openScheduleModal = () => {
         if (scheduleModal) scheduleModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        const modalBody = scheduleModal?.querySelector('.maintenance-modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
+        window.requestAnimationFrame(function() {
+            scheduleForm?.querySelector('.field-control:not([disabled])')?.focus();
+        });
     };
 
     const applyLocalSearch = () => {
@@ -1109,7 +1702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.setAttribute('aria-expanded', String(willExpand));
             const label = this.querySelector('span');
             const count = this.getAttribute('data-issue-count') || '';
-            if (label) label.textContent = willExpand ? 'Hide issues' : `View ${count} issues`;
+            if (label) label.textContent = willExpand ? 'Hide issues' : `View ${count} more`;
         });
     });
 
@@ -1150,7 +1743,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (modalMaintType) modalMaintType.value = row.getAttribute('data-maintenance_type') || 'Preventive';
             if (modalScheduleDate) modalScheduleDate.value = row.getAttribute('data-scheduled_date') || '';
-            if (modalAssignedTo) modalAssignedTo.value = row.getAttribute('data-assigned_to') || '';
+            if (modalAssignedTo) {
+                const assignedTo = row.getAttribute('data-assigned_to') || '';
+                const matchingAssignee = assigneeOptions.find((option) => option.value === assignedTo);
+
+                if (modalAssignmentMode) {
+                    modalAssignmentMode.value = assignedTo ? 'manual' : 'cimm';
+                }
+                updateAssignmentMode();
+
+                if (modalAssigneeRole) {
+                    modalAssigneeRole.value = matchingAssignee?.role || '';
+                }
+                filterAssignees(matchingAssignee?.role || '', assignedTo);
+
+                if (assignedTo && !matchingAssignee) {
+                    modalAssignedTo.disabled = false;
+                    modalAssignedTo.add(new Option(`${assignedTo} · Existing assignment`, assignedTo));
+                    modalAssignedTo.value = assignedTo;
+                }
+            }
             if (modalRemarks) {
                 const remarksText = row.getAttribute('data-remarks') || '';
                 modalRemarks.value = remarksText === '-' ? '' : remarksText;
@@ -1161,6 +1773,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalStatus.value = canUseStatus ? statusText : 'Ongoing';
             }
             if (modalCompletedDate) modalCompletedDate.value = row.getAttribute('data-completed_date') || '';
+            if (modalPhotoRequirement) modalPhotoRequirement.value = row.getAttribute('data-photo_requirement') || 'Optional';
+            if (modalProofPhoto) modalProofPhoto.value = '';
+            if (modalExistingProof) {
+                const proofUrl = row.getAttribute('data-proof_photo_url') || '';
+                modalExistingProof.href = proofUrl || '#';
+                modalExistingProof.dataset.hasProof = proofUrl ? '1' : '0';
+                modalExistingProof.style.display = proofUrl ? 'inline-flex' : 'none';
+            }
             updateCompletedDateState();
             updateIssueTypeState();
             openScheduleModal();
@@ -1178,6 +1798,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (modalTriggerMonth) modalTriggerMonth.disabled = false;
             if (modalTriggerYear) modalTriggerYear.disabled = false;
             if (modalStatus) modalStatus.value = 'Pending';
+            if (modalAssignmentMode) modalAssignmentMode.value = 'cimm';
+            if (modalAssigneeRole) modalAssigneeRole.value = '';
+            updateAssignmentMode();
+            if (modalPhotoRequirement) modalPhotoRequirement.value = 'Optional';
+            if (modalProofPhoto) modalProofPhoto.value = '';
+            if (modalExistingProof) {
+                modalExistingProof.href = '#';
+                modalExistingProof.dataset.hasProof = '0';
+                modalExistingProof.style.display = 'none';
+            }
             updateCompletedDateState();
             updateIssueTypeState();
             openScheduleModal();
@@ -1198,6 +1828,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.alert('Completed Date is required!');
                 return false;
             }
+            const proofFile = modalProofPhoto?.files?.[0] || null;
+            const hasExistingProof = modalExistingProof?.dataset?.hasProof === '1';
+            if (status === 'Completed' && modalPhotoRequirement?.value === 'Required' && !proofFile && !hasExistingProof) {
+                window.alert('Please upload the required proof photo before completing this maintenance task.');
+                return false;
+            }
+            if (modalAssignmentMode?.value === 'manual' && !modalAssignedTo?.value) {
+                window.alert('Select an assignee or choose “Let CIMM assign”.');
+                modalAssignedTo?.focus();
+                return false;
+            }
 
             const monthNum = modalTriggerMonth?.value;
             const yearVal = modalTriggerYear?.value;
@@ -1205,35 +1846,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? new Date(2000, parseInt(monthNum, 10) - 1, 1).toLocaleString('default', { month: 'long' })
                 : '';
             const triggerMonth = monthName && yearVal ? `${monthName} ${yearVal}` : '';
-            const payload = {
-                maintenance_id: modalMaintenanceId?.value || '',
-                facility_id: modalFacility?.value,
-                trigger_month: triggerMonth,
-                issue_type: modalIssueType?.value,
-                maintenance_type: modalMaintType?.value,
-                scheduled_date: modalScheduleDate?.value,
-                assigned_to: modalAssignedTo?.value,
-                remarks: modalRemarks?.value,
-                maintenance_status: status,
-                completed_date: completedDate,
-                _token: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const payload = new FormData();
+            payload.append('maintenance_id', modalMaintenanceId?.value || '');
+            payload.append('facility_id', modalFacility?.value || '');
+            payload.append('trigger_month', triggerMonth);
+            payload.append('issue_type', modalIssueType?.value || '');
+            payload.append('maintenance_type', modalMaintType?.value || '');
+            payload.append('scheduled_date', modalScheduleDate?.value || '');
+            payload.append('assignment_mode', modalAssignmentMode?.value || 'cimm');
+            payload.append('assigned_to', modalAssignmentMode?.value === 'manual' ? (modalAssignedTo?.value || '') : '');
+            payload.append('remarks', modalRemarks?.value || '');
+            payload.append('maintenance_status', status || '');
+            payload.append('completed_date', completedDate || '');
+            payload.append('photo_requirement', modalPhotoRequirement?.value || 'Optional');
+            payload.append('_token', csrfToken);
+            if (proofFile) payload.append('proof_photo', proofFile);
+
+            const saveButton = scheduleForm.querySelector('.maintenance-btn-save');
+            const restoreSaveButton = () => {
+                if (!saveButton) return;
+                saveButton.disabled = false;
+                saveButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Maintenance';
             };
+            if (saveButton) {
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            }
 
             try {
                 const response = await fetch("{{ route('modules.maintenance.schedule') }}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': payload._token },
-                    body: JSON.stringify(payload),
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: payload,
                 });
                 const body = await response.json().catch(() => ({}));
                 if (!response.ok || !body.success) {
                     const errors = body?.errors ? Object.values(body.errors).flat().join('\n') : '';
                     window.alert(body?.message || errors || 'Failed to save maintenance.');
+                    restoreSaveButton();
                     return;
                 }
                 location.reload();
             } catch (err) {
                 window.alert('Network error while saving maintenance.');
+                restoreSaveButton();
             }
         };
     }

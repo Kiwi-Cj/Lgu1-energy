@@ -6,6 +6,7 @@ use App\Mail\ContactMessageReceived;
 use App\Models\ContactMessage;
 use App\Models\User;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -46,7 +47,7 @@ class ContactMessageController extends Controller
         $this->notifyContactInboxRecipients($contactMessage);
 
         try {
-            if ($supportEmail !== '') {
+            if ($supportEmail !== '' && SystemSettings::emailNotificationsEnabled()) {
                 Mail::to($supportEmail)->send(new ContactMessageReceived($contactMessage));
 
                 $contactMessage->forceFill([
@@ -55,9 +56,13 @@ class ContactMessageController extends Controller
                 ])->save();
             }
 
+            $status = SystemSettings::emailNotificationsEnabled()
+                ? 'Your message has been sent. We will get back to you soon.'
+                : 'Your message was saved. Email delivery is currently disabled by the administrator.';
+
             return back()
                 ->withFragment('contact')
-                ->with('contact_success', 'Your message has been sent. We will get back to you soon.');
+                ->with('contact_success', $status);
         } catch (\Throwable $e) {
             report($e);
 

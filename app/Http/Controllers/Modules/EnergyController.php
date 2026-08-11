@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Support\RoleAccess;
+use App\Support\BaselineResolver;
+use App\Support\SystemSettings;
 use App\Services\EnergyTrendService;
 use Illuminate\Http\Request;
 
@@ -122,11 +124,13 @@ class EnergyController extends Controller
 
     public function energyReport(Request $request)
     {
-        // Get all energy records with facility relationships
         $facilityId = $request->input('facility_id');
         $year = $request->input('year');
         $month = $request->has('month') ? $request->input('month') : date('n');
-        $query = EnergyRecord::with('facility');
+        $reportYear = (int) ($year ?: date('Y'));
+        $facilities = Facility::query()->orderBy('name')->get();
+
+        $query = EnergyRecord::with(['facility.energyProfiles', 'meter']);
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
                 ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
@@ -152,7 +156,7 @@ class EnergyController extends Controller
 
         foreach ($records as $record) {
             $facility = $record->facility;
-            $baseline = $record->baseline_kwh;
+            $baseline = BaselineResolver::forRecord($record, $facility);
             $actualKwh = $record->actual_kwh;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
             $trend = $trendByRecordId[$record->id] ?? 'insufficient';
@@ -164,21 +168,292 @@ class EnergyController extends Controller
 
             $energyRows[] = [
                 'facility' => $facility ? $facility->name : 'N/A',
+                'facility_id' => (int) $record->facility_id,
+                'source' => strtolower((string) ($facility?->source ?? 'local')),
+                'external_ref' => $facility?->external_ref,
                 'month' => $monthYear,
                 'actual_kwh' => number_format($actualKwh, 2),
                 'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : '',
                 'variance' => $variance !== null ? number_format($variance, 2) : '',
                 'trend' => $trend,
+                'has_reading' => true,
+                'summary_key' => (int) $record->facility_id . ':' . (int) $record->year,
             ];
         }
-        
-        $facilities = Facility::all();
-        $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year');
+
+        // Keep every registered facility visible for the selected period, even
+        // before its first reading arrives. Placeholders are excluded from KPI
+        // totals, so completeness is visible without fabricating consumption.
+        $representedFacilityIds = $records
+            ->pluck('facility_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+        $placeholderPeriod = $month
+            ? date('M Y', mktime(0, 0, 0, (int) $month, 1, $reportYear))
+            : (string) $reportYear;
+
+        $facilities
+            ->when($facilityId, fn ($rows) => $rows->where('id', (int) $facilityId))
+            ->reject(fn (Facility $facility) => $representedFacilityIds->contains((int) $facility->id))
+            ->each(function (Facility $facility) use (&$energyRows, $placeholderPeriod) {
+                $baseline = $facility->resolveBaselineKwh();
+                $source = strtolower((string) ($facility->source ?? 'local'));
+
+                $energyRows[] = [
+                    'facility' => $facility->name,
+                    'facility_id' => (int) $facility->id,
+                    'source' => $source === 'cprf' ? 'cprf' : 'local',
+                    'external_ref' => $facility->external_ref,
+                    'month' => $placeholderPeriod,
+                    'actual_kwh' => '',
+                    'baseline_kwh' => $baseline !== null ? number_format($baseline, 2) : '',
+                    'variance' => '',
+                    'trend' => 'awaiting',
+                    'has_reading' => false,
+                    'summary_key' => '',
+                ];
+            });
+
+        $energyRows = collect($energyRows)
+            ->sortBy(fn (array $row) => mb_strtolower((string) ($row['facility'] ?? '')))
+            ->values()
+            ->all();
+
+        $annualSummaries = $this->buildAnnualReportSummaries($records);
+        $years = EnergyRecord::select('year')->distinct()->orderByDesc('year')->pluck('year')
+            ->push($reportYear)
+            ->unique()
+            ->sortDesc()
+            ->values();
         $user = auth()->user();
         $role = RoleAccess::normalize($user);
         $selectedMonth = (string) $month;
 
-        return view('modules.reports.energy', compact('energyRows', 'facilities', 'years', 'role', 'user', 'selectedMonth'));
+        return view('modules.reports.energy', compact('energyRows', 'annualSummaries', 'facilities', 'years', 'role', 'user', 'selectedMonth'));
+    }
+
+    public function exportAnnualSummary(Request $request, Facility $facility, int $year)
+    {
+        abort_unless(RoleAccess::can($request->user(), 'export_reports'), 403, 'You do not have permission to export reports.');
+        abort_unless($year >= 2000 && $year <= 2100, 404);
+
+        if (RoleAccess::is($request->user(), 'staff')) {
+            $hasFacilityAccess = (string) ($request->user()?->facility_id ?? '') === (string) $facility->id
+                || $request->user()?->facilities()->whereKey($facility->id)->exists();
+            abort_unless($hasFacilityAccess, 403, 'You do not have permission to export this facility report.');
+        }
+
+        $seedRecord = EnergyRecord::query()
+            ->where('facility_id', $facility->id)
+            ->where('year', $year)
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
+            ->firstOrFail();
+
+        $summaryKey = (int) $facility->id . ':' . $year;
+        $summary = $this->buildAnnualReportSummaries(collect([$seedRecord]))[$summaryKey] ?? null;
+        abort_unless($summary, 404);
+
+        $format = strtolower((string) $request->query('format', SystemSettings::defaultExportFormat(['pdf', 'csv'])));
+        abort_unless(in_array($format, ['csv', 'pdf'], true), 404);
+
+        $baseFilename = \Illuminate\Support\Str::slug($facility->name)
+            . '-annual-energy-summary-' . $year;
+
+        if ($format === 'pdf') {
+            return \Barryvdh\DomPDF\Facade\Pdf::loadView(
+                'modules.reports.annual-summary-pdf',
+                [
+                    'summary' => $summary,
+                    'generatedAt' => now()->format('F d, Y h:i A'),
+                ]
+            )
+                ->setPaper('a4', 'landscape')
+                ->download($baseFilename . '.pdf');
+        }
+
+        return response()->streamDownload(function () use ($summary) {
+            $stream = fopen('php://output', 'w');
+            fputcsv($stream, ['Annual Energy Summary']);
+            fputcsv($stream, ['Facility', $summary['facility']]);
+            fputcsv($stream, ['Year', $summary['year']]);
+            fputcsv($stream, ['Months Recorded', $summary['months_recorded'] . ' of 12']);
+            fputcsv($stream, []);
+            fputcsv($stream, ['Month', 'Actual kWh', 'Baseline kWh', 'Variance kWh', 'Energy Cost PHP', 'Change %', 'Direction']);
+
+            foreach ($summary['months'] as $month) {
+                fputcsv($stream, [
+                    $month['label'],
+                    $month['actual'],
+                    $month['baseline'],
+                    $month['variance'],
+                    $month['cost'],
+                    $month['change_percent'],
+                    ucfirst($month['direction']),
+                ]);
+            }
+
+            fputcsv($stream, []);
+            fputcsv($stream, ['Essential Annual Metrics', 'Value']);
+            fputcsv($stream, ['Total Actual kWh', $summary['total_actual']]);
+            fputcsv($stream, ['Total Baseline kWh', $summary['total_baseline']]);
+            fputcsv($stream, ['Total Variance kWh', $summary['total_variance']]);
+            fputcsv($stream, ['Variance %', $summary['variance_percent']]);
+            fputcsv($stream, ['Average per Recorded Month kWh', $summary['average_actual']]);
+            fputcsv($stream, ['Total Energy Cost PHP', $summary['total_cost']]);
+            fputcsv($stream, ['Annual Performance', $summary['annual_status']]);
+            fputcsv($stream, ['Peak Month', $summary['peak_month']['label'] ?? 'N/A']);
+            fputcsv($stream, ['Peak Month Actual kWh', $summary['peak_month']['actual'] ?? null]);
+            fputcsv($stream, ['Lowest Month', $summary['lowest_month']['label'] ?? 'N/A']);
+            fputcsv($stream, ['Lowest Month Actual kWh', $summary['lowest_month']['actual'] ?? null]);
+            fputcsv($stream, ['Months Above Baseline', $summary['months_above_baseline']]);
+            fputcsv($stream, ['Months Below Baseline', $summary['months_below_baseline']]);
+            fputcsv($stream, ['Largest Increase', $summary['peak_increase']['change_percent'] ?? null]);
+            fputcsv($stream, ['Largest Increase Month', $summary['peak_increase']['label'] ?? 'N/A']);
+            fputcsv($stream, ['Largest Decrease', $summary['peak_drop']['change_percent'] ?? null]);
+            fputcsv($stream, ['Largest Decrease Month', $summary['peak_drop']['label'] ?? 'N/A']);
+            fclose($stream);
+        }, $baseFilename . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function buildAnnualReportSummaries($selectedRecords): array
+    {
+        $summaryKeys = $selectedRecords
+            ->map(fn ($record) => (int) $record->facility_id . ':' . (int) $record->year)
+            ->unique()
+            ->values();
+
+        if ($summaryKeys->isEmpty()) {
+            return [];
+        }
+
+        $facilityIds = $selectedRecords->pluck('facility_id')->map(fn ($id) => (int) $id)->unique()->values();
+        $years = $selectedRecords->pluck('year')->map(fn ($year) => (int) $year)->unique()->values();
+
+        $annualRecords = EnergyRecord::with(['facility.energyProfiles', 'meter'])
+            ->whereIn('facility_id', $facilityIds)
+            ->whereIn('year', $years)
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
+            ->orderBy('month')
+            ->orderBy('id')
+            ->get(['id', 'facility_id', 'meter_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'energy_cost']);
+
+        $recordsByKey = $annualRecords->groupBy(
+            fn ($record) => (int) $record->facility_id . ':' . (int) $record->year
+        );
+
+        return $summaryKeys->mapWithKeys(function (string $key) use ($recordsByKey) {
+            $records = $recordsByKey->get($key, collect());
+            $facility = $records->first()?->facility;
+            [$facilityId, $year] = array_map('intval', explode(':', $key, 2));
+            $recordsByMonth = $records->groupBy(fn ($record) => (int) $record->month);
+            $months = [];
+            $previousActual = null;
+
+            for ($month = 1; $month <= 12; $month++) {
+                $monthRecords = $recordsByMonth->get($month, collect());
+                $actualValues = $monthRecords
+                    ->pluck('actual_kwh')
+                    ->filter(fn ($value) => is_numeric($value));
+                $baselineValues = $monthRecords
+                    ->map(fn ($record) => BaselineResolver::forRecord($record, $record->facility))
+                    ->filter(fn ($value) => $value !== null);
+                $costValues = $monthRecords
+                    ->pluck('energy_cost')
+                    ->filter(fn ($value) => is_numeric($value));
+                $actual = $actualValues->isNotEmpty() ? (float) $actualValues->sum() : null;
+                $baseline = $baselineValues->isNotEmpty() ? (float) $baselineValues->sum() : null;
+                $cost = $costValues->isNotEmpty() ? (float) $costValues->sum() : null;
+                $changePercent = null;
+
+                if ($actual !== null && $previousActual !== null && $previousActual > 0) {
+                    $changePercent = round((($actual - $previousActual) / $previousActual) * 100, 2);
+                }
+
+                $months[] = [
+                    'month' => $month,
+                    'label' => date('M', mktime(0, 0, 0, $month, 1)),
+                    'actual' => $actual,
+                    'baseline' => $baseline,
+                    'variance' => ($actual !== null && $baseline !== null) ? round($actual - $baseline, 2) : null,
+                    'cost' => $cost,
+                    'change_percent' => $changePercent,
+                    'direction' => $changePercent === null
+                        ? 'none'
+                        : ($changePercent > 0 ? 'up' : ($changePercent < 0 ? 'down' : 'stable')),
+                ];
+
+                if ($actual !== null) {
+                    $previousActual = $actual;
+                }
+            }
+
+            $recordedMonths = collect($months)->whereNotNull('actual');
+            $baselineMonths = collect($months)->whereNotNull('baseline');
+            $costMonths = collect($months)->whereNotNull('cost');
+            $comparableMonths = collect($months)->whereNotNull('variance');
+            $totalActual = $recordedMonths->isNotEmpty() ? (float) $recordedMonths->sum('actual') : null;
+            $totalBaseline = $baselineMonths->isNotEmpty() ? (float) $baselineMonths->sum('baseline') : null;
+            $latestMonth = $recordedMonths->last();
+            $comparableBaseline = (float) $comparableMonths->sum('baseline');
+            $totalVariance = $comparableMonths->isNotEmpty()
+                ? round((float) $comparableMonths->sum('variance'), 2)
+                : null;
+            $variancePercent = $totalVariance !== null && $comparableBaseline > 0
+                ? round(($totalVariance / $comparableBaseline) * 100, 2)
+                : null;
+            $peakMonth = $recordedMonths->sortByDesc('actual')->first();
+            $lowestMonth = $recordedMonths->sortBy('actual')->first();
+            $changedMonths = collect($months)->whereNotNull('change_percent');
+            $peakIncrease = $changedMonths->where('change_percent', '>', 0)->sortByDesc('change_percent')->first();
+            $peakDrop = $changedMonths->where('change_percent', '<', 0)->sortBy('change_percent')->first();
+            $annualStatus = $variancePercent === null
+                ? 'No Baseline'
+                : ($variancePercent > 0.5
+                    ? 'Above Baseline'
+                    : ($variancePercent < -0.5 ? 'Below Baseline' : 'On Baseline'));
+
+            return [$key => [
+                'facility_id' => $facilityId,
+                'facility' => $facility?->name ?? 'Facility',
+                'year' => $year,
+                'months_recorded' => $recordedMonths->count(),
+                'total_actual' => $totalActual !== null ? round($totalActual, 2) : null,
+                'total_baseline' => $totalBaseline !== null ? round($totalBaseline, 2) : null,
+                'total_variance' => $totalVariance,
+                'variance_percent' => $variancePercent,
+                'average_actual' => $recordedMonths->isNotEmpty()
+                    ? round($totalActual / $recordedMonths->count(), 2)
+                    : null,
+                'total_cost' => $costMonths->isNotEmpty() ? round((float) $costMonths->sum('cost'), 2) : null,
+                'latest_change_percent' => $latestMonth['change_percent'] ?? null,
+                'latest_direction' => $latestMonth['direction'] ?? 'none',
+                'annual_status' => $annualStatus,
+                'peak_month' => $peakMonth,
+                'lowest_month' => $lowestMonth,
+                'months_above_baseline' => $comparableMonths->where('variance', '>', 0)->count(),
+                'months_below_baseline' => $comparableMonths->where('variance', '<', 0)->count(),
+                'comparable_months' => $comparableMonths->count(),
+                'peak_increase' => $peakIncrease,
+                'peak_drop' => $peakDrop,
+                'csv_url' => route('reports.energy-annual-export', [
+                    'facility' => $facilityId,
+                    'year' => $year,
+                    'format' => 'csv',
+                ]),
+                'pdf_url' => route('reports.energy-annual-export', [
+                    'facility' => $facilityId,
+                    'year' => $year,
+                    'format' => 'pdf',
+                ]),
+                'months' => $months,
+            ]];
+        })->all();
     }
 
     private function buildTrendDirectionMap($records): array
@@ -277,6 +552,10 @@ class EnergyController extends Controller
             'energy_cost' => $validated['energy_cost'] ?? null,
             'rate_per_kwh' => $validated['rate_per_kwh'] ?? null,
             'alert' => $validated['alert'] ?? $this->resolveAlertLevel($baseline, $deviation),
+            'review_status' => 'for_review',
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'review_remarks' => null,
         ];
 
         if ($creating) {
@@ -310,16 +589,7 @@ class EnergyController extends Controller
             return (float) $baselineInput;
         }
 
-        $profile = $facility?->energyProfiles()->latest()->first();
-        if ($profile && $profile->baseline_kwh !== null) {
-            return (float) $profile->baseline_kwh;
-        }
-
-        if ($facility && isset($facility->baseline_kwh) && $facility->baseline_kwh !== null) {
-            return (float) $facility->baseline_kwh;
-        }
-
-        return null;
+        return $facility?->resolveBaselineKwh();
     }
 
     private function resolveAlertLevel(?float $baseline, ?float $deviation): string

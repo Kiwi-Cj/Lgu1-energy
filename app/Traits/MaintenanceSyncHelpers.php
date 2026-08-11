@@ -224,6 +224,8 @@ trait MaintenanceSyncHelpers
                 'scheduled_date' => $maintenance->scheduled_date,
                 'assigned_to' => $maintenance->assigned_to,
                 'completed_date' => $maintenance->completed_date,
+                'proof_photo_path' => $maintenance->proof_photo_path,
+                'photo_requirement' => $maintenance->photo_requirement ?? 'Optional',
                 'remarks' => $maintenance->remarks,
             ]);
             $maintenance->delete();
@@ -244,10 +246,15 @@ trait MaintenanceSyncHelpers
             return;
         }
 
-        $baseQuery = \App\Models\EnergyIncident::query()
-            ->where('facility_id', $maintenance->facility_id)
-            ->where('month', $triggerMonthNum)
-            ->where('year', $triggerYearNum);
+        $baseQuery = \App\Models\EnergyIncident::query();
+        if (! empty($maintenance->energy_incident_id)) {
+            $baseQuery->whereKey($maintenance->energy_incident_id);
+        } else {
+            $baseQuery
+                ->where('facility_id', $maintenance->facility_id)
+                ->where('month', $triggerMonthNum)
+                ->where('year', $triggerYearNum);
+        }
 
         if ($statusText === 'ongoing') {
             $incident = (clone $baseQuery)

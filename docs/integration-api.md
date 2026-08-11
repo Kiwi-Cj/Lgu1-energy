@@ -95,3 +95,67 @@ Set `CIMM_MAINTENANCE_SYNC_TOKEN` in `.env` to a long random secret shared
 with the CIMM install (see `config/services.php`); it falls back to a shared
 dev default if left unset, matching how CIMM's own CPRF/RGMAP integrations
 default to a shared key on local dev.
+
+## CPRF (Facilities Reservation) Integration
+
+Energy pulls CPRF facility identities, while CPRF reads Energy-managed
+facility profiles, engineer-approved recommendations, and approved energy
+reports. Auth: `Authorization: Bearer
+{CPRF_INTEGRATION_TOKEN}` (defaults to the shared dev key
+`CPRF_ENERGY_SHARED_KEY_2026`; override in production). Rate limit: 60
+requests/minute.
+
+### Removed: POST /api/v1/cprf/facility-readings
+
+This endpoint is intentionally unavailable. Monthly energy records are encoded and owned by the Energy system, including records for CPRF-managed facilities.
+
+### GET /api/v1/cprf/facilities
+
+Returns only facilities mirrored from CPRF (`source=cprf`) that have a CPRF
+`external_ref`. Local Energy facilities are never included. This catalog lets
+CPRF refresh its mapped facility list and discard entries returned by the old,
+unscoped implementation.
+
+### GET /api/v1/cprf/recommendations
+
+Rows from `energy_saving_recommendations`. Filters: `facility_id`, `year`,
+`month`, `status` (default `approved`; pass `all` to lift), `updated_since`,
+`page`, `per_page` (max 100). Row shape: `id, facility{id,name}, year, month,
+generated_message, engineer_recommendation, status, expected_savings_kwh,
+target_date, reviewed_at, updated_at`.
+
+### GET /api/v1/cprf/energy-reports
+
+Returns approved, Energy-encoded main-meter records for CPRF-managed
+facilities only. Filters: `facility_id`, `meter_id`, `year`, `month`, `page`,
+and `per_page` (max 100). The response includes facility and meter identity,
+period, actual and baseline kWh, cost, deviation, alert, and review details.
+
+### `GET /api/v1/cprf/facility-profiles`
+
+Auth: same `cprf.integration` bearer token as the rest of this section.
+
+Query params: `updated_since` (ISO 8601, optional), `page`, `per_page` (default 25, max 100).
+
+Returns only facilities where `source = 'cprf'`, `external_ref` is set, and an `EnergyProfile` exists. Facilities without a profile yet are omitted, not errored.
+
+Sample row:
+```json
+{
+    "facility_external_ref": 501,
+    "energy_facility_id": 14,
+    "main_meter_name": "Demo Facility 2 Main Meter",
+    "electric_meter_no": "MTR-0042",
+    "utility_provider": "Meralco",
+    "contract_account_no": "1234-5678",
+    "main_energy_source": "Grid",
+    "backup_power": "Generator",
+    "transformer_capacity": "75 kVA",
+    "number_of_meters": 3,
+    "baseline_kwh": 7820.00,
+    "engineer_approved": true,
+    "baseline_locked": true,
+    "baseline_source": "Manual entry",
+    "updated_at": "2026-07-26T08:00:00+00:00"
+}
+```

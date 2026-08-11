@@ -40,6 +40,11 @@ if (file_exists($maintenance = $basePath.'/storage/framework/maintenance.php')) 
 
 require $basePath.'/vendor/autoload.php';
 
+// Some deployment tools retain bootstrap/cache between releases. If that
+// manifest was generated with dev dependencies, production can fail before
+// Laravel boots because providers such as Pail are absent from --no-dev.
+\App\Support\StalePackageCacheCleaner::clear($basePath.'/bootstrap/cache');
+
 /*
 |--------------------------------------------------------------------------
 | Bootstrap Laravel

@@ -132,6 +132,10 @@
     transform: translateY(-1px);
 }
 .settings-btn.save:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); border-color: #1d4ed8; }
+.settings-btn:disabled { cursor: wait; opacity: .72; transform: none; }
+.settings-save-state { color:#64748b; font-size:.78rem; font-weight:700; }
+.settings-save-state.dirty { color:#b45309; }
+.settings-brand-preview { width:64px; height:64px; object-fit:contain; margin-top:6px; padding:5px; border:1px solid #dbe6f3; border-radius:12px; background:#fff; }
 
 .settings-alert {
     border-radius: 16px;
@@ -260,6 +264,35 @@
     color: #64748b;
     font-size: 0.82rem;
 }
+.settings-threshold-group > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -4px 0 12px;
+    color: #1d4ed8;
+    cursor: pointer;
+    list-style: none;
+    font-size: 1rem;
+    font-weight: 900;
+}
+.settings-threshold-group > summary::-webkit-details-marker { display: none; }
+.settings-threshold-group > summary::after {
+    content: '\f054';
+    font-family: 'Font Awesome 6 Free';
+    font-size: .8rem;
+    font-weight: 900;
+    transition: transform .2s ease;
+}
+.settings-threshold-group[open] > summary::after { transform: rotate(90deg); }
+.settings-threshold-group:not([open]) > summary { margin-bottom: -4px; }
+.settings-threshold-size-block {
+    padding: 14px 0;
+    border-top: 1px solid #dbe6f3;
+}
+.settings-threshold-size-block:first-of-type { border-top: 0; padding-top: 0; }
+.settings-threshold-size-block:last-child { padding-bottom: 0; }
+.settings-threshold-size-block h3 { margin-bottom: 10px; }
 .settings-field {
     display: flex;
     flex-direction: column;
@@ -403,6 +436,10 @@ body.dark-mode .settings-subblock {
 body.dark-mode .settings-subblock h3 {
     color: #93c5fd;
 }
+body.dark-mode .settings-threshold-group > summary {
+    color: #93c5fd;
+}
+body.dark-mode .settings-threshold-size-block { border-top-color: #253043; }
 body.dark-mode .settings-field label {
     color: #cbd5e1;
 }
@@ -450,8 +487,9 @@ body.dark-mode .settings-file-chip {
                 <p>Configure app behavior, security, notification, and threshold rules.</p>
             </div>
             <div class="settings-actions">
+                <span id="settingsSaveState" class="settings-save-state">All changes saved</span>
                 <a href="{{ route('dashboard.index') }}" class="settings-btn back"><i class="fa fa-arrow-left"></i> Back</a>
-                <button type="submit" form="settingsForm" class="settings-btn save"><i class="fa fa-floppy-disk"></i> Save Settings</button>
+                <button type="submit" form="settingsForm" id="settingsSaveButton" class="settings-btn save"><i class="fa fa-floppy-disk"></i> <span>Save Settings</span></button>
             </div>
         </div>
 
@@ -468,7 +506,7 @@ body.dark-mode .settings-file-chip {
             <div class="settings-summary">
                 <div class="settings-summary-card">
                     <i class="fa fa-bolt"></i>
-                    <strong>20</strong>
+                    <strong>{{ $thresholdInputCount }}</strong>
                     <span>Threshold Inputs</span>
                 </div>
                 <div class="settings-summary-card">
@@ -488,6 +526,10 @@ body.dark-mode .settings-file-chip {
             <div class="settings-alert success">{{ session('success') }}</div>
         @endif
 
+        @if(session('error'))
+            <div class="settings-alert error">{{ session('error') }}</div>
+        @endif
+
         @if($errors->any())
             <div class="settings-alert error">
                 Please fix the highlighted fields.
@@ -502,7 +544,7 @@ body.dark-mode .settings-file-chip {
         <form id="settingsForm" class="settings-form" method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data">
             @csrf
 
-            <section class="settings-card open">
+            <section class="settings-card">
                 <button class="settings-head" type="button" onclick="toggleSettingsCard(this)">
                     <span class="settings-head-label"><span class="settings-head-icon"><i class="fa fa-sliders"></i></span> General / App Settings</span>
                     <span class="settings-head-meta"><span class="settings-head-badge">Live identity</span><small>Branding + timezone</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
@@ -527,7 +569,7 @@ body.dark-mode .settings-file-chip {
                         <div class="settings-field">
                             <label for="timezone">Timezone</label>
                             <select id="timezone" name="timezone" required>
-                                @foreach(['Asia/Manila', 'UTC', 'Asia/Singapore', 'Asia/Tokyo'] as $tz)
+                                @foreach($timezones as $tz)
                                     <option value="{{ $tz }}" {{ (string) $getSetting('timezone', 'Asia/Manila') === $tz ? 'selected' : '' }}>{{ $tz }}</option>
                                 @endforeach
                             </select>
@@ -540,6 +582,7 @@ body.dark-mode .settings-file-chip {
                             @if($getSetting('system_logo'))
                                 <span class="settings-file-chip"><i class="fa fa-image"></i> {{ basename((string) $getSetting('system_logo')) }}</span>
                             @endif
+                            <img id="systemLogoPreview" class="settings-brand-preview" src="{{ $systemLogoUrl }}" alt="Current system logo preview">
                             @error('system_logo') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">
@@ -549,6 +592,7 @@ body.dark-mode .settings-file-chip {
                             @if($getSetting('favicon'))
                                 <span class="settings-file-chip"><i class="fa fa-star"></i> {{ basename((string) $getSetting('favicon')) }}</span>
                             @endif
+                            <img id="systemFaviconPreview" class="settings-brand-preview" src="{{ $systemFaviconUrl }}" alt="Current favicon preview">
                             @error('favicon') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
@@ -595,10 +639,52 @@ body.dark-mode .settings-file-chip {
                     <span class="settings-head-meta"><span class="settings-head-badge">Alert engine</span><small>Baseline Threshold</small> <i class="fa fa-chevron-right settings-chevron"></i></span>
                 </button>
                 <div class="settings-body">
-                    @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
-                        <div class="settings-subblock">
-                            <h3>{{ $sizeLabel }} Baseline Threshold (%)</h3>
-                            <p>Each level must increase strictly from Level 1 to Level 5.</p>
+                    <div class="settings-subblock">
+                        <h3>Baseline Size Bands (kWh)</h3>
+                        <p>These limits determine which threshold set is applied. Values must increase from Small to Large; anything above Large is Extra Large.</p>
+                        <div class="settings-threshold-grid">
+                            <div class="settings-field">
+                                <label for="baseline_small_max_kwh">Small maximum</label>
+                                <input type="number" step="0.01" min="1" id="baseline_small_max_kwh" name="baseline_small_max_kwh" value="{{ $getSetting('baseline_small_max_kwh', 1000) }}">
+                                @error('baseline_small_max_kwh') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="settings-field">
+                                <label for="baseline_medium_max_kwh">Medium maximum</label>
+                                <input type="number" step="0.01" min="1" id="baseline_medium_max_kwh" name="baseline_medium_max_kwh" value="{{ $getSetting('baseline_medium_max_kwh', 3000) }}">
+                                @error('baseline_medium_max_kwh') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="settings-field">
+                                <label for="baseline_large_max_kwh">Large maximum</label>
+                                <input type="number" step="0.01" min="1" id="baseline_large_max_kwh" name="baseline_large_max_kwh" value="{{ $getSetting('baseline_large_max_kwh', 10000) }}">
+                                @error('baseline_large_max_kwh') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+                    </div>
+                    <details class="settings-subblock settings-threshold-group">
+                        <summary>3-Month Spike Thresholds — Small to Extra Large</summary>
+                        <p>A spike requires three consecutive increases, this minimum total increase, and the same minimum amount above the facility baseline.</p>
+                        <div class="settings-threshold-grid">
+                            @foreach([
+                                'small' => ['Small', 10],
+                                'medium' => ['Medium', 7],
+                                'large' => ['Large', 4],
+                                'xlarge' => ['Extra Large', 2],
+                            ] as $sizeKey => [$sizeLabel, $defaultThreshold])
+                                @php $field = "trend_spike_threshold_{$sizeKey}"; @endphp
+                                <div class="settings-field">
+                                    <label for="{{ $field }}">{{ $sizeLabel }} minimum increase (%)</label>
+                                    <input type="number" step="0.01" min="0.01" max="100" id="{{ $field }}" name="{{ $field }}" value="{{ $getSetting($field, $defaultThreshold) }}">
+                                    @error($field) <div class="settings-error">{{ $message }}</div> @enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                    <details class="settings-subblock settings-threshold-group">
+                        <summary>Baseline Thresholds — Small to Extra Large</summary>
+                        <p>Each size has five levels. Values must increase strictly from Level 1 to Level 5.</p>
+                        @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
+                            <div class="settings-threshold-size-block">
+                                <h3>{{ $sizeLabel }} Baseline Threshold (%)</h3>
                             <div class="settings-threshold-grid">
                                 @for($lvl = 1; $lvl <= 5; $lvl++)
                                     @php $field = "alert_level{$lvl}_{$sizeKey}"; @endphp
@@ -609,13 +695,16 @@ body.dark-mode .settings-file-chip {
                                     </div>
                                 @endfor
                             </div>
-                        </div>
-                    @endforeach
+                            </div>
+                        @endforeach
+                    </details>
 
-                    @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
-                        <div class="settings-subblock">
-                            <h3>{{ $sizeLabel }} Drop Threshold (%)</h3>
-                            <p>Use this when usage falls below baseline. Levels only go from Level 1 to Level 3.</p>
+                    <details class="settings-subblock settings-threshold-group">
+                        <summary>Drop Thresholds — Small to Extra Large</summary>
+                        <p>Use these when usage falls below baseline. Each size has Levels 1 to 3.</p>
+                        @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
+                            <div class="settings-threshold-size-block">
+                                <h3>{{ $sizeLabel }} Drop Threshold (%)</h3>
                             <div class="settings-threshold-grid">
                                 @for($lvl = 1; $lvl <= 3; $lvl++)
                                     @php $field = "alert_drop_level{$lvl}_{$sizeKey}"; @endphp
@@ -626,8 +715,9 @@ body.dark-mode .settings-file-chip {
                                     </div>
                                 @endfor
                             </div>
-                        </div>
-                    @endforeach
+                            </div>
+                        @endforeach
+                    </details>
 
                     <div class="settings-toggle-grid">
                         <div class="settings-field">
@@ -657,6 +747,7 @@ body.dark-mode .settings-file-chip {
                         <div class="settings-field">
                             <label for="allowed_image_types">Allowed Image Types</label>
                             <input type="text" id="allowed_image_types" name="allowed_image_types" value="{{ $getSetting('allowed_image_types', 'jpg,png,jpeg') }}">
+                            <span class="settings-help">Supported values: JPG, JPEG, PNG, GIF, WEBP.</span>
                             @error('allowed_image_types') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">
@@ -681,6 +772,7 @@ body.dark-mode .settings-file-chip {
                         <div class="settings-field">
                             <label for="mail_host">Mail Host</label>
                             <input type="text" id="mail_host" name="mail_host" value="{{ $getSetting('mail_host', '') }}">
+                            <span class="settings-help">Leave blank to continue using MAIL_HOST from the environment file.</span>
                             @error('mail_host') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">
@@ -689,12 +781,18 @@ body.dark-mode .settings-file-chip {
                             @error('mail_port') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="settings-field">
-                            <label for="enable_email_notifications">Email Notifications</label>
+                            <label for="enable_email_notifications">Operational Email Notifications</label>
                             <select id="enable_email_notifications" name="enable_email_notifications">
                                 <option value="1" {{ (string) $getSetting('enable_email_notifications', '1') === '1' ? 'selected' : '' }}>Enabled</option>
                                 <option value="0" {{ (string) $getSetting('enable_email_notifications', '1') === '0' ? 'selected' : '' }}>Disabled</option>
                             </select>
                             @error('enable_email_notifications') <div class="settings-error">{{ $message }}</div> @enderror
+                            <span class="settings-help">Controls contact and welcome emails. OTP email remains available when OTP login is enabled.</span>
+                        </div>
+                        <div class="settings-field">
+                            <label>Configuration Check</label>
+                            <button type="submit" form="testEmailForm" class="settings-btn back"><i class="fa fa-paper-plane"></i> Send Test Email</button>
+                            <span class="settings-help">Sends a test to your signed-in account using the currently saved configuration.</span>
                         </div>
                     </div>
                 </div>
@@ -725,7 +823,8 @@ body.dark-mode .settings-file-chip {
                             <label for="export_format">Default Export Format</label>
                             <select id="export_format" name="export_format">
                                 <option value="pdf" {{ (string) $getSetting('export_format', 'pdf') === 'pdf' ? 'selected' : '' }}>PDF</option>
-                                <option value="excel" {{ (string) $getSetting('export_format', 'pdf') === 'excel' ? 'selected' : '' }}>Excel</option>
+                                <option value="xlsx" {{ in_array((string) $getSetting('export_format', 'pdf'), ['xlsx', 'excel'], true) ? 'selected' : '' }}>Excel (XLSX)</option>
+                                <option value="csv" {{ (string) $getSetting('export_format', 'pdf') === 'csv' ? 'selected' : '' }}>CSV</option>
                             </select>
                             @error('export_format') <div class="settings-error">{{ $message }}</div> @enderror
                         </div>
@@ -733,6 +832,7 @@ body.dark-mode .settings-file-chip {
                 </div>
             </section>
         </form>
+        <form id="testEmailForm" method="POST" action="{{ route('settings.test-email') }}" style="display:none;">@csrf</form>
     </div>
 </div>
 
@@ -743,7 +843,52 @@ function toggleSettingsCard(btn) {
     card.classList.toggle('open');
 }
 
-document.getElementById('settingsForm')?.addEventListener('submit', function (e) {
+const settingsForm = document.getElementById('settingsForm');
+const settingsSaveButton = document.getElementById('settingsSaveButton');
+const settingsSaveState = document.getElementById('settingsSaveState');
+let settingsDirty = false;
+
+settingsForm?.addEventListener('input', function () {
+    settingsDirty = true;
+    if (settingsSaveState) {
+        settingsSaveState.textContent = 'Unsaved changes';
+        settingsSaveState.classList.add('dirty');
+    }
+});
+
+settingsForm?.addEventListener('change', function () {
+    settingsDirty = true;
+});
+
+window.addEventListener('beforeunload', function (event) {
+    if (!settingsDirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+});
+
+function bindImagePreview(inputId, previewId) {
+    document.getElementById(inputId)?.addEventListener('change', function () {
+        const file = this.files?.[0];
+        const preview = document.getElementById(previewId);
+        if (!file || !preview) return;
+        preview.src = URL.createObjectURL(file);
+    });
+}
+bindImagePreview('system_logo', 'systemLogoPreview');
+bindImagePreview('favicon', 'systemFaviconPreview');
+
+settingsForm?.addEventListener('submit', function (e) {
+    const baselineBands = ['baseline_small_max_kwh', 'baseline_medium_max_kwh', 'baseline_large_max_kwh']
+        .map((id) => parseFloat(document.getElementById(id)?.value || '0'));
+    for (let i = 1; i < baselineBands.length; i += 1) {
+        if (!(baselineBands[i] > baselineBands[i - 1])) {
+            e.preventDefault();
+            alert('Baseline size limits must increase from Small to Medium to Large.');
+            document.getElementById(['baseline_small_max_kwh', 'baseline_medium_max_kwh', 'baseline_large_max_kwh'][i])?.focus();
+            return;
+        }
+    }
+
     const sizes = ['small', 'medium', 'large', 'xlarge'];
     for (const size of sizes) {
         const levels = [];
@@ -775,6 +920,15 @@ document.getElementById('settingsForm')?.addEventListener('submit', function (e)
                 return;
             }
         }
+    }
+
+    settingsDirty = false;
+    if (settingsSaveButton) {
+        settingsSaveButton.disabled = true;
+        settingsSaveButton.querySelector('i')?.classList.replace('fa-floppy-disk', 'fa-spinner');
+        settingsSaveButton.querySelector('i')?.classList.add('fa-spin');
+        const label = settingsSaveButton.querySelector('span');
+        if (label) label.textContent = 'Saving...';
     }
 });
 </script>

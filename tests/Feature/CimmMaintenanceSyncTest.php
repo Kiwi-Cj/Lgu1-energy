@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Facility;
+use App\Models\EnergyIncident;
 use App\Models\Maintenance;
 use App\Models\User;
 
@@ -13,13 +14,25 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'location' => 'Test Location',
         'status' => 'active',
     ]);
+    $incident = EnergyIncident::query()->create([
+        'facility_id' => $facility->id,
+        'month' => 7,
+        'year' => 2026,
+        'deviation_percent' => 45,
+        'description' => 'Incident owned by the CIMM maintenance workflow.',
+        'status' => 'Open',
+        'date_detected' => '2026-07-20',
+    ]);
     $maintenance = Maintenance::query()->create([
         'facility_id' => $facility->id,
+        'energy_incident_id' => $incident->id,
         'issue_type' => 'General - Preventive Check',
         'trigger_month' => 'Jul 2026',
         'trend' => 'Stable',
         'maintenance_type' => 'Corrective',
         'maintenance_status' => 'Pending',
+        'photo_requirement' => 'Required',
+        'proof_photo_path' => 'maintenance-proofs/existing-proof.jpg',
         'remarks' => 'Created for CIMM sync test.',
     ]);
 
@@ -41,7 +54,14 @@ test('cimm completed maintenance is archived to maintenance history', function (
         'facility_id' => $facility->id,
         'maintenance_status' => 'Completed',
         'completed_date' => '2026-07-23 00:00:00',
+        'photo_requirement' => 'Required',
+        'proof_photo_path' => 'maintenance-proofs/existing-proof.jpg',
     ]);
+    $this->assertDatabaseHas('energy_incidents', [
+        'id' => $incident->id,
+        'status' => 'Resolved',
+    ]);
+    expect($incident->fresh()->resolved_at)->not->toBeNull();
 });
 
 test('maintenance page reconciles stale completed rows into history', function () {
@@ -73,4 +93,54 @@ test('maintenance page reconciles stale completed rows into history', function (
         'maintenance_status' => 'Completed',
         'completed_date' => '2026-07-23 00:00:00',
     ]);
+});
+
+test('manual maintenance can leave assignment to CIMM', function () {
+    $user = User::factory()->create(['role' => 'super admin']);
+    $facility = Facility::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('modules.maintenance.schedule'), [
+            'facility_id' => $facility->id,
+            'trigger_month' => 'August 2026',
+            'issue_type' => 'General - Preventive Check',
+            'maintenance_type' => 'Preventive',
+            'scheduled_date' => null,
+            'assignment_mode' => 'cimm',
+            'assigned_to' => 'Should Be Cleared',
+            'remarks' => null,
+            'maintenance_status' => 'Pending',
+            'completed_date' => null,
+            'photo_requirement' => 'Optional',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    $this->assertDatabaseHas('maintenance', [
+        'facility_id' => $facility->id,
+        'assigned_to' => null,
+        'maintenance_status' => 'Pending',
+    ]);
+});
+
+test('assign now requires a selected assignee', function () {
+    $user = User::factory()->create(['role' => 'super admin']);
+    $facility = Facility::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('modules.maintenance.schedule'), [
+            'facility_id' => $facility->id,
+            'trigger_month' => 'August 2026',
+            'issue_type' => 'General - Preventive Check',
+            'maintenance_type' => 'Preventive',
+            'scheduled_date' => null,
+            'assignment_mode' => 'manual',
+            'assigned_to' => null,
+            'remarks' => null,
+            'maintenance_status' => 'Pending',
+            'completed_date' => null,
+            'photo_requirement' => 'Optional',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('assigned_to');
 });

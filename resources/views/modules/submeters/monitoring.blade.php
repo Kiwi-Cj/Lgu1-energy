@@ -153,24 +153,26 @@
         background: transparent;
     }
 
-    .submeter-table tbody tr:nth-child(even):not(.critical):not(.warning) {
+    .submeter-table tbody tr:nth-child(even):not(.critical):not(.high):not(.warning) {
         background: #fbfdff;
     }
 
-    .submeter-table tbody tr:nth-child(even):not(.critical):not(.warning) .sticky-col {
+    .submeter-table tbody tr:nth-child(even):not(.critical):not(.high):not(.warning) .sticky-col {
         background: #fbfdff;
     }
 
-    .submeter-table tbody tr:hover:not(.critical):not(.warning) {
+    .submeter-table tbody tr:hover:not(.critical):not(.high):not(.warning) {
         background: #f4f8ff;
     }
 
-    .submeter-table tbody tr:hover:not(.critical):not(.warning) .sticky-col {
+    .submeter-table tbody tr:hover:not(.critical):not(.high):not(.warning) .sticky-col {
         background: #f4f8ff;
     }
 
     .submeter-row.critical { background: #fef2f2; }
     .submeter-row.critical .sticky-col { background: #fef2f2; }
+    .submeter-row.high { background: #fff7ed; }
+    .submeter-row.high .sticky-col { background: #fff7ed; }
     .submeter-row.warning { background: #fffbeb; }
     .submeter-row.warning .sticky-col { background: #fffbeb; }
 
@@ -238,7 +240,12 @@
 
     .alert-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; border: 1px solid transparent; min-width: 80px; }
     .pill-critical { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .pill-very-high { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+    .pill-high { background: #fef3c7; color: #a16207; border-color: #fcd34d; }
     .pill-warning { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .pill-drop-critical { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+    .pill-drop-high { background: #e0e7ff; color: #4338ca; border-color: #a5b4fc; }
+    .pill-drop-warning { background: #cffafe; color: #0e7490; border-color: #67e8f9; }
     .pill-normal { background: #dcfce7; color: #166534; border-color: #86efac; }
     .pill-none { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
     .baseline-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 5px 10px; font-size: .73rem; font-weight: 800; border: 1px solid transparent; min-width: 104px; }
@@ -247,6 +254,7 @@
     .baseline-pill.seasonal { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
     .baseline-pill.ma6 { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
     .baseline-pill.equipment { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+    .baseline-pill.configured { background: #dcfce7; color: #166534; border-color: #86efac; }
     .baseline-pill.na { background: #e2e8f0; color: #475569; border-color: #cbd5e1; }
 
     .submeter-empty-row {
@@ -256,6 +264,10 @@
         font-weight: 600;
         background: #fcfdff;
     }
+    .submeter-empty-content { display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px; }
+    .submeter-empty-content i { color:#94a3b8; font-size:1.45rem; }
+    .submeter-empty-content strong { color:#334155; }
+    .submeter-empty-content span { color:#64748b; font-size:.78rem; font-weight:600; }
 
     .submeter-modal { display: none; position: fixed; inset: 0; z-index: 10080; background: rgba(15,23,42,.42); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 18px; }
     .submeter-modal.open { display: flex; }
@@ -269,6 +281,8 @@
     .submeter-modal-alert { margin: 12px 24px 0; }
     .submeter-modal-text { margin: 10px 24px 0; border: 1px solid #dbe3f1; border-radius: 14px; padding: 16px 16px; font-size: 1.02rem; line-height: 1.42; font-weight: 700; color: #334155; background: #f8fafc; }
     .submeter-modal-text.tone-critical { border-color: #fca5a5; background: #fef2f2; color: #7f1d1d; }
+    .submeter-modal-text.tone-high { border-color: #fdba74; background: #fff7ed; color: #9a3412; }
+    .submeter-modal-text.tone-drop { border-color: #a5b4fc; background: #eef2ff; color: #4338ca; }
     .submeter-modal-text.tone-warning { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
     .submeter-modal-text.tone-normal { border-color: #86efac; background: #f0fdf4; color: #166534; }
     .submeter-modal-text.tone-none { border-color: #cbd5e1; background: #f8fafc; color: #334155; }
@@ -371,24 +385,26 @@
         border: 2px solid #0f172a;
     }
 
-    body.dark-mode .submeter-table tbody tr:nth-child(even):not(.critical):not(.warning) {
+    body.dark-mode .submeter-table tbody tr:nth-child(even):not(.critical):not(.high):not(.warning) {
         background: #121b2b;
     }
 
-    body.dark-mode .submeter-table tbody tr:nth-child(even):not(.critical):not(.warning) .sticky-col {
+    body.dark-mode .submeter-table tbody tr:nth-child(even):not(.critical):not(.high):not(.warning) .sticky-col {
         background: #121b2b;
     }
 
-    body.dark-mode .submeter-table tbody tr:hover:not(.critical):not(.warning) {
+    body.dark-mode .submeter-table tbody tr:hover:not(.critical):not(.high):not(.warning) {
         background: #182437;
     }
 
-    body.dark-mode .submeter-table tbody tr:hover:not(.critical):not(.warning) .sticky-col {
+    body.dark-mode .submeter-table tbody tr:hover:not(.critical):not(.high):not(.warning) .sticky-col {
         background: #182437;
     }
 
     body.dark-mode .submeter-row.critical { background: #3b1f29; }
     body.dark-mode .submeter-row.critical .sticky-col { background: #3b1f29; }
+    body.dark-mode .submeter-row.high { background: #431f0f; }
+    body.dark-mode .submeter-row.high .sticky-col { background: #431f0f; }
     body.dark-mode .submeter-row.warning { background: #3a3319; }
     body.dark-mode .submeter-row.warning .sticky-col { background: #3a3319; }
 
@@ -427,11 +443,141 @@
     body.dark-mode .baseline-pill.seasonal { background: #4c1d95; color: #ede9fe; border-color: #8b5cf6; }
     body.dark-mode .baseline-pill.ma6 { background: #713f12; color: #fef9c3; border-color: #f59e0b; }
     body.dark-mode .baseline-pill.equipment { background: #7c2d12; color: #ffedd5; border-color: #fb923c; }
+    body.dark-mode .baseline-pill.configured { background: #14532d; color: #dcfce7; border-color: #22c55e; }
     body.dark-mode .baseline-pill.na { background: #334155; color: #cbd5e1; border-color: #475569; }
 
+    /* Enhanced monitoring overview */
+    .report-card-container {
+        background: linear-gradient(145deg,#ffffff 0%,#f8fbff 60%,#eef4ff 100%);
+        border: 1px solid #dbe5f2;
+        border-radius: 24px;
+        padding: 28px 30px 32px;
+        box-shadow: 0 18px 45px rgba(15,23,42,.10);
+    }
+    .submeter-head { align-items:center; padding:2px 0 4px; }
+    .submeter-heading { display:flex; align-items:center; gap:14px; min-width:0; }
+    .submeter-heading-icon { width:48px; height:48px; flex:0 0 48px; display:inline-flex; align-items:center; justify-content:center; border-radius:14px; color:#fff; background:linear-gradient(135deg,#2563eb,#06b6d4); box-shadow:0 9px 20px rgba(37,99,235,.20); }
+    .submeter-title { color:#0f172a; font-size:1.58rem; font-weight:900; letter-spacing:-.025em; }
+    .submeter-subtitle { font-size:.88rem; font-weight:600; }
+    .submeter-context-chips { display:flex; gap:7px; flex-wrap:wrap; margin-top:8px; }
+    .submeter-context-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #dbe5f2; border-radius:999px; padding:5px 9px; background:#fff; color:#475569; font-size:.7rem; font-weight:800; }
+    .sm-btn { gap:7px; min-height:42px; }
+
+    .submeter-kpis { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+    .submeter-kpi { position:relative; min-height:122px; padding:17px 18px; overflow:hidden; background:#fff !important; border-radius:16px; box-shadow:0 8px 22px rgba(15,23,42,.06); }
+    .submeter-kpi::before { content:""; position:absolute; left:0; top:0; right:0; height:4px; background:var(--kpi-color,#2563eb); }
+    .submeter-kpi-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .submeter-kpi-icon { width:40px; height:40px; flex:0 0 40px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; color:var(--kpi-color,#2563eb); background:var(--kpi-soft,#eff6ff); }
+    .submeter-kpi .label { color:#64748b !important; font-size:.68rem; }
+    .submeter-kpi .number { margin-top:12px; color:#0f172a; font-size:1.75rem; }
+    .submeter-kpi .value { margin-top:12px; color:#0f172a; font-size:1.05rem; font-weight:900; }
+    .submeter-kpi-note { margin-top:4px; color:#64748b; font-size:.7rem; font-weight:650; }
+    .submeter-kpi.critical { --kpi-color:#e11d48; --kpi-soft:#fff1f2; }
+    .submeter-kpi.increase { --kpi-color:#0891b2; --kpi-soft:#ecfeff; }
+    .submeter-kpi.facilities { --kpi-color:#7c3aed; --kpi-soft:#f5f3ff; }
+    .submeter-kpi.monitored { --kpi-color:#059669; --kpi-soft:#ecfdf5; }
+
+    .submeter-sensor-panel,.submeter-panel { border-radius:18px; box-shadow:0 10px 28px rgba(15,23,42,.07); }
+    .submeter-sensor-head { display:block; padding:18px; background:linear-gradient(135deg,#ffffff,#f8fbff); }
+    .submeter-sensor-topline,.submeter-records-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+    .submeter-section-heading { display:flex; align-items:center; gap:11px; }
+    .submeter-section-icon { width:40px; height:40px; flex:0 0 40px; display:inline-flex; align-items:center; justify-content:center; border-radius:11px; background:#ecfeff; color:#0891b2; }
+    .sensor-health-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 9px; border-radius:999px; background:#ecfdf5; color:#047857; font-size:.7rem; font-weight:850; }
+    .sensor-health-chip.no-data { background:#f1f5f9; color:#64748b; }
+    .submeter-sensor-controls { margin-top:16px; padding-top:14px; border-top:1px solid #e2e8f0; justify-content:space-between; }
+    .submeter-sensor-picker { flex:1; grid-template-columns:repeat(2,minmax(220px,1fr)); max-width:720px; }
+    .submeter-sensor-picker select { min-height:44px; font-size:.82rem; }
+    .submeter-sensor-tab { min-height:44px; padding:9px 14px; }
+    .submeter-sensor-body { padding:18px; }
+    .submeter-sensor-stats { grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .submeter-sensor-stat { padding:13px 14px; background:#f8fafc; border-color:#dbe5f2; }
+    .submeter-sensor-stat-value { font-size:1.35rem; }
+    .submeter-sensor-chart { height:320px; max-height:320px; border-top:1px solid #eef2f7; padding-top:10px; }
+    .submeter-chart-notice { display:flex; align-items:center; gap:8px; margin:2px 0 12px; padding:9px 11px; border:1px solid #fde68a; border-radius:10px; background:#fffbeb; color:#92400e; font-size:.76rem; font-weight:700; }
+    .submeter-chart-empty { min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; border:1px dashed #cbd5e1; border-radius:13px; background:#f8fafc; color:#64748b; text-align:center; padding:20px; }
+    .submeter-chart-empty i { font-size:1.6rem; color:#94a3b8; }
+    .submeter-chart-empty strong { color:#334155; }
+
+    .submeter-records-head { padding:16px 18px; border-bottom:1px solid #e2e8f0; background:#fff; }
+    .submeter-records-count { display:inline-flex; align-items:center; gap:6px; padding:6px 9px; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-size:.72rem; font-weight:850; }
+    .submeter-filter { padding:14px 18px; }
+    .submeter-filter-actions .sm-btn { min-width:92px; }
+
+    .submeter-table { min-width:1160px; }
+    .submeter-table col.col-submeter { width:190px; }
+    .submeter-table col.col-facility { width:175px; }
+    .submeter-table col.col-current,.submeter-table col.col-baseline { width:120px; }
+    .submeter-table col.col-baseline-source { width:145px; }
+    .submeter-table col.col-increase { width:110px; }
+    .submeter-table col.col-alert { width:145px; }
+    .submeter-table col.col-recommendation { width:150px; }
+    .submeter-table thead th { padding:13px 12px; background:#f1f5f9; color:#334155; }
+    .submeter-table td { padding:13px 12px; }
+    .submeter-row { position:relative; }
+    .submeter-row.critical { box-shadow:inset 4px 0 #e11d48; }
+    .submeter-row.high { box-shadow:inset 4px 0 #f97316; }
+    .submeter-row.warning { box-shadow:inset 4px 0 #f59e0b; }
+    .submeter-identity { display:flex; align-items:flex-start; gap:10px; min-width:0; }
+    .submeter-identity-icon { width:34px; height:34px; flex:0 0 34px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:#eff6ff; color:#2563eb; }
+    .submeter-name-link { display:inline-block; transition:color .15s ease; }
+    .submeter-name-link:hover { color:#2563eb; text-decoration:none; }
+    .reading-value { display:block; color:#0f172a; font-size:1rem; font-weight:900; }
+    .reading-unit { display:block; margin-top:2px; color:#94a3b8; font-size:.66rem; font-weight:750; text-transform:uppercase; }
+    .metric-na { display:inline-flex; align-items:center; gap:5px; color:#94a3b8; font-size:.76rem; font-weight:750; }
+    .baseline-pill.na { background:#fff7ed; color:#9a3412; border-color:#fed7aa; min-width:118px; }
+    .alert-pill.pill-none { min-width:122px; background:#f1f5f9; color:#475569; border-color:#cbd5e1; }
+    .alert-pill { gap:6px; }
+    .ai-rec-btn { width:auto; height:36px; padding:0 11px; gap:6px; border-radius:10px; font-size:.74rem; font-weight:850; }
+    .ai-rec-icon { display:inline-flex; align-items:center; gap:6px; font-size:.74rem; }
+    .baseline-help { display:block; margin-top:5px; color:#9a3412; font-size:.64rem; font-weight:700; }
+
+    body.dark-mode .submeter-identity-icon { background:#1e3a8a; color:#bfdbfe; }
+    body.dark-mode .reading-value { color:#e2e8f0; }
+    body.dark-mode .baseline-pill.na { background:#422006; color:#fed7aa; border-color:#9a3412; }
+
+    /* Keep all eight desktop columns inside the panel. The table previously
+       retained a fixed minimum width, which clipped Recommendation on the right. */
+    @media (min-width: 681px) {
+        .submeter-table-wrap { overflow-x: hidden; }
+        .submeter-table-shell { width: calc(100% - 20px); }
+        .submeter-table { width: 100%; min-width: 0; }
+        .submeter-table col.col-submeter { width: 18%; }
+        .submeter-table col.col-facility { width: 16%; }
+        .submeter-table col.col-current { width: 10%; }
+        .submeter-table col.col-baseline { width: 10%; }
+        .submeter-table col.col-baseline-source { width: 13%; }
+        .submeter-table col.col-increase { width: 9%; }
+        .submeter-table col.col-alert { width: 12%; }
+        .submeter-table col.col-recommendation { width: 12%; }
+        .submeter-table th,
+        .submeter-table td { overflow-wrap: anywhere; }
+        .submeter-table .ai-rec-btn { width: 100%; max-width: 132px; white-space: nowrap; }
+    }
+    body.dark-mode .alert-pill.pill-none { background:#1e293b; color:#cbd5e1; border-color:#475569; }
+
+    body.dark-mode .submeter-context-chip,
+    body.dark-mode .submeter-kpi,
+    body.dark-mode .submeter-records-head,
+    body.dark-mode .submeter-sensor-head,
+    body.dark-mode .submeter-sensor-stat,
+    body.dark-mode .submeter-chart-empty { background:#111827 !important; border-color:#334155; }
+    body.dark-mode .submeter-kpi .number,
+    body.dark-mode .submeter-kpi .value,
+    body.dark-mode .submeter-chart-empty strong { color:#e2e8f0; }
+    body.dark-mode .submeter-kpi .label,
+    body.dark-mode .submeter-kpi-note,
+    body.dark-mode .submeter-context-chip { color:#94a3b8 !important; }
+    body.dark-mode .submeter-sensor-controls { border-color:#334155; }
+    body.dark-mode .sensor-health-chip { background:#064e3b; color:#a7f3d0; }
+    body.dark-mode .sensor-health-chip.no-data { background:#1e293b; color:#94a3b8; }
+    body.dark-mode .submeter-chart-notice { background:#422006; border-color:#854d0e; color:#fde68a; }
+
     @media (max-width: 1200px) {
+        .submeter-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .submeter-filter { grid-template-columns: repeat(2, minmax(200px,1fr)); }
         .submeter-filter-actions { grid-column: 1 / -1; }
+        .submeter-sensor-controls { align-items:stretch; }
+        .submeter-sensor-picker { max-width:none; width:100%; }
     }
 
     @media (max-width: 680px) {
@@ -445,10 +591,15 @@
         .submeter-title { font-size: 1.28rem; }
         .submeter-subtitle { font-size: .92rem; line-height: 1.55; }
         .submeter-kpis { grid-template-columns: minmax(0, 1fr); }
+        .submeter-heading { align-items:flex-start; }
+        .submeter-heading-icon { width:42px; height:42px; flex-basis:42px; border-radius:12px; }
+        .submeter-context-chips { margin-left:-56px; margin-top:12px; }
         .submeter-filter { grid-template-columns: 1fr; }
         .submeter-head-actions { width: 100%; }
         .submeter-head-actions .sm-btn { flex: 1; }
         .submeter-sensor-head { align-items: stretch; }
+        .submeter-sensor-topline,.submeter-records-head { align-items:flex-start; }
+        .submeter-sensor-picker { grid-template-columns:1fr; }
         .submeter-sensor-tabs {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -474,6 +625,7 @@
             box-shadow: 0 5px 14px rgba(15, 23, 42, .06);
         }
         .submeter-table tbody tr.submeter-row.critical { background: #fef2f2; border-color: #fecaca; }
+        .submeter-table tbody tr.submeter-row.high { background: #fff7ed; border-color: #fdba74; }
         .submeter-table tbody tr.submeter-row.warning { background: #fffbeb; border-color: #fde68a; }
         .submeter-table tbody tr.submeter-row td {
             position: static;
@@ -508,6 +660,7 @@
             margin-bottom: 5px;
         }
         .submeter-table tbody tr.submeter-row.critical td:first-child { background: #fee2e2; }
+        .submeter-table tbody tr.submeter-row.high td:first-child { background: #ffedd5; }
         .submeter-table tbody tr.submeter-row.warning td:first-child { background: #fef3c7; }
         .submeter-table .facility-cell {
             display: grid;
@@ -524,10 +677,12 @@
             border-color: #334155;
         }
         body.dark-mode .submeter-table tbody tr.submeter-row.critical { background: #3b1f29; border-color: #7f1d1d; }
+        body.dark-mode .submeter-table tbody tr.submeter-row.high { background: #431f0f; border-color: #9a3412; }
         body.dark-mode .submeter-table tbody tr.submeter-row.warning { background: #3a3319; border-color: #854d0e; }
         body.dark-mode .submeter-table tbody tr.submeter-row td { background: transparent; border-color: #334155; box-shadow: none; }
         body.dark-mode .submeter-table tbody tr.submeter-row td:first-child { background: #182437; }
         body.dark-mode .submeter-table tbody tr.submeter-row.critical td:first-child { background: #4c1d2a; }
+        body.dark-mode .submeter-table tbody tr.submeter-row.high td:first-child { background: #50240f; }
         body.dark-mode .submeter-table tbody tr.submeter-row.warning td:first-child { background: #463b16; }
         body.dark-mode .submeter-table tbody tr.submeter-row td::before { color: #94a3b8; }
         .submeter-modal-head { padding: 18px 16px 10px; padding-right: 52px; }
@@ -551,8 +706,15 @@
     $top5 = $widgets['top5HighestIncrease'] ?? collect();
     $criticalCount = $widgets['criticalAlertsThisMonth'] ?? 0;
     $facilitiesMostAlerts = $widgets['facilitiesWithMostAlerts'] ?? collect();
+    $facilitiesWithAlertsCount = (int) ($widgets['facilitiesWithAlertsCount'] ?? $facilitiesMostAlerts->count());
     $sensorTrend = $sensorTrend ?? ['labels' => [], 'kwh' => [], 'total_kwh' => 0, 'reading_count' => 0];
     $selectedSensorPeriod = $selectedSensorPeriod ?? 'daily';
+    $sensorReadingCount = (int) ($sensorTrend['reading_count'] ?? 0);
+    $sensorTotalKwh = (float) ($sensorTrend['total_kwh'] ?? 0);
+    $sensorAverageKwh = $sensorReadingCount > 0 ? $sensorTotalKwh / $sensorReadingCount : 0;
+    $hasSensorData = $sensorReadingCount > 0 && count($sensorTrend['labels'] ?? []) > 0;
+    $selectedMonthLabel = \Carbon\Carbon::createFromFormat('Y-m', $selectedMonth)->format('F Y');
+    $activeFilterCount = collect([$selectedFacility, $selectedDepartment])->filter(fn ($value) => filled($value))->count();
 @endphp
 
 <div class="submeter-ui">
@@ -562,41 +724,56 @@
     @if(session('error'))
         <div class="submeter-flash err">{{ session('error') }}</div>
     @endif
-    @if($errors->any())
+    @if(isset($errors) && $errors->any())
         <div class="submeter-flash warn">Please check the form fields.</div>
     @endif
 
     <section class="report-card-container">
         <section class="submeter-head">
-            <div>
-                <h2 class="submeter-title">Submeter Monitoring, Baseline, and Alerts</h2>
-                <div class="submeter-subtitle">Track department and floor-level usage, baseline variance, and recommended actions.</div>
+            <div class="submeter-heading">
+                <span class="submeter-heading-icon"><i class="fa-solid fa-network-wired"></i></span>
+                <div>
+                    <h2 class="submeter-title">Submeter Monitoring</h2>
+                    <div class="submeter-subtitle">Track department and floor-level usage, baseline variance, and recommended actions.</div>
+                    <div class="submeter-context-chips">
+                        <span class="submeter-context-chip"><i class="fa-solid fa-calendar"></i> {{ $selectedMonthLabel }}</span>
+                        <span class="submeter-context-chip"><i class="fa-solid fa-clock"></i> {{ ucfirst($periodType) }} records</span>
+                        @if($activeFilterCount > 0)<span class="submeter-context-chip"><i class="fa-solid fa-filter"></i> {{ $activeFilterCount }} active {{ \Illuminate\Support\Str::plural('filter', $activeFilterCount) }}</span>@endif
+                    </div>
+                </div>
             </div>
             <div class="submeter-head-actions">
-                <a class="sm-btn soft" href="{{ route('modules.submeters.alerts', ['month' => $selectedMonth, 'facility_id' => $selectedFacility]) }}">View Alerts</a>
+                <a class="sm-btn soft" href="{{ route('modules.submeters.alerts', ['month' => $selectedMonth, 'period_type' => $periodType, 'facility_id' => $selectedFacility]) }}"><i class="fa-solid fa-triangle-exclamation"></i> Review Alerts</a>
             </div>
         </section>
 
         <div class="submeter-kpis">
-            <article class="submeter-kpi alert">
-                <div class="label">CRITICAL ALERTS (SELECTED MONTH)</div>
-                <div class="number">{{ $criticalCount }}</div>
+            <article class="submeter-kpi critical">
+                <div class="submeter-kpi-row"><div><div class="label">CRITICAL ALERTS</div><div class="number">{{ $criticalCount }}</div></div><span class="submeter-kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></span></div>
+                <div class="submeter-kpi-note">For {{ $selectedMonthLabel }}</div>
             </article>
-            <article class="submeter-kpi top">
-                <div class="label">TOP 5 HIGHEST INCREASE</div>
-                <div class="value">{{ $top5->count() }} submeters flagged</div>
+            <article class="submeter-kpi increase">
+                <div class="submeter-kpi-row"><div><div class="label">HIGHEST INCREASES</div><div class="value">{{ $top5->count() }} flagged</div></div><span class="submeter-kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></span></div>
+                <div class="submeter-kpi-note">Up to five positive variances</div>
             </article>
-            <article class="submeter-kpi fac">
-                <div class="label">FACILITIES WITH ALERTS</div>
-                <div class="value">{{ $facilitiesMostAlerts->count() }} facilities</div>
+            <article class="submeter-kpi facilities">
+                <div class="submeter-kpi-row"><div><div class="label">FACILITIES WITH ALERTS</div><div class="value">{{ $facilitiesWithAlertsCount }} facilities</div></div><span class="submeter-kpi-icon"><i class="fa-solid fa-building-circle-exclamation"></i></span></div>
+                <div class="submeter-kpi-note">Facilities requiring review</div>
+            </article>
+            <article class="submeter-kpi monitored">
+                <div class="submeter-kpi-row"><div><div class="label">MONITORED RECORDS</div><div class="number">{{ $rows->count() }}</div></div><span class="submeter-kpi-icon"><i class="fa-solid fa-gauge-high"></i></span></div>
+                <div class="submeter-kpi-note">Matching the current period and filters</div>
             </article>
         </div>
 
         <section class="submeter-sensor-panel">
             <div class="submeter-sensor-head">
-                <div>
-                    <h3 class="submeter-sensor-title">Submeter Sensor Graph</h3>
-                    <div class="submeter-sensor-subtitle">IoT source readings grouped by selected time range.</div>
+                <div class="submeter-sensor-topline">
+                    <div class="submeter-section-heading">
+                        <span class="submeter-section-icon"><i class="fa-solid fa-chart-column"></i></span>
+                        <div><h3 class="submeter-sensor-title">Sensor Consumption Trend</h3><div class="submeter-sensor-subtitle">IoT readings grouped by the selected meter and time range.</div></div>
+                    </div>
+                    <span class="sensor-health-chip{{ $hasSensorData ? '' : ' no-data' }}"><i class="fa-solid {{ $hasSensorData ? 'fa-signal' : 'fa-circle-minus' }}"></i> {{ $hasSensorData ? 'Sensor data available' : 'No sensor data' }}</span>
                 </div>
                 <div class="submeter-sensor-controls">
                     <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-sensor-picker">
@@ -607,18 +784,22 @@
                         <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
                         <div class="submeter-sensor-picker-field">
                             <label for="sensor_main_meter_id">Main Meter</label>
-                            <select id="sensor_main_meter_id">
-                                @foreach($sensorMeterGroups as $meterGroup)
+                            <select id="sensor_main_meter_id" aria-label="Select main meter">
+                                @forelse($sensorMeterGroups as $meterGroup)
                                     <option value="{{ $meterGroup['id'] }}" @selected((int) $selectedSensorMainMeter === (int) $meterGroup['id'])>{{ $meterGroup['label'] }}</option>
-                                @endforeach
+                                @empty
+                                    <option value="" disabled selected>No linked Main Meter available</option>
+                                @endforelse
                             </select>
                         </div>
                         <div class="submeter-sensor-picker-field">
                             <label for="sensor_submeter_id">Submeter</label>
                             <select id="sensor_submeter_id" name="sensor_submeter_id" onchange="this.form.submit()">
-                                @foreach(($sensorMeterGroups->firstWhere('id', $selectedSensorMainMeter)['submeters'] ?? collect()) as $sensorSubmeter)
+                                @forelse(($sensorMeterGroups->firstWhere('id', $selectedSensorMainMeter)['submeters'] ?? collect()) as $sensorSubmeter)
                                     <option value="{{ $sensorSubmeter->id }}" @selected((int) $selectedSensorSubmeter === (int) $sensorSubmeter->id)>{{ $sensorSubmeter->submeter_name }}</option>
-                                @endforeach
+                                @empty
+                                    <option value="" disabled selected>No linked Submeter available</option>
+                                @endforelse
                             </select>
                         </div>
                     </form>
@@ -634,6 +815,7 @@
                                 'sensor_submeter_id' => $selectedSensorSubmeter,
                             ], fn ($value) => $value !== null && $value !== '')) }}"
                             class="submeter-sensor-tab{{ $selectedSensorPeriod === $periodKey ? ' active' : '' }}"
+                            @if($selectedSensorPeriod === $periodKey) aria-current="page" @endif
                         >
                             {{ $periodLabel }}
                         </a>
@@ -645,20 +827,33 @@
                 <div class="submeter-sensor-stats">
                     <div class="submeter-sensor-stat">
                         <div class="submeter-sensor-stat-label">Sensor kWh</div>
-                        <div class="submeter-sensor-stat-value">{{ number_format((float) ($sensorTrend['total_kwh'] ?? 0), 2) }}</div>
+                        <div class="submeter-sensor-stat-value">{{ number_format($sensorTotalKwh, 2) }}</div>
                     </div>
                     <div class="submeter-sensor-stat">
                         <div class="submeter-sensor-stat-label">Sensor Readings</div>
-                        <div class="submeter-sensor-stat-value">{{ number_format((int) ($sensorTrend['reading_count'] ?? 0)) }}</div>
+                        <div class="submeter-sensor-stat-value">{{ number_format($sensorReadingCount) }}</div>
+                    </div>
+                    <div class="submeter-sensor-stat">
+                        <div class="submeter-sensor-stat-label">Average per Reading</div>
+                        <div class="submeter-sensor-stat-value">{{ number_format($sensorAverageKwh, 2) }} kWh</div>
                     </div>
                 </div>
-                <div class="submeter-sensor-chart">
-                    <canvas id="submeterSensorChart" style="display:block;width:100%;height:100%;"></canvas>
-                </div>
+                @if($sensorReadingCount === 1)
+                    <div class="submeter-chart-notice"><i class="fa-solid fa-circle-info"></i> One reading is available. Add more readings to reveal a meaningful usage trend.</div>
+                @endif
+                @if($hasSensorData)
+                    <div class="submeter-sensor-chart"><canvas id="submeterSensorChart" role="img" aria-label="{{ ucfirst($selectedSensorPeriod) }} submeter sensor consumption chart" style="display:block;width:100%;height:100%;"></canvas></div>
+                @else
+                    <div class="submeter-chart-empty"><i class="fa-solid fa-chart-line"></i><strong>No readings for this selection</strong><span>Choose another meter or time range, or wait for the IoT source to submit data.</span></div>
+                @endif
             </div>
         </section>
 
         <section class="submeter-panel">
+            <div class="submeter-records-head">
+                <div class="submeter-section-heading"><span class="submeter-section-icon"><i class="fa-solid fa-table-list"></i></span><div><h3 class="submeter-sensor-title">Monitoring Records</h3><div class="submeter-sensor-subtitle">Compare actual consumption against the selected baseline method.</div></div></div>
+                <span class="submeter-records-count"><i class="fa-solid fa-list-check"></i> {{ $rows->count() }} {{ \Illuminate\Support\Str::plural('record', $rows->count()) }}</span>
+            </div>
             <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-filter">
                 <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
                 <input type="hidden" name="sensor_submeter_id" value="{{ $selectedSensorSubmeter }}">
@@ -688,8 +883,8 @@
                     <input id="department" type="text" name="department" value="{{ $selectedDepartment }}" placeholder="Example: Engineering Office, 2F Lighting" class="submeter-input">
                 </div>
                 <div class="submeter-filter-actions">
-                    <button type="submit" class="sm-btn primary">Filter</button>
-                    <a href="{{ route('modules.submeters.monitoring') }}" class="sm-btn neutral">Reset</a>
+                    <button type="submit" class="sm-btn primary"><i class="fa-solid fa-filter"></i> Apply</button>
+                    <a href="{{ route('modules.submeters.monitoring') }}" class="sm-btn neutral"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                 </div>
             </form>
 
@@ -723,10 +918,12 @@
                             @php
                                 $level = strtolower((string) ($row->monitor_alert_level ?? 'none'));
                                 $increase = $row->monitor_increase_percent;
+                                $hasBaselineForRow = $row->monitor_baseline_kwh !== null && (float) $row->monitor_baseline_kwh > 0;
                                 $baselineSource = strtolower((string) ($row->monitor_baseline_source ?? ''));
                                 $rowClass = match ($level) {
-                                    'critical' => 'critical',
-                                    'warning' => 'warning',
+                                    'critical', 'drop_critical' => 'critical',
+                                    'very_high', 'high', 'drop_high' => 'high',
+                                    'warning', 'drop_warning' => 'warning',
                                     default => '',
                                 };
                                 [$baselineSourceLabel, $baselineSourceClass] = match ($baselineSource) {
@@ -735,31 +932,63 @@
                                     'seasonal_month' => ['Seasonal Pattern', 'seasonal'],
                                     'moving_avg_6' => ['6-Period Moving Avg', 'ma6'],
                                     'equipment_estimate' => ['Equipment Estimate', 'equipment'],
+                                    'configured_meter' => ['Configured Baseline', 'configured'],
                                     'alert' => ['Alert Baseline', 'na'],
                                     default => ['No Baseline', 'na'],
                                 };
                                 $alertDisplay = match ($level) {
                                     'critical' => 'CRITICAL',
+                                    'very_high' => 'VERY HIGH',
+                                    'high' => 'HIGH',
                                     'warning' => 'WARNING',
+                                    'drop_critical' => 'DROP CRITICAL',
+                                    'drop_high' => 'DROP HIGH',
+                                    'drop_warning' => 'DROP WARNING',
                                     'normal' => 'NORMAL',
-                                    default => 'NO DATA',
+                                    default => 'NOT EVALUATED',
                                 };
                                 $alertPillClass = match ($level) {
                                     'critical' => 'pill-critical',
+                                    'very_high' => 'pill-very-high',
+                                    'high' => 'pill-high',
                                     'warning' => 'pill-warning',
+                                    'drop_critical' => 'pill-drop-critical',
+                                    'drop_high' => 'pill-drop-high',
+                                    'drop_warning' => 'pill-drop-warning',
                                     'normal' => 'pill-normal',
                                     default => 'pill-none',
                                 };
+                                $alertIcon = match ($level) {
+                                    'critical' => 'fa-triangle-exclamation',
+                                    'very_high', 'high' => 'fa-arrow-trend-up',
+                                    'warning' => 'fa-circle-exclamation',
+                                    'drop_critical', 'drop_high', 'drop_warning' => 'fa-arrow-trend-down',
+                                    'normal' => 'fa-circle-check',
+                                    default => 'fa-circle-minus',
+                                };
                                 $fallbackAlertForAi = match ($level) {
                                     'critical' => 'Critical',
+                                    'very_high' => 'Very High',
+                                    'high' => 'High',
                                     'warning' => 'Warning',
-                                    default => (($row->monitor_has_reading ?? false) ? 'Normal' : 'No Data'),
+                                    'drop_critical' => 'Drop Critical',
+                                    'drop_high' => 'Drop High',
+                                    'drop_warning' => 'Drop Warning',
+                                    'normal' => 'Normal',
+                                    default => 'No Data',
                                 };
                                 $fallbackRecommendationForAi = match ($fallbackAlertForAi) {
                                     'Critical' => 'Critical submeter increase detected. Check department loads immediately and reduce non-essential usage this period.',
+                                    'Very High' => 'Very high consumption detected. Audit major loads and operating schedules today.',
+                                    'High' => 'Consumption is materially above baseline. Inspect major equipment and after-hours usage.',
                                     'Warning' => 'Submeter increase is above expected. Review operating schedule and inspect high-consumption equipment.',
+                                    'Drop Critical' => 'Critical consumption drop detected. Check the meter, power availability, outage, and operating status immediately.',
+                                    'Drop High' => 'Consumption is substantially below baseline. Validate the sensor and confirm whether shutdowns are intentional.',
+                                    'Drop Warning' => 'Consumption is below the expected range. Verify the reading before treating the reduction as savings.',
                                     'Normal' => 'Submeter usage is within expected range. Continue monitoring and maintain current controls.',
-                                    default => 'No reading data is available for this submeter in the selected period.',
+                                    default => ($row->monitor_has_reading ?? false)
+                                        ? 'A reading is available, but no valid baseline exists for comparison. Configure or compute a baseline before evaluating variance and alert status.'
+                                        : 'No reading data is available for this submeter in the selected period.',
                                 };
                                 $insightUrl = route('modules.submeters.ai-insight', [
                                     'submeter' => $row->submeter_id,
@@ -777,24 +1006,22 @@
                                 data-submeter-name="{{ $row->submeter?->submeter_name }}"
                             >
                                 <td class="sticky-col" data-label="Submeter">
-                                    <div class="submeter-name">
-                                        <a href="{{ route('modules.submeters.show', $row->submeter_id) }}" class="submeter-name-link">{{ $row->submeter?->submeter_name }}</a>
+                                    <div class="submeter-identity">
+                                        <span class="submeter-identity-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                                        <div><div class="submeter-name"><a href="{{ route('modules.submeters.show', ['submeter' => $row->submeter_id, 'period_type' => $periodType, 'return_period_type' => $periodType, 'from' => 'monitoring', 'month' => $selectedMonth, 'facility_id' => $selectedFacility, 'department' => $selectedDepartment]) }}" class="submeter-name-link">{{ $row->submeter?->submeter_name }}</a></div>
+                                        @if($row->monitor_has_reading ?? false)<div class="submeter-meta">{{ strtoupper($row->period_type) }} · {{ $row->periodLabel() }}</div>@else<div class="submeter-meta muted">No submitted reading for {{ $selectedMonth }}</div>@endif</div>
                                     </div>
-                                    @if($row->monitor_has_reading ?? false)
-                                        <div class="submeter-meta">{{ strtoupper($row->period_type) }} | {{ $row->periodLabel() }}</div>
-                                    @else
-                                        <div class="submeter-meta muted">No submitted reading for {{ $selectedMonth }}</div>
-                                    @endif
                                 </td>
                                 <td class="facility-cell" data-label="Facility" title="{{ $row->submeter?->facility?->name ?? '-' }}">{{ $row->submeter?->facility?->name ?? '-' }}</td>
-                                <td class="num metric" data-label="Actual (kWh)">{{ ($row->monitor_has_reading ?? false) ? number_format((float) $row->kwh_used, 2) : '-' }}</td>
-                                <td class="num metric base" data-label="Baseline (kWh)">{{ $row->monitor_baseline_kwh !== null ? number_format((float) $row->monitor_baseline_kwh, 2) : '-' }}</td>
+                                <td class="num metric" data-label="Actual (kWh)">@if($row->monitor_has_reading ?? false)<span class="reading-value">{{ number_format((float) $row->kwh_used, 2) }}</span><span class="reading-unit">kWh</span>@else<span class="metric-na">Not available</span>@endif</td>
+                                <td class="num metric base" data-label="Baseline (kWh)">@if($hasBaselineForRow)<span class="reading-value">{{ number_format((float) $row->monitor_baseline_kwh, 2) }}</span><span class="reading-unit">kWh</span>@else<span class="metric-na"><i class="fa-solid fa-minus"></i> Not set</span>@endif</td>
                                 <td class="center" data-label="Baseline Method">
-                                    <span class="baseline-pill {{ $baselineSourceClass }}">{{ $baselineSourceLabel }}</span>
+                                    <span class="baseline-pill {{ $baselineSourceClass }}">{{ $hasBaselineForRow ? $baselineSourceLabel : 'Needs Baseline' }}</span>
+                                    @if(!$hasBaselineForRow)<span class="baseline-help">Configure before evaluation</span>@endif
                                 </td>
-                                <td class="num metric inc {{ ($increase ?? 0) > 0 ? 'up' : 'down' }}" data-label="Variance">{{ $increase !== null ? number_format((float) $increase, 2) . '%' : '-' }}</td>
+                                <td class="num metric inc {{ ($increase ?? 0) > 0 ? 'up' : 'down' }}" data-label="Variance">@if($increase !== null){{ number_format((float) $increase, 2) }}%@else<span class="metric-na" title="A baseline is required to calculate variance"><i class="fa-solid fa-minus"></i> Not available</span>@endif</td>
                                 <td class="center" data-label="Alert Status">
-                                    <span data-alert-pill data-alert-level="{{ strtolower($fallbackAlertForAi) }}" class="alert-pill {{ $alertPillClass }}">{{ $alertDisplay }}</span>
+                                    <span data-alert-pill data-alert-level="{{ strtolower($fallbackAlertForAi) }}" class="alert-pill {{ $alertPillClass }}"><i class="fa-solid {{ $alertIcon }}"></i> {{ $alertDisplay }}</span>
                                 </td>
                                 <td class="recommendation-cell" data-label="Recommendation">
                                     <button
@@ -804,13 +1031,13 @@
                                         aria-label="View AI recommendation"
                                         data-open-ai-modal
                                     >
-                                        <span class="ai-rec-icon">AI</span>
+                                        <span class="ai-rec-icon"><i class="fa-solid fa-wand-magic-sparkles"></i> View Insight</span>
                                     </button>
                                 </td>
                             </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="submeter-empty-row">No submeter records match the selected filters.</td>
+                                    <td colspan="8" class="submeter-empty-row"><div class="submeter-empty-content"><i class="fa-solid fa-magnifying-glass-chart"></i><strong>No matching monitoring records</strong><span>Try changing the month, period type, facility, or search text.</span></div></td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -823,16 +1050,16 @@
 
     <div id="submeterAiModal" class="submeter-modal" aria-hidden="true">
         <div class="submeter-modal-card" role="dialog" aria-modal="true" aria-labelledby="submeterAiTitle">
-            <button type="button" class="submeter-modal-close" onclick="closeSubmeterAiModal()">&times;</button>
+            <button type="button" class="submeter-modal-close" onclick="closeSubmeterAiModal()" aria-label="Close AI insight"><i class="fa-solid fa-xmark"></i></button>
             <div class="submeter-modal-head">
-                <div id="submeterAiBadge" class="submeter-modal-badge">i</div>
+                <div id="submeterAiBadge" class="submeter-modal-badge"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                 <div>
                     <h3 id="submeterAiTitle" class="submeter-modal-title">AI Insight</h3>
                     <div id="submeterAiMeta" class="submeter-modal-meta">Rule-based recommendation</div>
                 </div>
             </div>
             <div class="submeter-modal-alert">
-                <span id="submeterAiAlert" class="alert-pill pill-none">NONE</span>
+                <span id="submeterAiAlert" class="alert-pill pill-none"><i class="fa-solid fa-circle-minus"></i> NOT EVALUATED</span>
             </div>
             <div id="submeterAiText" class="submeter-modal-text tone-none">No recommendation.</div>
             <div class="submeter-modal-foot">
@@ -844,13 +1071,23 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+@php
+    $sensorMeterGroupsPayload = $sensorMeterGroups->map(function ($group) {
+        return [
+            'id' => $group['id'],
+            'submeters' => $group['submeters']->map(function ($submeter) {
+                return [
+                    'id' => $submeter->id,
+                    'name' => $submeter->submeter_name,
+                ];
+            })->values()->all(),
+        ];
+    })->values()->all();
+@endphp
 <script>
 const submeterAiCache = {};
 
-const sensorMeterGroups = @json($sensorMeterGroups->map(fn ($group) => [
-    'id' => $group['id'],
-    'submeters' => $group['submeters']->map(fn ($submeter) => ['id' => $submeter->id, 'name' => $submeter->submeter_name])->values(),
-])->values());
+const sensorMeterGroups = {{ Illuminate\Support\Js::from($sensorMeterGroupsPayload) }};
 
 window.addEventListener('DOMContentLoaded', function () {
     const mainMeterSelect = document.getElementById('sensor_main_meter_id');
@@ -927,19 +1164,29 @@ window.addEventListener('DOMContentLoaded', function () {
 });
 
 function normalizeSubmeterAiAlert(level) {
-    const raw = String(level || '').trim().toLowerCase();
+    const raw = String(level || '').trim().toLowerCase().replaceAll('_', ' ');
     if (raw === 'critical') return 'Critical';
+    if (raw === 'very high') return 'Very High';
+    if (raw === 'high') return 'High';
     if (raw === 'warning' || raw === 'moderate') return 'Warning';
-    if (raw === 'normal' || raw === 'none' || raw === 'low') return 'Normal';
+    if (raw === 'drop critical') return 'Drop Critical';
+    if (raw === 'drop high') return 'Drop High';
+    if (raw === 'drop warning') return 'Drop Warning';
+    if (raw === 'normal' || raw === 'low') return 'Normal';
     return 'No Data';
 }
 
 function submeterAiAlertInfo(level) {
     const normalized = normalizeSubmeterAiAlert(level);
-    if (normalized === 'Critical') return { label: 'CRITICAL', pillClass: 'pill-critical', tone: 'tone-critical', icon: '!' };
-    if (normalized === 'Warning') return { label: 'WARNING', pillClass: 'pill-warning', tone: 'tone-warning', icon: '!' };
-    if (normalized === 'Normal') return { label: 'NORMAL', pillClass: 'pill-normal', tone: 'tone-normal', icon: 'i' };
-    return { label: 'NONE', pillClass: 'pill-none', tone: 'tone-none', icon: 'i' };
+    if (normalized === 'Critical') return { label: 'CRITICAL', pillClass: 'pill-critical', tone: 'tone-critical', icon: 'fa-triangle-exclamation' };
+    if (normalized === 'Very High') return { label: 'VERY HIGH', pillClass: 'pill-very-high', tone: 'tone-high', icon: 'fa-arrow-trend-up' };
+    if (normalized === 'High') return { label: 'HIGH', pillClass: 'pill-high', tone: 'tone-high', icon: 'fa-arrow-trend-up' };
+    if (normalized === 'Warning') return { label: 'WARNING', pillClass: 'pill-warning', tone: 'tone-warning', icon: 'fa-circle-exclamation' };
+    if (normalized === 'Drop Critical') return { label: 'DROP CRITICAL', pillClass: 'pill-drop-critical', tone: 'tone-drop', icon: 'fa-arrow-trend-down' };
+    if (normalized === 'Drop High') return { label: 'DROP HIGH', pillClass: 'pill-drop-high', tone: 'tone-drop', icon: 'fa-arrow-trend-down' };
+    if (normalized === 'Drop Warning') return { label: 'DROP WARNING', pillClass: 'pill-drop-warning', tone: 'tone-drop', icon: 'fa-arrow-trend-down' };
+    if (normalized === 'Normal') return { label: 'NORMAL', pillClass: 'pill-normal', tone: 'tone-normal', icon: 'fa-circle-check' };
+    return { label: 'NOT EVALUATED', pillClass: 'pill-none', tone: 'tone-none', icon: 'fa-circle-minus' };
 }
 
 function applySubmeterModalAlert(level) {
@@ -948,14 +1195,14 @@ function applySubmeterModalAlert(level) {
     const alert = document.getElementById('submeterAiAlert');
     const text = document.getElementById('submeterAiText');
 
-    if (badge) badge.textContent = info.icon;
+    if (badge) badge.innerHTML = `<i class="fa-solid ${info.icon}"></i>`;
     if (alert) {
-        alert.classList.remove('pill-critical', 'pill-warning', 'pill-normal', 'pill-none');
+        alert.classList.remove('pill-critical', 'pill-very-high', 'pill-high', 'pill-warning', 'pill-drop-critical', 'pill-drop-high', 'pill-drop-warning', 'pill-normal', 'pill-none');
         alert.classList.add(info.pillClass);
-        alert.textContent = info.label;
+        alert.innerHTML = `<i class="fa-solid ${info.icon}"></i> ${info.label}`;
     }
     if (text) {
-        text.classList.remove('tone-critical', 'tone-warning', 'tone-normal', 'tone-none');
+        text.classList.remove('tone-critical', 'tone-high', 'tone-warning', 'tone-drop', 'tone-normal', 'tone-none');
         text.classList.add(info.tone);
     }
 }
@@ -966,15 +1213,16 @@ function updateSubmeterAlertPill(submeterId, level) {
     const pill = row.querySelector('[data-alert-pill]');
     if (!pill) return;
     const info = submeterAiAlertInfo(level);
-    pill.classList.remove('pill-critical', 'pill-warning', 'pill-normal', 'pill-none');
+    pill.classList.remove('pill-critical', 'pill-very-high', 'pill-high', 'pill-warning', 'pill-drop-critical', 'pill-drop-high', 'pill-drop-warning', 'pill-normal', 'pill-none');
     pill.classList.add(info.pillClass);
-    pill.textContent = info.label;
+    pill.innerHTML = `<i class="fa-solid ${info.icon}"></i> ${info.label}`;
     pill.dataset.alertLevel = normalizeSubmeterAiAlert(level).toLowerCase();
 
-    row.classList.remove('critical', 'warning');
+    row.classList.remove('critical', 'high', 'warning');
     const normalized = normalizeSubmeterAiAlert(level);
-    if (normalized === 'Critical') row.classList.add('critical');
-    if (normalized === 'Warning') row.classList.add('warning');
+    if (normalized === 'Critical' || normalized === 'Drop Critical') row.classList.add('critical');
+    if (normalized === 'Very High' || normalized === 'High' || normalized === 'Drop High') row.classList.add('high');
+    if (normalized === 'Warning' || normalized === 'Drop Warning') row.classList.add('warning');
 }
 
 function updateSubmeterRecommendationText(submeterId, recommendation, source) {

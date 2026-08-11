@@ -22,7 +22,9 @@
 
 <style>
     .archive-page {
-        padding: 10px 12px 24px;
+        width:min(1440px,100%);
+        margin:0 auto;
+        padding: 18px;
         color: #1e293b;
     }
 
@@ -31,7 +33,13 @@
         border: 1px solid #e2e8f0;
         border-radius: 18px;
         box-shadow: 0 2px 12px rgba(31, 38, 135, .06);
-        padding: 26px;
+        padding: 24px;
+    }
+
+    .archive-heading { display:flex; align-items:center; gap:13px; }
+    .archive-heading-icon {
+        width:48px; height:48px; display:grid; place-items:center; flex:0 0 auto; border-radius:14px;
+        color:#fff; background:linear-gradient(135deg,#2563eb,#4f46e5); box-shadow:0 10px 22px rgba(37,99,235,.22);
     }
 
     .archive-header {
@@ -46,7 +54,7 @@
         margin: 0;
         font-size: clamp(1.55rem, 2.2vw, 2.1rem);
         font-weight: 800;
-        color: #2563eb;
+        color: #0f172a;
         letter-spacing: 0;
     }
 
@@ -170,6 +178,7 @@
         gap: 12px;
         padding: 14px 16px;
         border-bottom: 1px solid #e2e8f0;
+        background:#f8fafc;
     }
 
     .archive-count {
@@ -183,11 +192,20 @@
         text-align: right;
     }
 
+    .archive-policy {
+        display:inline-flex; align-items:center; gap:7px; padding:6px 9px; border:1px solid #fed7aa;
+        border-radius:999px; background:#fff7ed; color:#9a3412; font-size:.75rem; font-weight:800;
+    }
+
     .archive-empty {
+        min-height:190px;
         padding: 34px 16px;
         text-align: center;
         color: #64748b;
+        display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
     }
+    .archive-empty-icon { width:50px; height:50px; display:grid; place-items:center; border-radius:15px; background:#eff6ff; color:#2563eb; }
+    .archive-empty strong { color:#1e293b; }
 
     .archive-table {
         width: 100%;
@@ -210,7 +228,9 @@
         padding: 14px 16px;
         border-bottom: 1px solid #edf2f7;
         vertical-align: middle;
+        transition:background-color .15s ease;
     }
+    .archive-table tbody tr:hover td { background:#fbfdff; }
 
     .archive-col-facility { width: 32%; }
     .archive-col-reason { width: 27%; }
@@ -221,6 +241,12 @@
         font-weight: 900;
         color: #0f172a;
         line-height: 1.25;
+    }
+
+    .archive-facility-identity { display:flex; align-items:center; gap:11px; min-width:0; }
+    .archive-facility-icon {
+        width:40px; height:40px; display:grid; place-items:center; flex:0 0 auto; border-radius:12px;
+        background:#eff6ff; color:#2563eb;
     }
 
     .archive-meta {
@@ -255,7 +281,12 @@
         align-items: center;
         gap: 8px;
         min-width: 0;
+        padding:9px 10px;
+        border:1px solid #e2e8f0;
+        border-radius:10px;
+        background:#f8fafc;
     }
+    .archive-reason > i { color:#64748b; flex:0 0 auto; }
 
     .archive-reason-text {
         overflow: hidden;
@@ -279,6 +310,13 @@
         color: #1e293b;
         font-weight: 800;
     }
+    .archive-record-date-row { display:flex; align-items:center; gap:7px; }
+    .archive-record-date-row i { color:#2563eb; }
+
+    .archive-retention-pill {
+        display:inline-flex; align-items:center; gap:6px; margin-top:7px; padding:4px 8px; border-radius:999px;
+        background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; font-size:.72rem; font-weight:800;
+    }
 
     .archive-by {
         margin-top: 4px;
@@ -290,8 +328,11 @@
         display: inline-flex;
         justify-content: flex-end;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
+    .archive-row-actions form { margin:0; }
+    .archive-row-actions .archive-btn { min-height:38px; padding:0 11px; font-size:.8rem; transition:transform .15s ease,filter .15s ease; }
+    .archive-row-actions .archive-btn:hover { transform:translateY(-1px); filter:brightness(.96); }
 
     .archive-pagination {
         display: flex;
@@ -480,6 +521,47 @@
     .archive-alert.success { background: #dcfce7; color: #166534; }
     .archive-alert.error { background: #fee2e2; color: #b91c1c; }
 
+    body.dark-mode .archive-page { color:#e2e8f0; }
+    body.dark-mode .archive-card { background:#0f172a !important; border-color:#334155 !important; box-shadow:0 18px 46px rgba(2,6,23,.42); }
+    body.dark-mode .archive-title { color:#f8fafc !important; }
+    body.dark-mode .archive-subtitle { color:#94a3b8 !important; }
+    body.dark-mode .archive-back { background:#2563eb !important; color:#fff !important; }
+    body.dark-mode .archive-shell { background:#0f172a !important; border-color:#334155 !important; }
+    body.dark-mode .archive-list-head { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .archive-count { color:#f8fafc !important; }
+    body.dark-mode .archive-note { color:#94a3b8 !important; }
+    body.dark-mode .archive-policy { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    body.dark-mode .archive-empty { color:#94a3b8 !important; }
+    body.dark-mode .archive-empty strong { color:#f8fafc !important; }
+    body.dark-mode .archive-empty-icon { background:#172554 !important; color:#60a5fa !important; }
+    body.dark-mode .archive-table th { background:#111827 !important; border-color:#334155 !important; color:#93c5fd !important; }
+    body.dark-mode .archive-table td { background:#0f172a !important; border-color:#263449 !important; color:#e2e8f0 !important; }
+    body.dark-mode .archive-table tbody tr:hover td { background:#111827 !important; }
+    body.dark-mode .archive-facility-name,
+    body.dark-mode .archive-date { color:#f8fafc !important; }
+    body.dark-mode .archive-meta,
+    body.dark-mode .archive-by,
+    body.dark-mode .archive-reason-text { color:#cbd5e1 !important; }
+    body.dark-mode .archive-facility-icon { background:#172554 !important; color:#60a5fa !important; }
+    body.dark-mode .archive-pill { background:#172554 !important; color:#bfdbfe !important; }
+    body.dark-mode .archive-pill.neutral { background:#1e293b !important; color:#cbd5e1 !important; }
+    body.dark-mode .archive-reason { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .archive-link-btn { background:#172554 !important; border-color:#1e40af !important; color:#bfdbfe !important; }
+    body.dark-mode .archive-retention-pill { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    body.dark-mode .archive-pagination { background:#111827 !important; }
+    body.dark-mode .archive-page-link { background:#1e293b !important; color:#cbd5e1 !important; }
+    body.dark-mode .archive-modal,
+    body.dark-mode .archive-confirm-overlay { background:rgba(2,6,23,.76) !important; }
+    body.dark-mode .archive-modal-panel,
+    body.dark-mode .archive-confirm-panel { background:#0f172a !important; border:1px solid #334155; }
+    body.dark-mode .archive-modal-label { color:#93c5fd !important; }
+    body.dark-mode .archive-modal-title,
+    body.dark-mode .archive-confirm-title { color:#f8fafc !important; }
+    body.dark-mode .archive-modal-text { background:#111827 !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+    body.dark-mode .archive-confirm-head { border-color:#334155 !important; }
+    body.dark-mode .archive-confirm-message { color:#cbd5e1 !important; }
+    body.dark-mode .archive-confirm-btn.cancel { background:#1e293b !important; color:#e2e8f0 !important; }
+
     @media (max-width: 1180px) {
         .archive-toolbar {
             grid-template-columns: 1fr 1fr;
@@ -491,6 +573,7 @@
     }
 
     @media (max-width: 820px) {
+        .archive-page { padding:10px; }
         .archive-card {
             padding: 18px;
             border-radius: 16px;
@@ -553,6 +636,7 @@
         .archive-row-actions .archive-btn {
             width: 100%;
         }
+        .archive-row-actions { flex-wrap:wrap; }
     }
 </style>
 
@@ -564,11 +648,14 @@
         <div class="archive-alert error">{{ session('error') }}</div>
     @endif
 
-    <div class="archive-card">
+    <div class="report-card-container archive-card">
         <div class="archive-header">
-            <div>
-                <h2 class="archive-title">Facilities Archive</h2>
-                <p class="archive-subtitle">Restore archived facilities or permanently remove old entries.</p>
+            <div class="archive-heading">
+                <span class="archive-heading-icon"><i class="fa fa-building-circle-xmark"></i></span>
+                <div>
+                    <h2 class="archive-title">Facilities Archive</h2>
+                    <p class="archive-subtitle">Review, restore, or permanently remove archived facility records.</p>
+                </div>
             </div>
             <a href="{{ route('modules.facilities.index') }}" class="archive-back">
                 <i class="fa fa-arrow-left"></i>
@@ -578,12 +665,16 @@
 
         <div class="archive-shell">
             <div class="archive-list-head">
-                <div class="archive-count">Archived Facilities ({{ $archiveCount }})</div>
-                <div class="archive-note">Auto permanent delete after 30 days in archive.</div>
+                <div class="archive-count"><i class="fa fa-box-archive" style="color:#2563eb;margin-right:6px;"></i> Archived Facilities ({{ $archiveCount }})</div>
+                <div class="archive-policy"><i class="fa fa-shield-clock"></i> 30-day recovery window</div>
             </div>
 
             @if($archivedFacilities->count() === 0)
-                <div class="archive-empty">No archived facilities yet.</div>
+                <div class="archive-empty">
+                    <span class="archive-empty-icon"><i class="fa fa-building-circle-check"></i></span>
+                    <strong>No archived facilities</strong>
+                    <span>Facilities removed from the active directory will appear here for 30 days.</span>
+                </div>
             @else
                 <table class="archive-table">
                     <thead>
@@ -600,18 +691,25 @@
                                 $fullReason = trim((string) ($facility->archive_reason ?? ''));
                                 $archivedAt = $facility->deleted_at;
                                 $daysLeft = $archivedAt ? max(0, (int) ceil(30 - $archivedAt->diffInDays(now()))) : null;
+                                $expiresAt = $archivedAt ? $archivedAt->copy()->addDays(30) : null;
                             @endphp
                             <tr>
                                 <td class="archive-col-facility">
-                                    <div class="archive-facility-name">{{ $facility->name }}</div>
-                                    <div class="archive-meta">
-                                        <span class="archive-pill">{{ $facility->type ?: 'No type' }}</span>
-                                        <span class="archive-pill neutral">{{ ucfirst((string) ($facility->status ?: 'unknown')) }}</span>
-                                        <span>{{ $facility->barangay ?: 'No barangay' }}</span>
+                                    <div class="archive-facility-identity">
+                                        <span class="archive-facility-icon"><i class="fa fa-building"></i></span>
+                                        <div>
+                                            <div class="archive-facility-name">{{ $facility->name }}</div>
+                                            <div class="archive-meta">
+                                                <span class="archive-pill">{{ $facility->type ?: 'No type' }}</span>
+                                                <span class="archive-pill neutral">{{ ucfirst((string) ($facility->status ?: 'unknown')) }}</span>
+                                                <span><i class="fa fa-location-dot"></i> {{ $facility->barangay ?: 'No barangay' }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="archive-col-reason">
                                     <div class="archive-reason">
+                                        <i class="fa fa-message"></i>
                                         <span class="archive-reason-text" title="{{ $fullReason !== '' ? $fullReason : 'No reason provided' }}">
                                             {{ $fullReason !== '' ? $fullReason : 'No reason provided' }}
                                         </span>
@@ -625,13 +723,15 @@
                                     </div>
                                 </td>
                                 <td class="archive-col-date">
-                                    <div class="archive-date">{{ $archivedAt ? $archivedAt->format('M d, Y h:i A') : '-' }}</div>
+                                    <div class="archive-record-date-row"><i class="fa fa-calendar-xmark"></i><div class="archive-date">{{ $archivedAt ? $archivedAt->format('M d, Y h:i A') : '-' }}</div></div>
                                     <div class="archive-by">
                                         By {{ $facility->deletedByUser?->full_name ?? $facility->deletedByUser?->name ?? $facility->deletedByUser?->username ?? 'Unknown' }}
-                                        @if($daysLeft !== null)
-                                            <span>- {{ $daysLeft > 0 ? $daysLeft . ' day(s) left' : 'Due for cleanup' }}</span>
-                                        @endif
                                     </div>
+                                    @if($daysLeft !== null)
+                                        <span class="archive-retention-pill" title="{{ $expiresAt ? 'Scheduled cleanup: ' . $expiresAt->format('M d, Y h:i A') : '' }}">
+                                            <i class="fa fa-hourglass-half"></i> {{ $daysLeft > 0 ? $daysLeft . ' days remaining' : 'Due for cleanup' }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="archive-col-actions">
                                     <div class="archive-row-actions">
