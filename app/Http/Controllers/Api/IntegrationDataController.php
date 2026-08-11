@@ -163,7 +163,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $query = Maintenance::query()
-            ->with('facility:id,name')
+            ->with('facility')
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
             ->when($request->filled('scheduled_from'), fn (Builder $q) => $q->whereDate('scheduled_date', '>=', $request->date('scheduled_from')))
@@ -175,10 +175,7 @@ class IntegrationDataController extends Controller
         return $this->paginated($query, $request, fn (Maintenance $maintenance) => [
             'id' => $maintenance->id,
             'source' => 'active',
-            'facility' => [
-                'id' => $maintenance->facility_id,
-                'name' => $maintenance->facility?->name,
-            ],
+            'facility' => $this->facilityPayload($maintenance->facility),
             'issue_type' => $maintenance->issue_type,
             'trigger_month' => $maintenance->trigger_month,
             'trend' => $maintenance->trend,
@@ -209,7 +206,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $query = MaintenanceHistory::query()
-            ->with('facility:id,name')
+            ->with('facility')
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
             ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
@@ -218,11 +215,15 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (MaintenanceHistory $history) => [
             'id' => $history->id,
+            // The original active `maintenance` row this was archived from —
+            // lets CIMM recognize "this is the same task, now completed"
+            // instead of treating the history row's own (different) id as a
+            // brand new import and creating a duplicate schedule entry.
+            // Older history rows archived before this column existed fall
+            // back to their own id (nothing better available for those).
+            'source_maintenance_id' => $history->original_maintenance_id ?? $history->id,
             'source' => 'history',
-            'facility' => [
-                'id' => $history->facility_id,
-                'name' => $history->facility?->name,
-            ],
+            'facility' => $this->facilityPayload($history->facility),
             'issue_type' => $history->issue_type,
             'trigger_month' => $history->trigger_month,
             'trend' => $history->trend,
@@ -300,5 +301,30 @@ class IntegrationDataController extends Controller
     private function number(mixed $value): ?float
     {
         return is_numeric($value) ? (float) $value : null;
+    }
+
+    /**
+     * Full facility detail block for the maintenance sync endpoints — CIMM's
+     * "Facility Registry" style task modal shows these alongside the issue
+     * (see IntegrationDataController::facilities() above for the equivalent
+     * shape used by the general integration API).
+     */
+    private function facilityPayload(?Facility $facility): array
+    {
+        if (!$facility) {
+            return ['id' => null, 'name' => null];
+        }
+
+        return [
+            'id' => $facility->id,
+            'name' => $facility->name,
+            'address' => $facility->address,
+            'barangay' => $facility->barangay,
+            'floor_area_sqm' => $this->number($facility->floor_area_sqm ?? $facility->floor_area),
+            'floors' => $facility->floors,
+            'year_built' => $facility->year_built,
+            'operating_hours' => $facility->operating_hours,
+            'size_label' => Facility::resolveSizeLabelFromBaseline($facility->baseline_kwh) ?? 'N/A',
+        ];
     }
 }

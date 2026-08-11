@@ -208,6 +208,7 @@ trait MaintenanceSyncHelpers
         \Illuminate\Support\Facades\DB::transaction(function () use ($maintenance, &$archivedRecord) {
             $resolvedTrend = trim((string) $maintenance->trend) !== '' ? $maintenance->trend : 'Stable';
             $archivedRecord = \App\Models\MaintenanceHistory::create([
+                'original_maintenance_id' => $maintenance->id,
                 'facility_id' => $maintenance->facility_id,
                 'issue_type' => $maintenance->issue_type,
                 'trigger_month' => $maintenance->trigger_month,
