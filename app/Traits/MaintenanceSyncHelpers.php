@@ -358,9 +358,7 @@ trait MaintenanceSyncHelpers
             return;
         }
 
-        $maintenance->loadMissing('facility:id,name');
-
-        $facilityName = trim((string) ($maintenance->facility?->name ?? 'Unknown Facility'));
+        $facilityName = $maintenance->resolvedFacilityName();
         $period = trim((string) ($maintenance->trigger_month ?? 'Unknown Period'));
         $statusLabel = $newStatus === 'ongoing' ? 'Ongoing' : 'Completed';
         $title = $newStatus === 'ongoing' ? 'Maintenance In Progress' : 'Maintenance Completed';

@@ -29,4 +29,34 @@ class Maintenance extends Model
 
 
     use BelongsToFacility;
+
+    public function energyRecord()
+    {
+        return $this->belongsTo(EnergyRecord::class, 'energy_record_id');
+    }
+
+    public function energyIncident()
+    {
+        return $this->belongsTo(EnergyIncident::class, 'energy_incident_id');
+    }
+
+    /**
+     * Older maintenance rows can be linked through their energy record rather
+     * than directly through facility_id. Use that link before showing a
+     * generic label in alerts and notifications.
+     */
+    public function resolvedFacilityName(): string
+    {
+        $this->loadMissing('facility:id,name', 'energyRecord.facility:id,name', 'energyIncident.facility:id,name');
+
+        $name = trim((string) ($this->facility?->name ?? ''));
+        if ($name === '') {
+            $name = trim((string) ($this->energyRecord?->facility?->name ?? ''));
+        }
+        if ($name === '') {
+            $name = trim((string) ($this->energyIncident?->facility?->name ?? ''));
+        }
+
+        return $name !== '' ? $name : 'Facility not linked';
+    }
 }

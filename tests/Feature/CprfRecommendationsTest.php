@@ -78,6 +78,34 @@ test('approved recommendations for UMAN imported CPRF readings are exposed to CP
         ->assertJsonPath('data.0.recommendation', 'Reduce lighting use outside booked hours.');
 });
 
+test('CPRF can pull a recommendation using its external facility ID', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create(['source' => 'cprf', 'external_ref' => 8821]);
+    makeEnergyOwnedRecord($facility, 8, 'approved', 'cprf');
+    makeRecommendation($facility, ['month' => 8]);
+
+    $response = $this->withToken('test-token')
+        ->getJson('/api/v1/cprf/recommendations?facility_id=8821&year=2026&month=8');
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.facility.id', $facility->id)
+        ->assertJsonPath('data.0.facility.external_ref', 8821)
+        ->assertJsonPath('data.0.facility_external_ref', 8821);
+});
+
+test('CPRF energy reports include approved UMAN-imported readings', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create(['source' => 'cprf', 'external_ref' => 8822]);
+    makeEnergyOwnedRecord($facility, 8, 'approved', 'cprf');
+
+    $this->withToken('test-token')
+        ->getJson('/api/v1/cprf/energy-reports?facility_id=8822&year=2026&month=8')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.facility.external_ref', 8822);
+});
+
 test('cprf can sync recommendation implementation progress back to Energy', function () {
     config(['services.cprf_integration.token' => 'test-token']);
     $facility = Facility::factory()->create(['source' => 'cprf']);

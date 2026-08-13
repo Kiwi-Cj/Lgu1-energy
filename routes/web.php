@@ -106,6 +106,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');
     Route::post('/modules/settings/test-email', [\App\Http\Controllers\Modules\SettingsController::class, 'testEmail'])->name('settings.test-email');
     Route::get('/modules/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
+    Route::post('/modules/integrations/sync/cimm', [IntegrationController::class, 'syncCimm'])->name('integrations.sync-cimm');
+    Route::post('/modules/integrations/sync/cprf', [IntegrationController::class, 'syncCprf'])->name('integrations.sync-cprf');
 });
 
 require __DIR__ . '/modules.php';

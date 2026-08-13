@@ -148,13 +148,29 @@ class IntegrationDataController extends Controller
     private function energyRecordsResponse(Request $request, bool $cprfOnly = false): JsonResponse
     {
         $query = EnergyRecord::query()
-            ->with(['facility:id,name', 'meter:id,meter_name,meter_number'])
+            ->with(['facility:id,name,external_ref', 'meter:id,meter_name,meter_number'])
             ->when($cprfOnly, fn (Builder $q) => $q
                 ->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery->where('source', 'cprf'))
-                ->where('input_source', 'manual')
+                // CPRF readings arrive through UMAN with source=cprf. They
+                // are approved Energy records too, and must be returned to
+                // CPRF alongside Energy-entered/manual records.
+                ->whereIn('input_source', ['manual', 'cprf'])
                 ->where('review_status', 'approved')
                 ->whereNotNull('meter_id'))
-            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->when($request->filled('facility_id'), function (Builder $q) use ($request, $cprfOnly) {
+                $facilityId = $request->integer('facility_id');
+
+                if (! $cprfOnly) {
+                    $q->where('facility_id', $facilityId);
+                    return;
+                }
+
+                // CPRF may use its own facility ID (external_ref) when
+                // pulling data. Accept it as well as the Energy-side ID.
+                $q->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery
+                    ->whereKey($facilityId)
+                    ->orWhere('external_ref', $facilityId));
+            })
             ->when($request->filled('meter_id'), fn (Builder $q) => $q->where('meter_id', $request->integer('meter_id')))
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
             ->when($request->filled('month'), fn (Builder $q) => $q->where('month', $request->integer('month')))
@@ -162,7 +178,11 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (EnergyRecord $record) => [
             'id' => $record->id,
-            'facility' => ['id' => $record->facility_id, 'name' => $record->facility?->name],
+            'facility' => [
+                'id' => $record->facility_id,
+                'name' => $record->facility?->name,
+                'external_ref' => $record->facility?->external_ref !== null ? (int) $record->facility->external_ref : null,
+            ],
             'meter' => ['id' => $record->meter_id, 'name' => $record->meter?->meter_name, 'number' => $record->meter?->meter_number],
             'period' => ['year' => $record->year, 'month' => $record->month, 'day' => $record->day],
             'actual_kwh' => $this->number($record->actual_kwh),
@@ -364,7 +384,7 @@ class IntegrationDataController extends Controller
         $status = $request->filled('status') ? $request->string('status')->toString() : 'approved';
 
         $query = EnergySavingRecommendation::query()
-            ->with('facility:id,name')
+            ->with('facility:id,name,external_ref')
             ->where('status', 'approved')
             ->whereHas('facility', fn (Builder $q) => $q->where('source', 'cprf'))
             ->whereExists(function ($recordQuery) {
@@ -380,7 +400,13 @@ class IntegrationDataController extends Controller
                     ->whereNull('energy_records.deleted_at');
             })
             ->when($status !== 'all', fn (Builder $q) => $q->where('status', $status))
-            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->when($request->filled('facility_id'), function (Builder $q) use ($request) {
+                $facilityId = $request->integer('facility_id');
+
+                $q->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery
+                    ->whereKey($facilityId)
+                    ->orWhere('external_ref', $facilityId));
+            })
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
             ->when($request->filled('month'), fn (Builder $q) => $q->where('month', $request->integer('month')))
             ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
@@ -388,7 +414,14 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (EnergySavingRecommendation $reco) => [
             'id' => $reco->id,
-            'facility' => ['id' => $reco->facility_id, 'name' => $reco->facility?->name],
+            'facility' => [
+                'id' => $reco->facility_id,
+                'name' => $reco->facility?->name,
+                // CPRF uses this stable source-system ID to match the
+                // recommendation to its selected reservation facility.
+                'external_ref' => $reco->facility?->external_ref !== null ? (int) $reco->facility->external_ref : null,
+            ],
+            'facility_external_ref' => $reco->facility?->external_ref !== null ? (int) $reco->facility->external_ref : null,
             'year' => $reco->year,
             'month' => $reco->month,
             'generated_message' => $reco->generated_message,

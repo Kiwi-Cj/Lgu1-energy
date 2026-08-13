@@ -204,6 +204,18 @@
     font-weight: 700;
 }
 .system-direction i { color: var(--accent); }
+.sync-actions { margin-top: 12px; }
+.sync-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+    padding: 9px 11px; border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+    font: inherit; font-size: .7rem; font-weight: 800; cursor: pointer;
+}
+.sync-button:hover { filter: brightness(.95); }
+.sync-button:disabled { cursor: not-allowed; opacity: .52; }
+.sync-meta { margin: 7px 0 0; color: var(--int-muted); font-size: .64rem; line-height: 1.35; }
+.integration-alert { grid-column: 1 / -1; margin-bottom: 0; padding: 10px 13px; border-radius: 10px; font-size: .75rem; font-weight: 700; }
+.integration-alert.success { border: 1px solid #abefc6; background: #ecfdf3; color: #067647; }
+.integration-alert.error { border: 1px solid #fecdca; background: #fef3f2; color: #b42318; }
 .section-label {
     display: flex;
     align-items: center;
@@ -373,6 +385,12 @@ body.dark-mode .process-list li { color: #a1a1aa; }
     </div>
 
     <main class="integration-directory">
+        @if(session('success'))
+            <div class="integration-alert success"><i class="fa-solid fa-circle-check"></i> {{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="integration-alert error"><i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}</div>
+        @endif
         <article class="system-card cimm">
             <section class="system-overview">
                 <div class="system-topline">
@@ -381,6 +399,19 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                 </div>
                 <h2>CIMM Maintenance Sync</h2>
                 <p class="system-description">Two-way synchronization of active maintenance schedules, status changes, and completed work.</p>
+                <div class="sync-actions">
+                    <form method="POST" action="{{ route('integrations.sync-cimm') }}">
+                        @csrf
+                        <button class="sync-button" type="submit" {{ $statuses['cimm'] ? '' : 'disabled' }} title="Refresh the maintenance data available to CIMM">
+                            <i class="fa-solid fa-arrows-rotate"></i> Sync CIMM now
+                        </button>
+                    </form>
+                    @if(!empty($cimmSync['last_synced_at']))
+                        <p class="sync-meta">Last manual sync: {{ \Carbon\Carbon::parse($cimmSync['last_synced_at'])->diffForHumans() }}</p>
+                    @else
+                        <p class="sync-meta">Use after updating maintenance schedules or status.</p>
+                    @endif
+                </div>
                 <div class="system-direction"><i class="fa-solid fa-arrow-right-arrow-left"></i> Energy Maintenance ⇄ CIMM Schedule</div>
             </section>
 
@@ -424,6 +455,15 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                 </div>
                 <h2>CPRF Facilities Reservation</h2>
                 <p class="system-description">Public facility profiles, approved recommendations, and approved Energy reports.</p>
+                <div class="sync-actions">
+                    <form method="POST" action="{{ route('integrations.sync-cprf') }}">
+                        @csrf
+                        <button class="sync-button" type="submit" {{ $cprfReady ? '' : 'disabled' }} title="Pull the latest public facility changes from CPRF">
+                            <i class="fa-solid fa-arrows-rotate"></i> Sync CPRF now
+                        </button>
+                    </form>
+                    <p class="sync-meta">Pull the latest public facility changes from CPRF.</p>
+                </div>
                 <div class="system-direction"><i class="fa-solid fa-arrow-right-arrow-left"></i> CPRF Facilities ⇄ Energy Analytics</div>
             </section>
 
