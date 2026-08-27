@@ -143,7 +143,7 @@ test('AI alerts use the approved main meter baseline and flag large drops instea
         ->assertSee('Baseline 1,800.00 kWh')
         ->assertSee('-44.4%')
         ->assertSee('Usage: Drop Critical')
-        ->assertSee('CPRF via UMAN')
+        ->assertSee('External System')
         ->assertSee('Record: Approved')
         ->assertSee('record_id='.$record->id, escape: false)
         ->assertSee('Validate the meter reading')

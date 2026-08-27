@@ -417,35 +417,11 @@
 
 .facility-cell__body { min-width:0; }
 .facility-cell__name { display:block; color:inherit; line-height:1.35; }
-.facility-cell__body .facility-source-badge { margin-top:6px; }
-
 .facility-dot {
     width: 10px;
     height: 10px;
     border-radius: 999px;
     background: linear-gradient(135deg, #2563eb, #0ea5e9);
-}
-
-.facility-source-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 7px;
-    border: 1px solid #99f6e4;
-    border-radius: 999px;
-    background: #f0fdfa;
-    color: #0f766e;
-    font-size: 0.65rem;
-    font-weight: 900;
-    line-height: 1;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.facility-source-badge.is-local {
-    color: #1d4ed8;
-    border-color: #bfdbfe;
-    background: #eff6ff;
 }
 
 .energy-row.is-awaiting {
@@ -1019,8 +995,6 @@ body.dark-mode .energy-row.is-awaiting { background: #111827; }
 body.dark-mode .energy-row.is-awaiting:nth-child(even) { background: #101a2c; }
 body.dark-mode .energy-row.is-awaiting td { color: #a9b7c9; }
 body.dark-mode .energy-row.is-awaiting .facility-cell { color: #d7e0eb; }
-body.dark-mode .facility-source-badge { color: #5eead4; border-color: rgba(45,212,191,.35); background: rgba(13,148,136,.12); }
-body.dark-mode .facility-source-badge.is-local { color: #93c5fd; border-color: rgba(96,165,250,.3); background: rgba(37,99,235,.1); }
 body.dark-mode .trend-awaiting { color: #fdba74; border-color: rgba(251,146,60,.35); background: rgba(194,65,12,.14); }
 body.dark-mode .row-action { color: #bfdbfe; border-color: #334b70; background: rgba(37,99,235,.13); }
 body.dark-mode .row-action:hover { color: #fff; border-color: #3b82f6; background: #2563eb; }
@@ -1453,15 +1427,6 @@ body.dark-mode .energy-table tbody tr:nth-child(even):not(.is-awaiting) td:first
                                     <span class="facility-dot"></span>
                                     <div class="facility-cell__body">
                                         <span class="facility-cell__name">{{ $row['facility'] }}</span>
-                                        @if(($row['source'] ?? 'local') === 'cprf')
-                                            <span class="facility-source-badge" title="Mirrored from CPRF facility {{ $row['external_ref'] ?? '' }}">
-                                                <i class="fa fa-link"></i> CPRF Integrated
-                                            </span>
-                                        @else
-                                            <span class="facility-source-badge is-local" title="Facility managed in this system">
-                                                <i class="fa-solid fa-location-dot"></i> Local
-                                            </span>
-                                        @endif
                                     </div>
                                 </div>
                             </td>

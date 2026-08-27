@@ -78,7 +78,7 @@
                     $isManual = strtolower((string) ($incident->source ?? '')) === 'manual';
                     $isCprf = !$isManual && (strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
                         || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf');
-                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'CPRF Integrated' : 'Auto Detected');
+                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'External System' : 'Auto Detected');
                     $sourceClass = $isManual ? 'manual' : ($isCprf ? 'cprf' : 'auto');
                     $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : null;
                     $deviationText = $dpn !== null ? number_format((float) $dpn, 2) . '%' : '-';

@@ -475,12 +475,13 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/facility-profiles</code></div>
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/recommendations</code></div>
                     <div class="endpoint"><span class="method">GET</span><code>/api/v1/cprf/energy-reports</code></div>
+                    <div class="endpoint"><span class="method">POST</span><code>/api/v1/cprf/facility-readings</code></div>
                 </div>
                 <div class="api-tags">
                     <span class="api-tag">REST + JSON</span>
                     <span class="api-tag">Bearer Token</span>
                     <span class="api-tag">Hourly pull</span>
-                    <span class="api-tag">Energy-owned records</span>
+                    <span class="api-tag">Direct reading push</span>
                 </div>
             </section>
 
@@ -518,7 +519,7 @@ body.dark-mode .process-list li { color: #a1a1aa; }
                     <span class="system-status{{ $umanBadgeClass }}">{{ $umanBadgeLabel }}</span>
                 </div>
                 <h2>UMAN Monthly Energy Records</h2>
-                <p class="system-description">CPRF utility readings stored by UMAN and imported into LGU Energy records.</p>
+                <p class="system-description">Disabled. CPRF now sends utility readings directly to LGU Energy.</p>
                 <div class="system-direction"><i class="fa-solid fa-arrow-right"></i> CPRF → UMAN → Energy Records</div>
                 @if(!empty($umanSync['last_attempt_at']))
                     <p class="system-description" style="margin-top:10px;">
@@ -531,23 +532,21 @@ body.dark-mode .process-list li { color: #a1a1aa; }
             <section class="system-apis">
                 <h3 class="section-label"><i class="fa-solid fa-code"></i> Data source</h3>
                 <div class="endpoint-list">
-                    <div class="endpoint"><span class="method">GET</span><code>UMAN /api/monthly-energy-records.php</code></div>
+                    <div class="endpoint"><span class="method">POST</span><code>/api/v1/cprf/facility-readings</code></div>
                 </div>
                 <div class="api-tags">
-                    <span class="api-tag">X-API-Key</span>
-                    <span class="api-tag">Hourly pull</span>
-                    <span class="api-tag">Idempotent import</span>
-                    <span class="api-tag">CPRF records only</span>
+                    <span class="api-tag">Bearer Token</span>
+                    <span class="api-tag">Direct CPRF push</span>
+                    <span class="api-tag">Auto-approved</span>
                 </div>
             </section>
 
             <section class="system-process">
                 <h3 class="section-label"><i class="fa-solid fa-route"></i> Integration process</h3>
                 <ol class="process-list">
-                    <li><strong>CPRF records usage</strong>The facility reading is submitted to UMAN.</li>
-                    <li><strong>UMAN stores consumption</strong>UMAN keeps the utility record and exposes a read-only feed.</li>
-                    <li><strong>Energy pulls hourly</strong>The scheduler imports new or corrected records without duplication.</li>
-                    <li><strong>Energy analyzes records</strong>Imported usage appears in reports, alerts, and recommendations.</li>
+                    <li><strong>UMAN import is disabled</strong>No UMAN request is scheduled or configured.</li>
+                    <li><strong>CPRF sends the reading</strong>CPRF posts it directly to the Energy reading endpoint.</li>
+                    <li><strong>Energy validates and stores it</strong>Consumption, baseline, cost, deviation, and alerts are calculated here.</li>
                 </ol>
             </section>
         </article>

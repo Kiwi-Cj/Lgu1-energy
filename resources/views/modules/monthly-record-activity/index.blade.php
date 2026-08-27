@@ -182,7 +182,7 @@
             $record->recordedBy?->full_name
             ?? $record->recordedBy?->name
             ?? $record->recordedBy?->username
-            ?? (strtolower((string) $record->input_source) === 'cprf' ? 'CPRF Integration' : 'Unknown user')
+            ?? (strtolower((string) $record->input_source) === 'cprf' ? 'External System' : 'Unknown user')
         ));
     };
 @endphp
@@ -318,7 +318,7 @@
                             <td>
                                 <span class="activity-badge {{ $isDataset ? 'dataset' : ($isCprf ? 'cprf' : 'manual') }}">
                                     <i class="fa-solid {{ $isDataset ? 'fa-database' : ($isCprf ? 'fa-plug' : 'fa-keyboard') }}"></i>
-                                    {{ $isDataset ? 'QC Dataset' : ($isCprf ? 'CPRF Integration' : 'Manual Entry') }}
+                                    {{ $isDataset ? 'QC Dataset' : ($isCprf ? 'External System' : 'Manual Entry') }}
                                 </span>
                             </td>
                             <td>

@@ -124,10 +124,10 @@ class EnergyConservationController extends Controller
                         'period_label' => $periodDate->format('F Y'),
                         'record_date_label' => $recordDateLabel,
                         'meter_name' => $isCprfFacilityLevel
-                            ? 'Facility-Level (CPRF)'
+                            ? 'Facility-Level'
                             : (string) ($selectedRecord->meter?->meter_name ?? 'Main Meter'),
                         'source_label' => strtolower((string) ($selectedRecord->input_source ?? '')) === 'cprf'
-                            ? 'CPRF via UMAN'
+                            ? 'External System'
                             : 'Energy manual entry',
                         'review_status' => ucwords(str_replace('_', ' ', (string) ($selectedRecord->review_status ?? 'for_review'))),
                         'monthly_records_url' => route('facilities.monthly-records', [

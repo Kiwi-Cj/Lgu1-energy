@@ -5,7 +5,7 @@ use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\User;
 
-test('cprf facility-level readings appear in monthly records with a distinct badge', function () {
+test('cprf facility-level readings appear in monthly records without an integration badge', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create();
 
@@ -21,7 +21,8 @@ test('cprf facility-level readings appear in monthly records with a distinct bad
     $response = $this->actingAs($admin)->get("/modules/facilities/{$facility->id}/monthly-records");
 
     $response->assertOk();
-    $response->assertSee('Facility-Level (CPRF)');
+    $response->assertSee('Facility-Level');
+    $response->assertDontSee('Facility-Level (CPRF)');
     $response->assertSee('7,820.00');
 });
 
@@ -59,7 +60,8 @@ test('cprf facility-level readings still appear when the table is filtered to on
         ->get("/modules/facilities/{$facility->id}/monthly-records?table_meter_id={$meter->id}");
 
     $response->assertOk();
-    $response->assertSee('Facility-Level (CPRF)');
+    $response->assertSee('Facility-Level');
+    $response->assertDontSee('Facility-Level (CPRF)');
     $response->assertSee('7,820.00');
 });
 

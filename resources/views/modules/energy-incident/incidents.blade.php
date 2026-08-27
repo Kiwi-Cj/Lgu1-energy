@@ -100,7 +100,7 @@
                 <option value="all" {{ ($filters['source'] ?? 'all') === 'all' ? 'selected' : '' }}>All Sources</option>
                 <option value="auto" {{ ($filters['source'] ?? 'all') === 'auto' ? 'selected' : '' }}>Auto Detected</option>
                 <option value="manual" {{ ($filters['source'] ?? 'all') === 'manual' ? 'selected' : '' }}>Manual Report</option>
-                <option value="cprf" {{ ($filters['source'] ?? 'all') === 'cprf' ? 'selected' : '' }}>CPRF Integrated</option>
+                <option value="cprf" {{ ($filters['source'] ?? 'all') === 'cprf' ? 'selected' : '' }}>External System</option>
             </select>
             <select name="year" id="incidentYearFilter">
                 <option value="">All Years</option>
@@ -132,7 +132,7 @@
                     $isManual = strtolower((string) ($incident->source ?? '')) === 'manual';
                     $isCprf = !$isManual && (strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
                         || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf');
-                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'CPRF Integrated' : 'Auto Detected');
+                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'External System' : 'Auto Detected');
                     $sourceClass = $isManual ? 'manual' : ($isCprf ? 'cprf' : 'auto');
                     $categoryLabel = $categoryLabels->get((string) ($incident->category ?? ''), $isManual ? 'Other' : 'Energy Anomaly');
                     $deviation = $incident->deviation_percent;
@@ -382,7 +382,6 @@
                 <h3 id="reportIncidentTitle">Report Incident</h3>
                 <p>This creates an Open incident and forwards a Pending corrective-maintenance request to CIMM.</p>
             </div>
-            <span class="cimm-owner-badge"><i class="fa-solid fa-arrows-rotate"></i> CIMM Managed</span>
         </div>
 
         @if(count($incidentFormErrors))
@@ -626,21 +625,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .report-modal-heading h3 { margin: 0; color: #0f172a; font-size: 1.3rem; font-weight: 900; }
 .report-modal-heading p { margin: 5px 0 0; color: #64748b; font-size: 0.88rem; line-height: 1.4; }
-
-.cimm-owner-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid #99f6e4;
-    border-radius: 999px;
-    background: #f0fdfa;
-    color: #0f766e;
-    padding: 6px 9px;
-    font-size: 0.68rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
 
 .report-errors {
     margin-bottom: 14px;

@@ -279,13 +279,13 @@ class EnergyRecordObserver
                 ));
             }
             if ($encoderName === '') {
-                $encoderName = $isIntegrated ? 'CPRF Integration' : 'Unknown user';
+                $encoderName = $isIntegrated ? 'External System' : 'Unknown user';
             }
 
             $month = max(1, min(12, (int) ($record->month ?? now()->month)));
             $year = (int) ($record->year ?? now()->year);
             $periodLabel = date('F Y', mktime(0, 0, 0, $month, 1, $year));
-            $sourceLabel = $isIntegrated ? 'CPRF Integration' : 'Manual Entry';
+            $sourceLabel = $isIntegrated ? 'External System' : 'Manual Entry';
             $action = $isUpdate ? 'updated' : 'submitted';
             $message = "{$encoderName} {$action} the {$periodLabel} monthly record for {$facilityName} via {$sourceLabel}.";
             $targetUrl = route('monthly-record-activity.index');

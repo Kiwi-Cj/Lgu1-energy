@@ -54,7 +54,7 @@ test('CPRF-managed monthly records page provides Energy-owned entry controls', f
         ->assertSee('Add Monthly Record');
 });
 
-test('monthly records header displays the current UMAN integration badge', function () {
+test('monthly records header hides the UMAN integration badge', function () {
     config()->set('services.uman_monthly_records.url', 'https://uman.test/api/monthly-energy-records.php');
     config()->set('services.uman_monthly_records.key', 'test-key');
     Cache::put('integrations.uman_monthly_records', [
@@ -71,8 +71,8 @@ test('monthly records header displays the current UMAN integration badge', funct
     $this->actingAs($admin)
         ->get(route('facilities.monthly-records', ['facility' => $facility->id]))
         ->assertOk()
-        ->assertSee('UMAN Connected')
-        ->assertSee('UMAN integration status: UMAN Connected', false);
+        ->assertDontSee('UMAN Connected')
+        ->assertDontSee('UMAN integration status: UMAN Connected', false);
 });
 
 test('energy users cannot archive a CPRF-supplied monthly record', function () {

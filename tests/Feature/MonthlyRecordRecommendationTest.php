@@ -424,7 +424,7 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         ->assertOk()
         ->assertSee('Selected monthly record context')
         ->assertSee('CPRF Recommendation Main Meter')
-        ->assertSee('CPRF via UMAN')
+        ->assertSee('External System')
         ->assertSee('4,800.00')
         ->assertSee('Monthly Record Assessment')
         ->assertSee('Very high consumption')

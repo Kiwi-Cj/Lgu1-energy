@@ -105,9 +105,13 @@ reports. Auth: `Authorization: Bearer
 `CPRF_ENERGY_SHARED_KEY_2026`; override in production). Rate limit: 60
 requests/minute.
 
-### Removed: POST /api/v1/cprf/facility-readings
+### POST /api/v1/cprf/facility-readings
 
-This endpoint is intentionally unavailable. Monthly energy records are encoded and owned by the Energy system, including records for CPRF-managed facilities.
+CPRF sends reviewed monthly meter readings directly to Energy. Authenticate with
+the CPRF bearer token and include the Energy-mirrored `facility_id`, billing
+period, prior/current meter values, and reading date. The record is approved
+automatically and is updated idempotently when CPRF resubmits the same
+facility and period.
 
 ### GET /api/v1/cprf/facilities
 

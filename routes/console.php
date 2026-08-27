@@ -109,9 +109,8 @@ Schedule::command('energy:sync-cprf-facilities')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
-Schedule::command('energy:sync-uman-monthly-records')
-    ->everyFiveMinutes()
-    ->withoutOverlapping();
+// UMAN monthly-record imports are disabled. CPRF now submits readings
+// directly to POST /api/v1/cprf/facility-readings.
 
 Artisan::command('main-meter:backfill-from-energy-records
     {--dry-run : Preview records to be migrated}

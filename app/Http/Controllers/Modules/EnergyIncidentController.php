@@ -576,7 +576,7 @@ class EnergyIncidentController extends Controller
             strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
             || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf'
         ) {
-            return 'CPRF Integrated';
+            return 'External System';
         }
 
         return 'Auto Detected';

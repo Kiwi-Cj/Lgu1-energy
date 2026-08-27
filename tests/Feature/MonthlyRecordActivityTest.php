@@ -133,7 +133,8 @@ test('integrated records show the external encoder and source', function () {
         ->get(route('monthly-record-activity.index', ['source' => 'cprf']))
         ->assertOk()
         ->assertSee('CPRF Staff Account')
-        ->assertSee('CPRF Integration');
+        ->assertSee('External System')
+        ->assertDontSee('CPRF Integration');
 });
 
 test('QC dataset records are identified as system records and are not reviewable', function () {
@@ -151,7 +152,7 @@ test('QC dataset records are identified as system records and are not reviewable
         ->assertDontSee('data-return-url="'.route('monthly-record-activity.review', $datasetRecord).'"', false);
 });
 
-test('the removed cprf reading endpoint cannot create an energy record', function () {
+test('the cprf reading endpoint creates an approved energy record', function () {
     config(['services.cprf_integration.token' => 'test-token']);
 
     $facility = Facility::factory()->create(['name' => 'Integrated Civic Center']);
@@ -166,7 +167,14 @@ test('the removed cprf reading endpoint cannot create an energy record', functio
             'reading_date' => '2026-08-30',
             'recorded_by_name' => 'CPRF Monthly Encoder',
         ])
-        ->assertNotFound();
+        ->assertCreated()
+        ->assertJsonPath('record.facility_id', $facility->id)
+        ->assertJsonPath('record.actual_kwh', 275.0);
 
-    expect(EnergyRecord::query()->where('facility_id', $facility->id)->exists())->toBeFalse();
+    expect(EnergyRecord::query()
+        ->where('facility_id', $facility->id)
+        ->where('input_source', 'cprf')
+        ->where('review_status', 'approved')
+        ->where('actual_kwh', 275)
+        ->exists())->toBeTrue();
 });

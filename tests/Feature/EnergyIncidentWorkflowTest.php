@@ -43,7 +43,8 @@ test('incident list filters real CPRF incidents and labels their source', functi
         ->get(route('energy-incidents.index', ['source' => 'cprf', 'year' => 2026, 'month' => 7]))
         ->assertOk()
         ->assertSee('Integrated Civic Hall')
-        ->assertSee('CPRF Integrated');
+        ->assertSee('External System')
+        ->assertDontSee('CPRF Integrated');
 
     expect($response->viewData('incidents')->getCollection()->pluck('facility.name')->all())
         ->toBe(['Integrated Civic Hall']);

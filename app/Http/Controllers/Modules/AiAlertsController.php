@@ -86,7 +86,7 @@ class AiAlertsController extends Controller
                 'review_ready' => $reviewReady,
                 'review_status' => $reviewReady ? 'Approved' : ($records->isNotEmpty() ? 'For Review' : 'No Record'),
                 'source_label' => strtolower((string) ($primaryRecord?->input_source ?? '')) === 'cprf'
-                    ? 'CPRF via UMAN'
+                    ? 'External System'
                     : 'Energy',
                 'tip' => $this->energyTip($usageLevel, $deviation, $costExceeded, $costVariance),
             ];

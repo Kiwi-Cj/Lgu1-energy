@@ -91,40 +91,6 @@
         flex-wrap: wrap;
     }
 
-    .monthly-integration-badge {
-        min-height: 28px;
-        padding: 5px 10px;
-        border: 1px solid #86efac;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        color: #166534;
-        background: #f0fdf4;
-        font-size: .68rem;
-        font-weight: 850;
-        white-space: nowrap;
-    }
-
-    .monthly-integration-badge.is-partial,
-    .monthly-integration-badge.is-error {
-        color: #b91c1c;
-        border-color: #fecaca;
-        background: #fef2f2;
-    }
-
-    .monthly-integration-badge.is-waiting {
-        color: #92400e;
-        border-color: #fde68a;
-        background: #fffbeb;
-    }
-
-    .monthly-integration-badge.is-off {
-        color: #475569;
-        border-color: #cbd5e1;
-        background: #f8fafc;
-    }
-
     .monthly-action-btn {
         text-decoration: none;
         border: 1px solid #cbd5e1;
@@ -2072,11 +2038,6 @@
         .monthly-table th:nth-child(7), .monthly-table td:nth-child(7) { width:7%; text-align:center; }
     }
     body.dark-mode .monthly-context-chip, body.dark-mode .monthly-performance-card, body.dark-mode .monthly-bill-link { background:#111827; border-color:#334155; color:#cbd5e1; }
-    body.dark-mode .monthly-integration-badge { color:#86efac; border-color:#166534; background:rgba(22,101,52,.18); }
-    body.dark-mode .monthly-integration-badge.is-partial,
-    body.dark-mode .monthly-integration-badge.is-error { color:#fca5a5; border-color:#7f1d1d; background:rgba(127,29,29,.18); }
-    body.dark-mode .monthly-integration-badge.is-waiting { color:#fde68a; border-color:#92400e; background:rgba(146,64,14,.18); }
-    body.dark-mode .monthly-integration-badge.is-off { color:#cbd5e1; border-color:#475569; background:#111827; }
     body.dark-mode .monthly-performance-value { color:#f1f5f9; }
     body.dark-mode .monthly-table-title { color:#f1f5f9; }
     body.dark-mode .monthly-table-subtitle { color:#8fa0b5; }
@@ -2317,22 +2278,6 @@
         $recordDateDefault = $requestedRecordDate;
     }
 
-    $umanState = $umanSync['state'] ?? ($umanConfigured ? 'waiting' : 'not_configured');
-    $umanBadgeClass = match ($umanState) {
-        'partial' => 'is-partial',
-        'error' => 'is-error',
-        'waiting' => 'is-waiting',
-        'connected' => '',
-        default => 'is-off',
-    };
-    $umanBadgeLabel = match ($umanState) {
-        'connected' => 'UMAN Connected',
-        'partial' => 'UMAN Partial Sync',
-        'error' => 'UMAN Sync Error',
-        'waiting' => 'UMAN Waiting for Sync',
-        default => 'UMAN Not Configured',
-    };
-    $umanBadgeTitle = trim((string) ($umanSync['message'] ?? ''));
 @endphp
 
 <div class="report-card-container monthly-report-card-container monthly-shell">
@@ -2364,12 +2309,6 @@
                             <span class="monthly-context-chip"><i class="fa-solid fa-building"></i> {{ $facility->name }}</span>
                             <span class="monthly-context-chip"><i class="fa-solid fa-plug-circle-bolt"></i> {{ $billingSourceLabel }}</span>
                             <span class="monthly-context-chip"><i class="fa-solid fa-calendar"></i> {{ $selectedYear }}</span>
-                            <span class="monthly-integration-badge {{ $umanBadgeClass }}"
-                                  title="{{ $umanBadgeTitle ?: 'CPRF readings are imported through the UMAN monthly energy feed.' }}"
-                                  aria-label="UMAN integration status: {{ $umanBadgeLabel }}">
-                                <i class="fa-solid {{ $umanState === 'connected' ? 'fa-circle-check' : ($umanState === 'error' ? 'fa-circle-exclamation' : 'fa-arrows-rotate') }}"></i>
-                                {{ $umanBadgeLabel }}
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -2591,12 +2530,12 @@
                             $cost = \App\Support\EnergyCost::cost($record, $rate);
 
                             $isCprfFacilityLevel = $record->meter_id === null && ($record->input_source ?? null) === 'cprf';
-                            $scopeLabelRow = $isCprfFacilityLevel ? 'CPRF' : 'MAIN';
+                            $scopeLabelRow = $isCprfFacilityLevel ? 'FACILITY' : 'MAIN';
                             $scopeNameRow = $isCprfFacilityLevel
-                                ? 'Facility-Level (CPRF)'
+                                ? 'Facility-Level'
                                 : (string) ($record->meter->meter_name ?? 'Main Meter');
-                            $scopeBg = $isCprfFacilityLevel ? '#f3e8ff' : '#eff6ff';
-                            $scopeColor = $isCprfFacilityLevel ? '#7c3aed' : '#1d4ed8';
+                            $scopeBg = $isCprfFacilityLevel ? '#ecfdf5' : '#eff6ff';
+                            $scopeColor = $isCprfFacilityLevel ? '#047857' : '#1d4ed8';
 
                             $actualRow = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
                             $baselineRow = ($record->meter && is_numeric($record->meter->baseline_kwh))
