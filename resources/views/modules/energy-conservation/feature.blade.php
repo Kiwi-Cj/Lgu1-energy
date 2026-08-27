@@ -570,7 +570,7 @@
     }
     .tip-review-form textarea { min-height: 68px; resize: vertical; }
     .tip-review-disclosure { margin-top: 9px; border-top: 1px solid #dbe4f0; }
-    .tip-review-disclosure summary {
+    .tip-review-disclosure > summary {
         width: fit-content;
         margin-top: 9px;
         color: #1d4ed8;
@@ -580,9 +580,9 @@
         list-style: none;
         user-select: none;
     }
-    .tip-review-disclosure summary::-webkit-details-marker { display: none; }
-    .tip-review-disclosure summary::before { content: '\f044'; margin-right: 7px; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
-    .tip-review-disclosure[open] summary::before { content: '\f077'; }
+    .tip-review-disclosure > summary::-webkit-details-marker { display: none; }
+    .tip-review-disclosure > summary::before { content: '\f044'; margin-right: 7px; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
+    .tip-review-disclosure[open] > summary::before { content: '\f077'; }
     .manual-recommendation {
         margin: 0;
         padding: 14px 16px;
@@ -590,7 +590,7 @@
         border-radius: 14px;
         background: #eff6ff;
     }
-    .manual-recommendation summary {
+    .manual-recommendation > summary {
         display: flex;
         align-items: center;
         width: 100%;
@@ -598,7 +598,7 @@
         color: #1d4ed8;
         font-size: .86rem;
     }
-    .manual-recommendation summary::after {
+    .manual-recommendation > summary::after {
         content: 'Publishes advice with the monthly record assessment';
         margin-left: auto;
         color: #64748b;
@@ -617,6 +617,52 @@
         border-radius: 14px;
         background: #f0fdf4;
     }
+    .tip-review-field .daily-task-multiselect {
+        margin-top: 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+    }
+    .tip-review-field .daily-task-multiselect summary {
+        padding: 11px 13px;
+        cursor: pointer;
+        color: #1e3a5f;
+        font-weight: 700;
+        font-size: .82rem;
+        text-transform: none;
+    }
+    .tip-review-field .daily-task-multiselect-body {
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 0 12px 12px;
+        border-top: 1px solid #e2e8f0;
+    }
+    .tip-review-field .daily-task-multiselect-group { margin-top: 10px; }
+    .tip-review-field .daily-task-multiselect-group-title {
+        color: #64748b;
+        font-size: .72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .tip-review-field .daily-task-multiselect-option {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        align-items: center;
+        gap: 9px;
+        margin: 5px 0;
+        padding: 9px 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: #1e293b;
+        font-size: .78rem;
+        font-weight: 600;
+        line-height: 1.35;
+        text-transform: none;
+        cursor: pointer;
+    }
+    .tip-review-field .daily-task-multiselect-option:hover { background: #f8fafc; }
+    .tip-review-field .daily-task-multiselect-option:has(input:checked) { border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; }
+    .tip-review-field .daily-task-multiselect-option input { width: 18px; height: 18px; margin: 0; accent-color: #2563eb; }
     .manual-saved-head {
         display: flex;
         align-items: center;
@@ -825,6 +871,30 @@
     }
     .recommendation-assessment-snapshot .record-context-label { color: #1d4ed8; }
     .recommendation-assessment-snapshot p { margin: 5px 0 0; color: #334155; font-size: .76rem; line-height: 1.55; }
+    .recommendation-task-context {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 12px 18px 0;
+        padding: 11px 13px;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        background: #f0fdf4;
+    }
+    .recommendation-task-context-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .recommendation-task-context-label { color: #166534; font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .recommendation-task-context-title { margin-top: 2px; color: #14532d; font-size: .8rem; font-weight: 700; line-height: 1.4; }
+    .recommendation-task-context-meta { margin-top: 3px; color: #15803d; font-size: .69rem; }
     .recommendation-delete-form { padding: 0 18px 16px; }
     .recommendation-section-heading {
         display: flex;
@@ -934,6 +1004,9 @@
         color: #2563eb;
         font-size: .92rem;
     }
+    .recommendation-modal-heading-icon.is-danger { background: #fee2e2; color: #dc2626; }
+    .recommendation-delete-confirm-modal { width: min(460px, calc(100vw - 32px)); }
+    .recommendation-delete-copy { color: #475569; font-size: .83rem; line-height: 1.55; }
     .recommendation-modal-title {
         color: #0f172a;
         font-size: 1.02rem;
@@ -1950,9 +2023,9 @@
                                     <span>{{ $manualTip['assessment_message'] }} This assessment is automatically attached to the saved and published recommendation.</span>
                                 </div>
                                 <div class="recommendation-source-flow" aria-label="Recommendation review flow">
-                                    <span class="recommendation-flow-step"><i class="fa-solid fa-brain"></i> AI Alerts suggestion</span>
+                                    <span class="recommendation-flow-step"><i class="fa-solid fa-chart-column"></i> System assessment</span>
                                     <i class="fa-solid fa-arrow-right recommendation-flow-arrow" aria-hidden="true"></i>
-                                    <span class="recommendation-flow-step"><i class="fa-solid fa-user-check"></i> Reviewer approval</span>
+                                    <span class="recommendation-flow-step"><i class="fa-solid fa-pen"></i> Reviewer-written recommendation</span>
                                     <i class="fa-solid fa-arrow-right recommendation-flow-arrow" aria-hidden="true"></i>
                                     <span class="recommendation-flow-step"><i class="fa-solid fa-paper-plane"></i> {{ $isCprfIntegrationPeriod ? 'CPRF recommendation' : 'Facility recommendation' }}</span>
                                     <div class="recommendation-owner-note">
@@ -1985,10 +2058,43 @@
                                             <textarea id="manualRecommendationText" name="engineer_recommendation" required placeholder="Enter your recommendation for this facility...">{{ old('engineer_recommendation') }}</textarea>
                                             <div class="tip-field-help">
                                                 {{ $isCprfIntegrationPeriod
-                                                    ? 'This publishes advice to the CPRF recommendation list. It does not create or assign an implementation task.'
+                                                    ? 'This publishes advice to the CPRF recommendation list. You may also add it to this facility’s Daily Task Board.'
                                                     : 'This publishes advice to the facility recommendation list. It does not create or assign an implementation task.' }}
                                             </div>
+                                            <div class="recommendation-ai-draft-action">
+                                                <button type="button"
+                                                        class="system-adopt-btn"
+                                                        data-system-recommendation="{{ $manualTip['message'] }}"
+                                                        data-ai-recommendation-url="{{ route('modules.energy-monitoring.ai-recommendation', ['facility' => $manualTip['facility_id'], 'month' => $selectedMonth]) }}">
+                                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Use AI Draft
+                                                </button>
+                                                <span class="ai-source-status" data-ai-source-status aria-live="polite"></span>
+                                            </div>
+                                            <div class="tip-field-help">AI fills an editable draft only. Review and revise it before publishing.</div>
                                         </div>
+                                        @if($isCprfIntegrationPeriod)
+                                            <div class="tip-review-field">
+                                                <label>Daily Task Board tasks to send to CPRF</label>
+                                                <details class="daily-task-multiselect" @if(old('daily_task_options')) open @endif>
+                                                    <summary>Select daily tasks (optional)</summary>
+                                                    <div class="daily-task-multiselect-body">
+                                                    @foreach(['opening' => 'Opening routine', 'closing' => 'Closing routine'] as $taskPeriod => $taskPeriodLabel)
+                                                        <div class="daily-task-multiselect-group">
+                                                            <div class="daily-task-multiselect-group-title">{{ $taskPeriodLabel }}</div>
+                                                            @foreach($dailyTaskBoardOptions as $taskKey => $taskOption)
+                                                                @continue($taskOption['period'] !== $taskPeriod)
+                                                                <label class="daily-task-multiselect-option">
+                                                                    <input type="checkbox" name="daily_task_options[]" value="{{ $taskKey }}" @checked(in_array($taskKey, old('daily_task_options', []), true))>
+                                                                    <span>{{ $taskOption['label'] }}</span>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                    @endforeach
+                                                    </div>
+                                                </details>
+                                                <div class="tip-field-help">All selected tasks are added to this facility’s Daily Task Board and published to CPRF with the recommendation.</div>
+                                            </div>
+                                        @endif
                                     </div>
                                     <div class="tip-review-actions">
                                         <button class="tip-action save" type="submit" name="status" value="for_review">Save Draft</button>
@@ -2045,7 +2151,7 @@
                                 <div class="recommendation-modal-head">
                                     <div class="recommendation-modal-heading">
                                         <span class="recommendation-modal-heading-icon" aria-hidden="true">
-                                            <i class="fa-solid fa-lightbulb"></i>
+                                            <i class="fa-solid {{ $recommendation->dailyChecklistTask ? 'fa-list-check' : 'fa-lightbulb' }}"></i>
                                         </span>
                                         <div>
                                             <div class="recommendation-modal-title">Recommendation Details</div>
@@ -2057,16 +2163,26 @@
                                     </button>
                                 </div>
                                 <div class="recommendation-assessment-snapshot">
-                                    <div class="record-context-label">Monthly Record Assessment Sent With This Recommendation</div>
+                                    <div class="record-context-label">System-Generated Monthly Record Assessment</div>
                                     <p>{{ $recommendation->generated_message }}</p>
                                 </div>
+                                @if($recommendation->dailyChecklistTask)
+                                    <div class="recommendation-task-context">
+                                        <span class="recommendation-task-context-icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span>
+                                        <div>
+                                            <div class="recommendation-task-context-label">Daily Task Board item</div>
+                                            <div class="recommendation-task-context-title">{{ $recommendation->dailyChecklistTask->task_label }}</div>
+                                            <div class="recommendation-task-context-meta">{{ ucfirst($recommendation->dailyChecklistTask->period) }} routine &middot; Published to CPRF</div>
+                                        </div>
+                                    </div>
+                                @endif
                                 @if($canReviewTips)
                                 <form method="POST" action="{{ route('modules.energy-conservation.tips.update', $recommendation) }}">
                                     @csrf
                                     @method('PUT')
                                     <div class="recommendation-modal-body">
                                         <div class="tip-review-field">
-                                            <label>Recommendation</label>
+                                            <label>Published Recommendation</label>
                                             <textarea name="engineer_recommendation" required>{{ $recommendation->engineer_recommendation }}</textarea>
                                         </div>
                                         <div class="tip-review-grid">
@@ -2094,10 +2210,9 @@
                                         </div>
                                     </div>
                                     <div class="recommendation-modal-footer">
-                                        <button type="submit"
-                                                form="deleteRecommendation{{ $recommendation->id }}"
+                                        <button type="button"
                                                 class="tip-action dismiss"
-                                                onclick="return confirm('Delete this recommendation?')">
+                                                data-delete-recommendation-form="deleteRecommendation{{ $recommendation->id }}">
                                             Delete Recommendation
                                         </button>
                                         <button type="button" class="tip-action save recommendation-modal-close">Cancel</button>
@@ -2107,7 +2222,7 @@
                                 @else
                                     <div class="recommendation-modal-body">
                                         <div class="tip-review-field">
-                                            <label>Recommendation</label>
+                                            <label>Published Recommendation</label>
                                             <div class="recommendation-readonly-value is-long">{{ $recommendation->engineer_recommendation }}</div>
                                         </div>
                                         <div class="tip-review-grid">
@@ -2142,8 +2257,30 @@
                             </dialog>
                         @endforeach
 
+                        @if($canReviewTips && $manualRecommendations->isNotEmpty())
+                            <dialog id="deleteRecommendationConfirmModal" class="recommendation-modal recommendation-delete-confirm-modal" aria-labelledby="deleteRecommendationConfirmTitle">
+                                <div class="recommendation-modal-head">
+                                    <div class="recommendation-modal-heading">
+                                        <span class="recommendation-modal-heading-icon is-danger" aria-hidden="true"><i class="fa-solid fa-trash"></i></span>
+                                        <div>
+                                            <div id="deleteRecommendationConfirmTitle" class="recommendation-modal-title">Delete Recommendation?</div>
+                                            <div class="recommendation-row-meta">This action cannot be undone.</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="recommendation-modal-close" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                                </div>
+                                <div class="recommendation-modal-body">
+                                    <p class="recommendation-delete-copy">Are you sure you want to delete this recommendation? It will no longer be available in Energy or in the CPRF recommendation list.</p>
+                                </div>
+                                <div class="recommendation-modal-footer">
+                                    <button type="button" class="tip-action save recommendation-modal-close">Cancel</button>
+                                    <button id="confirmRecommendationDelete" type="button" class="tip-action dismiss">Delete Recommendation</button>
+                                </div>
+                            </dialog>
+                        @endif
+
                         <div class="recommendation-section-heading">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> System-Generated Recommendation
+                            <i class="fa-solid fa-chart-column"></i> System-Generated Assessment
                         </div>
                         <div class="energy-tip-list">
                             @forelse($energyTips as $tip)
@@ -2160,7 +2297,6 @@
                                         </div>
                                         @if(!empty($tip['assessment_message']))
                                             <div class="energy-tip-message"><strong>Assessment:</strong> {{ $tip['assessment_message'] }}</div>
-                                            <div class="energy-tip-message"><strong>Recommended action:</strong> {{ $tip['message'] }}</div>
                                         @else
                                             <div class="energy-tip-message">{{ $tip['message'] }}</div>
                                         @endif
@@ -2168,21 +2304,12 @@
                                             <div class="energy-tip-metric"><i class="fa-solid fa-chart-simple"></i> {{ $tip['metric'] }}</div>
                                         @endif
                                         @if($canReviewTips && !empty($tip['facility_id']))
-                                            <button type="button"
-                                                    class="system-adopt-btn"
-                                                    data-system-recommendation="{{ $tip['message'] }}"
-                                                    data-ai-recommendation-url="{{ route('modules.energy-monitoring.ai-recommendation', ['facility' => $tip['facility_id'], 'month' => $selectedMonth]) }}">
-                                                <i class="fa-solid fa-brain"></i> Use AI Alerts Suggestion
-                                            </button>
                                             <a class="system-adopt-btn"
                                                href="{{ route('modules.ai-alerts.index', ['month' => $selectedMonth]) }}">
                                                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Open AI Alerts
                                             </a>
-                                            <div class="ai-source-status" data-ai-source-status aria-live="polite"></div>
                                             <div class="tip-field-help">
-                                                {{ $isCprfIntegrationPeriod
-                                                    ? 'The AI Alerts suggestion is only a draft. Review it before publishing to CPRF.'
-                                                    : 'The AI Alerts suggestion is only a draft. Review it before publishing to the facility recommendation list.' }}
+                                                Review the assessment, then write the facility recommendation yourself before publishing.
                                             </div>
                                         @endif
                                         @if($review)
@@ -2196,7 +2323,7 @@
                             @empty
                                 <div class="feature-point">
                                     <i class="fa-solid fa-clock"></i>
-                                    <span>No monthly energy data is available for a system-generated recommendation.</span>
+                                    <span>No monthly energy data is available for a system-generated assessment.</span>
                                 </div>
                             @endforelse
                         </div>
@@ -2287,6 +2414,24 @@
 
         document.querySelectorAll('.recommendation-modal-close').forEach((button) => {
             button.addEventListener('click', () => button.closest('dialog')?.close());
+        });
+
+        const deleteRecommendationModal = document.getElementById('deleteRecommendationConfirmModal');
+        const confirmRecommendationDelete = document.getElementById('confirmRecommendationDelete');
+        let pendingRecommendationDeleteForm = null;
+
+        document.querySelectorAll('[data-delete-recommendation-form]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const formId = button.dataset.deleteRecommendationForm;
+                pendingRecommendationDeleteForm = formId ? document.getElementById(formId) : null;
+                if (!pendingRecommendationDeleteForm || !deleteRecommendationModal) return;
+                deleteRecommendationModal.showModal();
+            });
+        });
+
+        confirmRecommendationDelete?.addEventListener('click', () => {
+            if (!pendingRecommendationDeleteForm) return;
+            pendingRecommendationDeleteForm.requestSubmit();
         });
 
         document.querySelectorAll('.recommendation-modal').forEach((modal) => {

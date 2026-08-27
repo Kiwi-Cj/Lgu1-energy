@@ -4,6 +4,7 @@ use App\Models\EnergySavingRecommendation;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Models\DailyEnergyChecklistTask;
 
 function makeRecommendation(Facility $facility, array $overrides = []): EnergySavingRecommendation
 {
@@ -12,6 +13,7 @@ function makeRecommendation(Facility $facility, array $overrides = []): EnergySa
         'year' => 2026,
         'month' => 6,
         'generated_message' => 'Shift aircon pre-cooling 30 minutes later.',
+        'engineer_recommendation' => 'Review the air-conditioning pre-cooling schedule.',
         'status' => 'approved',
     ], $overrides));
 }
@@ -76,6 +78,52 @@ test('approved recommendations for UMAN imported CPRF readings are exposed to CP
         ->assertJsonPath('data.0.engineer_recommendation', 'Reduce lighting use outside booked hours.')
         ->assertJsonPath('data.0.monthly_record_assessment', 'Shift aircon pre-cooling 30 minutes later.')
         ->assertJsonPath('data.0.recommendation', 'Reduce lighting use outside booked hours.');
+});
+
+test('daily task board recommendations are exposed to CPRF and can be updated', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create(['source' => 'cprf']);
+    makeEnergyOwnedRecord($facility, 8, 'approved', 'cprf');
+    $task = DailyEnergyChecklistTask::create([
+        'facility_id' => $facility->id,
+        'task_key' => 'cprf_daily_task_'.str()->uuid(),
+        'task_label' => 'Switch off unused lights after closing.',
+        'period' => 'closing',
+    ]);
+    $recommendation = makeRecommendation($facility, [
+        'month' => 8,
+        'daily_checklist_task_id' => $task->id,
+        'engineer_recommendation' => $task->task_label,
+    ]);
+
+    $this->withToken('test-token')
+        ->getJson('/api/v1/cprf/recommendations?month=8')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $recommendation->id)
+        ->assertJsonPath('data.0.recommendation', $task->task_label);
+
+    $this->withToken('test-token')
+        ->patchJson("/api/v1/cprf/recommendations/{$recommendation->id}/implementation", [
+            'implementation_status' => 'in_progress',
+        ])
+        ->assertOk()
+        ->assertJsonPath('recommendation.implementation_status', 'in_progress');
+});
+
+test('an assessment is not exposed to CPRF until an actual recommendation is published', function () {
+    config(['services.cprf_integration.token' => 'test-token']);
+    $facility = Facility::factory()->create(['source' => 'cprf']);
+    makeEnergyOwnedRecord($facility, 8, 'approved', 'cprf');
+    makeRecommendation($facility, [
+        'month' => 8,
+        'engineer_recommendation' => '   ',
+    ]);
+
+    $this->withToken('test-token')
+        ->getJson('/api/v1/cprf/recommendations?month=8')
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
 });
 
 test('CPRF can pull a recommendation using its external facility ID', function () {

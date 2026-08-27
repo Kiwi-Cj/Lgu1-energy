@@ -11,4 +11,5 @@ class DailyEnergyChecklistTask extends Model
 
     public function facility() { return $this->belongsTo(Facility::class); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function recommendation() { return $this->hasOne(EnergySavingRecommendation::class); }
 }

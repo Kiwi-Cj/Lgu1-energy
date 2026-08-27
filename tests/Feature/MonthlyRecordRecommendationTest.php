@@ -2,6 +2,7 @@
 
 use App\Models\EnergyRecord;
 use App\Models\EnergySavingRecommendation;
+use App\Models\DailyEnergyChecklistTask;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\Notification;
@@ -144,11 +145,11 @@ test('monthly records show recommendation status and the matching recommendation
             'recommendation_notification_id' => $augustNotification->id,
         ]))
         ->assertOk()
-        ->assertSee('System-Generated Recommendation')
+        ->assertSee('System-Generated Assessment')
         ->assertSee('System /')
         ->assertDontSee('Added Recommendations')
         ->assertDontSee('This recommendation is not approved yet.')
-        ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
+        ->assertDontSee('No monthly energy data is available for a system-generated assessment.');
 
     expect($julyNotification->fresh()->read_at)->not->toBeNull()
         ->and($augustNotification->fresh()->read_at)->not->toBeNull();
@@ -186,13 +187,13 @@ test('monthly records show recommendation status and the matching recommendation
         ->assertSee('does not create or assign an implementation task')
         ->assertSee('Publish Recommendation')
         ->assertDontSee('Assignment &amp; Handoff', escape: false)
-        ->assertSee('Use AI Alerts Suggestion')
+        ->assertDontSee('Use AI Alerts Suggestion')
         ->assertSee('Open AI Alerts')
-        ->assertSee('AI Alerts suggestion is only a draft')
-        ->assertSee('AI Alerts suggestion')
-        ->assertSee('Reviewer approval')
+        ->assertSee('Review the assessment, then write the facility recommendation yourself before publishing.')
+        ->assertSee('System assessment')
+        ->assertSee('Reviewer-written recommendation')
         ->assertSee('Facility recommendation')
-        ->assertSee('System-Generated Recommendation')
+        ->assertSee('System-Generated Assessment')
         ->assertSee('Added Recommendations')
         ->assertSee('Recommendation Details')
         ->assertSee('Save Changes')
@@ -433,12 +434,15 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         ->assertDontSee('5,800.00')
         ->assertSee('publishes advice to the CPRF recommendation list')
         ->assertSee('Publish to CPRF')
+        ->assertSee('Daily Task Board tasks to send to CPRF')
+        ->assertSee('Record the opening main-meter reading.')
+        ->assertSee('Verify unused lights are switched off.')
         ->assertDontSee('<select name="assigned_to">', escape: false)
-        ->assertSee('Use AI Alerts Suggestion')
+        ->assertDontSee('Use AI Alerts Suggestion')
         ->assertSee('Open AI Alerts')
         ->assertSee('CPRF recommendation')
-        ->assertSee('System-Generated Recommendation')
-        ->assertDontSee('No monthly energy data is available for a system-generated recommendation.');
+        ->assertSee('System-Generated Assessment')
+        ->assertDontSee('No monthly energy data is available for a system-generated assessment.');
 
     $this->actingAs($admin)
         ->post(route('modules.energy-conservation.tips.review'), [
@@ -475,6 +479,57 @@ test('a meter-linked cprf monthly record is assigned to cprf integration', funct
         ->toContain('Approved baseline 4,000.00 kWh')
         ->toContain('800.00 kWh (20.00%) above baseline')
         ->toContain('Estimated avoidable cost: PHP 10,000.00');
+
+    $this->actingAs($admin)
+        ->post(route('modules.energy-conservation.tips.review'), [
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'period' => '2026-07',
+            'status' => 'approved',
+            'engineer_recommendation' => 'Review CPRF facility operating schedules.',
+            'daily_task_options' => ['opening_meter_reading', 'closing_lights'],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $dailyTask = DailyEnergyChecklistTask::query()
+        ->where('facility_id', $facility->id)
+        ->where('task_label', 'Verify unused lights are switched off.')
+        ->firstOrFail();
+
+    $this->assertDatabaseHas('energy_saving_recommendations', [
+        'facility_id' => $facility->id,
+        'daily_checklist_task_id' => $dailyTask->id,
+        'engineer_recommendation' => 'Verify unused lights are switched off.',
+        'status' => 'approved',
+    ]);
+
+    $linkedRecommendation = EnergySavingRecommendation::query()
+        ->where('daily_checklist_task_id', $dailyTask->id)
+        ->firstOrFail();
+
+    $this->actingAs($admin)
+        ->get(route('modules.energy-conservation.feature', [
+            'feature' => 'energy-saving-tips',
+            'facility_id' => $facility->id,
+            'record_id' => $record->id,
+            'month' => '2026-07',
+        ]))
+        ->assertOk()
+        ->assertSee('Daily Task Board item')
+        ->assertSee('Closing routine');
+
+    $this->actingAs($admin)
+        ->put(route('modules.energy-conservation.tips.update', $linkedRecommendation), [
+            'status' => 'approved',
+            'engineer_recommendation' => 'Switch off unused lights after closing.',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('daily_energy_checklist_tasks', [
+        'id' => $dailyTask->id,
+        'task_label' => 'Switch off unused lights after closing.',
+    ]);
 });
 
 test('recommendation summary requires a baseline before showing avoidable cost', function () {
@@ -518,7 +573,7 @@ test('recommendation summary requires a baseline before showing avoidable cost',
         ->assertSee('Monthly Energy Cost')
         ->assertSee('PHP 59,320.00')
         ->assertSee('does not create or assign an implementation task')
-        ->assertSee('baseline is still being established from 3–6 approved monthly readings')
+        ->assertSee('No approved baseline is available yet')
         ->assertSee('Set an approved baseline before estimating excess cost.');
 
     $this->actingAs($admin)

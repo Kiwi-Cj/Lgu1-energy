@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Facility;
+use App\Models\EnergySavingRecommendation;
 use App\Models\User;
 
 test('conservation overview presents one consolidated workflow', function () {
@@ -58,4 +59,42 @@ test('daily checklist uses a compact task board with modal task creation and aut
         ->assertSee('Add First Task')
         ->assertDontSee('Save Checklist')
         ->assertDontSee('<select id="checklist_task_period"', escape: false);
+});
+
+test('adding a daily task also creates its linked facility recommendation', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Daily Board Recommendation Facility']);
+
+    $this->actingAs($admin)
+        ->post(route('modules.energy-conservation.daily-checklist.tasks.store'), [
+            'facility_id' => $facility->id,
+            'task_label' => 'Turn off meeting-room lighting after closing.',
+            'period' => 'closing',
+            'return_date' => '2026-08-08',
+        ])
+        ->assertRedirect(route('modules.energy-conservation.feature', [
+            'feature' => 'daily-checklist',
+            'facility_id' => $facility->id,
+            'date' => '2026-08-08',
+        ]));
+
+    $task = \App\Models\DailyEnergyChecklistTask::query()
+        ->where('facility_id', $facility->id)
+        ->firstOrFail();
+
+    $this->assertDatabaseHas('energy_saving_recommendations', [
+        'facility_id' => $facility->id,
+        'daily_checklist_task_id' => $task->id,
+        'year' => 2026,
+        'month' => 8,
+        'engineer_recommendation' => 'Turn off meeting-room lighting after closing.',
+        'status' => 'approved',
+    ]);
+
+    expect(EnergySavingRecommendation::query()
+        ->where('daily_checklist_task_id', $task->id)
+        ->firstOrFail()
+        ->target_date
+        ->toDateString())
+        ->toBe('2026-08-08');
 });

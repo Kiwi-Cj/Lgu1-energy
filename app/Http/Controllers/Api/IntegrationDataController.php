@@ -365,9 +365,10 @@ class IntegrationDataController extends Controller
 
     /**
      * Engineer-reviewed energy-saving recommendations for CPRF-managed
-     * facilities. The partner can only receive approved recommendations whose
-     * linked main-meter period is approved, whether the reading was encoded in
-     * Energy or imported from CPRF through UMAN.
+     * facilities, including recommendations created from the Daily Task Board.
+     * The partner can only receive approved recommendations whose linked
+     * main-meter period is approved, whether the reading was encoded in Energy
+     * or imported from CPRF through UMAN.
      */
     public function recommendations(Request $request): JsonResponse
     {
@@ -386,6 +387,8 @@ class IntegrationDataController extends Controller
         $query = EnergySavingRecommendation::query()
             ->with('facility:id,name,external_ref')
             ->where('status', 'approved')
+            ->whereNotNull('engineer_recommendation')
+            ->whereRaw("TRIM(engineer_recommendation) <> ''")
             ->whereHas('facility', fn (Builder $q) => $q->where('source', 'cprf'))
             ->whereExists(function ($recordQuery) {
                 $recordQuery
@@ -456,6 +459,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $isCprfOwned = $recommendation->status === 'approved'
+            && trim((string) $recommendation->engineer_recommendation) !== ''
             && $recommendation->facility()->where('source', 'cprf')->exists()
             && EnergyRecord::query()
                 ->where('facility_id', $recommendation->facility_id)

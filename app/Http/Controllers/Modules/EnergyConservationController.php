@@ -148,7 +148,7 @@ class EnergyConservationController extends Controller
                 $selectedRecordForAssignment?->id,
             );
             $manualRecommendations = EnergySavingRecommendation::query()
-                ->with('reviewer:id,username')
+                ->with(['reviewer:id,username', 'dailyChecklistTask:id,task_label,period'])
                 ->where('facility_id', $selectedFacilityId)
                 ->where('year', $tipYear)
                 ->where('month', $tipMonth)
@@ -216,6 +216,7 @@ class EnergyConservationController extends Controller
             'checklistDate' => $checklistDate,
             'canManageChecklistTasks' => $this->canManageChecklistTasks($request),
             'canCompleteChecklist' => RoleAccess::is($request->user(), 'staff'),
+            'dailyTaskBoardOptions' => $this->dailyTaskBoardOptions(),
         ]);
     }
 
@@ -413,18 +414,39 @@ class EnergyConservationController extends Controller
             'period' => ['required', 'in:opening,closing'],
             'return_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
-        DailyEnergyChecklistTask::create([
-            'facility_id' => $validated['facility_id'],
-            'task_key' => 'custom_'.str()->uuid(),
-            'task_label' => $validated['task_label'],
-            'period' => $validated['period'],
-            'created_by' => $request->user()->id,
-        ]);
+        $allowedFacilityIds = $this->buildOverviewData($request)['facilities']->pluck('id')->map(fn ($id) => (int) $id);
+        abort_unless($allowedFacilityIds->contains((int) $validated['facility_id']), 403);
+
+        $taskDate = Carbon::parse($validated['return_date'] ?? now()->toDateString());
+
+        DB::transaction(function () use ($validated, $request, $taskDate) {
+            $task = DailyEnergyChecklistTask::create([
+                'facility_id' => $validated['facility_id'],
+                'task_key' => 'custom_'.str()->uuid(),
+                'task_label' => $validated['task_label'],
+                'period' => $validated['period'],
+                'created_by' => $request->user()->id,
+            ]);
+
+            EnergySavingRecommendation::create([
+                'facility_id' => $validated['facility_id'],
+                'daily_checklist_task_id' => $task->id,
+                'year' => $taskDate->year,
+                'month' => $taskDate->month,
+                'generated_message' => 'Added from the Daily Task Board for the '.ucfirst($validated['period']).' routine.',
+                'engineer_recommendation' => $validated['task_label'],
+                'status' => 'approved',
+                'target_date' => $taskDate->toDateString(),
+                'implementation_status' => 'pending',
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+        });
 
         return redirect()->route('modules.energy-conservation.feature', [
             'feature' => 'daily-checklist', 'facility_id' => $validated['facility_id'],
             'date' => $validated['return_date'] ?? now()->toDateString(),
-        ])->with('success', 'Checklist task added.');
+        ])->with('success', 'Checklist task added to the Daily Task Board and Recommendations.');
     }
 
     public function destroyDailyChecklistTask(Request $request, DailyEnergyChecklistTask $task)
@@ -447,6 +469,27 @@ class EnergyConservationController extends Controller
                 'id' => $task->id, 'key' => $task->task_key, 'period' => $task->period,
                 'label' => $task->task_label, 'is_custom' => $task->facility_id !== null,
             ]);
+    }
+
+    private function dailyTaskBoardOptions(): array
+    {
+        return [
+            'opening_meter_reading' => ['label' => 'Record the opening main-meter reading.', 'period' => 'opening'],
+            'opening_meter_inspection' => ['label' => 'Inspect the main meter for visible damage or unusual readings.', 'period' => 'opening'],
+            'opening_natural_lighting' => ['label' => 'Use natural lighting before switching on indoor lights.', 'period' => 'opening'],
+            'opening_aircon_setting' => ['label' => 'Check that air-conditioning is set between 24 and 26 degrees Celsius.', 'period' => 'opening'],
+            'opening_doors_windows' => ['label' => 'Confirm doors and windows are closed while air-conditioning is running.', 'period' => 'opening'],
+            'opening_equipment_inspection' => ['label' => 'Inspect equipment for unusual noise, heat, smell, or vibration.', 'period' => 'opening'],
+            'opening_leak_check' => ['label' => 'Check for leaks or continuously running pumps.', 'period' => 'opening'],
+            'closing_meter_reading' => ['label' => 'Record the closing main-meter reading.', 'period' => 'closing'],
+            'closing_lights' => ['label' => 'Verify unused lights are switched off.', 'period' => 'closing'],
+            'closing_equipment' => ['label' => 'Shut down computers, printers, and office equipment not in use.', 'period' => 'closing'],
+            'closing_aircon' => ['label' => 'Turn off air-conditioning and ventilation after operating hours.', 'period' => 'closing'],
+            'closing_appliances' => ['label' => 'Unplug chargers and non-essential pantry appliances.', 'period' => 'closing'],
+            'closing_nonessential' => ['label' => 'Confirm non-essential equipment is switched off before closing.', 'period' => 'closing'],
+            'closing_timers' => ['label' => 'Check timers and schedules for outdoor lighting.', 'period' => 'closing'],
+            'closing_emergency' => ['label' => 'Confirm emergency and safety equipment remains powered.', 'period' => 'closing'],
+        ];
     }
 
     private function isCprfIntegrationPeriod(int $facilityId, int $year, int $month, ?int $recordId = null): bool
@@ -488,6 +531,8 @@ class EnergyConservationController extends Controller
             'implementation_status' => ['nullable', 'in:pending,in_progress,implemented,verified'],
             'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'implementation_notes' => ['nullable', 'string', 'max:3000'],
+            'daily_task_options' => ['nullable', 'array'],
+            'daily_task_options.*' => ['string', 'in:'.implode(',', array_keys($this->dailyTaskBoardOptions()))],
         ]);
 
         [$year, $month] = array_map('intval', explode('-', $validated['period']));
@@ -500,28 +545,78 @@ class EnergyConservationController extends Controller
         $tip = $this->energySavingTips($overview['rows'], (int) $validated['facility_id'], $overview['periodLabel'])->first();
         abort_unless($tip && ! empty($tip['facility_id']), 422, 'No monthly energy data is available for this facility.');
 
-        $recommendation = EnergySavingRecommendation::create([
-            'facility_id' => $validated['facility_id'],
-            'year' => $year,
-            'month' => $month,
-            // Preserve the exact monthly assessment reviewed at publish time.
-            // It remains attached to the recommendation even if a later month
-            // changes the facility baseline.
-            'generated_message' => $tip['assessment_message'] ?? $tip['message'],
-            'engineer_recommendation' => $validated['engineer_recommendation'],
-            'status' => $validated['status'],
-            'expected_savings_kwh' => null,
-            'target_date' => null,
-            'assigned_to' => $validated['assigned_to'] ?? null,
-            'implementation_status' => 'pending',
-            'actual_savings_kwh' => null,
-            'implementation_notes' => null,
-            'implemented_at' => null,
-            'verified_by' => null,
-            'verified_at' => null,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+        $selectedDailyTaskOptions = collect($validated['daily_task_options'] ?? [])
+            ->unique()
+            ->values();
+        $dailyTaskRequested = $selectedDailyTaskOptions->isNotEmpty();
+        if ($dailyTaskRequested) {
+            abort_unless(
+                $this->isCprfIntegrationPeriod(
+                    (int) $validated['facility_id'],
+                    $year,
+                    $month,
+                    isset($validated['record_id']) ? (int) $validated['record_id'] : null,
+                ),
+                422,
+                'Daily Task Board publishing is only available for CPRF readings.'
+            );
+            abort_unless(
+                $validated['status'] === 'approved',
+                422,
+                'Publish the recommendation before adding it to the Daily Task Board.'
+            );
+        }
+        $recommendation = DB::transaction(function () use ($selectedDailyTaskOptions, $request, $tip, $validated, $year, $month) {
+            $recommendation = EnergySavingRecommendation::create([
+                'facility_id' => $validated['facility_id'],
+                'year' => $year,
+                'month' => $month,
+                // Preserve the exact monthly assessment reviewed at publish time.
+                // It remains attached to the recommendation even if a later month
+                // changes the facility baseline.
+                'generated_message' => $tip['assessment_message'] ?? $tip['message'],
+                'engineer_recommendation' => $validated['engineer_recommendation'],
+                'status' => $validated['status'],
+                'expected_savings_kwh' => null,
+                'target_date' => null,
+                'assigned_to' => $validated['assigned_to'] ?? null,
+                'implementation_status' => 'pending',
+                'actual_savings_kwh' => null,
+                'implementation_notes' => null,
+                'implemented_at' => null,
+                'verified_by' => null,
+                'verified_at' => null,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+
+            $dailyTaskOptions = $this->dailyTaskBoardOptions();
+            foreach ($selectedDailyTaskOptions as $optionKey) {
+                $option = $dailyTaskOptions[$optionKey];
+                $dailyTask = DailyEnergyChecklistTask::create([
+                    'facility_id' => $validated['facility_id'],
+                    'task_key' => 'cprf_recommendation_'.str()->uuid(),
+                    'task_label' => $option['label'],
+                    'period' => $option['period'],
+                    'created_by' => $request->user()->id,
+                ]);
+
+                EnergySavingRecommendation::create([
+                    'facility_id' => $validated['facility_id'],
+                    'daily_checklist_task_id' => $dailyTask->id,
+                    'year' => $year,
+                    'month' => $month,
+                    'generated_message' => 'Daily Task Board item published with recommendation: '.$validated['engineer_recommendation'],
+                    'engineer_recommendation' => $option['label'],
+                    'status' => 'approved',
+                    'implementation_status' => 'pending',
+                    'reviewed_by' => $request->user()->id,
+                    'reviewed_at' => now(),
+                ]);
+            }
+
+            return $recommendation;
+        });
 
         try {
             app(RecommendationNotificationService::class)->notifyManualRecommendation($recommendation);
@@ -534,7 +629,12 @@ class EnergyConservationController extends Controller
             'month' => $validated['period'],
             'facility_id' => $validated['facility_id'],
             'record_id' => $validated['record_id'] ?? null,
-        ], fn ($value) => $value !== null))->with('success', 'Recommendation added successfully.');
+        ], fn ($value) => $value !== null))->with(
+            'success',
+            $dailyTaskRequested
+                ? 'Recommendation and selected Daily Task Board items were published to CPRF.'
+                : 'Recommendation added successfully.'
+        );
     }
 
     public function updateEnergyTip(Request $request, EnergySavingRecommendation $recommendation)
@@ -548,12 +648,20 @@ class EnergyConservationController extends Controller
             'engineer_recommendation' => ['required', 'string', 'max:3000'],
         ]);
 
-        $recommendation->update([
-            'engineer_recommendation' => $validated['engineer_recommendation'],
-            'status' => $validated['status'],
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+        DB::transaction(function () use ($recommendation, $request, $validated) {
+            $recommendation->update([
+                'engineer_recommendation' => $validated['engineer_recommendation'],
+                'status' => $validated['status'],
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+
+            if ($recommendation->dailyChecklistTask) {
+                $recommendation->dailyChecklistTask->update([
+                    'task_label' => $validated['engineer_recommendation'],
+                ]);
+            }
+        });
 
         return back()->with('success', 'Recommendation changes saved successfully.');
     }
