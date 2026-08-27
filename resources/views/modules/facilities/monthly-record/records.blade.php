@@ -2857,6 +2857,13 @@
                                             <strong>{{ $previousActual !== null ? number_format($previousActual, 2) . ' kWh' : 'No prior record' }}</strong>
                                             <small>{{ $previousChange !== null ? (($previousChange >= 0 ? '+' : '') . number_format($previousChange, 2) . '% month over month') : 'Comparison unavailable' }}</small>
                                         </div>
+                                        @if($record->previous_reading_kwh !== null && $record->current_reading_kwh !== null)
+                                        <div class="monthly-record-breakdown-item">
+                                            <span>Meter reading</span>
+                                            <strong>{{ number_format((float) $record->previous_reading_kwh, 2) }} &rarr; {{ number_format((float) $record->current_reading_kwh, 2) }} kWh</strong>
+                                            <small>As encoded on the source meter (previous &rarr; current dial)</small>
+                                        </div>
+                                        @endif
                                         <div class="monthly-record-breakdown-item">
                                             <span>Recorded cost</span>
                                             <strong>PHP {{ number_format($cost, 2) }}</strong>

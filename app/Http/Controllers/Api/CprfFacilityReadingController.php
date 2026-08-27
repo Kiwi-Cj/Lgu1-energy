@@ -66,6 +66,12 @@ class CprfFacilityReadingController extends Controller
         $fill = [
             'day' => Carbon::parse($validated['reading_date'])->day,
             'actual_kwh' => $actualKwh,
+            // Raw dial values, kept verbatim alongside the derived
+            // consumption above - CPRF is the only source that ever sends
+            // these (manual entry and UMAN both submit consumption
+            // directly), so they stay null for every other input_source.
+            'previous_reading_kwh' => $validated['previous_reading_kwh'],
+            'current_reading_kwh' => $validated['current_reading_kwh'],
             'baseline_kwh' => $baseline,
             'deviation' => $deviation,
             'alert' => $alert,
@@ -130,6 +136,8 @@ class CprfFacilityReadingController extends Controller
                 'meter_id' => $record->meter_id,
                 'period' => ['year' => (int) $record->year, 'month' => (int) $record->month],
                 'actual_kwh' => (float) (string) $record->actual_kwh,
+                'previous_reading_kwh' => $record->previous_reading_kwh !== null ? (float) (string) $record->previous_reading_kwh : null,
+                'current_reading_kwh' => $record->current_reading_kwh !== null ? (float) (string) $record->current_reading_kwh : null,
                 'baseline_kwh' => $record->baseline_kwh !== null ? (float) (string) $record->baseline_kwh : null,
                 'deviation_percent' => $record->deviation,
                 'alert' => $record->alert,
