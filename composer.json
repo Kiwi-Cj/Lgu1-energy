@@ -59,6 +59,9 @@
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
         ],
+        "pre-autoload-dump": [
+            "@php -r \"foreach (['bootstrap/cache/packages.php', 'bootstrap/cache/services.php'] as $file) { if (is_file($file)) { unlink($file); } }\""
+        ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],

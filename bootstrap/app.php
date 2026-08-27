@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
             'cimm.maintenance.sync' => \App\Http\Middleware\AuthenticateCimmMaintenanceSync::class,
             'cprf.integration' => \App\Http\Middleware\AuthenticateCprfIntegration::class,
+            'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

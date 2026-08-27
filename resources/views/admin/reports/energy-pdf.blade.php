@@ -103,7 +103,6 @@
                     <th class="num">Actual</th>
                     <th class="num">Baseline</th>
                     <th class="num">Variance</th>
-                    <th class="num">EUI</th>
                     <th>Trend</th>
                 </tr>
             </thead>
@@ -118,15 +117,14 @@
                         <td class="num">{{ $row['actual_kwh'] ?? '0.00' }}</td>
                         <td class="num">{{ $row['baseline_kwh'] ?? 'N/A' }}</td>
                         <td class="num">{{ $row['variance'] ?? 'N/A' }}<div class="meter-meta">{{ $row['variance_percent'] ?? 'N/A' }}</div></td>
-                        <td class="num">{{ $row['eui'] ?? 'N/A' }}</td>
                         <td>{{ $row['trend'] ?? 'Insufficient Historical Data' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7">No energy report data available for the selected filters.</td></tr>
+                    <tr><td colspan="6">No energy report data available for the selected filters.</td></tr>
                 @endforelse
             </tbody>
         </table>
-        <div class="detail-note">EUI is expressed in kWh per square meter. Trend requires at least one valid earlier period for the same facility; otherwise it is reported as insufficient historical data.</div>
+        <div class="detail-note">Trend requires at least one valid earlier period for the same facility; otherwise it is reported as insufficient historical data.</div>
     </div>
 
     <table class="signatures">
@@ -136,6 +134,6 @@
         </tr>
     </table>
 
-    <div class="footer">LGU Energy Monitoring System | Generated report for official monitoring use</div>
+    <div class="footer">{{ $systemName }} | Generated report for official monitoring use</div>
 </body>
 </html>

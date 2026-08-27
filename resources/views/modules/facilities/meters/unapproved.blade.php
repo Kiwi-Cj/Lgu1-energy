@@ -12,8 +12,23 @@
 <style>
     .approval-page {
         display: grid;
-        gap: 14px;
-        padding: 12px;
+        gap: 16px;
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        padding: 18px;
+    }
+
+    .approval-report-card {
+        background:#fff;
+        border:1px solid #e2e8f0;
+        border-radius:20px;
+        box-shadow:0 12px 34px rgba(15,23,42,.07);
+        padding:24px;
+    }
+
+    .approval-report-card .approval-shell {
+        margin-top:18px;
+        box-shadow:none;
     }
 
     .approval-alert {
@@ -56,6 +71,13 @@
         align-items: flex-start;
         gap: 12px;
         flex-wrap: wrap;
+        padding: 4px 2px;
+    }
+
+    .approval-heading { display:flex; align-items:center; gap:13px; }
+    .approval-heading-icon {
+        width:48px; height:48px; display:grid; place-items:center; flex:0 0 auto; border-radius:14px;
+        color:#fff; background:linear-gradient(135deg,#2563eb,#4f46e5); box-shadow:0 10px 22px rgba(37,99,235,.22);
     }
 
     .approval-kicker {
@@ -173,6 +195,10 @@
         min-height: 42px;
     }
 
+    .approval-search-wrap { position:relative; }
+    .approval-search-wrap > i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; pointer-events:none; }
+    .approval-search-wrap .approval-input { padding-left:40px; }
+
     .approval-input:focus {
         border-color: #2563eb;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
@@ -187,11 +213,20 @@
     }
 
     .approval-stat {
+        position:relative;
+        overflow:hidden;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        border-radius: 14px;
         background: #f8fafc;
-        padding: 12px;
+        padding: 14px;
+        display:grid;
+        grid-template-columns:auto 1fr;
+        gap:10px 12px;
+        align-items:center;
     }
+
+    .approval-stat::before { content:''; position:absolute; inset:0 0 auto; height:3px; background:#2563eb; }
+    .approval-stat-icon { width:38px; height:38px; grid-row:1 / span 2; display:grid; place-items:center; border-radius:11px; background:#dbeafe; color:#2563eb; }
 
     .approval-stat-label {
         color: #64748b;
@@ -202,11 +237,12 @@
     }
 
     .approval-stat-value {
-        margin-top: 3px;
+        margin-top: 0;
         color: #0f172a;
         font-size: 1.35rem;
         font-weight: 950;
     }
+    .approval-stat-note { grid-column:2; color:#64748b; font-size:.73rem; font-weight:650; }
 
     .approval-section {
         padding: 18px;
@@ -231,6 +267,7 @@
         font-size: 1.08rem;
         font-weight: 950;
     }
+    .approval-section-title i { margin-right:7px; color:#2563eb; }
 
     .approval-count {
         display: inline-flex;
@@ -319,7 +356,11 @@
         color: #64748b;
         padding: 18px 20px;
         font-weight: 750;
+        display:flex;
+        align-items:center;
+        gap:10px;
     }
+    .empty-approval i { color:#2563eb; }
 
     .empty-approval.warning {
         background: #fffbeb;
@@ -403,7 +444,64 @@
         background: #fbfdff;
     }
 
+    body.dark-mode .approval-page { color:#e2e8f0; }
+    body.dark-mode .approval-report-card {
+        background:#0f172a !important;
+        border-color:#334155 !important;
+        box-shadow:0 18px 46px rgba(2,6,23,.42);
+    }
+    body.dark-mode .approval-title { color:#f8fafc !important; }
+    body.dark-mode .approval-subtitle { color:#94a3b8 !important; }
+    body.dark-mode .approval-kicker { color:#60a5fa !important; }
+    body.dark-mode .approval-shell {
+        background:#0f172a !important;
+        border-color:#334155 !important;
+        box-shadow:0 18px 45px rgba(2,6,23,.34);
+    }
+    body.dark-mode .approval-filter { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .approval-label { color:#cbd5e1 !important; }
+    body.dark-mode .approval-input {
+        color-scheme:dark;
+        background:#0b1220 !important;
+        border-color:#334155 !important;
+        color:#f8fafc !important;
+    }
+    body.dark-mode .approval-input::placeholder { color:#64748b !important; opacity:1; }
+    body.dark-mode .approval-input:focus { border-color:#3b82f6 !important; box-shadow:0 0 0 3px rgba(59,130,246,.2) !important; }
+    body.dark-mode .approval-btn.secondary,
+    body.dark-mode .approval-btn.ghost { background:#111827 !important; border-color:#334155 !important; color:#cbd5e1 !important; }
+    body.dark-mode .approval-btn.primary { background:#2563eb !important; color:#fff !important; }
+    body.dark-mode .approval-btn.approve { background:#16a34a !important; border-color:#22c55e !important; color:#fff !important; }
+    body.dark-mode .approval-summary { background:#0f172a !important; }
+    body.dark-mode .approval-stat { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .approval-stat-icon { background:#172554 !important; color:#60a5fa !important; }
+    body.dark-mode .approval-stat-label { color:#93c5fd !important; }
+    body.dark-mode .approval-stat-value { color:#f8fafc !important; }
+    body.dark-mode .approval-stat-note { color:#94a3b8 !important; }
+    body.dark-mode .approval-section-title { color:#f8fafc !important; }
+    body.dark-mode .approval-count.main { background:#172554 !important; color:#bfdbfe !important; }
+    body.dark-mode .approval-count.sub { background:#2e1065 !important; color:#ddd6fe !important; }
+    body.dark-mode .approval-table-wrap { border-color:#334155 !important; }
+    body.dark-mode .approval-table th { background:#111827 !important; color:#93c5fd !important; border-color:#334155 !important; }
+    body.dark-mode .approval-table td { background:#0f172a !important; color:#e2e8f0 !important; border-color:#263449 !important; }
+    body.dark-mode .approval-table tbody tr:hover td { background:#111827 !important; }
+    body.dark-mode .meter-name-cell { color:#f8fafc !important; }
+    body.dark-mode .muted-cell { color:#cbd5e1 !important; }
+    body.dark-mode .status-pill { background:#14532d !important; color:#bbf7d0 !important; border:1px solid #166534; }
+    body.dark-mode .empty-approval { background:#111827 !important; border-color:#475569 !important; color:#cbd5e1 !important; }
+    body.dark-mode .empty-approval.warning { background:#431407 !important; border-color:#c2410c !important; color:#fed7aa !important; }
+    body.dark-mode .approval-modal { background:rgba(2,6,23,.76) !important; }
+    body.dark-mode .approval-modal-card { background:#0f172a !important; border:1px solid #334155; }
+    body.dark-mode .approval-modal-title { color:#f8fafc !important; }
+    body.dark-mode .approval-modal-copy { color:#94a3b8 !important; }
+    body.dark-mode .approval-modal-target { background:#111827 !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+    body.dark-mode .approval-modal-actions { background:#111827 !important; border-color:#334155 !important; }
+
     @media (max-width: 760px) {
+        .approval-page { padding:10px; }
+        .approval-report-card { padding:14px; border-radius:17px; }
+        .approval-header-actions { width:100%; }
+        .approval-header-actions .approval-btn { flex:1; }
         .approval-filter {
             grid-template-columns: 1fr;
         }
@@ -427,11 +525,15 @@
         </div>
     @endif
 
+    <div class="report-card-container approval-report-card">
     <div class="approval-header">
-        <div>
-            <div class="approval-kicker">Meter Approval</div>
-            <h2 class="approval-title">Unapproved Meters</h2>
-            <div class="approval-subtitle">Facility: <strong>{{ $facility->name }}</strong></div>
+        <div class="approval-heading">
+            <span class="approval-heading-icon"><i class="fa fa-clipboard-check"></i></span>
+            <div>
+                <div class="approval-kicker">Meter Approval</div>
+                <h2 class="approval-title">Unapproved Meters</h2>
+                <div class="approval-subtitle">Review pending monitoring points for <strong>{{ $facility->name }}</strong>.</div>
+            </div>
         </div>
         <div class="approval-header-actions">
             <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="approval-btn secondary">
@@ -447,7 +549,10 @@
         <form method="GET" action="{{ route('modules.facilities.meters.unapproved', $facility->id) }}" class="approval-filter">
             <div class="approval-field">
                 <label class="approval-label">Search</label>
-                <input class="approval-input" type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Meter name / number / location / notes">
+                <div class="approval-search-wrap">
+                    <i class="fa fa-search"></i>
+                    <input class="approval-input" type="search" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search name, number, location, or notes">
+                </div>
             </div>
             <div class="approval-field">
                 <label class="approval-label">Status</label>
@@ -465,33 +570,39 @@
 
         <div class="approval-summary">
             <div class="approval-stat">
+                <span class="approval-stat-icon"><i class="fa fa-clock"></i></span>
                 <div class="approval-stat-label">Pending Total</div>
                 <div class="approval-stat-value">{{ $totalUnapproved }}</div>
+                <div class="approval-stat-note">Awaiting approval</div>
             </div>
             <div class="approval-stat">
+                <span class="approval-stat-icon"><i class="fa fa-gauge-high"></i></span>
                 <div class="approval-stat-label">Main Meters</div>
                 <div class="approval-stat-value">{{ $totalMain }}</div>
+                <div class="approval-stat-note">Primary monitoring points</div>
             </div>
             <div class="approval-stat">
+                <span class="approval-stat-icon"><i class="fa fa-diagram-project"></i></span>
                 <div class="approval-stat-label">Sub Meters</div>
                 <div class="approval-stat-value">{{ $totalSub }}</div>
+                <div class="approval-stat-note">Linked monitoring points</div>
             </div>
         </div>
 
         @if($totalUnapproved === 0)
             <div class="approval-section">
-                <div class="empty-approval">No unapproved meters found for current filters.</div>
+                <div class="empty-approval"><i class="fa fa-circle-check"></i> No unapproved meters found for the current filters.</div>
             </div>
         @endif
 
         <section class="approval-section">
             <div class="approval-section-head">
-                <h3 class="approval-section-title">Unapproved Main Meters</h3>
+                <h3 class="approval-section-title"><i class="fa fa-gauge-high"></i> Unapproved Main Meters</h3>
                 <span class="approval-count main">{{ $totalMain }}</span>
             </div>
 
             @if($totalMain === 0)
-                <div class="empty-approval">No unapproved main meters found.</div>
+                <div class="empty-approval"><i class="fa fa-circle-check"></i> No unapproved main meters found.</div>
             @else
                 <div class="approval-table-wrap">
                     <table class="approval-table">
@@ -542,14 +653,14 @@
 
         <section class="approval-section">
             <div class="approval-section-head">
-                <h3 class="approval-section-title">Unapproved Sub Meters</h3>
+                <h3 class="approval-section-title"><i class="fa fa-diagram-project"></i> Unapproved Sub Meters</h3>
                 <span class="approval-count sub">{{ $totalSub }}</span>
             </div>
 
             @if(! $hasMainMeter)
-                <div class="empty-approval warning">No main meter found for this facility. Sub meter list is hidden.</div>
+                <div class="empty-approval warning"><i class="fa fa-triangle-exclamation"></i> No main meter found for this facility. The sub-meter list is hidden.</div>
             @elseif($totalSub === 0)
-                <div class="empty-approval">No unapproved sub meters found.</div>
+                <div class="empty-approval"><i class="fa fa-circle-check"></i> No unapproved sub meters found.</div>
             @else
                 <div class="approval-table-wrap">
                     <table class="approval-table sub">
@@ -599,6 +710,7 @@
                 </div>
             @endif
         </section>
+    </div>
     </div>
 </div>
 

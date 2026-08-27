@@ -63,6 +63,10 @@ class MaintenanceController extends Controller
                 'scheduled_date' => $this->formatHistoryDate($row->scheduled_date),
                 'assigned_to' => $row->assigned_to,
                 'completed_date' => $this->formatHistoryDate($row->completed_date),
+                'proof_photo_url' => filled($row->proof_photo_path)
+                    ? asset('storage/'.$row->proof_photo_path)
+                    : null,
+                'photo_requirement' => $row->photo_requirement ?? 'Optional',
                 'remarks' => $resolvedRemarks,
             ];
         }
@@ -95,12 +99,15 @@ class MaintenanceController extends Controller
         // If maintenance_id is present, update. Otherwise, insert new.
         $isUpdate = $request->filled('maintenance_id');
         $rules = [
-            'maintenance_type' => 'required|string',
+            'maintenance_type' => ['required', 'string', Rule::in(['Preventive', 'Corrective'])],
             'scheduled_date' => 'nullable|date',
-            'assigned_to' => 'nullable|string',
-            'remarks' => 'nullable|string',
-            'maintenance_status' => 'required|string',
+            'assignment_mode' => ['nullable', 'string', Rule::in(['cimm', 'manual'])],
+            'assigned_to' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string|max:5000',
+            'maintenance_status' => ['required', 'string', Rule::in(['Pending', 'Ongoing', 'Completed'])],
             'completed_date' => 'nullable|date',
+            'photo_requirement' => ['nullable', 'string', Rule::in(['Optional', 'Required'])],
+            'proof_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
         if ($isUpdate) {
             $rules['maintenance_id'] = 'required|integer|exists:maintenance,id';
@@ -126,12 +133,62 @@ class MaintenanceController extends Controller
             throw $e;
         }
 
+        $assignmentMode = $validated['assignment_mode']
+            ?? (filled($validated['assigned_to'] ?? null) ? 'manual' : 'cimm');
+        if ($assignmentMode === 'manual' && blank($validated['assigned_to'] ?? null)) {
+            $errors = ['assigned_to' => ['Select an assignee or choose “Let CIMM assign”.']];
+            if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $errors,
+                    'message' => 'Please select an assignee.',
+                ], 422);
+            }
+
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+        $validated['assigned_to'] = $assignmentMode === 'cimm'
+            ? null
+            : trim((string) $validated['assigned_to']);
+
+        $existingMaintenance = $isUpdate
+            ? \App\Models\Maintenance::findOrFail($validated['maintenance_id'])
+            : null;
+        $photoRequirement = $validated['photo_requirement']
+            ?? $existingMaintenance?->photo_requirement
+            ?? 'Optional';
+        $hasProofPhoto = $request->hasFile('proof_photo')
+            || filled($existingMaintenance?->proof_photo_path);
+
+        if (
+            $validated['maintenance_status'] === 'Completed'
+            && $photoRequirement === 'Required'
+            && ! $hasProofPhoto
+        ) {
+            $errors = ['proof_photo' => ['A proof photo is required before completing this maintenance task.']];
+            if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $errors,
+                    'message' => 'Please upload the required proof photo.',
+                ], 422);
+            }
+
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+
         try {
             $previousStatus = null;
             if ($isUpdate) {
-                $maintenance = \App\Models\Maintenance::findOrFail($validated['maintenance_id']);
+                $maintenance = $existingMaintenance;
                 $previousStatus = $maintenance->maintenance_status;
                 $this->applyMaintenanceStatusUpdate($maintenance, $validated);
+                $maintenance->photo_requirement = $photoRequirement;
+                if ($request->hasFile('proof_photo')) {
+                    $maintenance->proof_photo_path = $request->file('proof_photo')
+                        ->store('maintenance-proofs', 'public');
+                }
+                $maintenance->save();
             } else {
                 $remarksInput = trim((string) ($validated['remarks'] ?? ''));
                 $maintenance = \App\Models\Maintenance::create([
@@ -151,6 +208,10 @@ class MaintenanceController extends Controller
                         ),
                     'maintenance_status' => $validated['maintenance_status'],
                     'completed_date' => $validated['completed_date'],
+                    'photo_requirement' => $photoRequirement,
+                    'proof_photo_path' => $request->hasFile('proof_photo')
+                        ? $request->file('proof_photo')->store('maintenance-proofs', 'public')
+                        : null,
                 ]);
             }
         } catch (\Exception $e) {
@@ -202,6 +263,8 @@ class MaintenanceController extends Controller
 
 public function index()
 {
+    $this->archiveCompletedMaintenanceRows();
+
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
@@ -244,6 +307,10 @@ public function index()
             $row->trend,
             $row->maintenance_status
         );
+        $scheduledDate = filled($row->scheduled_date) ? Carbon::parse($row->scheduled_date) : null;
+        $isOverdue = $scheduledDate
+            && $scheduledDate->isBefore(today())
+            && strtolower((string) $row->maintenance_status) !== 'completed';
 
         $maintenanceRows[] = [
             'id' => $row->id,
@@ -256,8 +323,15 @@ public function index()
             'maintenance_type' => $row->maintenance_type,
             'maintenance_status' => $row->maintenance_status,
             'scheduled_date' => $row->scheduled_date ?? '-',
+            'is_overdue' => $isOverdue,
+            'overdue_days' => $isOverdue ? $scheduledDate->diffInDays(today()) : 0,
+            'priority' => $this->maintenancePriority($row->issue_type),
             'assigned_to' => $row->assigned_to,
             'completed_date' => $row->completed_date,
+            'proof_photo_url' => filled($row->proof_photo_path)
+                ? asset('storage/'.$row->proof_photo_path)
+                : null,
+            'photo_requirement' => $row->photo_requirement ?? 'Optional',
             'remarks' => $resolvedRemarks,
             'action' => $row->maintenance_status === 'Pending'
                 ? '<button class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Schedule Maintenance"><i class="fa fa-calendar-plus"></i> Schedule</button>'
@@ -279,6 +353,39 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilities = ($role === 'staff') ? $user->facilities : Facility::orderBy('name')->get();
+    $assignableUsers = User::query()
+        ->select(['id', 'full_name', 'name', 'username', 'email', 'role', 'department', 'status'])
+        ->orderBy('full_name')
+        ->orderBy('name')
+        ->get()
+        ->reject(fn (User $candidate) => in_array(
+            strtolower(trim((string) $candidate->status)),
+            ['inactive', 'disabled'],
+            true
+        ))
+        ->filter(fn (User $candidate) => in_array(
+            RoleAccess::normalize($candidate),
+            ['engineer', 'energy_officer'],
+            true
+        ))
+        ->map(function (User $candidate) use ($user) {
+            $displayName = trim((string) (
+                $candidate->full_name
+                ?: $candidate->name
+                ?: $candidate->username
+                ?: $candidate->email
+            ));
+
+            return [
+                'name' => $displayName,
+                'role' => RoleAccess::normalize($candidate),
+                'is_self' => (int) $candidate->id === (int) $user->id,
+            ];
+        })
+        ->filter(fn (array $candidate) => $candidate['name'] !== '')
+        ->unique('name')
+        ->values();
+
     return view('modules.maintenance.index', [
         'maintenanceRows' => $maintenanceRows,
         'needingCount' => $needingCount,
@@ -289,6 +396,7 @@ public function index()
         'role' => $role,
         'user' => $user,
         'facilities' => $facilities,
+        'assignableUsers' => $assignableUsers,
     ]);
 }
 
@@ -309,6 +417,21 @@ private function ensureMaintenanceActionAccess(?Request $request = null)
     }
 
     return redirect()->back()->with('error', 'Staff accounts are not allowed to perform maintenance actions.');
+}
+
+private function archiveCompletedMaintenanceRows(): void
+{
+    \App\Models\Maintenance::query()
+        ->whereRaw('LOWER(TRIM(maintenance_status)) = ?', ['completed'])
+        ->orderBy('id')
+        ->get()
+        ->each(function (\App\Models\Maintenance $maintenance) {
+            $maintenance->maintenance_status = 'Completed';
+            $maintenance->completed_date ??= $maintenance->updated_at?->toDateString() ?? now()->toDateString();
+            $maintenance->save();
+
+            $this->applyMaintenancePostSaveEffects($maintenance, 'Completed');
+        });
 }
 
 private function ensureMaintenanceCompletionAccess(?Request $request = null)
@@ -365,6 +488,29 @@ private function formatHistoryDate(mixed $value): string
     } catch (\Throwable) {
         return (string) $value;
     }
+}
+
+private function maintenancePriority(?string $issueType): string
+{
+    $issue = strtolower((string) $issueType);
+
+    if (
+        str_contains($issue, 'critical')
+        || str_contains($issue, 'power outage')
+        || str_contains($issue, 'circuit overload')
+    ) {
+        return 'Critical';
+    }
+
+    if (
+        str_contains($issue, 'very high')
+        || str_contains($issue, 'leak')
+        || str_contains($issue, 'not cooling')
+    ) {
+        return 'High';
+    }
+
+    return 'Normal';
 }
 
 }

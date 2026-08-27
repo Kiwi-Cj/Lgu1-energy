@@ -17,11 +17,10 @@ class CprfFacilityProfileController extends Controller
      * meter are omitted from the response, not returned as an error.
      *
      * "engineer_approved" and "baseline_kwh" are sourced from the
-     * facility's main meter, NOT the EnergyProfile record — the
-     * EnergyProfile approval/edit UI has no reachable entry point in this
-     * app (its modal exists but nothing opens it), so it can never
-     * reflect real engineer sign-off. Meter approval is the workflow this
-     * team actually uses, so CPRF reflects that instead. The remaining
+     * facility's main meter, NOT the EnergyProfile record. Main Meter
+     * approval is the authoritative engineer sign-off workflow, while the
+     * Energy Profile holds the facility's LGU-managed billing and power
+     * setup. The remaining
      * fields (utility provider, contract account, energy source, etc.)
      * have no meter equivalent and still come from EnergyProfile as-is.
      */
@@ -78,18 +77,25 @@ class CprfFacilityProfileController extends Controller
             $latestUpdatedAt = $profile?->updated_at && $meterUpdatedAt
                 ? ($profile->updated_at->greaterThan($meterUpdatedAt) ? $profile->updated_at : $meterUpdatedAt)
                 : ($profile?->updated_at ?? $meterUpdatedAt);
+            $registeredMeterNumber = trim((string) ($meter?->meter_number ?? ''));
+            $profileMeterNumber = trim((string) ($profile?->electric_meter_no ?? ''));
+            $electricMeterNumber = $registeredMeterNumber !== ''
+                ? $registeredMeterNumber
+                : (! in_array(strtoupper($profileMeterNumber), ['', 'N/A', 'NA', '-'], true)
+                    ? $profileMeterNumber
+                    : null);
 
             return [
                 'facility_external_ref' => (int) $facility->external_ref,
                 'energy_facility_id' => $facility->id,
-                'main_meter_name' => $meter->meter_name ?? null,
-                'electric_meter_no' => $profile->electric_meter_no ?? null,
+                'electric_meter_no' => $electricMeterNumber,
                 'utility_provider' => $profile->utility_provider ?? null,
                 'contract_account_no' => $profile->contract_account_no ?? null,
                 'main_energy_source' => $profile->main_energy_source ?? null,
                 'backup_power' => $profile->backup_power ?? null,
                 'transformer_capacity' => $profile->transformer_capacity ?? null,
                 'number_of_meters' => $profile->number_of_meters ?? null,
+                'main_meter_name' => $meter?->meter_name,
                 'baseline_kwh' => $meter && $meter->baseline_kwh !== null ? (float) $meter->baseline_kwh : null,
                 'engineer_approved' => $meter !== null && $meter->approved_at !== null,
                 'baseline_locked' => (bool) ($profile->baseline_locked ?? false),

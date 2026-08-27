@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Modules\AuditLogController;
+use App\Http\Controllers\Modules\AiAlertsController;
 use App\Http\Controllers\Modules\ContactInboxController;
 use App\Http\Controllers\Modules\EnergyController;
 use App\Http\Controllers\Modules\EnergyConservationController;
@@ -42,8 +43,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('modules.facilities.show', compact('facility', 'showAvg', 'avgKwh'));
     })->name('modules.facilities.show');
     Route::get('/modules/facilities/{id}/edit', fn($id) => redirect()->route('modules.facilities.show', ['id' => $id]))->name('modules.facilities.edit');
-    Route::get('/modules/facilities/{facility}/equipment-inventory', [FacilityController::class, 'equipmentInventory'])->name('modules.facilities.equipment-inventory');
-
     // Facility Meters (Main/Sub-meter master data)
     Route::get('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'index'])->name('modules.facilities.meters.index');
     Route::post('/modules/facilities/{facility}/meters', [FacilityMeterController::class, 'store'])->name('modules.facilities.meters.store');
@@ -52,19 +51,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/facilities/{facility}/meters/{meter}/toggle-approval', [FacilityMeterController::class, 'toggleApproval'])->name('modules.facilities.meters.toggle-approval');
     Route::get('/modules/facilities/{facility}/meters/unapproved', [FacilityMeterController::class, 'unapproved'])->name('modules.facilities.meters.unapproved');
     Route::get('/modules/facilities/{facility}/meters/archive', [FacilityMeterController::class, 'archive'])->name('modules.facilities.meters.archive');
-    Route::get('/modules/facilities/{facility}/meters/{meter}/submeters', [FacilityMeterController::class, 'mainSubmeters'])->name('modules.facilities.meters.main-submeters');
-    Route::get('/modules/facilities/{facility}/meters/{meter}/equipment', [FacilityMeterController::class, 'submeterEquipment'])->name('modules.facilities.meters.submeter-equipment');
-    Route::post('/modules/facilities/{facility}/meters/{meter}/equipment', [FacilityMeterController::class, 'storeSubmeterEquipment'])->name('modules.facilities.meters.submeter-equipment.store');
+    Route::get('/modules/facilities/{facility}/meters/{meter}/submeters', [FacilityMeterController::class, 'mainSubmeters'])->middleware('feature:submeters')->name('modules.facilities.meters.main-submeters');
     Route::post('/modules/facilities/{facility}/meters/{meter}/restore', [FacilityMeterController::class, 'restore'])->name('modules.facilities.meters.restore');
     Route::delete('/modules/facilities/{facility}/meters/{meter}/force-delete', [FacilityMeterController::class, 'forceDelete'])->name('modules.facilities.meters.force-delete');
 
     // Submeter Monitoring and Alerts
-    Route::get('/modules/submeters/monitoring', [SubmeterMonitoringController::class, 'index'])->name('modules.submeters.monitoring');
-    Route::post('/modules/submeters/readings', [SubmeterMonitoringController::class, 'store'])->name('modules.submeters.readings.store');
-    Route::post('/modules/submeters/readings/{reading}/approve', [SubmeterMonitoringController::class, 'approve'])->name('modules.submeters.readings.approve');
-    Route::get('/modules/submeters/alerts', [SubmeterMonitoringController::class, 'alerts'])->name('modules.submeters.alerts');
-    Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
-    Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
+    Route::middleware('feature:submeters')->group(function () {
+        Route::get('/modules/submeters/monitoring', [SubmeterMonitoringController::class, 'index'])->name('modules.submeters.monitoring');
+        Route::post('/modules/submeters/readings', [SubmeterMonitoringController::class, 'store'])->name('modules.submeters.readings.store');
+        Route::post('/modules/submeters/readings/{reading}/approve', [SubmeterMonitoringController::class, 'approve'])->name('modules.submeters.readings.approve');
+        Route::get('/modules/submeters/alerts', [SubmeterMonitoringController::class, 'alerts'])->name('modules.submeters.alerts');
+        Route::get('/modules/submeters/{submeter}/ai-insight', [SubmeterMonitoringController::class, 'aiInsight'])->name('modules.submeters.ai-insight');
+        Route::get('/modules/submeters/{submeter}', [SubmeterMonitoringController::class, 'show'])->name('modules.submeters.show');
+    });
+    Route::get('/modules/ai-alerts', [AiAlertsController::class, 'index'])->name('modules.ai-alerts.index');
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
     Route::post('/modules/energy-conservation/daily-checklist', [EnergyConservationController::class, 'updateDailyChecklist'])->name('modules.energy-conservation.daily-checklist.update');
     Route::post('/modules/energy-conservation/daily-checklist/tasks', [EnergyConservationController::class, 'storeDailyChecklistTask'])->name('modules.energy-conservation.daily-checklist.tasks.store');
@@ -73,6 +73,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/modules/energy-conservation/goals/{goal}', [EnergyConservationController::class, 'destroyConservationGoal'])->name('modules.energy-conservation.goals.destroy');
     Route::get('/modules/energy-conservation/{feature}', [EnergyConservationController::class, 'feature'])->name('modules.energy-conservation.feature');
     Route::post('/modules/energy-conservation/energy-saving-tips/review', [EnergyConservationController::class, 'reviewEnergyTip'])->name('modules.energy-conservation.tips.review');
+    Route::put('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'updateEnergyTip'])->name('modules.energy-conservation.tips.update');
+    Route::patch('/modules/energy-conservation/energy-saving-tips/{recommendation}/progress', [EnergyConservationController::class, 'updateEnergyTipProgress'])->name('modules.energy-conservation.tips.progress');
+    Route::delete('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'destroyEnergyTip'])->name('modules.energy-conservation.tips.destroy');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -232,6 +235,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $allRecordsForYear = $allRecords
             ->filter(fn ($record) => (int) ($record->year ?? 0) === $selectedYear)
             ->values();
+
+        $recommendationNotificationsByRecordId = collect();
+        if (\App\Support\RoleAccess::is(auth()->user(), 'staff')) {
+            $recommendationNotificationService = app(\App\Services\RecommendationNotificationService::class);
+            $recommendationNotificationsByRecordId = $recordsForYear
+                ->mapWithKeys(function ($record) use ($recommendationNotificationService) {
+                    $notification = $recommendationNotificationService->ensureForUser(auth()->user(), $record);
+
+                    return $notification ? [(int) $record->id => $notification] : [];
+                });
+        }
 
         $allMainRecordsForSummary = $allRecordsForYear->filter(function ($record) use ($effectiveSummaryMonth) {
             if ($effectiveSummaryMonth === null) {
@@ -517,6 +531,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $oldMeterId = (string) old('meter_id', $primaryBillingMeterId > 0 ? $primaryBillingMeterId : '');
 
         $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
+        $umanConfigured = filled(config('services.uman_monthly_records.url'))
+            && filled(config('services.uman_monthly_records.key'));
+        $umanSync = \Illuminate\Support\Facades\Cache::get('integrations.uman_monthly_records', []);
 
         return view('modules.facilities.monthly-record.records', compact(
             'facility',
@@ -529,6 +546,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'mainSubScope',
             'mainSubScopeLabel',
             'recordsForYear',
+            'recommendationNotificationsByRecordId',
             'mainRecordIndex',
             'years',
             'selectedYear',
@@ -552,7 +570,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'billingSourceLabel',
             'primaryBillingMeter',
             'oldMeterId',
-            'archivedCount'
+            'archivedCount',
+            'umanConfigured',
+            'umanSync'
         ));
     })->name('facilities.monthly-records');
 
@@ -594,7 +614,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         $selectedMainMeterId = (int) ($request->query('main_meter_id') ?: 0);
-        if ($selectedMainMeterId > 0 && ! $mainMeterOptions->contains(fn ($meter) => (int) $meter->id === $selectedMainMeterId)) {
+        if ($mainMeterOptions->count() === 1) {
+            $selectedMainMeterId = (int) $mainMeterOptions->first()->id;
+        } elseif ($selectedMainMeterId <= 0
+            || ! $mainMeterOptions->contains(fn ($meter) => (int) $meter->id === $selectedMainMeterId)) {
             $selectedMainMeterId = 0;
         }
 
@@ -604,9 +627,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderBy('meter_name')
             ->get();
 
-        $subMeterOptions = $allSubMeterOptions
-            ->when($selectedMainMeterId > 0, fn ($collection) => $collection->filter(fn ($meter) => (int) ($meter->parent_meter_id ?? 0) === $selectedMainMeterId))
-            ->values();
+        $subMeterOptions = $selectedMainMeterId > 0
+            ? $allSubMeterOptions
+                ->filter(fn ($meter) => (int) ($meter->parent_meter_id ?? 0) === $selectedMainMeterId)
+                ->values()
+            : collect();
 
         $normalizeSubmeterName = static fn (string $name): string => preg_replace('/\s+/', ' ', strtolower(trim($name))) ?? '';
         $submeterNameToIdMap = \App\Models\Submeter::where('facility_id', $facilityId)
@@ -677,6 +702,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $q->where('meter_type', 'sub');
                 if ($selectedMainMeterId > 0) {
                     $q->where('parent_meter_id', $selectedMainMeterId);
+                } else {
+                    $q->where('parent_meter_id', -1);
                 }
             });
 
@@ -842,7 +869,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'totalCost',
             'totalRecords'
         ));
-    })->name('facilities.monthly-records.submeters');
+    })->middleware('feature:submeters')->name('facilities.monthly-records.submeters');
 
     Route::get('/modules/facilities/{facility}/monthly-records/archive', function ($facilityId) {
         $facility = \App\Models\Facility::find($facilityId);
@@ -882,7 +909,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Reports
     Route::get('/modules/reports/energy', [EnergyController::class, 'energyReport'])->name('modules.reports.energy');
-    Route::get('/modules/reports/facilities', fn() => redirect()->route('modules.reports.energy'))->name('modules.reports.facilities');
 
     // Users - Admin/Energy Officer only (Staff blocked via controller)
     Route::get('/modules/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('modules.users.roles');
@@ -890,114 +916,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/contact-messages', [ContactInboxController::class, 'index'])->name('modules.contact-messages.index');
     Route::post('/modules/contact-messages/{contactMessage}/mark-read', [ContactInboxController::class, 'markRead'])->name('modules.contact-messages.mark-read');
     Route::post('/modules/contact-messages/{contactMessage}/mark-unread', [ContactInboxController::class, 'markUnread'])->name('modules.contact-messages.mark-unread');
+    Route::post('/modules/contact-messages/{contactMessage}/archive', [ContactInboxController::class, 'archive'])->name('modules.contact-messages.archive');
+    Route::post('/modules/contact-messages/{contactMessage}/restore', [ContactInboxController::class, 'restore'])->name('modules.contact-messages.restore');
+    Route::delete('/modules/contact-messages/{contactMessage}', [ContactInboxController::class, 'destroy'])->name('modules.contact-messages.destroy');
     Route::post('/modules/contact-messages/{contactMessage}/reply', [ContactInboxController::class, 'reply'])->name('modules.contact-messages.reply');
 
-    Route::get('/modules/energy/annual', function () {
-        $years = range(date('Y'), date('Y') - 10);
-        $selectedYear = request('year', date('Y'));
-        $facilities = \App\Models\Facility::all();
-        $selectedFacility = request('facility_id', '');
-
-        $query = \App\Models\EnergyRecord::with('facility')
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
-            });
-        if ($selectedFacility) {
-            $query->where('facility_id', $selectedFacility);
-        }
-        $query->where('year', $selectedYear);
-        $records = $query->get();
-
-        $getAlertBySize = function ($deviation, $baselineKwh) {
-            if ($deviation === null || $baselineKwh === null || $baselineKwh <= 0) {
-                return '-';
-            }
-
-            if ($baselineKwh <= 1000) {
-                $size = 'Small';
-            } elseif ($baselineKwh <= 3000) {
-                $size = 'Medium';
-            } elseif ($baselineKwh <= 10000) {
-                $size = 'Large';
-            } else {
-                $size = 'Extra Large';
-            }
-
-            $thresholds = [
-                'Small' => ['level5' => 80, 'level4' => 50, 'level3' => 30, 'level2' => 15],
-                'Medium' => ['level5' => 60, 'level4' => 40, 'level3' => 20, 'level2' => 10],
-                'Large' => ['level5' => 30, 'level4' => 20, 'level3' => 12, 'level2' => 5],
-                'Extra Large' => ['level5' => 20, 'level4' => 12, 'level3' => 7, 'level2' => 3],
-            ];
-            $t = $thresholds[$size];
-
-            if ($deviation > $t['level5']) return 'Critical';
-            if ($deviation > $t['level4']) return 'Very High';
-            if ($deviation > $t['level3']) return 'High';
-            if ($deviation > $t['level2']) return 'Warning';
-            return 'Normal';
-        };
-
-        $getHighestAlert = function ($alerts) {
-            $priority = [
-                'Critical' => 5,
-                'Very High' => 4,
-                'High' => 3,
-                'Warning' => 2,
-                'Normal' => 1,
-                '-' => 0,
-            ];
-            $best = '-';
-            $bestScore = 0;
-            foreach ($alerts as $alert) {
-                $score = $priority[$alert] ?? 0;
-                if ($score > $bestScore) {
-                    $best = $alert;
-                    $bestScore = $score;
-                }
-            }
-            return $best;
-        };
-
-        $monthlyBreakdown = [];
-        $totalActualKwh = 0;
-        $annualBaseline = 0;
-        foreach (range(1, 12) as $m) {
-            $monthRecords = $records->where('month', str_pad($m, 2, '0', STR_PAD_LEFT));
-            $actual = $monthRecords->sum('actual_kwh');
-            $baseline = 0;
-            $monthAlerts = [];
-            foreach ($monthRecords as $record) {
-                $recordBaseline = $record->baseline_kwh;
-                if ($recordBaseline === null || $recordBaseline <= 0) {
-                    $profile = $record->facility ? $record->facility->energyProfiles()->latest()->first() : null;
-                    $recordBaseline = $profile ? (float) $profile->baseline_kwh : 0;
-                }
-                $baseline += (float) $recordBaseline;
-                $deviation = $recordBaseline > 0
-                    ? ((float)$record->actual_kwh - (float)$recordBaseline) / (float)$recordBaseline * 100
-                    : null;
-                $monthAlerts[] = $getAlertBySize($deviation, $recordBaseline);
-            }
-            $diff = $actual - $baseline;
-            $status = $getHighestAlert($monthAlerts);
-            $monthlyBreakdown[] = [
-                'label' => date('M', mktime(0, 0, 0, $m, 1)),
-                'actual' => $actual,
-                'baseline' => $baseline,
-                'diff' => $diff,
-                'status' => $status,
-            ];
-            $totalActualKwh += $actual;
-            $annualBaseline += $baseline;
-        }
-        $annualDifference = $totalActualKwh - $annualBaseline;
-        $annualStatus = $getHighestAlert(array_column($monthlyBreakdown, 'status'));
-        $user = auth()->user();
-        $role = strtolower($user->role ?? '');
-
-        return view('modules.energy-monitoring.annual', compact('years', 'selectedYear', 'facilities', 'selectedFacility', 'totalActualKwh', 'annualBaseline', 'annualDifference', 'annualStatus', 'monthlyBreakdown', 'role', 'user'));
-    })->name('modules.energy.annual');
 });
 
 // =====================
@@ -1024,6 +947,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->with('error', 'Facility not found.');
         }
         $user = auth()->user();
+        $submetersEnabled = (bool) config('features.submeters_enabled', false);
         $energyProfiles = $facilityModel->energyProfiles()->with('primaryMeter')->get();
         $mainMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
             ->where('meter_type', 'main')
@@ -1035,25 +959,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNotNull('approved_at')
             ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at']);
-        $subMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
-            ->where('meter_type', 'sub')
-            ->whereNotNull('approved_at')
-            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
-            ->orderBy('meter_name')
-            ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at']);
+            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at']);
+        $subMeterOptions = $submetersEnabled
+            ? \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+                ->where('meter_type', 'sub')
+                ->whereNotNull('approved_at')
+                ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+                ->orderBy('meter_name')
+                ->get(['id', 'meter_name', 'meter_number', 'meter_type', 'parent_meter_id', 'location', 'status', 'multiplier', 'baseline_kwh', 'notes', 'approved_by_user_id', 'approved_at', 'created_at'])
+            : collect();
         $subMetersByParentMainId = $subMeterOptions
             ->filter(fn ($meter) => ! empty($meter->parent_meter_id))
             ->groupBy(fn ($meter) => (int) $meter->parent_meter_id);
         $normalizeName = function (string $name): string {
             return strtolower((string) preg_replace('/\s+/', ' ', trim($name)));
         };
-        $submeterNameToIdMap = \App\Models\Submeter::where('facility_id', $facilityModel->id)
-            ->where('status', 'active')
-            ->get(['id', 'submeter_name'])
-            ->mapWithKeys(function ($submeter) use ($normalizeName) {
-                return [$normalizeName((string) $submeter->submeter_name) => (int) $submeter->id];
-            });
+        $submeterNameToIdMap = $submetersEnabled
+            ? \App\Models\Submeter::where('facility_id', $facilityModel->id)
+                ->where('status', 'active')
+                ->get(['id', 'submeter_name'])
+                ->mapWithKeys(function ($submeter) use ($normalizeName) {
+                    return [$normalizeName((string) $submeter->submeter_name) => (int) $submeter->id];
+                })
+            : collect();
         $subMeterEntityIdMap = $subMeterOptions->mapWithKeys(function ($meter) use ($submeterNameToIdMap, $normalizeName) {
             $nameKey = $normalizeName((string) $meter->meter_name);
             $linkedSubmeterId = $submeterNameToIdMap->get($nameKey);
@@ -1137,6 +1065,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->orderBy('meter_name')
             ->get(['id', 'meter_name', 'meter_type']);
         $activeMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
             ->where('status', 'active')
             ->whereNotNull('approved_at')
             ->count();
@@ -1145,16 +1074,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where('status', 'active')
             ->whereNotNull('approved_at')
             ->count();
-        $subMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
-            ->where('meter_type', 'sub')
-            ->whereNotNull('approved_at')
-            ->count();
+        $subMeterCount = $submetersEnabled
+            ? \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+                ->where('meter_type', 'sub')
+                ->whereNotNull('approved_at')
+                ->count()
+            : 0;
         $unapprovedMeterCount = \App\Models\FacilityMeter::where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
             ->whereNull('approved_at')
             ->count();
-        $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()->where('facility_id', $facilityModel->id)->count();
+        $archivedMeterCount = \App\Models\FacilityMeter::onlyTrashed()
+            ->where('facility_id', $facilityModel->id)
+            ->when(! $submetersEnabled, fn ($query) => $query->where('meter_type', 'main'))
+            ->count();
         $canManageMeters = \App\Support\RoleAccess::can($user, 'manage_facility_master');
+        $canManageEnergyProfile = \App\Support\RoleAccess::can($user, 'manage_energy_profile');
         $canApproveMeters = \App\Support\RoleAccess::can($user, 'approve_facility_meters');
+        $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
+        $latestEnergyRecord = \App\Models\EnergyRecord::query()
+            ->where('facility_id', $facilityModel->id)
+            ->where(function ($mainScope) {
+                $mainScope->whereNull('meter_id')
+                    ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+            })
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->first(['id', 'facility_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'input_source']);
+        $baselineEstablishmentService = app(\App\Services\MainMeterBaselineEstablishmentService::class);
+        $baselinePlans = $mainMeters->mapWithKeys(
+            fn ($meter) => [(int) $meter->id => $baselineEstablishmentService->summary($meter)]
+        );
         // 3-Month average update logic removed
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
@@ -1172,7 +1122,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'unapprovedMeterCount',
             'archivedMeterCount',
             'canManageMeters',
-            'canApproveMeters'
+            'canManageEnergyProfile',
+            'canApproveMeters',
+            'canEncodeMainReadings',
+            'latestEnergyRecord',
+            'baselinePlans'
         ));
     })->name('modules.facilities.energy-profile.index');
 
@@ -1185,6 +1139,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Toggle engineer approval for energy profile
     Route::post('/modules/facilities/{facility}/energy-profile/{profile}/toggle-approval', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'toggleEngineerApproval'])->name('energy-profile.toggle-approval');
+
+    Route::post('/modules/facilities/{facility}/meters/{meter}/baseline/establish', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'establishBaseline'])
+        ->name('modules.facilities.meters.baseline.establish');
 
     // Delete energy profile (controller, like monthly record)
     Route::delete('/modules/facilities/{facility}/energy-profile/{profile}', [\App\Http\Controllers\Modules\EnergyProfileController::class, 'destroy'])

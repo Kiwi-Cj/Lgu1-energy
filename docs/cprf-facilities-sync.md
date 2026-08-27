@@ -12,23 +12,25 @@ meters, baselines, readings, recommendations).
    **Sync from CPRF now** button on the Facilities page's *Public
    Facilities — Brgy. Culiat* tab) pulls CPRF's facilities feed:
    `GET {CPRF_FACILITIES_FEED_URL}` with `Authorization: Bearer
-   {CPRF_INTEGRATION_TOKEN}` (same shared token used by the readings API).
+   {CPRF_INTEGRATION_TOKEN}`.
 2. Rows are upserted into `facilities` with `source='cprf'` and
    `external_ref=<CPRF facility id>` (unique per source). Identity fields
    are overwritten on every run; facilities that disappear from the feed
    are set to `status='inactive'` — never deleted, so reading history
    survives.
-3. `GET /api/v1/cprf/facilities` now returns `source` and `external_ref`,
-   which CPRF uses to **auto-map** its facilities by id (no manual
-   name-matching needed on either side).
+3. `GET /api/v1/cprf/facility-profiles` keys each profile by CPRF's
+   `external_ref`, so CPRF can map Energy-managed profile data without fuzzy
+   name matching.
 
 ## Rules for cprf-sourced facilities
 
 - Identity fields are **read-only** in the UI and server-side
   (`FacilityController@update` allows only a photo change;
   `@destroy` refuses to archive them).
-- Energy profiles, meters, submeters, and readings work exactly like on
-  local facilities — that is the whole point.
+- Each facility has one LGU-managed energy profile. Meters, submeters, and
+  readings work exactly like on local facilities. Approved Main Meters are
+  authoritative for meter number, active meter count, and available baseline;
+  the profile owns billing and power-setup fields.
 - Locally created facilities keep `source='local'` and are unaffected.
 
 ## Configuration (.env)

@@ -47,8 +47,24 @@ class IntegrationDataController extends Controller
 
     public function facilities(Request $request): JsonResponse
     {
+        return $this->facilitiesResponse($request);
+    }
+
+    /**
+     * CPRF's facility catalog is restricted to rows mirrored from CPRF.
+     */
+    public function cprfFacilities(Request $request): JsonResponse
+    {
+        return $this->facilitiesResponse($request, true);
+    }
+
+    private function facilitiesResponse(Request $request, bool $cprfOnly = false): JsonResponse
+    {
         $query = Facility::query()
             ->withCount(['meters', 'submeters', 'energyRecords'])
+            ->when($cprfOnly, fn (Builder $q) => $q
+                ->where('source', 'cprf')
+                ->whereNotNull('external_ref'))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('status', $request->string('status')))
             ->when($request->filled('search'), function (Builder $q) use ($request) {
                 $search = '%'.addcslashes($request->string('search')->toString(), '%_').'%' ;
@@ -109,9 +125,52 @@ class IntegrationDataController extends Controller
 
     public function energyRecords(Request $request): JsonResponse
     {
+        return $this->energyRecordsResponse($request);
+    }
+
+    /**
+     * Approved Energy-owned reports for facilities mirrored from CPRF.
+     */
+    public function cprfEnergyReports(Request $request): JsonResponse
+    {
+        $request->validate([
+            'facility_id' => ['nullable', 'integer', 'min:1'],
+            'meter_id' => ['nullable', 'integer', 'min:1'],
+            'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        return $this->energyRecordsResponse($request, true);
+    }
+
+    private function energyRecordsResponse(Request $request, bool $cprfOnly = false): JsonResponse
+    {
         $query = EnergyRecord::query()
-            ->with(['facility:id,name', 'meter:id,meter_name,meter_number'])
-            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->with(['facility:id,name,external_ref', 'meter:id,meter_name,meter_number'])
+            ->when($cprfOnly, fn (Builder $q) => $q
+                ->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery->where('source', 'cprf'))
+                // CPRF readings arrive through UMAN with source=cprf. They
+                // are approved Energy records too, and must be returned to
+                // CPRF alongside Energy-entered/manual records.
+                ->whereIn('input_source', ['manual', 'cprf'])
+                ->where('review_status', 'approved')
+                ->whereNotNull('meter_id'))
+            ->when($request->filled('facility_id'), function (Builder $q) use ($request, $cprfOnly) {
+                $facilityId = $request->integer('facility_id');
+
+                if (! $cprfOnly) {
+                    $q->where('facility_id', $facilityId);
+                    return;
+                }
+
+                // CPRF may use its own facility ID (external_ref) when
+                // pulling data. Accept it as well as the Energy-side ID.
+                $q->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery
+                    ->whereKey($facilityId)
+                    ->orWhere('external_ref', $facilityId));
+            })
             ->when($request->filled('meter_id'), fn (Builder $q) => $q->where('meter_id', $request->integer('meter_id')))
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
             ->when($request->filled('month'), fn (Builder $q) => $q->where('month', $request->integer('month')))
@@ -119,7 +178,11 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (EnergyRecord $record) => [
             'id' => $record->id,
-            'facility' => ['id' => $record->facility_id, 'name' => $record->facility?->name],
+            'facility' => [
+                'id' => $record->facility_id,
+                'name' => $record->facility?->name,
+                'external_ref' => $record->facility?->external_ref !== null ? (int) $record->facility->external_ref : null,
+            ],
             'meter' => ['id' => $record->meter_id, 'name' => $record->meter?->meter_name, 'number' => $record->meter?->meter_number],
             'period' => ['year' => $record->year, 'month' => $record->month, 'day' => $record->day],
             'actual_kwh' => $this->number($record->actual_kwh),
@@ -128,6 +191,9 @@ class IntegrationDataController extends Controller
             'baseline_kwh' => $this->number($record->baseline_kwh),
             'deviation_percent' => $record->deviation,
             'alert' => $record->alert,
+            'review_status' => $record->review_status ?? 'for_review',
+            'reviewed_at' => $record->reviewed_at?->toIso8601String(),
+            'review_remarks' => $record->review_remarks,
             'created_at' => $record->created_at?->toIso8601String(),
             'updated_at' => $record->updated_at?->toIso8601String(),
         ]);
@@ -169,7 +235,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $query = Maintenance::query()
-            ->with('facility:id,name')
+            ->with('facility')
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
             ->when($request->filled('scheduled_from'), fn (Builder $q) => $q->whereDate('scheduled_date', '>=', $request->date('scheduled_from')))
@@ -180,11 +246,9 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (Maintenance $maintenance) => [
             'id' => $maintenance->id,
+            'energy_incident_id' => $maintenance->energy_incident_id,
             'source' => 'active',
-            'facility' => [
-                'id' => $maintenance->facility_id,
-                'name' => $maintenance->facility?->name,
-            ],
+            'facility' => $this->facilityPayload($maintenance->facility),
             'issue_type' => $maintenance->issue_type,
             'trigger_month' => $maintenance->trigger_month,
             'trend' => $maintenance->trend,
@@ -215,7 +279,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $query = MaintenanceHistory::query()
-            ->with('facility:id,name')
+            ->with('facility')
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
             ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
@@ -224,11 +288,15 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (MaintenanceHistory $history) => [
             'id' => $history->id,
+            // The original active `maintenance` row this was archived from —
+            // lets CIMM recognize "this is the same task, now completed"
+            // instead of treating the history row's own (different) id as a
+            // brand new import and creating a duplicate schedule entry.
+            // Older history rows archived before this column existed fall
+            // back to their own id (nothing better available for those).
+            'source_maintenance_id' => $history->original_maintenance_id ?? $history->id,
             'source' => 'history',
-            'facility' => [
-                'id' => $history->facility_id,
-                'name' => $history->facility?->name,
-            ],
+            'facility' => $this->facilityPayload($history->facility),
             'issue_type' => $history->issue_type,
             'trigger_month' => $history->trigger_month,
             'trend' => $history->trend,
@@ -285,6 +353,7 @@ class IntegrationDataController extends Controller
             'archived' => $effects['archived'],
             'maintenance' => [
                 'id' => $effects['archived'] ? null : $record->id,
+                'energy_incident_id' => $record->energy_incident_id ?? null,
                 'facility_id' => $record->facility_id,
                 'status' => $record->maintenance_status,
                 'scheduled_date' => $record->scheduled_date,
@@ -295,9 +364,11 @@ class IntegrationDataController extends Controller
     }
 
     /**
-     * Engineer-reviewed energy-saving recommendations for CPRF. Defaults to
-     * status=approved so the reservation system only surfaces vetted advice;
-     * pass status=all to lift the filter.
+     * Engineer-reviewed energy-saving recommendations for CPRF-managed
+     * facilities, including recommendations created from the Daily Task Board.
+     * The partner can only receive approved recommendations whose linked
+     * main-meter period is approved, whether the reading was encoded in Energy
+     * or imported from CPRF through UMAN.
      */
     public function recommendations(Request $request): JsonResponse
     {
@@ -314,9 +385,31 @@ class IntegrationDataController extends Controller
         $status = $request->filled('status') ? $request->string('status')->toString() : 'approved';
 
         $query = EnergySavingRecommendation::query()
-            ->with('facility:id,name')
+            ->with('facility:id,name,external_ref')
+            ->where('status', 'approved')
+            ->whereNotNull('engineer_recommendation')
+            ->whereRaw("TRIM(engineer_recommendation) <> ''")
+            ->whereHas('facility', fn (Builder $q) => $q->where('source', 'cprf'))
+            ->whereExists(function ($recordQuery) {
+                $recordQuery
+                    ->selectRaw('1')
+                    ->from('energy_records')
+                    ->whereColumn('energy_records.facility_id', 'energy_saving_recommendations.facility_id')
+                    ->whereColumn('energy_records.year', 'energy_saving_recommendations.year')
+                    ->whereColumn('energy_records.month', 'energy_saving_recommendations.month')
+                    ->whereIn('energy_records.input_source', ['manual', 'cprf'])
+                    ->where('energy_records.review_status', 'approved')
+                    ->whereNotNull('energy_records.meter_id')
+                    ->whereNull('energy_records.deleted_at');
+            })
             ->when($status !== 'all', fn (Builder $q) => $q->where('status', $status))
-            ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
+            ->when($request->filled('facility_id'), function (Builder $q) use ($request) {
+                $facilityId = $request->integer('facility_id');
+
+                $q->whereHas('facility', fn (Builder $facilityQuery) => $facilityQuery
+                    ->whereKey($facilityId)
+                    ->orWhere('external_ref', $facilityId));
+            })
             ->when($request->filled('year'), fn (Builder $q) => $q->where('year', $request->integer('year')))
             ->when($request->filled('month'), fn (Builder $q) => $q->where('month', $request->integer('month')))
             ->when($request->filled('updated_since'), fn (Builder $q) => $q->where('updated_at', '>=', $request->date('updated_since')))
@@ -324,16 +417,98 @@ class IntegrationDataController extends Controller
 
         return $this->paginated($query, $request, fn (EnergySavingRecommendation $reco) => [
             'id' => $reco->id,
-            'facility' => ['id' => $reco->facility_id, 'name' => $reco->facility?->name],
+            'facility' => [
+                'id' => $reco->facility_id,
+                'name' => $reco->facility?->name,
+                // CPRF uses this stable source-system ID to match the
+                // recommendation to its selected reservation facility.
+                'external_ref' => $reco->facility?->external_ref !== null ? (int) $reco->facility->external_ref : null,
+            ],
+            'facility_external_ref' => $reco->facility?->external_ref !== null ? (int) $reco->facility->external_ref : null,
             'year' => $reco->year,
             'month' => $reco->month,
             'generated_message' => $reco->generated_message,
             'engineer_recommendation' => $reco->engineer_recommendation,
+            'monthly_record_assessment' => $reco->generated_message,
+            'recommendation' => $reco->engineer_recommendation,
             'status' => $reco->status,
             'expected_savings_kwh' => $this->number($reco->expected_savings_kwh),
             'target_date' => $reco->target_date?->toDateString(),
+            'implementation_status' => $reco->implementation_status ?? 'pending',
+            'actual_savings_kwh' => $this->number($reco->actual_savings_kwh),
+            'implementation_notes' => $reco->implementation_notes,
+            'implemented_at' => $reco->implemented_at?->toIso8601String(),
+            'verified_at' => $reco->verified_at?->toIso8601String(),
             'reviewed_at' => $reco->reviewed_at?->toIso8601String(),
             'updated_at' => $reco->updated_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Accept implementation progress from CPRF while keeping approval and
+     * final verification under Energy's control.
+     */
+    public function updateRecommendationImplementation(
+        Request $request,
+        EnergySavingRecommendation $recommendation
+    ): JsonResponse {
+        $validated = $request->validate([
+            'implementation_status' => ['required', Rule::in(['pending', 'in_progress', 'implemented'])],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $isCprfOwned = $recommendation->status === 'approved'
+            && trim((string) $recommendation->engineer_recommendation) !== ''
+            && $recommendation->facility()->where('source', 'cprf')->exists()
+            && EnergyRecord::query()
+                ->where('facility_id', $recommendation->facility_id)
+                ->where('year', $recommendation->year)
+                ->where('month', $recommendation->month)
+                ->whereIn('input_source', ['manual', 'cprf'])
+                ->where('review_status', 'approved')
+                ->whereNotNull('meter_id')
+                ->exists();
+
+        if (! $isCprfOwned) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Approved CPRF recommendation not found for this reporting period.',
+            ], 404);
+        }
+
+        if ($recommendation->implementation_status === 'verified') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Verified recommendations are locked in Energy.',
+            ], 409);
+        }
+
+        $isImplemented = $validated['implementation_status'] === 'implemented';
+        $notes = isset($validated['implementation_notes'])
+            ? trim((string) $validated['implementation_notes'])
+            : null;
+
+        $recommendation->update([
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $notes !== '' ? $notes : null,
+            'implemented_at' => $isImplemented ? ($recommendation->implemented_at ?? now()) : null,
+        ]);
+
+        $recommendation->refresh();
+
+        return response()->json([
+            'success' => true,
+            'recommendation' => [
+                'id' => $recommendation->id,
+                'implementation_status' => $recommendation->implementation_status,
+                'actual_savings_kwh' => $this->number($recommendation->actual_savings_kwh),
+                'implementation_notes' => $recommendation->implementation_notes,
+                'implemented_at' => $recommendation->implemented_at?->toIso8601String(),
+                'verified_at' => $recommendation->verified_at?->toIso8601String(),
+                'updated_at' => $recommendation->updated_at?->toIso8601String(),
+            ],
         ]);
     }
 
@@ -349,5 +524,30 @@ class IntegrationDataController extends Controller
     private function number(mixed $value): ?float
     {
         return is_numeric($value) ? (float) $value : null;
+    }
+
+    /**
+     * Full facility detail block for the maintenance sync endpoints — CIMM's
+     * "Facility Registry" style task modal shows these alongside the issue
+     * (see IntegrationDataController::facilities() above for the equivalent
+     * shape used by the general integration API).
+     */
+    private function facilityPayload(?Facility $facility): array
+    {
+        if (!$facility) {
+            return ['id' => null, 'name' => null];
+        }
+
+        return [
+            'id' => $facility->id,
+            'name' => $facility->name,
+            'address' => $facility->address,
+            'barangay' => $facility->barangay,
+            'floor_area_sqm' => $this->number($facility->floor_area_sqm ?? $facility->floor_area),
+            'floors' => $facility->floors,
+            'year_built' => $facility->year_built,
+            'operating_hours' => $facility->operating_hours,
+            'size_label' => Facility::resolveSizeLabelFromBaseline($facility->baseline_kwh) ?? 'N/A',
+        ];
     }
 }

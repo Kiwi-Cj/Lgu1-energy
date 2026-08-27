@@ -28,6 +28,19 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}', functio
     ]);
 
     $record = EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
+    $facility = Facility::findOrFail($facilityId);
+    if (strtolower((string) $record->input_source) === 'cprf') {
+        $message = 'Legacy CPRF-supplied monthly records are read-only in this system.';
+
+        if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+            return response()->json(['message' => $message], 403);
+        }
+
+        return redirect()
+            ->route('facilities.monthly-records', ['facility' => $facility->id])
+            ->with('error', $message);
+    }
+
     $record->deleted_by = auth()->id();
     $record->archive_reason = trim($validated['archive_reason']);
     $record->save();
@@ -89,6 +102,7 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}/force-del
 
 // Store new monthly energy record for a facility (for modal form)
 Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
+    $facility = Facility::findOrFail($facilityId);
     $validated = $request->validate([
         'date' => 'required|date',
         'meter_id' => 'required|integer',
@@ -103,9 +117,9 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     $validated['day'] = $date->format('j');
     $validated['facility_id'] = $facilityId;
     $validated['recorded_by'] = auth()->id();
+    $validated['input_source'] = 'manual';
     $validated['meter_id'] = (int) $validated['meter_id'];
 
-    $facility = Facility::find($facilityId);
     $latestProfile = $facility ? $facility->energyProfiles()->latest()->first() : null;
 
     $selectedMeter = FacilityMeter::where('facility_id', $facilityId)

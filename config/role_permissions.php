@@ -4,6 +4,8 @@ return [
     'abilities' => [
         'view_facilities' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'view_energy_monitoring' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'view_monthly_record_activity' => ['super_admin', 'admin', 'engineer'],
+        'review_monthly_records' => ['super_admin', 'admin', 'engineer'],
         'view_submeter_monitoring' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'view_maintenance' => ['super_admin', 'admin', 'energy_officer', 'staff'],
         'access_energy_conservation' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],

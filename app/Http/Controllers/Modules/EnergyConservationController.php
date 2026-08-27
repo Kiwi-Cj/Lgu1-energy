@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContactMessage;
 use App\Models\ConservationGoal;
 use App\Models\DailyEnergyChecklist;
 use App\Models\DailyEnergyChecklistTask;
 use App\Models\EnergyRecord;
 use App\Models\EnergySavingRecommendation;
 use App\Models\Facility;
+use App\Services\RecommendationNotificationService;
+use App\Support\BaselineResolver;
+use App\Support\EnergyAlertRouting;
 use App\Support\EnergyCost;
 use App\Support\RoleAccess;
 use Carbon\Carbon;
@@ -26,10 +28,36 @@ class EnergyConservationController extends Controller
 
     public function feature(Request $request, string $feature)
     {
+        // Legacy feature URLs now point to the single workspace that owns the
+        // workflow, instead of maintaining duplicate conservation screens.
+        if ($feature === 'ai-recommendations') {
+            return redirect()->route('modules.ai-alerts.index', ['month' => $request->query('month')]);
+        }
+        if (in_array($feature, ['estimated-savings', 'conservation-reports'], true)) {
+            return redirect()->route('reports.performance-summary');
+        }
+        if ($feature === 'suggestions-box') {
+            return redirect()->route('landing.contact');
+        }
+
         $features = $this->featureCatalog();
         $selected = $features[$feature] ?? null;
         if (! $selected) {
             return redirect()->route('modules.energy-conservation.index')->with('error', 'Feature not found.');
+        }
+        if (($selected['status'] ?? null) !== 'enabled') {
+            return redirect()->route('modules.energy-conservation.index')
+                ->with('error', $selected['title'].' is coming soon.');
+        }
+
+        $recommendationNotificationId = (int) $request->query('recommendation_notification_id', 0);
+        if ($feature === 'energy-saving-tips' && $recommendationNotificationId > 0) {
+            $request->user()
+                ->notifications()
+                ->whereKey($recommendationNotificationId)
+                ->where('type', RecommendationNotificationService::TYPE)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
         }
 
         $overview = $this->buildOverviewData($request);
@@ -40,6 +68,11 @@ class EnergyConservationController extends Controller
         $dailyChecklist = collect();
         $conservationGoals = collect();
         $checklistDate = (string) $request->query('date', now()->toDateString());
+        $selectedRecordContext = null;
+        $selectedRecordForAssignment = null;
+        $isCprfIntegrationPeriod = false;
+        $manualRecommendations = collect();
+        $recommendationTotals = $overview['totals'];
 
         if ($feature === 'conservation-goals') {
             $allowedFacilityIds = $overview['facilities']->pluck('id');
@@ -52,14 +85,85 @@ class EnergyConservationController extends Controller
         }
 
         if ($feature === 'energy-saving-tips') {
+            if (! $selectedFacility) {
+                $selectedFacility = $overview['facilities']->first();
+                $selectedFacilityId = (int) ($selectedFacility?->id ?? 0);
+            }
+
+            $recommendationRows = $selectedFacilityId > 0
+                ? $overview['rows']->where('facility_id', $selectedFacilityId)->values()
+                : $overview['rows'];
+            $recommendationTotals = $this->summarizeEnergyRows($recommendationRows);
+
+            $selectedRecordId = (int) $request->query('record_id', 0);
+            if ($selectedRecordId > 0 && $selectedFacilityId > 0) {
+                [$selectedYear, $selectedMonthNumber] = array_map('intval', explode('-', $overview['selectedMonth']));
+                $selectedRecord = EnergyRecord::query()
+                    ->with('meter:id,facility_id,meter_name,meter_type')
+                    ->whereKey($selectedRecordId)
+                    ->where('facility_id', $selectedFacilityId)
+                    ->where('year', $selectedYear)
+                    ->where('month', $selectedMonthNumber)
+                    ->first();
+
+                if ($selectedRecord) {
+                    $selectedRecordForAssignment = $selectedRecord;
+                    $isCprfFacilityLevel = $selectedRecord->meter_id === null
+                        && strtolower((string) ($selectedRecord->input_source ?? '')) === 'cprf';
+                    $recordDay = is_numeric($selectedRecord->day) ? (int) $selectedRecord->day : null;
+                    $periodDate = Carbon::create($selectedYear, $selectedMonthNumber, 1);
+                    $recordDateLabel = 'Day not specified';
+                    if ($recordDay !== null && $recordDay >= 1 && $recordDay <= $periodDate->daysInMonth) {
+                        $recordDateLabel = $periodDate->copy()->day($recordDay)->format('F j, Y');
+                    }
+
+                    $selectedRecordContext = [
+                        'record_id' => (int) $selectedRecord->id,
+                        'facility_name' => (string) ($selectedFacility?->name ?? 'Facility #'.$selectedFacilityId),
+                        'facility_type' => (string) ($selectedFacility?->type ?? ''),
+                        'period_label' => $periodDate->format('F Y'),
+                        'record_date_label' => $recordDateLabel,
+                        'meter_name' => $isCprfFacilityLevel
+                            ? 'Facility-Level (CPRF)'
+                            : (string) ($selectedRecord->meter?->meter_name ?? 'Main Meter'),
+                        'source_label' => strtolower((string) ($selectedRecord->input_source ?? '')) === 'cprf'
+                            ? 'CPRF via UMAN'
+                            : 'Energy manual entry',
+                        'review_status' => ucwords(str_replace('_', ' ', (string) ($selectedRecord->review_status ?? 'for_review'))),
+                        'monthly_records_url' => route('facilities.monthly-records', [
+                            'facility' => $selectedFacilityId,
+                            'year' => $selectedYear,
+                            'table_month' => $selectedMonthNumber,
+                        ]),
+                    ];
+                }
+            }
+
             $energyTips = $this->energySavingTips($overview['rows'], $selectedFacilityId, $overview['periodLabel']);
             [$tipYear, $tipMonth] = array_map('intval', explode('-', $overview['selectedMonth']));
+            $isCprfIntegrationPeriod = $this->isCprfIntegrationPeriod(
+                $selectedFacilityId,
+                $tipYear,
+                $tipMonth,
+                $selectedRecordForAssignment?->id,
+            );
+            $manualRecommendations = EnergySavingRecommendation::query()
+                ->with(['reviewer:id,username', 'dailyChecklistTask:id,task_label,period'])
+                ->where('facility_id', $selectedFacilityId)
+                ->where('year', $tipYear)
+                ->where('month', $tipMonth)
+                ->when(! $canReviewTips, fn ($query) => $query->where('status', 'approved'))
+                ->latest('id')
+                ->get();
             $reviews = EnergySavingRecommendation::query()
                 ->with('reviewer:id,username')
                 ->where('year', $tipYear)
                 ->where('month', $tipMonth)
                 ->whereIn('facility_id', $energyTips->pluck('facility_id')->filter())
+                ->when(! $canReviewTips, fn ($query) => $query->where('status', 'approved'))
+                ->latest('id')
                 ->get()
+                ->unique('facility_id')
                 ->keyBy('facility_id');
 
             $energyTips = $energyTips
@@ -67,9 +171,6 @@ class EnergyConservationController extends Controller
                     $tip['review'] = $reviews->get($tip['facility_id'] ?? 0);
                     return $tip;
                 })
-                ->when(! $canReviewTips, fn (Collection $tips) => $tips->filter(
-                    fn (array $tip) => ($tip['review']?->status ?? null) === 'approved' || empty($tip['facility_id'])
-                ))
                 ->values();
         }
 
@@ -103,14 +204,19 @@ class EnergyConservationController extends Controller
             'overview' => $overview,
             'selectedFacility' => $selectedFacility,
             'selectedFacilityId' => $selectedFacilityId,
+            'selectedRecordContext' => $selectedRecordContext,
             'energyTips' => $energyTips,
             'canReviewTips' => $canReviewTips,
+            'isCprfIntegrationPeriod' => $isCprfIntegrationPeriod,
+            'recommendationTotals' => $recommendationTotals,
+            'manualRecommendations' => $manualRecommendations,
             'dailyChecklist' => $dailyChecklist,
             'conservationGoals' => $conservationGoals,
             'canManageGoals' => $this->canManageChecklistTasks($request),
             'checklistDate' => $checklistDate,
             'canManageChecklistTasks' => $this->canManageChecklistTasks($request),
             'canCompleteChecklist' => RoleAccess::is($request->user(), 'staff'),
+            'dailyTaskBoardOptions' => $this->dailyTaskBoardOptions(),
         ]);
     }
 
@@ -308,18 +414,39 @@ class EnergyConservationController extends Controller
             'period' => ['required', 'in:opening,closing'],
             'return_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
-        DailyEnergyChecklistTask::create([
-            'facility_id' => $validated['facility_id'],
-            'task_key' => 'custom_'.str()->uuid(),
-            'task_label' => $validated['task_label'],
-            'period' => $validated['period'],
-            'created_by' => $request->user()->id,
-        ]);
+        $allowedFacilityIds = $this->buildOverviewData($request)['facilities']->pluck('id')->map(fn ($id) => (int) $id);
+        abort_unless($allowedFacilityIds->contains((int) $validated['facility_id']), 403);
+
+        $taskDate = Carbon::parse($validated['return_date'] ?? now()->toDateString());
+
+        DB::transaction(function () use ($validated, $request, $taskDate) {
+            $task = DailyEnergyChecklistTask::create([
+                'facility_id' => $validated['facility_id'],
+                'task_key' => 'custom_'.str()->uuid(),
+                'task_label' => $validated['task_label'],
+                'period' => $validated['period'],
+                'created_by' => $request->user()->id,
+            ]);
+
+            EnergySavingRecommendation::create([
+                'facility_id' => $validated['facility_id'],
+                'daily_checklist_task_id' => $task->id,
+                'year' => $taskDate->year,
+                'month' => $taskDate->month,
+                'generated_message' => 'Added from the Daily Task Board for the '.ucfirst($validated['period']).' routine.',
+                'engineer_recommendation' => $validated['task_label'],
+                'status' => 'approved',
+                'target_date' => $taskDate->toDateString(),
+                'implementation_status' => 'pending',
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+        });
 
         return redirect()->route('modules.energy-conservation.feature', [
             'feature' => 'daily-checklist', 'facility_id' => $validated['facility_id'],
             'date' => $validated['return_date'] ?? now()->toDateString(),
-        ])->with('success', 'Checklist task added.');
+        ])->with('success', 'Checklist task added to the Daily Task Board and Recommendations.');
     }
 
     public function destroyDailyChecklistTask(Request $request, DailyEnergyChecklistTask $task)
@@ -344,6 +471,43 @@ class EnergyConservationController extends Controller
             ]);
     }
 
+    private function dailyTaskBoardOptions(): array
+    {
+        return [
+            'opening_meter_reading' => ['label' => 'Record the opening main-meter reading.', 'period' => 'opening'],
+            'opening_meter_inspection' => ['label' => 'Inspect the main meter for visible damage or unusual readings.', 'period' => 'opening'],
+            'opening_natural_lighting' => ['label' => 'Use natural lighting before switching on indoor lights.', 'period' => 'opening'],
+            'opening_aircon_setting' => ['label' => 'Check that air-conditioning is set between 24 and 26 degrees Celsius.', 'period' => 'opening'],
+            'opening_doors_windows' => ['label' => 'Confirm doors and windows are closed while air-conditioning is running.', 'period' => 'opening'],
+            'opening_equipment_inspection' => ['label' => 'Inspect equipment for unusual noise, heat, smell, or vibration.', 'period' => 'opening'],
+            'opening_leak_check' => ['label' => 'Check for leaks or continuously running pumps.', 'period' => 'opening'],
+            'closing_meter_reading' => ['label' => 'Record the closing main-meter reading.', 'period' => 'closing'],
+            'closing_lights' => ['label' => 'Verify unused lights are switched off.', 'period' => 'closing'],
+            'closing_equipment' => ['label' => 'Shut down computers, printers, and office equipment not in use.', 'period' => 'closing'],
+            'closing_aircon' => ['label' => 'Turn off air-conditioning and ventilation after operating hours.', 'period' => 'closing'],
+            'closing_appliances' => ['label' => 'Unplug chargers and non-essential pantry appliances.', 'period' => 'closing'],
+            'closing_nonessential' => ['label' => 'Confirm non-essential equipment is switched off before closing.', 'period' => 'closing'],
+            'closing_timers' => ['label' => 'Check timers and schedules for outdoor lighting.', 'period' => 'closing'],
+            'closing_emergency' => ['label' => 'Confirm emergency and safety equipment remains powered.', 'period' => 'closing'],
+        ];
+    }
+
+    private function isCprfIntegrationPeriod(int $facilityId, int $year, int $month, ?int $recordId = null): bool
+    {
+        $query = EnergyRecord::query()
+            ->where('facility_id', $facilityId)
+            ->where('year', $year)
+            ->where('month', $month);
+
+        if ($recordId !== null && $recordId > 0) {
+            $query->whereKey($recordId);
+        }
+
+        return $query
+            ->whereRaw('LOWER(input_source) = ?', ['cprf'])
+            ->exists();
+    }
+
     private function canManageChecklistTasks(Request $request): bool
     {
         return RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer']);
@@ -362,32 +526,201 @@ class EnergyConservationController extends Controller
             'engineer_recommendation' => ['nullable', 'string', 'max:3000', 'required_if:status,approved'],
             'expected_savings_kwh' => ['nullable', 'numeric', 'min:0'],
             'target_date' => ['nullable', 'date'],
+            'record_id' => ['nullable', 'integer'],
+            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'implementation_status' => ['nullable', 'in:pending,in_progress,implemented,verified'],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+            'daily_task_options' => ['nullable', 'array'],
+            'daily_task_options.*' => ['string', 'in:'.implode(',', array_keys($this->dailyTaskBoardOptions()))],
         ]);
+
+        [$year, $month] = array_map('intval', explode('-', $validated['period']));
+        // Creating this record publishes advice only. Assignment and
+        // implementation tracking are separate follow-up actions.
+        $validated['assigned_to'] = null;
 
         $request->merge(['month' => $validated['period'], 'facility_id' => $validated['facility_id']]);
         $overview = $this->buildOverviewData($request);
         $tip = $this->energySavingTips($overview['rows'], (int) $validated['facility_id'], $overview['periodLabel'])->first();
         abort_unless($tip && ! empty($tip['facility_id']), 422, 'No monthly energy data is available for this facility.');
-        [$year, $month] = array_map('intval', explode('-', $validated['period']));
 
-        EnergySavingRecommendation::updateOrCreate(
-            ['facility_id' => $validated['facility_id'], 'year' => $year, 'month' => $month],
-            [
-                'generated_message' => $tip['message'],
+        $selectedDailyTaskOptions = collect($validated['daily_task_options'] ?? [])
+            ->unique()
+            ->values();
+        $dailyTaskRequested = $selectedDailyTaskOptions->isNotEmpty();
+        if ($dailyTaskRequested) {
+            abort_unless(
+                $this->isCprfIntegrationPeriod(
+                    (int) $validated['facility_id'],
+                    $year,
+                    $month,
+                    isset($validated['record_id']) ? (int) $validated['record_id'] : null,
+                ),
+                422,
+                'Daily Task Board publishing is only available for CPRF readings.'
+            );
+            abort_unless(
+                $validated['status'] === 'approved',
+                422,
+                'Publish the recommendation before adding it to the Daily Task Board.'
+            );
+        }
+        $recommendation = DB::transaction(function () use ($selectedDailyTaskOptions, $request, $tip, $validated, $year, $month) {
+            $recommendation = EnergySavingRecommendation::create([
+                'facility_id' => $validated['facility_id'],
+                'year' => $year,
+                'month' => $month,
+                // Preserve the exact monthly assessment reviewed at publish time.
+                // It remains attached to the recommendation even if a later month
+                // changes the facility baseline.
+                'generated_message' => $tip['assessment_message'] ?? $tip['message'],
                 'engineer_recommendation' => $validated['engineer_recommendation'],
                 'status' => $validated['status'],
-                'expected_savings_kwh' => $validated['expected_savings_kwh'] ?? null,
-                'target_date' => $validated['target_date'] ?? null,
+                'expected_savings_kwh' => null,
+                'target_date' => null,
+                'assigned_to' => $validated['assigned_to'] ?? null,
+                'implementation_status' => 'pending',
+                'actual_savings_kwh' => null,
+                'implementation_notes' => null,
+                'implemented_at' => null,
+                'verified_by' => null,
+                'verified_at' => null,
                 'reviewed_by' => $request->user()->id,
                 'reviewed_at' => now(),
-            ]
-        );
+            ]);
 
-        return redirect()->route('modules.energy-conservation.feature', [
+            $dailyTaskOptions = $this->dailyTaskBoardOptions();
+            foreach ($selectedDailyTaskOptions as $optionKey) {
+                $option = $dailyTaskOptions[$optionKey];
+                $dailyTask = DailyEnergyChecklistTask::create([
+                    'facility_id' => $validated['facility_id'],
+                    'task_key' => 'cprf_recommendation_'.str()->uuid(),
+                    'task_label' => $option['label'],
+                    'period' => $option['period'],
+                    'created_by' => $request->user()->id,
+                ]);
+
+                EnergySavingRecommendation::create([
+                    'facility_id' => $validated['facility_id'],
+                    'daily_checklist_task_id' => $dailyTask->id,
+                    'year' => $year,
+                    'month' => $month,
+                    'generated_message' => 'Daily Task Board item published with recommendation: '.$validated['engineer_recommendation'],
+                    'engineer_recommendation' => $option['label'],
+                    'status' => 'approved',
+                    'implementation_status' => 'pending',
+                    'reviewed_by' => $request->user()->id,
+                    'reviewed_at' => now(),
+                ]);
+            }
+
+            return $recommendation;
+        });
+
+        try {
+            app(RecommendationNotificationService::class)->notifyManualRecommendation($recommendation);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return redirect()->route('modules.energy-conservation.feature', array_filter([
             'feature' => 'energy-saving-tips',
             'month' => $validated['period'],
             'facility_id' => $validated['facility_id'],
-        ])->with('success', 'Energy-saving recommendation updated.');
+            'record_id' => $validated['record_id'] ?? null,
+        ], fn ($value) => $value !== null))->with(
+            'success',
+            $dailyTaskRequested
+                ? 'Recommendation and selected Daily Task Board items were published to CPRF.'
+                : 'Recommendation added successfully.'
+        );
+    }
+
+    public function updateEnergyTip(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        if (! RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer'])) {
+            abort(403, 'Only Engineering, Energy Officers, or administrators can update recommendations.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:for_review,approved,dismissed'],
+            'engineer_recommendation' => ['required', 'string', 'max:3000'],
+        ]);
+
+        DB::transaction(function () use ($recommendation, $request, $validated) {
+            $recommendation->update([
+                'engineer_recommendation' => $validated['engineer_recommendation'],
+                'status' => $validated['status'],
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+
+            if ($recommendation->dailyChecklistTask) {
+                $recommendation->dailyChecklistTask->update([
+                    'task_label' => $validated['engineer_recommendation'],
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Recommendation changes saved successfully.');
+    }
+
+    public function updateEnergyTipProgress(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        abort_unless(
+            RoleAccess::is($request->user(), 'staff'),
+            403,
+            'Only the assigned staff member can update implementation progress.'
+        );
+        abort_unless(
+            (int) $recommendation->assigned_to === (int) $request->user()->id,
+            403,
+            'This recommendation is assigned to another staff member.'
+        );
+        abort_unless(
+            $recommendation->status === 'approved',
+            403,
+            'Only approved recommendations can be implemented.'
+        );
+        abort_if(
+            $recommendation->implementation_status === 'verified',
+            403,
+            'Verified recommendations are locked.'
+        );
+
+        $hasFacilityAccess = $request->user()
+            ->facilities()
+            ->whereKey((int) $recommendation->facility_id)
+            ->exists();
+        abort_unless($hasFacilityAccess, 403, 'You do not have access to this facility.');
+
+        $validated = $request->validate([
+            'implementation_status' => ['required', 'in:pending,in_progress,implemented'],
+            'actual_savings_kwh' => ['nullable', 'numeric', 'min:0'],
+            'implementation_notes' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $isImplemented = $validated['implementation_status'] === 'implemented';
+        $recommendation->update([
+            'implementation_status' => $validated['implementation_status'],
+            'actual_savings_kwh' => $validated['actual_savings_kwh'] ?? null,
+            'implementation_notes' => $validated['implementation_notes'] ?? null,
+            'implemented_at' => $isImplemented ? ($recommendation->implemented_at ?? now()) : null,
+        ]);
+
+        return back()->with('success', 'Implementation progress updated successfully.');
+    }
+
+    public function destroyEnergyTip(Request $request, EnergySavingRecommendation $recommendation)
+    {
+        if (! RoleAccess::in($request->user(), ['super_admin', 'admin', 'energy_officer', 'engineer'])) {
+            abort(403, 'Only Engineering, Energy Officers, or administrators can delete recommendations.');
+        }
+
+        $recommendation->delete();
+
+        return back()->with('success', 'Recommendation deleted successfully.');
     }
 
     private function renderOverview(Request $request)
@@ -412,10 +745,11 @@ class EnergyConservationController extends Controller
             abort(403);
         }
 
-        [$year, $month, $selectedMonth, $periodLabel] = $this->resolveMonth($request->query('month'));
+        [$year, $month, $selectedMonth, $periodLabel] = $this->resolveMonth($request->input('month'));
         $facilityScope = $this->facilityScope($request);
 
         $facilities = Facility::query()
+            ->with('energyProfiles:id,facility_id,baseline_kwh')
             ->when($facilityScope !== null, fn ($query) => $query->whereIn('id', $facilityScope))
             ->orderBy('name')
             ->get(['id', 'name', 'type', 'baseline_kwh', 'status']);
@@ -424,29 +758,37 @@ class EnergyConservationController extends Controller
         $facilityMap = $facilities->keyBy('id');
 
         $records = EnergyRecord::query()
-            ->with('meter:id,facility_id,meter_name,meter_type')
+            ->with('meter:id,facility_id,meter_name,meter_type,baseline_kwh')
             ->whereIn('facility_id', $facilityIds)
             ->where('year', $year)
             ->where('month', $month)
-            ->whereHas('meter', fn ($query) => $query->where('meter_type', 'main'))
-            ->get(['id', 'facility_id', 'meter_id', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'energy_cost', 'rate_per_kwh']);
+            ->where(function ($query) {
+                $query
+                    ->whereHas('meter', fn ($meterQuery) => $meterQuery->where('meter_type', 'main'))
+                    ->orWhere(function ($cprfQuery) {
+                        $cprfQuery
+                            ->whereNull('meter_id')
+                            ->where('input_source', 'cprf');
+                    });
+            })
+            ->get(['id', 'facility_id', 'meter_id', 'input_source', 'year', 'month', 'actual_kwh', 'baseline_kwh', 'energy_cost', 'rate_per_kwh']);
 
         $rows = $records
             ->groupBy('facility_id')
             ->map(function (Collection $facilityRecords, int $facilityId) use ($facilityMap, $selectedMonth) {
                 $facility = $facilityMap->get($facilityId);
                 $actualKwh = (float) $facilityRecords->sum(fn ($record) => (float) ($record->actual_kwh ?? 0));
-                $baselineKwh = (float) $facilityRecords->sum(fn ($record) => is_numeric($record->baseline_kwh ?? null) ? (float) $record->baseline_kwh : 0);
-                if ($baselineKwh <= 0 && is_numeric($facility?->baseline_kwh)) {
-                    $baselineKwh = (float) $facility->baseline_kwh;
-                }
+                $baselineKwh = (float) $facilityRecords->sum(
+                    fn (EnergyRecord $record) => BaselineResolver::forRecord($record, $facility) ?? 0
+                );
 
                 $energyCost = (float) $facilityRecords->sum(fn ($record) => EnergyCost::cost($record));
                 $resolvedRate = $actualKwh > 0 ? ($energyCost / $actualKwh) : EnergyCost::DEFAULT_RATE_PER_KWH;
-                $excessKwh = max(0, $actualKwh - $baselineKwh);
-                $avoidableCost = $excessKwh * $resolvedRate;
+                $hasBaseline = $baselineKwh > 0;
+                $excessKwh = $hasBaseline ? max(0, $actualKwh - $baselineKwh) : null;
+                $avoidableCost = $hasBaseline ? $excessKwh * $resolvedRate : null;
                 $deviation = EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
-                $alertLevel = $baselineKwh > 0 ? EnergyRecord::resolveAlertLevel($deviation, $baselineKwh) : 'No Data';
+                $alertLevel = $hasBaseline ? EnergyRecord::resolveAlertLevel($deviation, $baselineKwh) : 'No Data';
 
                 return [
                     'facility_id' => $facilityId,
@@ -454,8 +796,11 @@ class EnergyConservationController extends Controller
                     'facility_type' => (string) ($facility?->type ?? 'Facility'),
                     'actual_kwh' => round($actualKwh, 2),
                     'baseline_kwh' => round($baselineKwh, 2),
-                    'excess_kwh' => round($excessKwh, 2),
-                    'avoidable_cost' => round($avoidableCost, 2),
+                    'has_baseline' => $hasBaseline,
+                    'excess_kwh' => $excessKwh !== null ? round($excessKwh, 2) : null,
+                    'avoidable_cost' => $avoidableCost !== null ? round($avoidableCost, 2) : null,
+                    'energy_cost' => round($energyCost, 2),
+                    'rate_per_kwh' => round($resolvedRate, 2),
                     'deviation' => $deviation,
                     'alert_level' => $alertLevel !== '' ? $alertLevel : 'Normal',
                     'recommendation' => $this->recommendationFor($alertLevel, $deviation),
@@ -469,15 +814,10 @@ class EnergyConservationController extends Controller
             ->reject(fn (Facility $facility) => $rows->contains('facility_id', (int) $facility->id))
             ->values();
 
-        $totals = [
-            'facilities' => $facilities->count(),
-            'monitored_facilities' => $rows->count(),
-            'actual_kwh' => round((float) $rows->sum('actual_kwh'), 2),
-            'baseline_kwh' => round((float) $rows->sum('baseline_kwh'), 2),
-            'excess_kwh' => round((float) $rows->sum('excess_kwh'), 2),
-            'avoidable_cost' => round((float) $rows->sum('avoidable_cost'), 2),
-            'priority_count' => $rows->filter(fn (array $row) => in_array($row['alert_level'], ['High', 'Very High', 'Critical'], true))->count(),
-        ];
+        $totals = array_merge(
+            ['facilities' => $facilities->count()],
+            $this->summarizeEnergyRows($rows),
+        );
 
         return [
             'selectedMonth' => $selectedMonth,
@@ -486,13 +826,27 @@ class EnergyConservationController extends Controller
             'rows' => $rows,
             'totals' => $totals,
             'facilitiesWithoutCurrentRecord' => $facilitiesWithoutCurrentRecord,
-            'topFacility' => $rows->first(),
-            'averageDeviation' => $rows->isNotEmpty() ? round((float) $rows->filter(fn (array $row) => $row['deviation'] !== null)->avg('deviation'), 2) : null,
-            'contactInboxCount' => ContactMessage::count(),
-            'latestContactSuggestions' => ContactMessage::query()
-                ->latest()
-                ->limit(5)
-                ->get(['id', 'name', 'subject', 'message', 'created_at']),
+        ];
+    }
+
+    private function summarizeEnergyRows(Collection $rows): array
+    {
+        $rowsWithBaseline = $rows->filter(fn (array $row) => (bool) ($row['has_baseline'] ?? false));
+
+        return [
+            'monitored_facilities' => $rows->count(),
+            'actual_kwh' => round((float) $rows->sum('actual_kwh'), 2),
+            'baseline_kwh' => round((float) $rowsWithBaseline->sum('baseline_kwh'), 2),
+            'baseline_ready_facilities' => $rowsWithBaseline->count(),
+            'excess_kwh' => $rowsWithBaseline->isNotEmpty()
+                ? round((float) $rowsWithBaseline->sum('excess_kwh'), 2)
+                : null,
+            'avoidable_cost' => $rowsWithBaseline->isNotEmpty()
+                ? round((float) $rowsWithBaseline->sum('avoidable_cost'), 2)
+                : null,
+            'priority_count' => $rows->filter(
+                fn (array $row) => in_array($row['alert_level'], ['High', 'Very High', 'Critical'], true)
+            )->count(),
         ];
     }
 
@@ -500,16 +854,11 @@ class EnergyConservationController extends Controller
     {
         return [
             'energy-saving-tips' => [
-                'title' => 'Energy Saving Tips',
+                'title' => 'Energy Recommendations',
                 'badge' => 'Enabled',
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-sun',
-                'description' => 'Data-driven recommendations for reducing electricity use across LGU facilities.',
-                'details' => [
-                    'Post practical tips for AC, lighting, and equipment use.',
-                    'Highlight weekly or monthly saving reminders.',
-                    'Use this area for quick staff education.',
-                ],
+                'description' => 'Review monthly energy context and publish practical recommendations for each facility.',
             ],
             'conservation-goals' => [
                 'title' => 'Conservation Goals',
@@ -517,59 +866,6 @@ class EnergyConservationController extends Controller
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-bullseye',
                 'description' => 'Set and monitor energy reduction targets.',
-                'details' => [
-                    'Set reduction targets per month or quarter.',
-                    'Track progress against baseline usage.',
-                    'Show goal progress in percent and kWh.',
-                ],
-            ],
-            'department-ranking' => [
-                'title' => 'Department Ranking',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-ranking-star',
-                'description' => 'Rank departments based on energy efficiency.',
-                'details' => [
-                    'Compare department usage against targets.',
-                    'Rank by savings percentage and consistency.',
-                    'Allow filters by month, quarter, and year.',
-                ],
-            ],
-            'rewards-system' => [
-                'title' => 'Rewards System',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-medal',
-                'description' => 'Award badges or incentives for energy savings.',
-                'details' => [
-                    'Issue badges for consistent low-consumption teams.',
-                    'Highlight top performers in the dashboard.',
-                    'Optionally connect to incentive approvals.',
-                ],
-            ],
-            'ai-recommendations' => [
-                'title' => 'AI Recommendations',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
-                'icon' => 'fa-solid fa-robot',
-                'description' => 'Provide AI-based energy-saving recommendations.',
-                'details' => [
-                    'Suggest actions based on monthly trends.',
-                    'Summarize inefficiencies in plain language.',
-                    'Combine manual rules with AI output.',
-                ],
-            ],
-            'campaign-management' => [
-                'title' => 'Campaign Management',
-                'badge' => 'Coming Soon',
-                'status' => 'coming-soon',
-                'icon' => 'fa-solid fa-bullhorn',
-                'description' => 'Publish and manage energy conservation campaigns.',
-                'details' => [
-                    'Publish campaigns and reminders.',
-                    'Attach target dates and campaign owners.',
-                    'Track which departments acknowledged the campaign.',
-                ],
             ],
             'daily-checklist' => [
                 'title' => 'Daily Checklist',
@@ -577,47 +873,6 @@ class EnergyConservationController extends Controller
                 'status' => 'enabled',
                 'icon' => 'fa-solid fa-clipboard-check',
                 'description' => 'Track daily energy-saving practices and routines.',
-                'details' => [
-                    'Use a simple checklist for opening and closing routines.',
-                    'Mark completed conservation tasks each day.',
-                    'Show overdue checklist items clearly.',
-                ],
-            ],
-            'estimated-savings' => [
-                'title' => 'Estimated Savings',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
-                'icon' => 'fa-solid fa-chart-line',
-                'description' => 'View estimated kWh, cost, and CO2 savings.',
-                'details' => [
-                    'Display kWh savings, peso savings, and CO2 impact.',
-                    'Break down savings by month and department.',
-                    'Use baseline comparisons to compute estimates.',
-                ],
-            ],
-            'suggestions-box' => [
-                'title' => 'Suggestions Box',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
-                'icon' => 'fa-solid fa-inbox',
-                'description' => 'Collect energy-saving suggestions from users.',
-                'details' => [
-                    'Let users submit ideas and observations.',
-                    'Show admin review status and follow-up notes.',
-                    'Keep the suggestions visible for everyone to see progress.',
-                ],
-            ],
-            'conservation-reports' => [
-                'title' => 'Conservation Reports',
-                'badge' => 'Enabled',
-                'status' => 'enabled',
-                'icon' => 'fa-solid fa-file-lines',
-                'description' => 'Generate reports on energy conservation efforts.',
-                'details' => [
-                    'Generate printable and exportable reports.',
-                    'Summarize goals, tips, ranking, and savings in one place.',
-                    'Use reports for management review and compliance.',
-                ],
             ],
         ];
     }
@@ -669,7 +924,7 @@ class EnergyConservationController extends Controller
                 'tone' => 'info',
                 'icon' => 'fa-solid fa-circle-info',
                 'title' => 'Add a monthly main-meter record',
-                'message' => "No usable energy record was found for {$periodLabel}. Add actual kWh and a baseline so the system can calculate targeted saving tips.",
+                'message' => "No usable energy record was found for {$periodLabel}. Add a monthly main-meter reading first; new facilities can build an approved baseline from 3–6 months of data.",
                 'facility_name' => null,
                 'facility_id' => null,
                 'metric' => null,
@@ -688,6 +943,23 @@ class EnergyConservationController extends Controller
                 $facilityName = (string) ($row['facility_name'] ?? 'Facility');
                 $facilityType = (string) ($row['facility_type'] ?? 'Facility');
                 $operationalAction = $this->operationalTipFor($facilityType);
+                $details = [
+                    'actual_kwh' => round($actual, 2),
+                    'baseline_kwh' => $baseline > 0 ? round($baseline, 2) : null,
+                    'difference_kwh' => $baseline > 0 ? round($actual - $baseline, 2) : null,
+                    'deviation_percent' => $deviation !== null ? round((float) $deviation, 2) : null,
+                    'avoidable_cost' => $baseline > 0 ? round($avoidableCost, 2) : null,
+                    'energy_cost' => round((float) ($row['energy_cost'] ?? 0), 2),
+                    'rate_per_kwh' => round((float) ($row['rate_per_kwh'] ?? 0), 2),
+                    'status' => $this->recommendationAssessmentStatus($row['alert_level'] ?? null, $deviation, $baseline),
+                    'alert_level' => (string) ($row['alert_level'] ?? 'No Data'),
+                    'action_owner' => EnergyAlertRouting::owner((string) ($row['alert_level'] ?? 'No Data')),
+                ];
+                $assessmentMessage = $this->recommendationAssessmentMessage(
+                    $facilityName,
+                    $periodLabel,
+                    $details,
+                );
 
                 if ($baseline <= 0 || $deviation === null) {
                     return [
@@ -695,7 +967,9 @@ class EnergyConservationController extends Controller
                         'tone' => 'info',
                         'icon' => 'fa-solid fa-gauge-high',
                         'title' => 'Establish a reliable consumption baseline',
-                        'message' => "{$facilityName} used " . number_format($actual, 2) . " kWh in {$periodLabel}, but has no valid baseline. Add a baseline before setting a reduction target. {$operationalAction}",
+                        'assessment_message' => $assessmentMessage,
+                        'details' => $details,
+                        'message' => "{$facilityName} used " . number_format($actual, 2) . " kWh in {$periodLabel}. Its baseline is still being established from 3–6 approved monthly readings, so no reduction target or savings estimate is calculated yet. {$operationalAction}",
                         'facility_name' => $facilityName,
                         'facility_id' => $row['facility_id'],
                         'metric' => number_format($actual, 2) . ' kWh actual',
@@ -708,6 +982,8 @@ class EnergyConservationController extends Controller
                         'tone' => 'critical',
                         'icon' => 'fa-solid fa-triangle-exclamation',
                         'title' => 'Cut the current excess load first',
+                        'assessment_message' => $assessmentMessage,
+                        'details' => $details,
                         'message' => "{$facilityName} is " . number_format((float) $deviation, 2) . "% above baseline. Target at least " . number_format($excess, 2) . " kWh reduction and review the largest loads immediately. {$operationalAction}",
                         'facility_name' => $facilityName,
                         'facility_id' => $row['facility_id'],
@@ -721,6 +997,8 @@ class EnergyConservationController extends Controller
                         'tone' => 'warning',
                         'icon' => 'fa-solid fa-bolt',
                         'title' => 'Reduce operating-hour consumption',
+                        'assessment_message' => $assessmentMessage,
+                        'details' => $details,
                         'message' => "{$facilityName} is " . number_format((float) $deviation, 2) . "% above baseline for {$periodLabel}. {$operationalAction} Track the meter weekly until usage returns to baseline.",
                         'facility_name' => $facilityName,
                         'facility_id' => $row['facility_id'],
@@ -734,6 +1012,8 @@ class EnergyConservationController extends Controller
                         'tone' => 'watch',
                         'icon' => 'fa-solid fa-chart-line',
                         'title' => 'Prevent the small increase from growing',
+                        'assessment_message' => $assessmentMessage,
+                        'details' => $details,
                         'message' => "{$facilityName} is slightly above baseline by " . number_format((float) $deviation, 2) . "%. {$operationalAction} Compare weekly readings to confirm the adjustment works.",
                         'facility_name' => $facilityName,
                         'facility_id' => $row['facility_id'],
@@ -743,11 +1023,28 @@ class EnergyConservationController extends Controller
 
                 $savedKwh = max(0, $baseline - $actual);
 
+                if ($deviation <= -20 || in_array($row['alert_level'] ?? null, ['Drop High', 'Drop Critical'], true)) {
+                    return [
+                        'priority' => 'Verify reading',
+                        'tone' => 'watch',
+                        'icon' => 'fa-solid fa-magnifying-glass-chart',
+                        'title' => 'Validate the unusually low consumption',
+                        'assessment_message' => $assessmentMessage,
+                        'details' => $details,
+                        'message' => "{$facilityName} is substantially below baseline for {$periodLabel}. Confirm the meter reading and check for outages, reduced operating hours, or equipment downtime before treating the reduction as sustained savings. If the reading is valid, document the operating changes that caused it.",
+                        'facility_name' => $facilityName,
+                        'facility_id' => $row['facility_id'],
+                        'metric' => number_format($savedKwh, 2) . ' kWh below baseline',
+                    ];
+                }
+
                 return [
                     'priority' => 'Maintain',
                     'tone' => 'success',
                     'icon' => 'fa-solid fa-leaf',
                     'title' => 'Maintain the current energy controls',
+                    'assessment_message' => $assessmentMessage,
+                    'details' => $details,
                     'message' => "{$facilityName} is within or below baseline for {$periodLabel}. Keep the current operating schedule and check for rebound consumption next month.",
                     'facility_name' => $facilityName,
                     'facility_id' => $row['facility_id'],
@@ -755,6 +1052,75 @@ class EnergyConservationController extends Controller
                 ];
             })
             ->values();
+    }
+
+    private function recommendationAssessmentStatus(?string $alertLevel, ?float $deviation, float $baseline): string
+    {
+        if ($baseline <= 0 || $deviation === null) {
+            return 'No baseline yet';
+        }
+
+        if (in_array($alertLevel, ['Critical', 'Very High'], true) || $deviation >= 20) {
+            return 'Very high consumption';
+        }
+
+        if ($alertLevel === 'High' || $deviation >= 10) {
+            return 'High consumption';
+        }
+
+        if (in_array($alertLevel, ['Drop High', 'Drop Critical'], true) || $deviation <= -20) {
+            return 'Very low consumption';
+        }
+
+        if ($deviation > 0) {
+            return 'Slightly above baseline';
+        }
+
+        if ($deviation < 0) {
+            return 'Below baseline';
+        }
+
+        return 'Within baseline';
+    }
+
+    private function recommendationAssessmentMessage(
+        string $facilityName,
+        string $periodLabel,
+        array $details,
+    ): string {
+        $message = "Monthly record assessment for {$facilityName}, {$periodLabel}: Actual usage "
+            . number_format((float) $details['actual_kwh'], 2)
+            . " kWh; monthly energy cost PHP "
+            . number_format((float) $details['energy_cost'], 2)
+            . " at PHP "
+            . number_format((float) $details['rate_per_kwh'], 2)
+            . "/kWh. Status: {$details['status']}.";
+
+        if ($details['baseline_kwh'] === null) {
+            return $message
+                . ' No approved baseline is available yet, so the difference, percentage deviation, and avoidable cost cannot be estimated.';
+        }
+
+        $difference = (float) $details['difference_kwh'];
+        $direction = $difference > 0 ? 'above' : ($difference < 0 ? 'below' : 'equal to');
+
+        $message .= ' Approved baseline '
+            . number_format((float) $details['baseline_kwh'], 2)
+            . ' kWh; usage is '
+            . number_format(abs($difference), 2)
+            . ' kWh ('
+            . number_format(abs((float) $details['deviation_percent']), 2)
+            . "%) {$direction} baseline.";
+
+        if ((float) $details['avoidable_cost'] > 0) {
+            $message .= ' Estimated avoidable cost: PHP '
+                . number_format((float) $details['avoidable_cost'], 2)
+                . '.';
+        } else {
+            $message .= ' No excess-cost estimate because usage did not exceed the baseline.';
+        }
+
+        return $message;
     }
 
     private function operationalTipFor(string $facilityType): string

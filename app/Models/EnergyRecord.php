@@ -30,6 +30,12 @@ class EnergyRecord extends Model
         'recorded_by',
         'recorded_by_name',
         'input_source',
+        'external_source',
+        'external_record_id',
+        'review_status',
+        'reviewed_by',
+        'reviewed_at',
+        'review_remarks',
         'bill_image',
         'baseline_kwh',
         'deviation',
@@ -47,11 +53,17 @@ class EnergyRecord extends Model
         'rate_per_kwh' => 'decimal:2',
         'baseline_kwh' => 'decimal:2',
         'deviation' => 'decimal:2',
+        'reviewed_at' => 'datetime',
     ];
 
     public function recordedBy()
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     // Backward-compatible alias for older code paths.
@@ -141,13 +153,17 @@ class EnergyRecord extends Model
     public static function resolveSizeKeyFromBaseline(?float $baselineKwh): string
     {
         $baseline = $baselineKwh ?? 0.0;
-        if ($baseline <= 1000) {
+        $smallMax = max(1.0, (float) Setting::getValue('baseline_small_max_kwh', 1000));
+        $mediumMax = max($smallMax, (float) Setting::getValue('baseline_medium_max_kwh', 3000));
+        $largeMax = max($mediumMax, (float) Setting::getValue('baseline_large_max_kwh', 10000));
+
+        if ($baseline <= $smallMax) {
             return 'small';
         }
-        if ($baseline <= 3000) {
+        if ($baseline <= $mediumMax) {
             return 'medium';
         }
-        if ($baseline <= 10000) {
+        if ($baseline <= $largeMax) {
             return 'large';
         }
 
@@ -176,6 +192,9 @@ class EnergyRecord extends Model
             foreach (array_keys($defaults) as $sizeKey) {
                 for ($level = 1; $level <= 5; $level++) {
                     $keys[] = "alert_level{$level}_{$sizeKey}";
+                }
+                for ($level = 1; $level <= 3; $level++) {
+                    $keys[] = "alert_drop_level{$level}_{$sizeKey}";
                 }
             }
 
@@ -247,4 +266,3 @@ class EnergyRecord extends Model
             : null;
     }
 }
-

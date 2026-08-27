@@ -208,6 +208,7 @@ trait MaintenanceSyncHelpers
         \Illuminate\Support\Facades\DB::transaction(function () use ($maintenance, &$archivedRecord) {
             $resolvedTrend = trim((string) $maintenance->trend) !== '' ? $maintenance->trend : 'Stable';
             $archivedRecord = \App\Models\MaintenanceHistory::create([
+                'original_maintenance_id' => $maintenance->id,
                 'facility_id' => $maintenance->facility_id,
                 'issue_type' => $maintenance->issue_type,
                 'trigger_month' => $maintenance->trigger_month,
@@ -223,6 +224,8 @@ trait MaintenanceSyncHelpers
                 'scheduled_date' => $maintenance->scheduled_date,
                 'assigned_to' => $maintenance->assigned_to,
                 'completed_date' => $maintenance->completed_date,
+                'proof_photo_path' => $maintenance->proof_photo_path,
+                'photo_requirement' => $maintenance->photo_requirement ?? 'Optional',
                 'remarks' => $maintenance->remarks,
             ]);
             $maintenance->delete();
@@ -243,10 +246,15 @@ trait MaintenanceSyncHelpers
             return;
         }
 
-        $baseQuery = \App\Models\EnergyIncident::query()
-            ->where('facility_id', $maintenance->facility_id)
-            ->where('month', $triggerMonthNum)
-            ->where('year', $triggerYearNum);
+        $baseQuery = \App\Models\EnergyIncident::query();
+        if (! empty($maintenance->energy_incident_id)) {
+            $baseQuery->whereKey($maintenance->energy_incident_id);
+        } else {
+            $baseQuery
+                ->where('facility_id', $maintenance->facility_id)
+                ->where('month', $triggerMonthNum)
+                ->where('year', $triggerYearNum);
+        }
 
         if ($statusText === 'ongoing') {
             $incident = (clone $baseQuery)
@@ -350,9 +358,7 @@ trait MaintenanceSyncHelpers
             return;
         }
 
-        $maintenance->loadMissing('facility:id,name');
-
-        $facilityName = trim((string) ($maintenance->facility?->name ?? 'Unknown Facility'));
+        $facilityName = $maintenance->resolvedFacilityName();
         $period = trim((string) ($maintenance->trigger_month ?? 'Unknown Period'));
         $statusLabel = $newStatus === 'ongoing' ? 'Ongoing' : 'Completed';
         $title = $newStatus === 'ongoing' ? 'Maintenance In Progress' : 'Maintenance Completed';

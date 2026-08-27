@@ -1,3 +1,6 @@
+@php
+    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index', 'landing.contact');
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +18,8 @@
 })();
 </script>
 
-<title>@yield('title','LGU Employee Portal')</title>
- <link rel="icon" type="image/x-icon" href="{{ asset('img/logocityhall.jpg') }}" />
+<title>@yield('title', $systemName)</title>
+@include('partials.favicon')
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
@@ -207,6 +210,40 @@ body {
     object-fit: cover;
     border: 2px solid #dbeafe;
     background: #fff;
+}
+
+.user-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.user-avatar[hidden] {
+    display: none !important;
+}
+
+.user-avatar-fallback {
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #bfdbfe;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+    color: #1e40af;
+    font-size: .7rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.user-avatar-fallback:not([hidden]) {
+    display: inline-flex;
 }
 
 .user-name {
@@ -1431,10 +1468,694 @@ body.dark-mode .secure-download-feedback.is-success {
         max-width: calc(100vw - 24px);
     }
 }
+
+/* Public information pages do not use the application sidebar. */
+body.information-page-layout .top-header {
+    left: 0;
+    padding-right: max(24px, calc((100vw - 1240px) / 2));
+    padding-left: max(24px, calc((100vw - 1240px) / 2));
+    border-bottom-color: #e2e8f0;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, .07);
+}
+
+body.information-page-layout .main-content {
+    margin-left: 0;
+}
+
+body.information-page-layout .sidebar-nav,
+body.information-page-layout .sidebar-hamburger,
+body.information-page-layout .sidebar-backdrop {
+    display: none !important;
+}
+
+body.information-page-layout .main-content-inner {
+    padding-right: clamp(18px, 3vw, 48px);
+    padding-left: clamp(18px, 3vw, 48px);
+    padding-top: clamp(22px, 3vw, 38px);
+    padding-bottom: clamp(28px, 4vw, 52px);
+    background:
+        radial-gradient(circle at 8% 4%, rgba(37,99,235,.07), transparent 24%),
+        radial-gradient(circle at 94% 92%, rgba(14,165,233,.06), transparent 25%),
+        #edf3f8;
+}
+
+.information-report-card {
+    width: min(100%, 1380px);
+    margin: 0 auto;
+    padding: clamp(18px, 2.1vw, 30px);
+    border: 1px solid rgba(203, 213, 225, .82);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, .82);
+    box-shadow: 0 24px 65px rgba(15, 23, 42, .1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+body.dark-mode .information-report-card {
+    border-color: #334155;
+    background: rgba(15, 23, 42, .76);
+    box-shadow: 0 24px 65px rgba(0, 0, 0, .28);
+}
+
+body.dark-mode.information-page-layout .main-content-inner {
+    background:
+        radial-gradient(circle at 8% 4%, rgba(37,99,235,.1), transparent 24%),
+        radial-gradient(circle at 94% 92%, rgba(14,165,233,.07), transparent 25%),
+        #0b1220;
+}
+
+.information-brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.information-brand img {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, .1);
+}
+
+.information-brand__copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.information-brand__copy strong {
+    overflow: hidden;
+    color: #0f172a;
+    font-size: .9rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.information-brand__copy span {
+    overflow: hidden;
+    color: #64748b;
+    font-size: .62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.information-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.information-header-nav a {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    color: #64748b;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: .64rem;
+    font-weight: 700;
+    transition: color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.information-header-nav a:hover,
+.information-header-nav a.is-active {
+    color: #1d4ed8;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, .07);
+}
+
+.information-header-nav a.is-active {
+    box-shadow: inset 0 0 0 1px #dbeafe, 0 4px 12px rgba(15, 23, 42, .06);
+}
+
+.information-header-nav .information-header-cta {
+    margin-left: 3px;
+    padding-right: 13px;
+    padding-left: 13px;
+    color: #fff;
+    background: linear-gradient(105deg, #2563eb, #4f46e5);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, .18);
+}
+
+.information-header-nav .information-header-cta:hover {
+    color: #fff;
+    background: linear-gradient(105deg, #1d4ed8, #4338ca);
+}
+
+body.dark-mode .information-brand,
+body.dark-mode .information-brand__copy strong {
+    color: #f1f5f9;
+}
+
+body.dark-mode .information-brand__copy span {
+    color: #94a3b8;
+}
+
+body.dark-mode.information-page-layout .top-header {
+    border-bottom-color: #334155;
+}
+
+body.dark-mode .information-header-nav {
+    border-color: #334155;
+    background: #0f172a;
+}
+
+body.dark-mode .information-header-nav a {
+    color: #94a3b8;
+}
+
+body.dark-mode .information-header-nav a:hover,
+body.dark-mode .information-header-nav a.is-active {
+    color: #bfdbfe;
+    background: #1e293b;
+    box-shadow: inset 0 0 0 1px #334155;
+}
+
+body.dark-mode .information-header-nav .information-header-cta,
+body.dark-mode .information-header-nav .information-header-cta:hover {
+    color: #fff;
+    background: linear-gradient(105deg, #2563eb, #4f46e5);
+}
+
+@media (max-width: 880px) {
+    body.information-page-layout .top-header {
+        padding-right: 18px;
+        padding-left: 18px;
+    }
+
+    .information-header-nav a:not(.is-active):not(.information-header-cta) {
+        display: none;
+    }
+}
+
+@media (max-width: 540px) {
+    .information-brand__copy span,
+    .information-header-nav a.is-active {
+        display: none;
+    }
+
+    .information-brand__copy strong {
+        max-width: 150px;
+        font-size: .78rem;
+    }
+
+    .information-header-nav {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .information-header-nav .information-header-cta {
+        min-width: 40px;
+        width: 40px;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .information-header-nav .information-header-cta i {
+        font-size: .72rem;
+    }
+
+    .information-report-card {
+        padding: 12px;
+        border-radius: 20px;
+    }
+}
+
+/* ===== REFINED APPLICATION SHELL ===== */
+body:not(.information-page-layout) {
+    --shell-sidebar-width: 278px;
+    --shell-header-height: 76px;
+    --shell-blue: #2454d3;
+    --shell-blue-dark: #173fae;
+    --shell-border: #dce6f3;
+    --shell-muted: #64748b;
+}
+
+body:not(.information-page-layout) .top-header {
+    left: var(--shell-sidebar-width);
+    height: var(--shell-header-height);
+    padding: 0 28px;
+    background: rgba(255, 255, 255, .9);
+    border-bottom: 1px solid rgba(203, 213, 225, .72);
+    box-shadow: 0 8px 30px rgba(15, 23, 42, .055);
+}
+
+.header-page-context {
+    min-width: 0;
+}
+
+.header-page-kicker {
+    display: block;
+    margin-bottom: 3px;
+    color: #64748b;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .11em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .header-left h1 {
+    color: #0f172a;
+    font-size: 1.28rem;
+    font-weight: 700;
+    letter-spacing: -.025em;
+}
+
+body:not(.information-page-layout) .header-icon-btn,
+body:not(.information-page-layout) .user-menu-btn {
+    border-color: #d8e3f1;
+    background: rgba(248, 251, 255, .92);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .035);
+}
+
+body:not(.information-page-layout) .header-icon-btn:hover,
+body:not(.information-page-layout) .user-menu-btn:hover {
+    border-color: #b9cff7;
+    background: #edf4ff;
+    transform: translateY(-1px);
+}
+
+body:not(.information-page-layout) .user-menu-btn {
+    height: 46px;
+    padding: 0 13px 0 7px;
+    border-radius: 14px;
+}
+
+body:not(.information-page-layout) .user-avatar {
+    width: 34px;
+    height: 34px;
+}
+
+.user-menu-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
+.user-role-label {
+    max-width: 150px;
+    overflow: hidden;
+    color: #64748b;
+    font-size: .65rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body:not(.information-page-layout) .sidebar-nav {
+    width: var(--shell-sidebar-width);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 0 0, rgba(37, 99, 235, .1), transparent 33%),
+        rgba(255, 255, 255, .97);
+    border-right: 1px solid rgba(203, 213, 225, .75);
+    box-shadow: 12px 0 38px rgba(15, 23, 42, .075);
+}
+
+body:not(.information-page-layout) .sidebar-top {
+    padding: 18px 12px 12px;
+    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-width: thin;
+}
+
+.sidebar-brand {
+    display: flex;
+    min-height: 66px;
+    align-items: center;
+    gap: 12px;
+    margin: 0 4px 14px;
+    padding: 9px 10px;
+    border: 1px solid rgba(191, 219, 254, .75);
+    border-radius: 16px;
+    background: rgba(239, 246, 255, .8);
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.sidebar-brand .site-logo {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 5px 14px rgba(30, 64, 175, .13);
+}
+
+.sidebar-brand .site-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sidebar-brand-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.sidebar-brand-copy strong {
+    overflow: hidden;
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-brand-copy small {
+    margin-top: 3px;
+    color: #547097;
+    font-size: .64rem;
+    font-weight: 600;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .nav-list {
+    padding: 0 2px;
+}
+
+.nav-section-label {
+    margin: 21px 10px 7px;
+    color: #8a9ab0;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+body:not(.information-page-layout) .nav-link {
+    position: relative;
+    min-height: 45px;
+    gap: 12px;
+    margin: 3px 0;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: #334155;
+    font-size: .84rem;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+body:not(.information-page-layout) .nav-link > i:first-child,
+body:not(.information-page-layout) .nav-link > span > i:first-child {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f0f5fc;
+    color: #4e6d9f;
+    font-size: .78rem;
+}
+
+body:not(.information-page-layout) .nav-link:hover {
+    border-color: #dbeafe;
+    background: #f1f6ff;
+    color: #173fae;
+    transform: translateX(2px);
+}
+
+body:not(.information-page-layout) .nav-link.active {
+    border-color: #2f64dc;
+    background: linear-gradient(135deg, var(--shell-blue-dark), #3475eb);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(36, 84, 211, .22);
+}
+
+body:not(.information-page-layout) .nav-link.active > i:first-child,
+body:not(.information-page-layout) .nav-link.active > span > i:first-child {
+    background: rgba(255, 255, 255, .17);
+    color: #fff;
+}
+
+.nav-count-badge {
+    display: inline-flex;
+    min-width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 0 7px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #e11d48;
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 800;
+}
+
+body:not(.information-page-layout) .nav-submenu {
+    margin: 4px 0 8px 15px;
+    padding: 4px 4px 4px 10px;
+    border-left: 1px solid #cbdcf4;
+    border-radius: 0;
+    background: transparent;
+}
+
+body:not(.information-page-layout) .nav-submenu .nav-link {
+    min-height: 39px;
+    padding: 7px 9px;
+    font-size: .78rem;
+}
+
+body:not(.information-page-layout) .nav-submenu .nav-link > i:first-child {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    background: transparent;
+}
+
+.submenu-toggle > .fa-caret-down {
+    transition: transform .2s ease;
+}
+
+.submenu-toggle[aria-expanded="true"] > .fa-caret-down {
+    transform: rotate(180deg);
+}
+
+.sidebar-footer {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 14px 14px;
+    padding: 12px;
+    border: 1px solid #dce8f5;
+    border-radius: 13px;
+    background: #f7fafc;
+    color: #334155;
+}
+
+.sidebar-footer > span:last-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.sidebar-footer strong {
+    font-size: .73rem;
+    line-height: 1.2;
+}
+
+.sidebar-footer small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #7a8ba3;
+    font-size: .62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-status-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    margin-top: 3px;
+    border: 2px solid #bbf7d0;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, .1);
+}
+
+body:not(.information-page-layout) .main-content {
+    margin-left: var(--shell-sidebar-width);
+    padding-top: var(--shell-header-height);
+}
+
+body:not(.information-page-layout) .main-content-inner {
+    min-height: calc(100vh - var(--shell-header-height));
+}
+
+body.dark-mode:not(.information-page-layout) .top-header,
+body.dark-mode:not(.information-page-layout) .sidebar-nav {
+    border-color: #263449;
+    background: rgba(15, 23, 42, .96);
+}
+
+body.dark-mode:not(.information-page-layout) .header-left h1 {
+    color: #f8fafc;
+}
+
+body.dark-mode:not(.information-page-layout) .header-icon-btn,
+body.dark-mode:not(.information-page-layout) .user-menu-btn {
+    border-color: #334155;
+    background: #1e293b;
+    color: #dbeafe;
+}
+
+body.dark-mode:not(.information-page-layout) .header-icon-btn:hover,
+body.dark-mode:not(.information-page-layout) .user-menu-btn:hover {
+    border-color: #49617e;
+    background: #26364d;
+}
+
+body.dark-mode .user-avatar-fallback {
+    border-color: #496a9e;
+    background: linear-gradient(135deg, #1e3a8a, #312e81);
+    color: #dbeafe;
+}
+
+body.dark-mode .header-page-kicker,
+body.dark-mode .user-role-label {
+    color: #8fa3bd;
+}
+
+body.dark-mode:not(.information-page-layout) .sidebar-brand {
+    border-color: #2b4268;
+    background: rgba(30, 58, 100, .42);
+    color: #f8fafc;
+}
+
+body.dark-mode .sidebar-brand-copy small,
+body.dark-mode .nav-section-label,
+body.dark-mode .sidebar-footer small {
+    color: #8fa3bd;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link > i:first-child,
+body.dark-mode:not(.information-page-layout) .nav-link > span > i:first-child {
+    background: #1e2c42;
+    color: #9fbcf5;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link:hover {
+    border-color: #334967;
+    background: #1b2a40;
+    color: #dbeafe;
+}
+
+body.dark-mode:not(.information-page-layout) .nav-link.active > i:first-child,
+body.dark-mode:not(.information-page-layout) .nav-link.active > span > i:first-child {
+    background: rgba(255, 255, 255, .16);
+    color: #fff;
+}
+
+body.dark-mode .nav-submenu {
+    border-color: #334967 !important;
+}
+
+body.dark-mode .sidebar-footer {
+    border-color: #2b3b52;
+    background: #172235;
+    color: #e2e8f0;
+}
+
+@media (max-width: 991px) {
+    body:not(.information-page-layout) .top-header {
+        left: 0;
+        padding-left: 72px;
+    }
+
+    body:not(.information-page-layout) .main-content {
+        margin-left: 0;
+    }
+
+    body:not(.information-page-layout) .sidebar-nav {
+        width: min(var(--shell-sidebar-width), calc(100vw - 46px));
+    }
+
+    body:not(.information-page-layout) .sidebar-hamburger {
+        top: 17px;
+        left: 15px;
+        display: block;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(255, 255, 255, .28);
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--shell-blue-dark), #3475eb);
+        box-shadow: 0 7px 18px rgba(30, 64, 175, .27);
+    }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 640px) {
+    body:not(.information-page-layout) {
+        --shell-header-height: 68px;
+    }
+
+    body:not(.information-page-layout) .top-header {
+        padding-right: 10px;
+    }
+
+    body:not(.information-page-layout) .sidebar-hamburger {
+        top: 13px;
+    }
+
+    .header-page-kicker {
+        display: none;
+    }
+
+    body:not(.information-page-layout) .header-left h1 {
+        max-width: 34vw;
+        font-size: 1rem;
+    }
+
+    body:not(.information-page-layout) .user-menu-btn {
+        width: 42px;
+        height: 42px;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .user-menu-copy,
+    body:not(.information-page-layout) .user-menu-caret {
+        display: none;
+    }
+}
 </style>
 </head>
 
-<body>
+<body class="{{ $isInformationPageLayout ? 'information-page-layout' : '' }}">
 @include('layouts.partials.flash-toast')
 
 <div id="secureDownloadModal" class="secure-download-modal" style="display:none;" aria-hidden="true">
@@ -1459,6 +2180,31 @@ body.dark-mode .secure-download-feedback.is-success {
     $currentUserName = $currentUser?->username ?? $currentUser?->name ?? 'User';
     $currentUserRole = ucwords(str_replace('_', ' ', (string) ($currentUser?->role_key ?? $currentUser?->role ?? 'User')));
     $currentUserAvatar = $currentUser?->profile_photo_url ?? asset('img/default-avatar.png');
+    $currentUserAvatarName = $currentUser?->full_name ?? $currentUser?->name ?? $currentUser?->username ?? 'User';
+    $currentUserInitials = collect(preg_split('/\s+/', trim((string) $currentUserAvatarName)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($part) => mb_strtoupper(mb_substr((string) $part, 0, 1)))
+        ->implode('');
+    $currentSection = match (true) {
+        request()->routeIs('dashboard.*') || request()->is('modules/dashboard*') => 'Dashboard',
+        request()->routeIs('modules.facilities.*') || request()->is('modules/facilities*') => 'Facility Registry',
+        request()->routeIs('monthly-record-activity.*') => 'Monthly Record Activity',
+        request()->routeIs('modules.ai-alerts.*') => 'AI Alerts',
+        request()->routeIs('modules.energy-conservation.*') => 'Conservation Program',
+        request()->routeIs('modules.energy-monitoring.*', 'energy.dashboard') => 'Energy Monitoring',
+        request()->routeIs('modules.submeters.*') => 'Submeter Monitoring',
+        request()->routeIs('modules.maintenance.*', 'maintenance.*') || request()->is('modules/maintenance*') => 'Maintenance',
+        request()->routeIs('energy-incidents.*') => 'Energy Incidents',
+        request()->routeIs('modules.reports.*', 'reports.*') || request()->is('modules/reports*') => 'Reports & Analytics',
+        request()->routeIs('modules.users.*') || request()->is('modules/users*') => 'User Management',
+        request()->routeIs('modules.contact-messages.*') => 'Contact Inbox',
+        request()->routeIs('integrations.*') => 'Integrations',
+        request()->routeIs('modules.audit.*') => 'Audit Logs',
+        request()->is('modules/settings*') => 'System Settings',
+        request()->routeIs('profile.*') => 'My Profile',
+        default => $systemShortName,
+    };
 @endphp
 <script>
 if (document.documentElement.classList.contains('dark-mode')) {
@@ -1468,19 +2214,43 @@ if (document.documentElement.classList.contains('dark-mode')) {
 
 <div class="sidebar-backdrop" id="backdrop"></div>
 
-<button class="sidebar-hamburger" id="hamburger" aria-label="Menu">
+<button class="sidebar-hamburger" id="hamburger" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
     <span></span><span></span><span></span>
 </button>
 
 <header class="top-header">
     <div class="header-left">
-        <div>
-            <h1>Energy System</h1>
-            <div class="header-sub">LGU Employee Portal</div>
-        </div>
+        @if($isInformationPageLayout)
+            <a class="information-brand" href="{{ url('/') }}">
+                <img src="{{ $systemLogoUrl }}" alt="">
+                <span class="information-brand__copy">
+                    <strong>{{ $systemShortName }}</strong>
+                    <span>{{ $systemOrganization }}</span>
+                </span>
+            </a>
+        @else
+            <div class="header-page-context">
+                <span class="header-page-kicker">Energy Management</span>
+                <h1>{{ $currentSection }}</h1>
+            </div>
+        @endif
     </div>
     <div class="header-right">
-        <button class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
+        @if($isInformationPageLayout)
+            <nav class="information-header-nav" aria-label="Information pages">
+                <a href="{{ url('/') }}"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="{{ route('about.index') }}" class="{{ request()->routeIs('about.index') ? 'is-active' : '' }}" {{ request()->routeIs('about.index') ? 'aria-current=page' : '' }}>About</a>
+                <a href="{{ route('faqs.index') }}" class="{{ request()->routeIs('faqs.index') ? 'is-active' : '' }}" {{ request()->routeIs('faqs.index') ? 'aria-current=page' : '' }}>FAQs</a>
+                <a href="{{ route('privacy.index') }}" class="{{ request()->routeIs('privacy.index') ? 'is-active' : '' }}" {{ request()->routeIs('privacy.index') ? 'aria-current=page' : '' }}>Privacy</a>
+                <a href="{{ route('landing.contact') }}" class="{{ request()->routeIs('landing.contact') ? 'is-active' : '' }}" {{ request()->routeIs('landing.contact') ? 'aria-current=page' : '' }}>Contact</a>
+                <a class="information-header-cta" href="{{ auth()->check() ? route('dashboard') : route('login') }}">
+                    {{ auth()->check() ? 'Dashboard' : 'Sign in' }}
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </nav>
+        @endif
+        @auth
+        <button type="button" class="header-icon-btn notif-btn has-hover-label" id="notifBtn" aria-label="Notifications" data-tooltip="Notifications">
             <i class="fa fa-bell"></i>
             <span id="notifCount" class="notif-count {{ ($unreadNotifCount ?? 0) > 0 ? '' : 'is-hidden' }}">{{ $unreadNotifCount ?? 0 }}</span>
         </button>
@@ -1627,16 +2397,23 @@ if (document.documentElement.classList.contains('dark-mode')) {
             </div>
             <a class="notif-view-all" href="{{ route('notifications.index') }}">View all notifications <i class="fa-solid fa-arrow-right"></i></a>
         </div>
+        @endauth
 
-        <button id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
+        <button type="button" id="darkToggleHeader" class="header-icon-btn has-hover-label" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
             <i id="darkModeIcon" class="fa fa-moon"></i>
         </button>
 
         @auth
             <div class="header-user user-menu-wrap">
-                <button id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu">
-                    <img src="{{ $currentUserAvatar }}" alt="Profile Photo" class="user-avatar" onerror="this.onerror=null;this.src='{{ asset('img/default-avatar.png') }}';">
-                    <span class="user-name">{{ $currentUserName }}</span>
+                <button type="button" id="userMenuBtn" class="user-menu-btn has-hover-label" data-tooltip="Account menu" aria-label="Open account menu" aria-haspopup="true" aria-expanded="false">
+                    <span class="user-avatar-wrap">
+                        <img src="{{ $currentUserAvatar }}" alt="{{ $currentUserAvatarName }}" class="user-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">
+                        <span class="user-avatar-fallback" hidden>{{ $currentUserInitials ?: 'U' }}</span>
+                    </span>
+                    <span class="user-menu-copy">
+                        <span class="user-name">{{ $currentUserName }}</span>
+                        <span class="user-role-label">{{ $currentUserRole ?: 'User' }}</span>
+                    </span>
                     <i class="fa fa-caret-down user-menu-caret"></i>
                 </button>
                 <div id="userDropdown" class="user-dropdown">
@@ -1648,7 +2425,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <i class="fa fa-user"></i> My Profile
     </a>
     <a href="{{ route('about.index') }}" class="user-dropdown-link">
-        <i class="fa fa-info-circle"></i> About LGU Energy System
+        <i class="fa fa-info-circle"></i> About {{ $systemShortName }}
     </a>
     <a href="{{ route('faqs.index') }}" class="user-dropdown-link">
         <i class="fa fa-question-circle"></i> FAQs
@@ -1669,10 +2446,15 @@ if (document.documentElement.classList.contains('dark-mode')) {
 @auth
 <div class="sidebar-nav" id="sidebar">
     <div class="sidebar-top">
-        <div class="site-logo">
-            <img src="/img/logocityhall.jpg" alt="Logo" style="border-radius:50%;object-fit:cover;width:60px;height:60px;box-shadow:0 2px 8px rgba(49,46,129,0.10);">
-        </div>
-        <div class="sidebar-divider"></div>
+        <a class="sidebar-brand" href="{{ route('dashboard.index') }}" aria-label="Go to dashboard">
+            <span class="site-logo">
+                <img src="{{ $systemLogoUrl }}" alt="{{ $systemShortName }} logo">
+            </span>
+            <span class="sidebar-brand-copy">
+                <strong>{{ $systemShortName }}</strong>
+                <small>Energy Management</small>
+            </span>
+        </a>
 
         @php
             $user = auth()->user();
@@ -1683,6 +2465,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             }
             $isEnergyMonitoringMenuActive = request()->routeIs('modules.energy-monitoring.*')
                 || request()->routeIs('modules.energy-conservation.*')
+                || request()->routeIs('modules.ai-alerts.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
@@ -1691,34 +2474,51 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('energy-incidents.*');
             $canViewFacilities = \App\Support\RoleAccess::can($user, 'view_facilities');
             $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
+            $canViewMonthlyActivity = \App\Support\RoleAccess::can($user, 'view_monthly_record_activity');
             $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
-            $canViewSubmeters = \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
+            $canViewSubmeters = config('features.submeters_enabled', false)
+                && \App\Support\RoleAccess::can($user, 'view_submeter_monitoring');
             $canViewMaintenance = \App\Support\RoleAccess::can($user, 'view_maintenance');
             $canViewReports = \App\Support\RoleAccess::can($user, 'access_reports');
             $canAccessUsers = \App\Support\RoleAccess::can($user, 'access_users');
             $canAccessSettings = \App\Support\RoleAccess::can($user, 'access_settings');
+            $canAccessAuditLogs = \App\Support\RoleAccess::can($user, 'access_audit_logs');
         @endphp
 
         <ul class="nav-list">
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
             @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">OPERATIONS</li>
+                <li class="nav-section-label">Operations</li>
                 @if($canViewFacilities)
-                <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facilities</a></li>
+                <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Registry</a></li>
+                @endif
+                @if($canViewMonthlyActivity)
+                <li>
+                    <a href="{{ route('monthly-record-activity.index') }}" class="nav-link{{ request()->routeIs('monthly-record-activity.*') ? ' active' : '' }}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Monthly Record Activity
+                        @if(($unreadMonthlySubmissionCount ?? 0) > 0)
+                            <span class="nav-count-badge">
+                                {{ ($unreadMonthlySubmissionCount ?? 0) > 99 ? '99+' : $unreadMonthlySubmissionCount }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
                 @endif
                 @if($canViewEnergy || $canViewConservation || $canViewSubmeters)
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}">
-                        <span><i class="fa-solid fa-bolt"></i> Energy Monitoring</span>
+                    <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}" aria-expanded="{{ $isEnergyMonitoringMenuActive ? 'true' : 'false' }}">
+                        <span><i class="fa-solid fa-bolt"></i> Energy Management</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
                         @if($canViewEnergy)
-                        <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Monitoring</a></li>
+                        <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge-high"></i> Main Meter Monitoring</a></li>
+                        <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Alerts</a></li>
                         @endif
                         @if($canViewConservation)
-                        <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Energy Conservation</a></li>
+                        <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Conservation Program</a></li>
                         @endif
                         @if($canViewSubmeters)
                         <li><a href="{{ route('modules.submeters.monitoring') }}" class="nav-link{{ request()->routeIs('modules.submeters.*') ? ' active' : '' }}"><i class="fa-solid fa-network-wired"></i> Submeter Monitoring</a></li>
@@ -1732,51 +2532,74 @@ if (document.documentElement.classList.contains('dark-mode')) {
             @endif
 
             @if($canViewReports)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ANALYTICS</li>
+                <li class="nav-section-label">Analytics</li>
                 <li class="nav-item-has-submenu">
-                    <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}">
+                    <a href="#" class="nav-link submenu-toggle{{ $isReportsMenuActive ? ' active' : '' }}" aria-expanded="{{ $isReportsMenuActive ? 'true' : 'false' }}">
                         <span><i class="fa-solid fa-chart-bar"></i> Reports</span>
                         <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="nav-submenu">
                         <li><a href="{{ $p('modules/reports/energy') }}" class="nav-link{{ (request()->routeIs('modules.reports.energy') || request()->routeIs('reports.energy') || request()->is('modules/reports/energy')) ? ' active' : '' }}"><i class="fa-solid fa-bolt"></i> Energy Report</a></li>
-                        <li><a href="{{ $p('modules/reports/efficiency-summary') }}" class="nav-link{{ request()->routeIs('reports.efficiency-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Efficiency Summary</a></li>
+                        <li><a href="{{ route('reports.performance-summary') }}" class="nav-link{{ request()->routeIs('reports.performance-summary') ? ' active' : '' }}"><i class="fa-solid fa-chart-line"></i> Performance Summary</a></li>
                         <li><a href="{{ route('energy-incidents.index') }}" class="nav-link{{ request()->routeIs('energy-incidents.*') ? ' active' : '' }}"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a></li>
                     </ul>
                 </li>
             @endif
 
-            @if($canAccessUsers || $canAccessSettings)
-                <li style="margin: 18px 0 6px 8px; font-size:0.8rem; color:#888; font-weight:600; letter-spacing:1px;">ADMIN</li>
+            @if($canAccessUsers || $canAccessSettings || $canAccessAuditLogs)
+                <li class="nav-section-label">Administration</li>
                 @if($canAccessUsers)
                 <li><a href="{{ $p('modules/users/index') }}" class="nav-link{{ request()->is('modules/users*') ? ' active' : '' }}"><i class="fa-solid fa-users"></i> Users</a></li>
                 @if(in_array($roleKey, ['super_admin', 'admin'], true))
                 <li><a href="{{ route('modules.contact-messages.index') }}" class="nav-link{{ request()->routeIs('modules.contact-messages.*') ? ' active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Inbox</a></li>
                 @endif
                 @endif
+                @if($canAccessAuditLogs)
+                <li><a href="{{ route('modules.audit.index') }}" class="nav-link{{ request()->routeIs('modules.audit.*') ? ' active' : '' }}"><i class="fa-solid fa-clipboard-list"></i> Audit Logs</a></li>
+                @endif
                 @if($canAccessSettings)
+                <li><a href="{{ route('integrations.index') }}" class="nav-link{{ request()->routeIs('integrations.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-bolt"></i> Integrations</a></li>
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
         </ul>
     </div>
 
-    <div class="user-info">
-        Welcome, {{ auth()->user()?->username ?? auth()->user()?->name ?? 'Guest' }}<br>
-        <small style="color:#666;font-size:0.8rem;">{{ ucwords(str_replace('_', ' ', (string) ($role ?: auth()->user()?->role_key ?: 'Guest'))) }}</small>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="logout-btn">Logout</button>
-        </form>
+    <div class="sidebar-footer">
+        <span class="sidebar-status-dot" aria-hidden="true"></span>
+        <span><strong>System online</strong><small>{{ $systemOrganization }}</small></span>
     </div>
 </div>
 @endauth
 
 <div class="main-content">
     <div class="main-content-inner">
-        @yield('content')
+        @if($isInformationPageLayout)
+            <div class="information-report-card">
+                @yield('content')
+            </div>
+        @else
+            @yield('content')
+        @endif
     </div>
 </div>
+
+@include('partials.global-summary-cards')
+
+<style>
+    html.app-modal-open,
+    body.app-modal-open {
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    .modal-overlay,
+    .monthly-modal-overlay,
+    .meter-modal-overlay,
+    [role="dialog"][aria-modal="true"] {
+        overscroll-behavior: contain;
+    }
+</style>
 
 <div id="sessionTimeoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;padding:12px;">
     <div class="session-timeout-dialog" style="width:100%;background:#fff;padding:44px 36px 36px 36px;border-radius:20px;max-width:430px;text-align:center;box-shadow:0 12px 40px rgba(37,99,235,0.15);">
@@ -1791,6 +2614,56 @@ if (document.documentElement.classList.contains('dark-mode')) {
 <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
 <script src="/js/echo.js"></script>
 <script>
+// Keep the page behind an open modal fixed while allowing the modal body to scroll.
+(function initializeGlobalModalScrollLock() {
+    const modalSelector = [
+        '.modal-overlay',
+        '.monthly-modal-overlay',
+        '.meter-modal-overlay',
+        '.modal',
+        '[role="dialog"][aria-modal="true"]',
+        '#sessionTimeoutModal'
+    ].join(',');
+    let scheduled = false;
+
+    const isVisible = (element) => {
+        if (!(element instanceof HTMLElement) || element.getClientRects().length === 0) return false;
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) !== 0;
+    };
+
+    const syncModalScrollLock = () => {
+        scheduled = false;
+        const hasOpenModal = Array.from(document.querySelectorAll(modalSelector)).some(isVisible);
+        document.documentElement.classList.toggle('app-modal-open', hasOpenModal);
+        document.body?.classList.toggle('app-modal-open', hasOpenModal);
+    };
+
+    const scheduleSync = () => {
+        if (scheduled) return;
+        scheduled = true;
+        window.requestAnimationFrame(syncModalScrollLock);
+    };
+
+    const startObserver = () => {
+        syncModalScrollLock();
+        new MutationObserver(scheduleSync).observe(document.body, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ['style', 'class', 'hidden', 'open']
+        });
+        document.addEventListener('click', scheduleSync, true);
+        document.addEventListener('keydown', scheduleSync, true);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver, { once: true });
+    } else {
+        startObserver();
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-global-toast]').forEach((toast) => {
         setTimeout(() => {
@@ -1807,15 +2680,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const hamburger = document.getElementById('hamburger');
     const backdrop = document.getElementById('backdrop');
 
-    hamburger.onclick = () => {
-        sidebar.classList.toggle('open');
-        backdrop.classList.toggle('active');
-    };
+    if (hamburger && sidebar && backdrop) {
+        const setSidebarOpen = (isOpen) => {
+            sidebar.classList.toggle('open', isOpen);
+            backdrop.classList.toggle('active', isOpen);
+            document.body.classList.toggle('sidebar-open', isOpen);
+            hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            hamburger.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
+        };
 
-    backdrop.onclick = () => {
-        sidebar.classList.remove('open');
-        backdrop.classList.remove('active');
-    };
+        hamburger.onclick = () => setSidebarOpen(!sidebar.classList.contains('open'));
+        backdrop.onclick = () => setSidebarOpen(false);
+
+        sidebar.querySelectorAll('a.nav-link:not(.submenu-toggle)').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (window.matchMedia('(max-width: 991px)').matches) setSidebarOpen(false);
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && sidebar.classList.contains('open')) setSidebarOpen(false);
+        });
+    }
 
     // 2. Submenu Logic
     document.querySelectorAll('.nav-item-has-submenu').forEach((item) => {
@@ -1826,12 +2712,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasActiveChild = !!menu.querySelector('.nav-link.active');
         if (hasActiveChild || btn.classList.contains('active')) {
             menu.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
+        } else {
+            btn.setAttribute('aria-expanded', 'false');
         }
 
         btn.onclick = e => {
             e.preventDefault();
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
+            btn.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
         };
     });
 
@@ -1845,7 +2735,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const notifMarkAllBtn = document.getElementById('notifMarkAll');
     const notifFilterButtons = document.querySelectorAll('.notif-filter-btn');
     const notifFilterEmpty = document.getElementById('notifFilterEmpty');
-    const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content');
+    const csrfToken = document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || '';
     const notifRoutes = {
         incident: "{{ route('energy-incidents.index') }}",
         maintenance: "{{ route('modules.maintenance.index') }}",
@@ -2259,14 +3149,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    userBtn.onclick = (e) => { e.stopPropagation(); userDrop.style.display = userDrop.style.display === 'block' ? 'none' : 'block'; notifDrop.style.display = 'none'; };
-    notifBtn.onclick = (e) => { e.stopPropagation(); notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block'; userDrop.style.display = 'none'; applyNotifFilter(); };
-    userDrop.addEventListener('click', (e) => e.stopPropagation());
-    notifDrop.addEventListener('click', (e) => e.stopPropagation());
+    if (userBtn && userDrop) {
+        userBtn.onclick = (e) => {
+            e.stopPropagation();
+            const willOpen = userDrop.style.display !== 'block';
+            userDrop.style.display = willOpen ? 'block' : 'none';
+            userBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            if (notifDrop) notifDrop.style.display = 'none';
+        };
+        userDrop.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    if (notifBtn && notifDrop) {
+        notifBtn.onclick = (e) => {
+            e.stopPropagation();
+            notifDrop.style.display = notifDrop.style.display === 'block' ? 'none' : 'block';
+            if (userDrop) userDrop.style.display = 'none';
+            if (userBtn) userBtn.setAttribute('aria-expanded', 'false');
+            applyNotifFilter();
+        };
+        notifDrop.addEventListener('click', (e) => e.stopPropagation());
+    }
     
     document.addEventListener('click', () => {
-        userDrop.style.display = 'none';
-        notifDrop.style.display = 'none';
+        if (userDrop) userDrop.style.display = 'none';
+        if (userBtn) userBtn.setAttribute('aria-expanded', 'false');
+        if (notifDrop) notifDrop.style.display = 'none';
     });
 
     if (notifMarkAllBtn) {
@@ -2323,25 +3231,93 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 5. Session Timeout Logic
-    var timeoutMinutes = {{ (int) config('session.lifetime', 20) }};
-    var timeoutMs = timeoutMinutes * 60 * 1000;
-    var timeoutModal = document.getElementById('sessionTimeoutModal');
-    var timer = null;
+    const timeoutMinutes = {{ max(1, (int) config('session.lifetime', 60)) }};
+    const timeoutMs = timeoutMinutes * 60 * 1000;
+    const keepAliveIntervalMs = 60 * 1000;
+    const keepAliveUrl = @json(route('session.keep-alive'));
+    const logoutUrl = @json(route('logout'));
+    const expiredLoginUrl = @json(route('login')) + '?session=expired';
+    let sessionTimer = null;
+    let lastKeepAliveAt = Date.now();
+    let lastActivityHandledAt = 0;
+    let keepAlivePending = false;
+    let logoutStarted = false;
 
-    var resetSessionTimer = () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            if (timeoutModal) {
-                timeoutModal.style.display = 'flex';
-            }
-        }, timeoutMs);
+    const redirectToExpiredLogin = () => {
+        window.location.replace(expiredLoginUrl);
     };
 
-    resetSessionTimer();
+    const endIdleSession = async () => {
+        if (logoutStarted) return;
+        logoutStarted = true;
+        clearTimeout(sessionTimer);
 
-    // Track more real user activity to avoid false timeout while actively using the app.
-    ['click', 'mousemove', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'].forEach(evt => {
-        window.addEventListener(evt, resetSessionTimer, { passive: true });
+        try {
+            await fetch(logoutUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reason: 'idle' }),
+            });
+        } catch (error) {
+            // The server session may already be expired or the network may be unavailable.
+        } finally {
+            redirectToExpiredLogin();
+        }
+    };
+
+    const scheduleIdleLogout = () => {
+        if (logoutStarted) return;
+        clearTimeout(sessionTimer);
+        sessionTimer = setTimeout(endIdleSession, timeoutMs);
+    };
+
+    const renewServerSession = async () => {
+        if (keepAlivePending || logoutStarted || !csrfToken) return;
+        keepAlivePending = true;
+        lastKeepAliveAt = Date.now();
+
+        try {
+            const response = await fetch(keepAliveUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.status === 401 || response.status === 419 || response.redirected) {
+                logoutStarted = true;
+                redirectToExpiredLogin();
+            }
+        } catch (error) {
+            // Do not interrupt active work for a temporary network failure.
+        } finally {
+            keepAlivePending = false;
+        }
+    };
+
+    const recordUserActivity = () => {
+        if (logoutStarted) return;
+        const now = Date.now();
+        if (now - lastActivityHandledAt < 1000) return;
+        lastActivityHandledAt = now;
+        scheduleIdleLogout();
+
+        if (now - lastKeepAliveAt >= keepAliveIntervalMs) {
+            renewServerSession();
+        }
+    };
+
+    scheduleIdleLogout();
+
+    ['click', 'mousemove', 'keydown', 'scroll', 'wheel', 'touchstart', 'touchmove'].forEach((eventName) => {
+        window.addEventListener(eventName, recordUserActivity, { passive: true });
     });
 });
 

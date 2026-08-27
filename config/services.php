@@ -60,6 +60,11 @@ return [
         'token' => env('INTEGRATION_API_TOKEN'),
     ],
 
+    // SSO — must match SSO_SECRET_ENERGY in Main LGU's .env
+    'sso' => [
+        'secret' => env('SSO_SHARED_SECRET', '400f214e72c54090af8b91ede0c17a23bad10f298b60cfea55d546cb8a44752a'),
+    ],
+
     // CIMM <-> Energy maintenance sync (Facilities Needing Maintenance page).
     // Separate from integration_api.token above on purpose: that token gates
     // read access to ALL integration endpoints (facilities, meters, energy
@@ -83,6 +88,11 @@ return [
         // https://cprf.infragovservices.com/public/api/energy-facilities-feed.php
         // Pulled by energy:sync-cprf-facilities using the same token above.
         'facilities_feed_url' => env('CPRF_FACILITIES_FEED_URL'),
+    ],
+
+    'uman_monthly_records' => [
+        'url' => env('UMAN_MONTHLY_RECORDS_URL'),
+        'key' => env('UMAN_INTEGRATION_API_KEY'),
     ],
 
     'mqtt' => [

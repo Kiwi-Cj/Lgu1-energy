@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Log;
  *
  * CPRF is the system of record for these facilities: identity fields
  * (name, address, details, status) are overwritten on every sync and are
- * read-only in this app's UI. Energy-side data (energy profiles, meters,
- * baselines, readings) is never touched by the sync.
+ * read-only in this app's UI. Every mirrored facility gets an editable local
+ * energy-profile shell, while existing profiles, meters, baselines, and
+ * readings are never overwritten by the sync.
  *
  * Rows previously mirrored but no longer present in the feed are marked
  * status='inactive' (never deleted) so their reading history is preserved.
@@ -88,11 +89,26 @@ class CprfFacilitySyncService
                 'image_path' => isset($row['image_url']) && $row['image_url'] !== null ? (string) $row['image_url'] : null,
             ];
 
+            // CPRF returns an absolute URL so Energy can display the original
+            // uploaded photo without copying files between the two systems.
+            // Keep an existing local upload as a fallback while CPRF has no
+            // photo. If a previously synced remote photo is removed in CPRF,
+            // clear the stale URL instead of leaving a broken image behind.
+            if (array_key_exists('image_url', $row)) {
+                $remoteImageUrl = trim((string) ($row['image_url'] ?? ''));
+                if ($remoteImageUrl !== '') {
+                    $identity['image_path'] = $remoteImageUrl;
+                } elseif ($facility !== null && preg_match('#^https?://#i', (string) $facility->image_path)) {
+                    $identity['image_path'] = null;
+                }
+            }
+
             if ($facility === null) {
-                Facility::create($identity + [
+                $facility = Facility::create($identity + [
                     'source' => 'cprf',
                     'external_ref' => $externalRef,
                 ]);
+                $this->ensureLocalEnergyProfile($facility);
                 $summary['created']++;
                 continue;
             }
@@ -108,6 +124,8 @@ class CprfFacilitySyncService
             } else {
                 $summary['unchanged']++;
             }
+
+            $this->ensureLocalEnergyProfile($facility);
         }
 
         // Mirrored rows missing from the feed: deactivate, never delete.
@@ -125,5 +143,25 @@ class CprfFacilitySyncService
         Log::info('CPRF facility sync completed', $summary);
 
         return $summary;
+    }
+
+    /**
+     * Create only the empty local shell needed to manage energy data.
+     * CPRF does not currently provide billing, meter, or baseline fields, so
+     * placeholders remain editable and an existing profile is left untouched.
+     */
+    private function ensureLocalEnergyProfile(Facility $facility): void
+    {
+        $facility->energyProfiles()->firstOrCreate([], [
+            'electric_meter_no' => 'N/A',
+            'utility_provider' => 'Other',
+            'contract_account_no' => 'N/A',
+            'baseline_kwh' => 0,
+            'main_energy_source' => 'Other',
+            'backup_power' => 'Other',
+            'transformer_capacity' => null,
+            'number_of_meters' => 0,
+            'baseline_source' => 'other',
+        ]);
     }
 }

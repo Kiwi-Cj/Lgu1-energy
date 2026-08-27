@@ -75,9 +75,16 @@
                     $yearNum = isset($incident->year) && $incident->year ? $incident->year : null;
                     $monthLabel = $monthNum && $monthNum >= 1 && $monthNum <= 12 ? $months[$monthNum-1] : '-';
                     $facilityName = $incident->facility->name ?? 'Unknown Facility';
+                    $isManual = strtolower((string) ($incident->source ?? '')) === 'manual';
+                    $isCprf = !$isManual && (strtolower((string) ($incident->energyRecord?->input_source ?? '')) === 'cprf'
+                        || strtolower((string) ($incident->facility?->source ?? '')) === 'cprf');
+                    $sourceLabel = $isManual ? 'Manual Report' : ($isCprf ? 'CPRF Integrated' : 'Auto Detected');
+                    $sourceClass = $isManual ? 'manual' : ($isCprf ? 'cprf' : 'auto');
                     $dpn = isset($incident->deviation_percent) ? $incident->deviation_percent : null;
                     $deviationText = $dpn !== null ? number_format((float) $dpn, 2) . '%' : '-';
-                    $dateDetected = $incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-');
+                    $dateDetected = $incident->detected_at
+                        ? \Carbon\Carbon::parse($incident->detected_at)->format('M d, Y h:i A')
+                        : ($incident->date_detected ? \Carbon\Carbon::parse($incident->date_detected)->format('M d, Y') : ($incident->created_at ? $incident->created_at->format('M d, Y') : '-'));
                     $resolvedDateRaw = $incident->resolved_at ?? $incident->updated_at ?? $incident->created_at;
                     $resolvedDate = $resolvedDateRaw ? \Carbon\Carbon::parse($resolvedDateRaw)->format('M d, Y h:i A') : '-';
 
@@ -101,6 +108,9 @@
                     if (str_contains($statusRaw, 'closed')) {
                         $statusKey = 'closed';
                         $statusLabel = 'Closed';
+                    } elseif (str_contains($statusRaw, 'dismissed')) {
+                        $statusKey = 'dismissed';
+                        $statusLabel = 'Dismissed';
                     }
 
                     $defaultDescription = $levelKey === 'critical'
@@ -111,7 +121,7 @@
                         $descriptionText = $defaultDescription;
                     }
                     $descriptionPreview = \Illuminate\Support\Str::limit($descriptionText, 130);
-                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $descriptionText);
+                    $searchText = strtolower($facilityName . ' ' . $statusLabel . ' ' . $levelLabel . ' ' . $sourceLabel . ' ' . $descriptionText);
 
                     $probableCause = $incident->probable_cause;
                     if (is_array($probableCause)) {
@@ -146,7 +156,10 @@
                     onclick="openHistoryModal({{ $incident->id }})">
                     <div class="row-main">
                         <div class="facility-col">
-                            <div class="facility-name">{{ $facilityName }}</div>
+                            <div class="facility-heading">
+                                <div class="facility-name">{{ $facilityName }}</div>
+                                <span class="source-chip {{ $sourceClass }}">{{ $sourceLabel }}</span>
+                            </div>
                             <div class="facility-desc">{{ $descriptionPreview }}</div>
                         </div>
                         <div class="meta-col">
@@ -186,6 +199,7 @@
                             <div class="detail-item"><span>Deviation</span><strong>{{ $deviationText }}</strong></div>
                             <div class="detail-item"><span>Date Detected</span><strong>{{ $dateDetected }}</strong></div>
                             <div class="detail-item"><span>Date Resolved</span><strong>{{ $resolvedDate }}</strong></div>
+                            <div class="detail-item"><span>Data Source</span><strong>{{ $sourceLabel }}</strong></div>
                         </div>
 
                         <div class="detail-block"><span>Description</span><p>{{ $descriptionText }}</p></div>
@@ -450,6 +464,29 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #0f172a;
 }
 
+.facility-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.source-chip {
+    display: inline-flex;
+    padding: 3px 7px;
+    border: 1px solid;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.source-chip.cprf { background: #f0fdfa; border-color: #99f6e4; color: #0f766e; }
+.source-chip.auto { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.source-chip.manual { background: #faf5ff; border-color: #d8b4fe; color: #7e22ce; }
+
 .facility-desc {
     margin-top: 4px;
     color: #64748b;
@@ -484,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 .chip.status.resolved { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
 .chip.status.closed { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+.chip.status.dismissed { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 
 .value-label {
     color: #64748b;

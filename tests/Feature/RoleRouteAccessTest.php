@@ -40,10 +40,6 @@ test('staff energy monitoring excel exports are blocked', function () {
     $this->actingAs($staff)
         ->get('/modules/energy/export-excel')
         ->assertRedirect(route('energy.exportReport', absolute: false));
-
-    $this->actingAs($staff)
-        ->get('/modules/energy/annual/export-excel')
-        ->assertRedirect(route('modules.energy.annual', absolute: false));
 });
 
 test('energy officer cannot delete energy profile and cannot complete maintenance', function () {

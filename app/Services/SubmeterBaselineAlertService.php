@@ -131,20 +131,6 @@ class SubmeterBaselineAlertService
             );
         }
 
-        if ($selectedBaseline !== null) {
-            $normalizedPerSqm = $this->computePerSqm($reading, $selectedBaseline);
-            if ($normalizedPerSqm !== null) {
-                $this->upsertBaseline(
-                    $reading,
-                    'normalized_per_sqm',
-                    3,
-                    $selectedBaseline,
-                    $normalizedPerSqm,
-                    $periodLabel
-                );
-            }
-        }
-
         $alert = $this->detectAndPersistAlert($reading, $selectedBaseline, $lastThree);
         $increasePercent = $alert ? (float) $alert->increase_percent : null;
 
@@ -247,24 +233,6 @@ class SubmeterBaselineAlertService
         }
 
         return round((float) $estimated, 2);
-    }
-
-    private function computePerSqm(SubmeterReading $reading, float $baselineKwh): ?float
-    {
-        $facility = $reading->submeter?->facility;
-        if (! $facility) {
-            return null;
-        }
-
-        $area = is_numeric($facility->floor_area_sqm ?? null)
-            ? (float) $facility->floor_area_sqm
-            : (is_numeric($facility->floor_area ?? null) ? (float) $facility->floor_area : null);
-
-        if (! $area || $area <= 0) {
-            return null;
-        }
-
-        return round($baselineKwh / $area, 4);
     }
 
     private function upsertBaseline(
@@ -376,15 +344,6 @@ class SubmeterBaselineAlertService
             $previousKwh = (float) $previous->kwh_used;
             $increasePrev = round((($currentKwh - $previousKwh) / $previousKwh) * 100, 2);
             $parts[] = sprintf('Versus previous period: %.2f%% (prev %.2f kWh).', $increasePrev, $previousKwh);
-        }
-
-        $facility = $reading->submeter?->facility;
-        $area = $facility && is_numeric($facility->floor_area_sqm ?? null)
-            ? (float) $facility->floor_area_sqm
-            : ($facility && is_numeric($facility->floor_area ?? null) ? (float) $facility->floor_area : null);
-
-        if ($area && $area > 0) {
-            $parts[] = sprintf('Current intensity: %.4f kWh/sqm.', round($currentKwh / $area, 4));
         }
 
         if (is_numeric($reading->operating_days) && (int) $reading->operating_days > 0) {

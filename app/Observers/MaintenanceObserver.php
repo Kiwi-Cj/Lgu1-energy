@@ -21,9 +21,7 @@ class MaintenanceObserver
                 return;
             }
 
-            $maintenance->loadMissing('facility:id,name');
-
-            $facilityName = trim((string) ($maintenance->facility?->name ?? 'Unknown Facility'));
+            $facilityName = $maintenance->resolvedFacilityName();
             $period = trim((string) ($maintenance->trigger_month ?? 'Unknown Period'));
             $issue = trim((string) ($maintenance->issue_type ?? 'Maintenance Required'));
             $statusLabel = $status !== '' ? ucfirst($status) : 'Pending';

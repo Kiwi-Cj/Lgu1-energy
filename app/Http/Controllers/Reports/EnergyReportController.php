@@ -7,6 +7,7 @@ use App\Models\Facility;
 use App\Models\EnergyRecord;
 use App\Services\EnergyRecommendationService;
 use App\Services\EnergyTrendService;
+use App\Support\BaselineResolver;
 use Illuminate\Http\Request;
 
 class EnergyReportController extends Controller
@@ -21,7 +22,7 @@ class EnergyReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $query = EnergyRecord::with(['facility', 'meter']);
+        $query = EnergyRecord::with(['facility.energyProfiles', 'meter']);
         $query->where(function ($mainScope) {
             $mainScope->whereNull('meter_id')
                 ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
@@ -49,7 +50,7 @@ class EnergyReportController extends Controller
 
         foreach ($records as $record) {
             $facility = $record->facility;
-            $baseline = $record->baseline_kwh !== null ? (float) $record->baseline_kwh : null;
+            $baseline = BaselineResolver::forRecord($record, $facility);
             $actualKwh = $record->actual_kwh !== null ? (float) $record->actual_kwh : 0.0;
             $variance = ($baseline !== null) ? ($actualKwh - $baseline) : null;
             $trend = $this->energyTrendService->displayLabel($trendByRecordId[$record->id] ?? 'insufficient');
@@ -57,8 +58,6 @@ class EnergyReportController extends Controller
             $energyCost = is_numeric($record->energy_cost ?? null)
                 ? (float) $record->energy_cost
                 : ($actualKwh * (float) ($record->rate_per_kwh ?? 0));
-            $floorArea = is_numeric($facility?->floor_area ?? null) ? (float) $facility->floor_area : null;
-            $eui = ($floorArea !== null && $floorArea > 0) ? ($actualKwh / $floorArea) : null;
             $assessment = $this->assessmentForVariance($variancePercent, $baseline);
             $monthNum = (int)ltrim($record->month, '0');
             $monthName = date('M', mktime(0, 0, 0, $monthNum, 1));
@@ -80,7 +79,6 @@ class EnergyReportController extends Controller
                 'trend_percent' => $variancePercent,
                 'actual_kwh' => $actualKwh,
                 'baseline_kwh' => $baseline,
-                'floor_area' => $floorArea,
             ], false);
 
             $energyData[] = [
@@ -93,7 +91,6 @@ class EnergyReportController extends Controller
                 'variance' => $variance !== null ? number_format($variance, 2) : 'N/A',
                 'variance_percent' => $variancePercent !== null ? number_format($variancePercent, 2) . '%' : 'N/A',
                 'energy_cost' => number_format($energyCost, 2),
-                'eui' => $eui !== null ? number_format($eui, 2) : 'N/A',
                 'assessment' => $assessment,
                 'trend' => $trend,
                 'recommendation' => $recommendation,

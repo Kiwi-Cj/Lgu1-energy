@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Support\BaselineResolver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -47,12 +48,14 @@ class Facility extends Model
         'archive_reason',
         'source',       // 'local' (created here) | 'cprf' (mirrored from CPRF)
         'external_ref', // CPRF facility id when source='cprf'
+        'source_key',   // stable non-numeric identity for integrations such as UMAN
     ];
 
     /**
      * Mirrored from the CPRF facilities reservation system: identity fields
      * (name, address, details, status) are managed by the sync and read-only
-     * here; energy data (profiles, meters, readings) stays fully editable.
+     * here. Energy setup and monthly readings are owned and managed locally by
+     * the Energy system.
      */
     public function isCprfManaged(): bool
     {
@@ -71,6 +74,11 @@ class Facility extends Model
     public function energyProfiles()
     {
         return $this->hasMany(\App\Models\EnergyProfile::class);
+    }
+
+    public function energyProfile()
+    {
+        return $this->hasOne(\App\Models\EnergyProfile::class)->latestOfMany();
     }
 
     public function energyRecords()
@@ -108,20 +116,10 @@ class Facility extends Model
         return $this->hasMany(FacilityAuditLog::class);
     }
 
-    /**
-     * Baseline used for deviation/alert computation on new energy records:
-     * latest energy profile baseline first, then the facility's own column.
-     * Shared by the Energy Monitoring UI and the CPRF integration endpoint
-     * so both compute deviations identically.
-     */
+    /** Baseline fallback for facility-level readings without a specific meter. */
     public function resolveBaselineKwh(): ?float
     {
-        $profile = $this->energyProfiles()->latest()->first();
-        if ($profile && $profile->baseline_kwh !== null) {
-            return (float) $profile->baseline_kwh;
-        }
-
-        return $this->baseline_kwh !== null ? (float) $this->baseline_kwh : null;
+        return BaselineResolver::forFacility($this);
     }
 
     /* =======================
@@ -194,21 +192,12 @@ class Facility extends Model
             return null;
         }
 
-        $baseline = (float) $baseline;
-
-        if ($baseline < 3000) {
-            return 'Small';
-        }
-
-        if ($baseline < 10000) {
-            return 'Medium';
-        }
-
-        if ($baseline < 30000) {
-            return 'Large';
-        }
-
-        return 'Extra Large';
+        return match (EnergyRecord::resolveSizeKeyFromBaseline((float) $baseline)) {
+            'medium' => 'Medium',
+            'large' => 'Large',
+            'xlarge' => 'Extra Large',
+            default => 'Small',
+        };
     }
 
     // Removed: getAverageMonthlyKwhAttribute (use baseline_kwh instead)

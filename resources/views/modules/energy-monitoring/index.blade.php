@@ -18,28 +18,46 @@
 
     .energy-monitor-page .report-card {
         background: linear-gradient(165deg, #ffffff 0%, #f8fbff 100%);
-        border-radius: 16px;
-        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-        padding: 30px;
-        border: 1px solid #e7eef8;
+        border-radius: 22px;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+        border: 1px solid #dfe8f4;
         margin-bottom: 2rem;
     }
 
     .energy-monitor-page .monitor-header {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         justify-content: space-between;
-        margin-bottom: 25px;
-        gap: 20px;
+        margin-bottom: 24px;
+        gap: 24px;
         flex-wrap: wrap;
+    }
+
+    .energy-monitor-page .monitor-heading {
+        min-width: 280px;
+        flex: 1 1 430px;
+    }
+
+    .energy-monitor-page .monitor-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: #2563eb;
+        font-size: .68rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
     }
 
     .energy-monitor-page .monitor-title {
         margin: 0;
-        font-size: 1.8rem;
-        color: #1e293b;
+        font-size: clamp(1.65rem, 2.2vw, 2rem);
+        color: #0f172a;
         font-weight: 800;
-        letter-spacing: -0.5px;
+        letter-spacing: -.035em;
+        line-height: 1.16;
     }
 
     .energy-monitor-page .monitor-title-accent {
@@ -47,20 +65,53 @@
     }
 
     .energy-monitor-page .monitor-subtitle {
-        margin: 4px 0 0;
+        margin: 7px 0 0;
         color: #64748b;
-        font-size: 1rem;
+        font-size: .9rem;
+        line-height: 1.55;
     }
 
     .energy-monitor-page .search-form {
         display: flex;
-        gap: 10px;
-        align-items: center;
+        gap: 9px;
+        align-items: flex-end;
         flex-wrap: wrap;
+        flex: 0 1 auto;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: rgba(248, 250, 252, .85);
+    }
+
+    .energy-monitor-page .filter-control {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+
+    .energy-monitor-page .filter-control.period-field {
+        align-items: stretch;
+    }
+
+    .energy-monitor-page .filter-label {
+        color: #64748b;
+        font-size: .65rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
     }
 
     .energy-monitor-page .search-field {
         position: relative;
+    }
+
+    .energy-monitor-page .search-field > i {
+        position: absolute;
+        left: 13px;
+        bottom: 15px;
+        color: #94a3b8;
+        pointer-events: none;
     }
 
     .energy-monitor-page .period-field {
@@ -69,11 +120,12 @@
     }
 
     .energy-monitor-page .search-input {
-        border-radius: 10px;
+        height: 46px;
+        border-radius: 11px;
         border: 1px solid #e2e8f0;
-        padding: 10px 10px 10px 35px;
+        padding: 10px 12px 10px 38px;
         font-size: 0.9rem;
-        width: 220px;
+        width: 230px;
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
         background: #fff;
@@ -81,11 +133,12 @@
     }
 
     .energy-monitor-page .period-input {
-        border-radius: 10px;
+        height: 46px;
+        border-radius: 11px;
         border: 1px solid #e2e8f0;
         padding: 10px 12px;
         font-size: 0.9rem;
-        width: 165px;
+        width: 170px;
         outline: none;
         transition: border-color 0.2s, box-shadow 0.2s;
         background: #fff;
@@ -103,11 +156,12 @@
     }
 
     .energy-monitor-page .search-btn {
+        height: 46px;
         background: #2563eb;
         color: #fff;
         border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
+        border-radius: 11px;
+        padding: 10px 21px;
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -119,71 +173,215 @@
     }
 
     .energy-monitor-page .clear-link {
-        color: #e11d48;
+        display: inline-flex;
+        height: 46px;
+        align-items: center;
+        color: #64748b;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        padding: 0 7px;
+    }
+
+    .energy-monitor-page .monitor-table-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    .energy-monitor-page .monitor-source-tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+        padding: 5px;
+        border: 1px solid #dbe3ef;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, .04);
+    }
+
+    .energy-monitor-page .monitor-source-tab {
+        min-height: 38px;
+        padding: 7px 11px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: transparent;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: .8rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: .2s ease;
+    }
+
+    .energy-monitor-page .monitor-source-tab:hover {
+        background: #f8fafc;
+        color: #1d4ed8;
+    }
+
+    .energy-monitor-page .monitor-source-tab.is-active {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+        box-shadow: 0 2px 7px rgba(37, 99, 235, .08);
+    }
+
+    .energy-monitor-page .monitor-source-count {
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2f7;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 900;
+    }
+
+    .energy-monitor-page .monitor-source-tab.is-active .monitor-source-count {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .energy-monitor-page .monitor-sort-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-size: .8rem;
+        font-weight: 800;
+    }
+
+    .energy-monitor-page .monitor-sort-select {
+        min-height: 40px;
+        padding: 0 34px 0 11px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #1e293b;
+        font: inherit;
+        outline: none;
+    }
+
+    .energy-monitor-page .monitor-sort-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
     }
 
     .energy-monitor-page .overview-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
     }
 
     .energy-monitor-page .metric-card {
-        padding: 20px;
-        border-radius: 14px;
-        border-left: 4px solid transparent;
+        position: relative;
+        min-height: 154px;
+        padding: 19px 20px;
+        overflow: hidden;
+        border-radius: 16px;
         border: 1px solid transparent;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+    }
+
+    .energy-monitor-page .metric-card::before {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: 4px;
+        background: var(--metric-accent);
+        content: '';
+    }
+
+    .energy-monitor-page .metric-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .energy-monitor-page .metric-icon {
+        display: inline-flex;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--metric-icon-bg);
+        color: var(--metric-accent);
+        font-size: .85rem;
     }
 
     .energy-monitor-page .metric-card .metric-label {
         font-weight: 700;
         font-size: 0.75rem;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 0;
         letter-spacing: 0.4px;
     }
 
     .energy-monitor-page .metric-card .metric-value {
         font-weight: 800;
-        font-size: 1.8rem;
-        color: #1e293b;
+        font-size: clamp(1.7rem, 2.2vw, 2rem);
+        color: #0f172a;
+        letter-spacing: -.035em;
+        line-height: 1.1;
     }
 
     .energy-monitor-page .metric-meta {
-        margin-top: 5px;
+        margin-top: 8px;
         color: #64748b;
         font-size: 0.76rem;
         font-weight: 600;
     }
 
     .energy-monitor-page .metric-facilities {
+        --metric-accent: #2563eb;
+        --metric-icon-bg: #dbeafe;
         background: linear-gradient(140deg, #f4f9ff, #f8fbff);
         border-color: #dbeafe;
-        border-left-color: #2563eb;
     }
     .energy-monitor-page .metric-facilities .metric-label { color: #64748b; }
 
     .energy-monitor-page .metric-alert {
+        --metric-accent: #e11d48;
+        --metric-icon-bg: #ffe4e6;
         background: linear-gradient(140deg, #fff3f5, #fff7f8);
         border-color: #fecdd3;
-        border-left-color: #e11d48;
     }
     .energy-monitor-page .metric-alert .metric-label { color: #e11d48; }
 
     .energy-monitor-page .metric-cost {
+        --metric-accent: #16a34a;
+        --metric-icon-bg: #dcfce7;
         background: linear-gradient(140deg, #f2fdf7, #f8fffb);
         border-color: #bbf7d0;
-        border-left-color: #16a34a;
     }
     .energy-monitor-page .metric-cost .metric-label { color: #166534; }
 
     .energy-monitor-page .monitor-table-wrap {
+        height: 570px;
+        max-height: 570px;
+        overflow-y: auto;
         overflow-x: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
         background: #fff;
@@ -193,7 +391,7 @@
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        min-width: 820px;
+        min-width: 1120px;
         font-size: 0.86rem;
     }
 
@@ -202,7 +400,11 @@
     }
 
     .energy-monitor-page .monitor-table th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
         padding: 11px 8px;
+        background: #f1f5f9;
         color: #475569;
         font-weight: 700;
         text-align: center;
@@ -225,10 +427,20 @@
         color: #334155;
         line-height: 1.3;
     }
+    .energy-monitor-page .monitor-table tbody tr {
+        height: 104px;
+    }
+    .energy-monitor-page .monitor-table th:last-child,
+    .energy-monitor-page .monitor-table td:last-child {
+        width: 260px;
+        min-width: 260px;
+    }
 
     .energy-monitor-page .monitor-row:hover {
         background: #fafcff;
     }
+    .energy-monitor-page .monitor-row[data-facility-url] { cursor: pointer; }
+    .energy-monitor-page .monitor-row[data-facility-url]:focus-visible { outline: 3px solid rgba(37,99,235,.35); outline-offset: -3px; }
 
     .energy-monitor-page .cell-facility {
         font-weight: 700;
@@ -253,6 +465,28 @@
         margin-top: 3px;
         font-size: 0.72rem;
         color: #64748b;
+    }
+
+    .energy-monitor-page .monitor-row-source {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        padding: 3px 8px;
+        border: 1px solid #dbeafe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: .66rem;
+        font-weight: 850;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+    }
+
+    .energy-monitor-page .monitor-row-source.source-cprf {
+        border-color: #ddd6fe;
+        background: #f5f3ff;
+        color: #6d28d9;
     }
 
     .energy-monitor-page .cell-meter-alert-summary {
@@ -329,7 +563,8 @@
         font-size: 0.82rem;
     }
 
-    .energy-monitor-page .alert-pill-level-critical {
+    .energy-monitor-page .alert-pill-level-critical,
+    .energy-monitor-page .alert-pill-level-drop-critical {
         color: #7c1d1d;
         background: #fef2f2;
         border-color: rgba(124, 29, 29, 0.2);
@@ -341,14 +576,16 @@
         border-color: rgba(190, 18, 60, 0.2);
     }
 
-    .energy-monitor-page .alert-pill-level-high {
+    .energy-monitor-page .alert-pill-level-high,
+    .energy-monitor-page .alert-pill-level-drop-high {
         color: #c2410c;
         background: #fff7ed;
         border-color: rgba(194, 65, 12, 0.2);
     }
 
     .energy-monitor-page .alert-pill-level-moderate,
-    .energy-monitor-page .alert-pill-level-warning {
+    .energy-monitor-page .alert-pill-level-warning,
+    .energy-monitor-page .alert-pill-level-drop-warning {
         color: #b45309;
         background: #fffbeb;
         border-color: rgba(180, 83, 9, 0.22);
@@ -368,11 +605,14 @@
     }
 
     .energy-monitor-page .recommendation-btn.level-critical,
-    .energy-monitor-page .recommendation-btn.level-very-high {
+    .energy-monitor-page .recommendation-btn.level-very-high,
+    .energy-monitor-page .recommendation-btn.level-drop-critical {
         color: #e11d48;
     }
 
     .energy-monitor-page .recommendation-btn.level-high,
+    .energy-monitor-page .recommendation-btn.level-drop-high,
+    .energy-monitor-page .recommendation-btn.level-drop-warning,
     .energy-monitor-page .recommendation-btn.level-warning,
     .energy-monitor-page .recommendation-btn.level-moderate {
         color: #f59e42;
@@ -763,6 +1003,77 @@
         cursor: pointer;
         padding: 7px 10px;
         white-space: nowrap;
+        text-decoration: none;
+    }
+    .energy-monitor-page .monitor-actions {
+        min-width: 190px;
+        display: grid;
+        gap: 7px;
+    }
+    .energy-monitor-page .monitor-primary-action {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: 1px solid #2563eb;
+        border-radius: 9px;
+        padding: 7px 10px;
+        background: #2563eb;
+        color: #fff;
+        font-size: .76rem;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .energy-monitor-page .monitor-primary-action:hover {
+        border-color: #1d4ed8;
+        background: #1d4ed8;
+    }
+    .energy-monitor-page .monitor-primary-action.setup {
+        border-color: #d97706;
+        background: #d97706;
+    }
+    .energy-monitor-page .monitor-primary-action.setup:hover { background: #b45309; }
+    .energy-monitor-page .monitor-primary-action.integration-waiting {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        cursor: default;
+        box-shadow: none;
+    }
+    .energy-monitor-page .monitor-primary-action.integration-waiting:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+    }
+    .energy-monitor-page .monitor-quick-actions {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        flex-wrap: nowrap;
+    }
+    .energy-monitor-page .monitor-quick-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #dbe4f0;
+        border-radius: 8px;
+        padding: 5px 6px;
+        background: #fff;
+        color: #475569;
+        font-size: .65rem;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .energy-monitor-page .monitor-quick-link:hover {
+        border-color: #93c5fd;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .energy-monitor-page .monitor-quick-link.attention {
+        border-color: #fecaca;
+        color: #b91c1c;
     }
 
     .energy-monitor-page .pagination-wrap {
@@ -775,6 +1086,11 @@
         background: #0f172a !important;
         border-color: #334155 !important;
         box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
+    }
+    body.dark-mode .energy-monitor-page .monitor-quick-link {
+        border-color: #475569;
+        background: #1e293b;
+        color: #cbd5e1;
     }
 
     body.dark-mode .energy-monitor-page .monitor-title,
@@ -793,7 +1109,50 @@
         color: #fda4af;
     }
 
-    body.dark-mode .energy-monitor-page .search-input {
+    body.dark-mode .energy-monitor-page .search-form {
+        border-color: #334155;
+        background: rgba(15, 23, 42, .7);
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-table-toolbar,
+    body.dark-mode .energy-monitor-page .monitor-source-tabs {
+        border-color: #334155;
+        background: #0f172a;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab,
+    body.dark-mode .energy-monitor-page .monitor-sort-wrap {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab.is-active {
+        border-color: #1d4ed8;
+        background: #172554;
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-count {
+        background: #334155;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-source-tab.is-active .monitor-source-count {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    body.dark-mode .energy-monitor-page .monitor-sort-select {
+        border-color: #334155;
+        background: #0b1220;
+        color: #e2e8f0;
+    }
+
+    body.dark-mode .energy-monitor-page .filter-label {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .energy-monitor-page .search-input,
+    body.dark-mode .energy-monitor-page .period-input {
         background: #0b1220 !important;
         color: #e2e8f0 !important;
         border-color: #334155 !important;
@@ -902,21 +1261,28 @@
         border-color: #166534 !important;
     }
 
-    body.dark-mode .energy-monitor-page .alert-pill-level-critical {
+    body.dark-mode .energy-monitor-page .metric-icon {
+        background: rgba(148, 163, 184, .13);
+    }
+
+    body.dark-mode .energy-monitor-page .alert-pill-level-critical,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-critical {
         color: #fecaca;
         background: rgba(127, 29, 29, 0.35);
         border-color: rgba(248, 113, 113, 0.4);
     }
 
     body.dark-mode .energy-monitor-page .alert-pill-level-very-high,
-    body.dark-mode .energy-monitor-page .alert-pill-level-high {
+    body.dark-mode .energy-monitor-page .alert-pill-level-high,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-high {
         color: #fda4af;
         background: rgba(190, 18, 60, 0.25);
         border-color: rgba(244, 114, 182, 0.35);
     }
 
     body.dark-mode .energy-monitor-page .alert-pill-level-moderate,
-    body.dark-mode .energy-monitor-page .alert-pill-level-warning {
+    body.dark-mode .energy-monitor-page .alert-pill-level-warning,
+    body.dark-mode .energy-monitor-page .alert-pill-level-drop-warning {
         color: #fde68a;
         background: rgba(146, 64, 14, 0.3);
         border-color: rgba(251, 191, 36, 0.35);
@@ -1126,12 +1492,31 @@
 
     @media (max-width: 600px) {
         .energy-monitor-page .monitor-title { font-size: 1.5rem !important; }
+        .energy-monitor-page .monitor-header { align-items: stretch; gap: 18px; }
+        .energy-monitor-page .monitor-heading { min-width: 0; }
         .energy-monitor-page .overview-cards { grid-template-columns: 1fr; gap: 12px; }
         .energy-monitor-page .report-card { padding: 15px; }
-        .energy-monitor-page .search-form { width: 100%; flex-wrap: wrap; }
+        .energy-monitor-page .search-form { width: 100%; padding: 10px; flex-wrap: wrap; }
+        .energy-monitor-page .filter-control,
+        .energy-monitor-page .period-input,
         .energy-monitor-page .search-field,
         .energy-monitor-page .search-input { width: 100%; }
         .energy-monitor-page .search-btn { width: 100%; }
+        .energy-monitor-page .clear-link { width: 100%; justify-content: center; }
+        .energy-monitor-page .monitor-table-toolbar { align-items: stretch; }
+        .energy-monitor-page .monitor-source-tabs { display:grid; grid-template-columns:1fr; width:100%; }
+        .energy-monitor-page .monitor-source-tab { justify-content:space-between; width:100%; }
+        .energy-monitor-page .monitor-sort-wrap { justify-content:space-between; width:100%; }
+        .energy-monitor-page .monitor-sort-select { flex:1; min-width:0; }
+        .energy-monitor-page .metric-card { min-height: 140px; }
+        .energy-monitor-page .monitor-table-wrap {
+            height: 62vh;
+            max-height: 62vh;
+            overflow-x: auto;
+        }
+        .energy-monitor-page .monitor-table {
+            min-width: 1120px;
+        }
     }
 </style>
 
@@ -1140,6 +1525,8 @@
 @php
     $user = auth()->user();
     $userRole = strtolower($user->role ?? '');
+    $canEncodeMainReadings = \App\Support\RoleAccess::can($user, 'encode_main_meter_readings');
+    $canManageEnergyIncidents = \App\Support\RoleAccess::can($user, 'manage_energy_incidents');
 @endphp
 
 <a href="#main-content" class="skip-link" tabindex="0">Skip to main content</a>
@@ -1161,43 +1548,91 @@
         $selectedMonthInput = $selectedMonthInput ?? $dashboardNow->format('Y-m');
     @endphp
     <div class="monitor-header">
-        <div>
+        <div class="monitor-heading">
+            <div class="monitor-eyebrow"><i class="fa-solid fa-bolt"></i> Live energy overview</div>
             <h1 class="monitor-title">
                 Facility Energy Monitoring <span class="monitor-title-accent">Dashboard</span>
             </h1>
             <p class="monitor-subtitle">Period consumption, variance, and facilities requiring attention</p>
         </div>
         
-        <form class="search-form" method="GET" action="">
-            <div class="period-field">
-                <input class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}" aria-label="Filter period month">
+        <form class="search-form" method="GET" action="" aria-label="Filter energy monitoring data">
+            <div class="filter-control period-field">
+                <label class="filter-label" for="monitorPeriod">Billing month</label>
+                <input id="monitorPeriod" class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}">
             </div>
-            <div class="search-field">
-                <i class="fa fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                <input class="search-input" type="text" name="search" value="{{ request('search') }}" placeholder="Search facility...">
+            <div class="filter-control search-field">
+                <label class="filter-label" for="monitorSearch">Facility</label>
+                <i class="fa fa-search"></i>
+                <input id="monitorSearch" class="search-input" type="search" name="search" value="{{ request('search') }}" placeholder="Search facility...">
             </div>
             <button class="search-btn" type="submit">Apply</button>
             @if(request()->filled('search') || request()->filled('month'))
-                <a class="clear-link" href="{{ url()->current() }}">Clear</a>
+                <a class="clear-link" href="{{ url()->current() }}"><i class="fa-solid fa-rotate-left"></i>&nbsp; Reset</a>
             @endif
         </form>
     </div>
     <div class="overview-cards">
         <div class="metric-card metric-facilities">
-            <div class="metric-label">Main Meter Consumption</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Main Meter Consumption</div>
+                <span class="metric-icon"><i class="fa-solid fa-bolt"></i></span>
+            </div>
             <div class="metric-value">{{ number_format($totalConsumptionKwh ?? 0, 2) }} kWh</div>
             <div class="metric-meta">Across {{ $totalFacilities ?? 0 }} monitored facilities</div>
         </div>
         <div class="metric-card metric-alert">
-            <div class="metric-label">Facilities Requiring Attention</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Facilities Requiring Attention</div>
+                <span class="metric-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            </div>
             <div class="metric-value">{{ $highAlertCount ?? 0 }}</div>
-            <div class="metric-meta">High, very high, or critical alert</div>
+            <div class="metric-meta">High/critical increase or abnormal drop</div>
         </div>
         <div class="metric-card metric-cost">
-            <div class="metric-label">Estimated Energy Cost</div>
-            <div class="metric-value">PHP {{ number_format($totalEnergyCost ?? 0, 2) }}</div>
+            <div class="metric-card-head">
+                <div class="metric-label">Estimated Energy Cost</div>
+                <span class="metric-icon"><i class="fa-solid fa-peso-sign"></i></span>
+            </div>
+            <div class="metric-value">₱{{ number_format($totalEnergyCost ?? 0, 2) }}</div>
             <div class="metric-meta">For the selected billing period</div>
         </div>
+    </div>
+    @php
+        $sourceFilter = $sourceFilter ?? 'all';
+        $sourceTabs = [
+            'all' => ['label' => 'All Facilities', 'count' => $allFacilitiesCount ?? $totalFacilities ?? 0, 'icon' => 'fa-layer-group'],
+            'cprf' => ['label' => 'CPRF', 'count' => $cprfFacilitiesCount ?? 0, 'icon' => 'fa-building-shield'],
+            'local' => ['label' => 'Local', 'count' => $localFacilitiesCount ?? 0, 'icon' => 'fa-building'],
+        ];
+    @endphp
+    <div class="monitor-table-toolbar">
+        <nav class="monitor-source-tabs" aria-label="Facility source filter">
+            @foreach($sourceTabs as $sourceKey => $sourceTab)
+                @php
+                    $sourceQuery = request()->except('source');
+                    if ($sourceKey !== 'all') {
+                        $sourceQuery['source'] = $sourceKey;
+                    }
+                @endphp
+                <a href="{{ route('modules.energy-monitoring.index', $sourceQuery) }}"
+                   class="monitor-source-tab {{ $sourceFilter === $sourceKey ? 'is-active' : '' }}"
+                   @if($sourceFilter === $sourceKey) aria-current="page" @endif>
+                    <span><i class="fa-solid {{ $sourceTab['icon'] }}" aria-hidden="true"></i> {{ $sourceTab['label'] }}</span>
+                    <span class="monitor-source-count">{{ $sourceTab['count'] }}</span>
+                </a>
+            @endforeach
+        </nav>
+        <label class="monitor-sort-wrap" for="monitorTableSort">
+            <span><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i> Sort by</span>
+            <select id="monitorTableSort" class="monitor-sort-select">
+                <option value="default">Default order</option>
+                <option value="name-asc">Facility name (A-Z)</option>
+                <option value="name-desc">Facility name (Z-A)</option>
+                <option value="consumption-desc">Highest consumption</option>
+                <option value="condition">Condition priority</option>
+            </select>
+        </label>
     </div>
     <div class="monitor-table-wrap">
         <table id="main-content" class="monitor-table">
@@ -1207,18 +1642,19 @@
                     <th>Main Meter</th>
                     <th>Consumption</th>
                     <th>Baseline</th>
-                    <th>Variance</th>
-                    <th>EUI</th>
+                    <th>Baseline Variance</th>
                     <th>Condition</th>
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="monitorTableBody">
             @forelse($facilities as $facility)
                 @php 
                     $record = $facility->currentMonthRecord;
                     $trendAnalysis = $facility->trend_analysis ?? '-';
                     $trendSpikeDetected = (bool) ($facility->trend_spike_detected ?? false);
+                    $trendSpikeThreshold = (float) ($facility->trend_spike_threshold ?? 0);
+                    $trendSpikeSizeLabel = (string) ($facility->trend_spike_size_label ?? '');
                     $alertLevel = $facility->alert_level ?? 'No Data';
                     $mainMeterLabel = $facility->main_meter_name ?? 'No Main Meter';
                     $mainMeterStatus = $facility->main_meter_status_label ?? 'No Main Meter';
@@ -1255,20 +1691,62 @@
                     $facilityNameRaw = (string) ($facility->name ?? '');
                     $isSeededDualMain = \Illuminate\Support\Str::startsWith($facilityNameRaw, '[Seeder 2M]');
                     $facilityNameDisplay = $isSeededDualMain ? trim((string) preg_replace('/^\[Seeder 2M\]\s*/', '', $facilityNameRaw)) : $facilityNameRaw;
-                    $eui = null;
                 @endphp
                 @php
-                    $actualKwh = $record->actual_kwh ?? 0;
-                    $floorArea = $facility->floor_area;
-                    $eui = ($record && $floorArea > 0) ? number_format($actualKwh / $floorArea, 2) : null;
-                    $trendRecommendation = $facility->trend_recommendation ?? 'Not enough data yet to generate a trend recommendation.';
-                    $recommendationUrl = route('modules.energy-monitoring.ai-recommendation', ['facility' => $facility->id, 'month' => $selectedMonthInput]);
                     $baselineKwh = $record->baseline_kwh ?? null;
+                    $baselineVarianceKwh = $facility->baseline_variance_kwh ?? null;
+                    $baselineVariancePercent = $facility->baseline_variance_percent ?? null;
+                    $hasApprovedMainMeter = collect($facility->main_meters ?? [])->contains(fn ($meter) => !empty($meter->approved_at));
+                    $hasCurrentReading = $record && is_numeric($record->actual_kwh ?? null);
+                    $isCprfManaged = method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged();
+                    $selectedDashboardYear = (int) substr($selectedMonthInput, 0, 4);
+                    $selectedDashboardMonth = (int) substr($selectedMonthInput, 5, 2);
+                    $monthlyRecordsUrl = route('facilities.monthly-records', [
+                        'facility' => $facility->id,
+                        'year' => $selectedDashboardYear,
+                        'summary_mode' => 'month',
+                        'summary_month' => $selectedDashboardMonth,
+                    ]);
+                    $encodeReadingUrl = route('facilities.monthly-records', [
+                        'facility' => $facility->id,
+                        'year' => $selectedDashboardYear,
+                        'summary_mode' => 'month',
+                        'summary_month' => $selectedDashboardMonth,
+                        'open_add' => 1,
+                        'record_date' => $selectedMonthInput . '-01',
+                    ]);
+                    $energyProfileUrl = route('modules.facilities.energy-profile.index', ['facility' => $facility->id]);
+                    $facilityDetailsUrl = route('modules.facilities.show', ['id' => $facility->id]);
+                    $createIncidentUrl = route('energy-incidents.index', ['report' => 1, 'facility_id' => $facility->id]);
+                    $aiAlertsUrl = route('modules.ai-alerts.index', ['month' => $selectedMonthInput, 'facility' => $facility->name]);
+                    $facilitySource = strtolower((string) ($facility->source ?? 'local')) === 'cprf' ? 'cprf' : 'local';
+                    $conditionRank = match ($alertLevel) {
+                        'Critical', 'Drop Critical' => 0,
+                        'Very High' => 1,
+                        'High', 'Drop High' => 2,
+                        'Warning', 'Drop Warning' => 3,
+                        'Normal' => 4,
+                        default => 5,
+                    };
                 @endphp
-                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}" data-facility-row data-facility-id="{{ (int) $facility->id }}">
+                <tr class="monitor-row {{ $isSeededDualMain ? 'monitor-row-seeded' : '' }}"
+                    data-facility-row
+                    data-facility-id="{{ (int) $facility->id }}"
+                    data-facility-url="{{ $facilityDetailsUrl }}"
+                    data-original-order="{{ $loop->index }}"
+                    data-name="{{ strtolower($facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw) }}"
+                    data-consumption="{{ $record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : -1 }}"
+                    data-condition-rank="{{ $conditionRank }}"
+                    tabindex="0"
+                    role="link"
+                    aria-label="View {{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }} facility details">
                     <td class="cell-facility">
                         <div>{{ $facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw }}</div>
                         <div class="cell-meter-meta">{{ $facility->type ?: 'Facility' }}</div>
+                        <span class="monitor-row-source source-{{ $facilitySource }}">
+                            <i class="fa-solid {{ $facilitySource === 'cprf' ? 'fa-link' : 'fa-building' }}" aria-hidden="true"></i>
+                            {{ strtoupper($facilitySource) }}
+                        </span>
                         @if($isSeededDualMain)
                             <div class="seeded-facility-badge">Sample: 2 Main Meters</div>
                         @endif
@@ -1298,15 +1776,22 @@
                     <td class="cell-baseline">
                         {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
                     </td>
-                    <td class="trend-value {{ $trendAnalysis === '-' ? '' : (str_contains($trendAnalysis, '+') ? 'trend-positive' : 'trend-normal') }}">
-                        {{ $trendAnalysis }}
+                    <td class="trend-value {{ is_numeric($baselineVarianceKwh) && (float) $baselineVarianceKwh > 0 ? 'trend-positive' : 'trend-normal' }}">
+                        @if(is_numeric($baselineVarianceKwh) && is_numeric($baselineVariancePercent))
+                            {{ (float) $baselineVarianceKwh > 0 ? '+' : '' }}{{ number_format((float) $baselineVarianceKwh, 2) }} kWh
+                            <div class="cell-reading-note">{{ (float) $baselineVariancePercent > 0 ? '+' : '' }}{{ number_format((float) $baselineVariancePercent, 2) }}% vs baseline</div>
+                        @else
+                            -
+                        @endif
+                        @if($trendAnalysis !== '-')
+                            <div class="cell-reading-note">Recent trend: {{ $trendAnalysis }}</div>
+                        @endif
                         @if($trendSpikeDetected)
-                            <div class="trend-spike-badge" style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
-                                3-Month Spike
+                            <div class="trend-spike-badge" title="Three consecutive increases, at least {{ number_format($trendSpikeThreshold, 2) }}% total growth, and at least {{ number_format($trendSpikeThreshold, 2) }}% above baseline." style="margin-top:4px;font-size:0.76rem;font-weight:800;color:#b91c1c;">
+                                3-Month Spike · {{ $trendSpikeSizeLabel }} ≥{{ number_format($trendSpikeThreshold, 2) }}%
                             </div>
                         @endif
                     </td>
-                    <td>{{ $eui ?? '-' }}</td>
                     <td>
                         <div class="facility-status-cluster">
                             <span class="monitor-alert-pill alert-pill-level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" data-alert-pill>
@@ -1324,14 +1809,52 @@
                                 'Very High' => ['icon' => '!'],
                                 'High' => ['icon' => '!'],
                                 'Warning' => ['icon' => 'i'],
+                                'Drop Critical' => ['icon' => '!'],
+                                'Drop High' => ['icon' => '!'],
+                                'Drop Warning' => ['icon' => 'i'],
                                 'Normal' => ['icon' => 'i'],
                                 'No Data' => ['icon' => 'i'],
                             ][$alertLevel] ?? ['icon' => 'i'];
                         @endphp
-                        <button type="button" title="View AI Recommendation" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" onclick='openRecommendationModal(@json($facility->id), @json($facility->name), @json($alertLevel), @json($trendRecommendation), @json($recommendationUrl), @json($selectedMonthInput))'>
-                            <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
-                            <span>View Guidance</span>
-                        </button>
+                        <div class="monitor-actions">
+                            @if($isCprfManaged && !$hasCurrentReading)
+                                <span class="monitor-primary-action integration-waiting" title="The monthly record will appear after CPRF sends it through the integration.">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Waiting for CPRF
+                                </span>
+                            @elseif(!$hasApprovedMainMeter)
+                                <a href="{{ $energyProfileUrl }}" class="monitor-primary-action setup">
+                                    <i class="fa-solid fa-gauge-high"></i> Configure Main Meter
+                                </a>
+                            @elseif(!$hasCurrentReading && $canEncodeMainReadings)
+                                <a href="{{ $encodeReadingUrl }}" class="monitor-primary-action">
+                                    <i class="fa-solid fa-plus"></i> Encode {{ $selectedPeriodLabel }}
+                                </a>
+                            @else
+                                <a href="{{ $aiAlertsUrl }}" title="Open this facility in AI Alerts" class="recommendation-btn level-{{ \Illuminate\Support\Str::slug($alertLevel, '-') }}" style="width:100%;">
+                                    <span class="recommendation-icon">{{ $iconData['icon'] }}</span>
+                                    <span>Open AI Alert</span>
+                                </a>
+                            @endif
+
+                            <div class="monitor-quick-actions">
+                                <a href="{{ $facilityDetailsUrl }}" class="monitor-quick-link" title="View facility details">
+                                    <i class="fa-solid fa-building"></i> View Facility
+                                </a>
+                                <a href="{{ $monthlyRecordsUrl }}" class="monitor-quick-link" title="View monthly records and trends">
+                                    <i class="fa-solid fa-chart-line"></i> Records
+                                </a>
+                                @if(!$hasCurrentReading || !$hasApprovedMainMeter)
+                                    <a href="{{ $aiAlertsUrl }}" class="monitor-quick-link">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Alert
+                                    </a>
+                                @endif
+                                @if($canManageEnergyIncidents && in_array($alertLevel, ['High', 'Very High', 'Critical', 'Drop High', 'Drop Critical'], true))
+                                    <a href="{{ $createIncidentUrl }}" class="monitor-quick-link attention" title="Create a corrective action incident">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Create Action
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
                     </td>
                 </tr>
             @empty
@@ -1416,6 +1939,9 @@ function formatMetricValue(value, suffix = '') {
 
 function normalizeAlertLevel(level) {
     const raw = String(level || '').trim().toLowerCase();
+    if (raw === 'drop critical' || raw === 'drop_critical') return 'Drop Critical';
+    if (raw === 'drop high' || raw === 'drop_high') return 'Drop High';
+    if (raw === 'drop warning' || raw === 'drop_warning') return 'Drop Warning';
     if (raw === 'critical') return 'Critical';
     if (raw === 'very high' || raw === 'very_high') return 'Very High';
     if (raw === 'high') return 'High';
@@ -1466,10 +1992,13 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
     const isDark = document.body.classList.contains('dark-mode');
     const alertStyles = {
         'Critical': { color: '#991b1b', bg: '#fef2f2', border: '#fca5a5', badgeBg: '#ffffff', badgeColor: '#991b1b', darkBg: 'rgba(127,29,29,0.22)', darkBorder: 'rgba(248,113,113,0.35)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fecaca', icon: '!' },
+        'Drop Critical': { color: '#991b1b', bg: '#fef2f2', border: '#fca5a5', badgeBg: '#ffffff', badgeColor: '#991b1b', darkBg: 'rgba(127,29,29,0.22)', darkBorder: 'rgba(248,113,113,0.35)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fecaca', icon: '↓' },
         'Very High': { color: '#be123c', bg: '#fff1f2', border: '#fda4af', badgeBg: '#ffffff', badgeColor: '#be123c', darkBg: 'rgba(190,18,60,0.18)', darkBorder: 'rgba(244,114,182,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fda4af', icon: '!' },
         'High': { color: '#c2410c', bg: '#fff7ed', border: '#fdba74', badgeBg: '#ffffff', badgeColor: '#c2410c', darkBg: 'rgba(194,65,12,0.18)', darkBorder: 'rgba(251,146,60,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fdba74', icon: '!' },
+        'Drop High': { color: '#c2410c', bg: '#fff7ed', border: '#fdba74', badgeBg: '#ffffff', badgeColor: '#c2410c', darkBg: 'rgba(194,65,12,0.18)', darkBorder: 'rgba(251,146,60,0.30)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fdba74', icon: '↓' },
         'Moderate': { color: '#92400e', bg: '#fef3c7', border: '#fcd34d', badgeBg: '#ffffff', badgeColor: '#92400e', darkBg: 'rgba(146,64,14,0.18)', darkBorder: 'rgba(251,191,36,0.28)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
         'Warning': { color: '#9a4a12', bg: '#f7edc0', border: '#f3c23c', badgeBg: '#ffffff', badgeColor: '#b45309', darkBg: 'rgba(180,83,9,0.16)', darkBorder: 'rgba(251,191,36,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: 'i' },
+        'Drop Warning': { color: '#9a4a12', bg: '#fffbeb', border: '#fcd34d', badgeBg: '#ffffff', badgeColor: '#b45309', darkBg: 'rgba(180,83,9,0.16)', darkBorder: 'rgba(251,191,36,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#fde68a', icon: '↓' },
         'Low': { color: '#166534', bg: '#f0fdf4', border: '#86efac', badgeBg: '#ffffff', badgeColor: '#166534', darkBg: 'rgba(22,101,52,0.16)', darkBorder: 'rgba(74,222,128,0.24)', darkBadgeBg: '#0f172a', darkBadgeColor: '#86efac', icon: 'i' },
         'Normal': { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', badgeBg: '#ffffff', badgeColor: '#1d4ed8', darkBg: 'rgba(37,99,235,0.14)', darkBorder: 'rgba(147,197,253,0.22)', darkBadgeBg: '#0f172a', darkBadgeColor: '#93c5fd', icon: 'i' },
         'No Data': { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', badgeBg: '#ffffff', badgeColor: '#475569', darkBg: 'rgba(51,65,85,0.22)', darkBorder: 'rgba(148,163,184,0.20)', darkBadgeBg: '#0f172a', darkBadgeColor: '#cbd5e1', icon: 'i' },
@@ -1629,6 +2158,36 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const recommendationModal = document.getElementById('recommendationModal');
     const meterBreakdownModal = document.getElementById('meterBreakdownModal');
+    const tableBody = document.getElementById('monitorTableBody');
+    const tableSort = document.getElementById('monitorTableSort');
+    const facilityRows = Array.from(document.querySelectorAll('[data-facility-row]'));
+
+    const sortFacilityRows = () => {
+        if (!tableBody || !tableSort) return;
+
+        const mode = tableSort.value;
+        const orderedRows = [...facilityRows].sort((left, right) => {
+            const leftName = left.dataset.name || '';
+            const rightName = right.dataset.name || '';
+            const originalDifference = Number(left.dataset.originalOrder || 0) - Number(right.dataset.originalOrder || 0);
+
+            if (mode === 'name-asc') return leftName.localeCompare(rightName) || originalDifference;
+            if (mode === 'name-desc') return rightName.localeCompare(leftName) || originalDifference;
+            if (mode === 'consumption-desc') {
+                return Number(right.dataset.consumption || -1) - Number(left.dataset.consumption || -1)
+                    || leftName.localeCompare(rightName);
+            }
+            if (mode === 'condition') {
+                return Number(left.dataset.conditionRank || 5) - Number(right.dataset.conditionRank || 5)
+                    || leftName.localeCompare(rightName);
+            }
+            return originalDifference;
+        });
+
+        orderedRows.forEach((row) => tableBody.appendChild(row));
+    };
+
+    tableSort?.addEventListener('change', sortFacilityRows);
 
     if (recommendationModal) {
         recommendationModal.addEventListener('click', (event) => {
@@ -1645,6 +2204,19 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    facilityRows.filter((row) => row.dataset.facilityUrl).forEach((row) => {
+        const openFacility = () => { window.location.href = row.dataset.facilityUrl; };
+        row.addEventListener('click', (event) => {
+            if (event.target.closest('a, button, input, select, textarea, form, [role="button"]')) return;
+            openFacility();
+        });
+        row.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openFacility();
+        });
+    });
 });
 </script>
 

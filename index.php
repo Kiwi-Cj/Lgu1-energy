@@ -1,21 +1,21 @@
 <?php
 
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
 /*
 |--------------------------------------------------------------------------
-| Front Controller (Domain Root)
+| Set Laravel Base Path (Local Setup)
 |--------------------------------------------------------------------------
-| Used when the hosting document root points directly at this project
-| folder (e.g. https://energy.infragovservices.com/) instead of at the
-| /public subfolder. Base path is this directory itself.
+| Local project root (one level above /public)
 */
 
-$basePath = __DIR__;
+$basePath = realpath(__DIR__ . '/..');
 
-if (!file_exists($basePath.'/vendor/autoload.php')
+if ($basePath === false
+    || !file_exists($basePath.'/vendor/autoload.php')
     || !file_exists($basePath.'/bootstrap/app.php')) {
 
     http_response_code(500);
@@ -47,7 +47,5 @@ require $basePath.'/vendor/autoload.php';
 */
 
 $app = require_once $basePath.'/bootstrap/app.php';
-
-$app->usePublicPath($basePath.'/public');
 
 $app->handleRequest(Request::capture());

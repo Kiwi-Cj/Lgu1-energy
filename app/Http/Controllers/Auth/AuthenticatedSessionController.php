@@ -4,9 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Otp;
+use App\Models\User;
+use App\Notifications\SendOtpNotification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -22,72 +29,174 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    public function store(LoginRequest $request): RedirectResponse|JsonResponse
     {
         $request->ensureIsNotRateLimited();
-        $user = \App\Models\User::where('email', $request->email)->first();
-        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password) || strtolower($user->status) !== 'active') {
-            \Illuminate\Support\Facades\RateLimiter::hit($request->throttleKey());
-            session()->forget(['otp_user_id']);
-            $errorMsg = !$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)
-                ? trans('auth.failed')
-                : 'Your account is inactive. Please contact the administrator.';
+
+        $user = User::where('email', $request->email)->first();
+
+        if (
+            ! $user ||
+            ! Hash::check($request->password, $user->password) ||
+            strtolower($user->status) !== 'active'
+        ) {
+            RateLimiter::hit($request->throttleKey());
+
+            $request->session()->forget([
+                'otp_user_id',
+                'otp_email',
+                'otp_expires_at',
+                'otp_resend_available_at',
+            ]);
+
+            $errorMsg = ! $user ||
+                ! Hash::check($request->password, $user->password)
+                    ? trans('auth.failed')
+                    : 'Your account is inactive. Please contact the administrator.';
+
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
-                    'message' => $errorMsg
+                    'message' => $errorMsg,
                 ], 422);
             }
-            return back()->withErrors(['email' => $errorMsg]);
+
+            return back()->withErrors([
+                'email' => $errorMsg,
+            ]);
         }
 
         $otpEnabled = (bool) config('otp.enabled', true);
+
         if (! $otpEnabled) {
             Auth::login($user);
-            $user->forceFill(['last_login' => now()])->save();
+
+            $user->forceFill([
+                'last_login' => now(),
+            ])->save();
+
             $request->session()->regenerate();
-            \Illuminate\Support\Facades\RateLimiter::clear($request->throttleKey());
+
+            RateLimiter::clear($request->throttleKey());
+
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'redirect' => route('dashboard'),
                     'otp_enabled' => false,
                 ]);
             }
+
             return redirect()->route('dashboard');
         }
 
-        session(['otp_user_id' => $user->id]);
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $expireMinutes = max(1, (int) config('otp.expire_minutes', 5));
+        $resendCooldown = max(1, (int) config('otp.resend_cooldown_seconds', 30));
         $expiresAt = now()->addMinutes($expireMinutes);
-        \App\Models\Otp::create([
+        $resendAvailableAt = now()->addSeconds($resendCooldown);
+
+        $user->otps()->where('used', false)->update(['used' => true]);
+
+        Otp::create([
             'user_id' => $user->id,
             'code' => $otp,
             'expires_at' => $expiresAt,
         ]);
-        \Log::info('Sending OTP to: ' . $user->email);
-        $user->notify(new \App\Notifications\SendOtpNotification($otp));
+
+        $request->session()->put([
+            'otp_user_id' => $user->id,
+            'otp_email' => $user->email,
+            'otp_expires_at' => $expiresAt->timestamp,
+            'otp_resend_available_at' => $resendAvailableAt->timestamp,
+        ]);
+
+        $resendRateLimitKey = 'otp-resend-'.$user->id;
+        RateLimiter::clear($resendRateLimitKey);
+        RateLimiter::hit($resendRateLimitKey, $resendCooldown);
+
+        Log::info('Sending OTP to: '.$user->email);
+        $user->notify(new SendOtpNotification((string) $otp));
+
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
-                'show_otp_modal' => true,
+                'redirect' => route('verify.otp.form'),
                 'otp_expire_minutes' => $expireMinutes,
             ]);
         }
-        return redirect()->back();
+
+        return redirect()->route('verify.otp.form');
+    }
+
+    /**
+     * Renew an authenticated session after real user activity.
+     */
+    public function keepAlive(Request $request): JsonResponse
+    {
+        $request->session()->put(
+            'last_user_activity_at',
+            now()->timestamp
+        );
+
+        return response()->json([
+            'ok' => true,
+            'expires_in_seconds' =>
+                max(1, (int) config('session.lifetime', 60)) * 60,
+        ]);
     }
 
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): RedirectResponse|JsonResponse
     {
+        $returnToMainLgu = (bool) $request->session()
+            ->get('sso_from_mainlgu');
+
+        $timedOut = strtolower(
+            trim((string) $request->input('reason', ''))
+        ) === 'idle';
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')
-            ->with('session_ended_modal', true)
-            ->with('status', 'You have been logged out successfully.');
+        if ($returnToMainLgu) {
+            $mainLguUrl = $request->getHost() === 'localhost'
+                ? 'http://localhost/Main%20LGU/admin/dashboard.php'
+                : 'https://infragovservices.com/admin/dashboard.php';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'redirect' => $mainLguUrl,
+                    'reason' => $timedOut ? 'idle' : 'manual',
+                ]);
+            }
+
+            return redirect()->away($mainLguUrl);
+        }
+
+        $message = $timedOut
+            ? 'Your session expired due to inactivity. Please sign in again.'
+            : 'You have been logged out successfully.';
+
+        if ($timedOut) {
+            $request->session()->flash(
+                'session_ended_modal',
+                true
+            );
+        }
+
+        $request->session()->flash('status', $message);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect' => route('login'),
+                'reason' => $timedOut ? 'idle' : 'manual',
+            ]);
+        }
+
+        return redirect()->route('login');
     }
 }
