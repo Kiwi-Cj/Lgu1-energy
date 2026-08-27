@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\SubmeterSensorReadingController;
 use App\Http\Controllers\Api\IntegrationDataController;
 use App\Http\Controllers\Api\CprfFacilityProfileController;
+use App\Http\Controllers\Api\CprfFacilityReadingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/submeter/sensor-readings', function () {
@@ -53,11 +54,12 @@ Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 
 });
 
 // CPRF (facilities reservation) <-> Energy integration. CPRF facility
-// identities are mirrored separately, while CPRF pulls facilities, Energy-managed
-// profiles, approved recommendations, and approved energy reports out. Monthly
-// energy records are entered and owned by the Energy system.
-// Same
-// per-partner token pattern as the CIMM group above (services.cprf_integration).
+// identities are mirrored separately; CPRF also pushes its own direct
+// electric-only manual meter readings in (facility-readings, re-added -
+// see CprfFacilityReadingController), alongside the UMAN-mediated monthly
+// records path. CPRF pulls facilities, Energy-managed profiles, approved
+// recommendations, and approved energy reports out.
+// Same per-partner token pattern as the CIMM group above (services.cprf_integration).
 // GET endpoints reuse IntegrationDataController methods -- only the auth differs.
 Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->group(function () {
     Route::get('/facilities', [IntegrationDataController::class, 'cprfFacilities']);
@@ -65,4 +67,5 @@ Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->gro
     Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
     Route::patch('/recommendations/{recommendation}/implementation', [IntegrationDataController::class, 'updateRecommendationImplementation']);
     Route::get('/facility-profiles', [CprfFacilityProfileController::class, 'index']);
+    Route::post('/facility-readings', [CprfFacilityReadingController::class, 'store']);
 });

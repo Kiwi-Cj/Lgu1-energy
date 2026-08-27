@@ -82,6 +82,11 @@ class CprfFacilitySyncService
                 'barangay' => isset($row['barangay']) && $row['barangay'] !== null ? (string) $row['barangay'] : 'Culiat',
                 'operating_hours' => isset($row['operating_hours']) && $row['operating_hours'] !== null ? (string) $row['operating_hours'] : null,
                 'status' => self::STATUS_MAP[strtolower((string) ($row['status'] ?? ''))] ?? 'inactive',
+                // CPRF sends an absolute URL (a real upload, or its own
+                // category placeholder when the facility has no photo) -
+                // getResolvedImageUrlAttribute() already returns an
+                // http(s):// value as-is, so this needs no further handling.
+                'image_path' => isset($row['image_url']) && $row['image_url'] !== null ? (string) $row['image_url'] : null,
             ];
 
             // CPRF returns an absolute URL so Energy can display the original
