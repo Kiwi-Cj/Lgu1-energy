@@ -1386,13 +1386,7 @@
                             <option value="Lighting - Fixture Repair">Lighting - Fixture Repair</option>
                             <option value="Aircon - Not Cooling">Aircon - Not Cooling</option>
                             <option value="Aircon - Cleaning Needed">Aircon - Cleaning Needed</option>
-                            <option value="Plumbing - Leak">Plumbing - Leak</option>
-                            <option value="Plumbing - Clogged Drain">Plumbing - Clogged Drain</option>
-                            <option value="Roof - Leak">Roof - Leak</option>
-                            <option value="Roof - Gutter Cleaning">Roof - Gutter Cleaning</option>
-                            <option value="Pest Control">Pest Control</option>
-                            <option value="General - Preventive Check">General - Preventive Check</option>
-                            <option value="General - Other">General - Other</option>
+                            
 >>>>>>> 208907ff6de27711a88bd2a4da94e3465e152881
                         </select>
                     </div>
