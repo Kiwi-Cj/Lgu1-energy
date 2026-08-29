@@ -7,11 +7,24 @@ use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\Maintenance;
 use App\Models\User;
+use App\Services\RecommendationNotificationService;
+use App\Support\BaselineResolver;
+use App\Support\EnergyCost;
+use App\Support\EnergyAlertRouting;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class EnergyRecordObserver
 {
+    public function created(EnergyRecord $record): void
+    {
+        $this->notifyReviewersOfSubmission($record);
+    }
+
     public function deleted(EnergyRecord $record): void
     {
         // For soft deletes, keep related records so monthly entries can be restored from archive.
@@ -28,6 +41,23 @@ class EnergyRecordObserver
 
     public function saved(EnergyRecord $record): void
     {
+        if (! $record->wasRecentlyCreated
+            && strtolower(trim((string) $record->input_source)) === 'cprf'
+            && strtolower(trim((string) $record->external_source)) !== 'uman_cprf'
+            && $record->wasChanged([
+                'actual_kwh',
+                'year',
+                'month',
+                'day',
+                'energy_cost',
+                'rate_per_kwh',
+                'recorded_by',
+                'recorded_by_name',
+            ])
+        ) {
+            $this->notifyReviewersOfSubmission($record, true);
+        }
+
         $record->loadMissing(['facility.energyProfiles', 'meter']);
         $facility = $record->facility;
         if (! $facility) {
@@ -54,10 +84,21 @@ class EnergyRecordObserver
             $record->forceFill($updates)->saveQuietly();
         }
 
+        try {
+            app(RecommendationNotificationService::class)->notifySystemRecommendation($record);
+        } catch (\Throwable $e) {
+            // Recommendation notifications must not block monthly record persistence.
+        }
+
         $this->notifyRecipientsOfAlert($record, $facility, $deviation, $alert);
+        $this->notifyRecipientsOfProjectedCost($record, $facility);
 
         // Legacy incident/maintenance automation is only for non-submeter streams.
         if ($this->isSubMeterRecord($record)) {
+            return;
+        }
+
+        if (! SystemSettings::enabled('auto_log_incident', true)) {
             return;
         }
 
@@ -95,64 +136,187 @@ class EnergyRecordObserver
 
             $title = 'Energy Alert';
             $message = "Alert: {$scopeLabel} {$meterName} at {$facilityName} ({$periodLabel}) increased{$deviationLabel} [{$level}]";
+            $targetUrl = route('modules.ai-alerts.index', ['month' => sprintf('%04d-%02d', $year, $month)]);
 
-            User::query()
-                ->with('facilities:id')
-                ->get()
-                ->filter(function (User $user) use ($facility) {
-                    $role = RoleAccess::normalize($user);
+            $this->alertRecipients($facility)
+                ->each(function (User $recipient) use ($message, $title, $targetUrl, $alertKey, $facilityName, $periodLabel) {
+                    $notification = $recipient->notifications()->firstOrCreate(
+                        ['type' => 'energy_record_alert', 'message' => $message],
+                        ['title' => $title, 'target_url' => $targetUrl]
+                    );
 
-                    if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
-                        return true;
+                    if ($notification->wasRecentlyCreated
+                        && $alertKey === 'critical'
+                        && in_array(RoleAccess::normalize($recipient), ['energy_officer', 'engineer'], true)
+                        && SystemSettings::emailNotificationsEnabled()
+                        && filter_var($recipient->email, FILTER_VALIDATE_EMAIL)
+                    ) {
+                        try {
+                            Mail::raw(
+                                "A critical energy alert was detected for {$facilityName} ({$periodLabel}).\n\n{$message}\n\nOpen AI Alerts: {$targetUrl}",
+                                fn ($mail) => $mail->to($recipient->email)->subject("Critical Energy Alert - {$facilityName}")
+                            );
+                        } catch (\Throwable $e) {
+                            // The bell alert remains available if email delivery fails.
+                        }
                     }
-
-                    if ($role === 'staff') {
-                        return $user->facilities->contains('id', (int) $facility->id);
-                    }
-
-                    return false;
-                })
-                ->each(function (User $recipient) use ($message, $title) {
-                    $exists = $recipient->notifications()
-                        ->where('type', 'energy_record_alert')
-                        ->where('message', $message)
-                        ->exists();
-
-                    if ($exists) {
-                        return;
-                    }
-
-                    $recipient->notifications()->create([
-                        'title' => $title,
-                        'message' => $message,
-                        'type' => 'energy_record_alert',
-                    ]);
                 });
         } catch (\Throwable $e) {
             // Notification failure must not block monthly record persistence.
         }
     }
 
+    private function notifyRecipientsOfProjectedCost(EnergyRecord $record, Facility $facility): void
+    {
+        try {
+            if ($this->isSubMeterRecord($record) || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $month = (int) $record->month;
+            $year = (int) $record->year;
+            if ($month < 1 || $month > 12 || $year < 1) {
+                return;
+            }
+
+            $period = Carbon::create($year, $month, 1);
+            $previousPeriod = $period->copy()->subMonth();
+            $scope = static function ($query): void {
+                $query->where(function ($meterScope) {
+                    $meterScope->whereNull('meter_id')
+                        ->orWhereHas('meter', fn ($meter) => $meter->where('meter_type', 'main'));
+                });
+            };
+
+            $currentRecords = EnergyRecord::query()
+                ->where('facility_id', $facility->id)
+                ->where('year', $year)->where('month', $month)
+                ->tap($scope)->get();
+            $previousRecords = EnergyRecord::query()
+                ->where('facility_id', $facility->id)
+                ->where('year', $previousPeriod->year)->where('month', $previousPeriod->month)
+                ->tap($scope)->get();
+
+            $currentCost = (float) $currentRecords->sum(fn ($item) => EnergyCost::cost($item));
+            $previousCost = (float) $previousRecords->sum(fn ($item) => EnergyCost::cost($item));
+            if ($currentCost <= 0 || $previousCost <= 0) {
+                return;
+            }
+
+            $latestDay = (int) $currentRecords->max('day');
+            $projectedCost = $period->isSameMonth(now()) && $latestDay > 0
+                ? ($currentCost / max(1, $latestDay)) * $period->daysInMonth
+                : $currentCost;
+            if ($projectedCost <= $previousCost) {
+                return;
+            }
+
+            $increase = (($projectedCost - $previousCost) / $previousCost) * 100;
+            $periodLabel = $period->format('M Y');
+            $facilityName = trim((string) ($facility->name ?: 'Unknown Facility'));
+            $message = sprintf(
+                'Projected cost alert: %s (%s) may reach ₱%s, %.1f%% above the previous month budget of ₱%s.',
+                $facilityName,
+                $periodLabel,
+                number_format($projectedCost, 2),
+                $increase,
+                number_format($previousCost, 2)
+            );
+            $targetUrl = route('modules.ai-alerts.index', ['month' => $period->format('Y-m')]);
+
+            $this->alertRecipients($facility)->each(function (User $recipient) use ($message, $targetUrl) {
+                $recipient->notifications()->firstOrCreate(
+                    ['type' => 'ai_cost_alert', 'message' => $message],
+                    ['title' => 'Projected Cost Alert', 'target_url' => $targetUrl]
+                );
+            });
+        } catch (\Throwable $e) {
+            // Cost analysis must not block saving the energy reading.
+        }
+    }
+
+    private function alertRecipients(Facility $facility)
+    {
+        return User::query()
+            ->with('facilities:id')
+            ->get()
+            ->filter(function (User $user) use ($facility) {
+                $role = RoleAccess::normalize($user);
+                if (in_array($role, ['super_admin', 'admin', 'energy_officer', 'engineer'], true)) {
+                    return true;
+                }
+
+                return $role === 'staff'
+                    && $user->facilities->contains('id', (int) $facility->id);
+            });
+    }
+
+    private function notifyReviewersOfSubmission(EnergyRecord $record, bool $isUpdate = false): void
+    {
+        try {
+            // UMAN imports are already approved by the source system and do
+            // not belong in the manual monthly-record review queue.
+            if (strtolower(trim((string) $record->external_source)) === 'uman_cprf') {
+                return;
+            }
+
+            if (! Schema::hasTable('users') || ! Schema::hasTable('notifications')) {
+                return;
+            }
+
+            $record->loadMissing(['facility:id,name', 'recordedBy:id,full_name,name,username']);
+            $facilityName = trim((string) ($record->facility?->name ?? 'Unknown Facility'));
+            $source = strtolower(trim((string) ($record->input_source ?? 'manual')));
+            $isIntegrated = $source === 'cprf';
+            $encoderName = trim((string) ($record->recorded_by_name ?? ''));
+
+            if ($encoderName === '') {
+                $encoderName = trim((string) (
+                    $record->recordedBy?->full_name
+                    ?? $record->recordedBy?->name
+                    ?? $record->recordedBy?->username
+                    ?? ''
+                ));
+            }
+            if ($encoderName === '') {
+                $encoderName = $isIntegrated ? 'External System' : 'Unknown user';
+            }
+
+            $month = max(1, min(12, (int) ($record->month ?? now()->month)));
+            $year = (int) ($record->year ?? now()->year);
+            $periodLabel = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+            $sourceLabel = $isIntegrated ? 'External System' : 'Manual Entry';
+            $action = $isUpdate ? 'updated' : 'submitted';
+            $message = "{$encoderName} {$action} the {$periodLabel} monthly record for {$facilityName} via {$sourceLabel}.";
+            $targetUrl = route('monthly-record-activity.index');
+
+            User::query()
+                ->get()
+                ->filter(fn (User $recipient) => RoleAccess::in($recipient, ['super_admin', 'admin', 'engineer']))
+                ->each(function (User $recipient) use ($record, $message, $targetUrl, $isUpdate) {
+                    if ((int) $recipient->id === (int) $record->recorded_by) {
+                        return;
+                    }
+
+                    $recipient->notifications()->firstOrCreate(
+                        [
+                            'type' => 'monthly_record_submission',
+                            'message' => $message,
+                        ],
+                        [
+                            'title' => $isUpdate ? 'Monthly Record Updated' : 'New Monthly Record',
+                            'target_url' => $targetUrl,
+                        ]
+                    );
+                });
+        } catch (\Throwable $e) {
+            // Activity notifications must not block monthly record persistence.
+        }
+    }
+
     private function resolveBaseline(EnergyRecord $record, Facility $facility): ?float
     {
-        if (is_numeric($record->baseline_kwh)) {
-            return round((float) $record->baseline_kwh, 2);
-        }
-
-        if ($record->meter && is_numeric($record->meter->baseline_kwh)) {
-            return round((float) $record->meter->baseline_kwh, 2);
-        }
-
-        $profile = $facility->energyProfiles()->latest()->first();
-        if ($profile && is_numeric($profile->baseline_kwh)) {
-            return round((float) $profile->baseline_kwh, 2);
-        }
-
-        if (is_numeric($facility->baseline_kwh)) {
-            return round((float) $facility->baseline_kwh, 2);
-        }
-
-        return null;
+        return BaselineResolver::forRecord($record, $facility);
     }
 
     private function syncIncidentAndMaintenance(
@@ -169,7 +333,8 @@ class EnergyRecordObserver
             default => 'normal',
         };
 
-        if (! in_array($severityKey, ['critical', 'very-high', 'high'], true)) {
+        if (! EnergyAlertRouting::requiresIncident($alert)) {
+            $this->closeUnqualifiedPendingAutoMaintenance($record, $facility);
             return;
         }
 
@@ -190,10 +355,15 @@ class EnergyRecordObserver
         $legacyDescriptions = [
             'High energy consumption detected for this billing period.',
             'System detected unusually high energy consumption for this period. Please review and validate.',
+            'Critical energy spike detected for this billing period and queued for urgent review.',
+            'Very high energy deviation detected for this billing period and queued for validation.',
+            'High energy deviation detected for this billing period and queued for validation.',
         ];
 
         $payload = [
             'energy_record_id' => $record->id,
+            'category' => 'energy_anomaly',
+            'source' => strtolower(trim((string) ($record->input_source ?? ''))) === 'cprf' ? 'cprf' : 'auto',
             'month' => $month,
             'year' => $year,
             'deviation_percent' => $deviation,
@@ -209,27 +379,85 @@ class EnergyRecordObserver
 
         if (! $incident) {
             $payload['facility_id'] = $facility->id;
-            $payload['status'] = 'Pending';
+            $payload['status'] = 'Open';
             $payload['date_detected'] = now()->toDateString();
             $payload['created_by'] = $record->recorded_by ?? null;
-            EnergyIncident::create($payload);
+            $incident = EnergyIncident::create($payload);
         } else {
             $incident->fill($payload);
             if (! $incident->date_detected) {
                 $incident->date_detected = now()->toDateString();
             }
             if (! $incident->status) {
-                $incident->status = 'Pending';
+                $incident->status = 'Open';
             }
             $incident->save();
         }
 
-        $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $severityKey);
+        if (EnergyAlertRouting::requiresMaintenance($alert)) {
+            $this->upsertMaintenanceFromIncidentSeverity($facility, $record, $incident, $severityKey);
+        } else {
+            $this->closeUnqualifiedPendingAutoMaintenance($record, $facility, false);
+        }
+    }
+
+    private function closeUnqualifiedPendingAutoMaintenance(
+        EnergyRecord $record,
+        Facility $facility,
+        bool $resolveIncident = true
+    ): void
+    {
+        if (! Schema::hasTable('maintenance')) {
+            return;
+        }
+
+        $month = (int) ($record->month ?? 0);
+        $year = (int) ($record->year ?? 0);
+        if ($month < 1 || $month > 12 || $year < 1) {
+            return;
+        }
+
+        $triggerMonth = date('M Y', mktime(0, 0, 0, $month, 1, $year));
+        $maintenanceRows = Maintenance::query()
+            ->where('facility_id', $facility->id)
+            ->where('trigger_month', $triggerMonth)
+            ->where('issue_type', 'like', 'Auto-flagged:%')
+            ->where('maintenance_status', 'Pending')
+            ->whereNull('scheduled_date')
+            ->whereNull('assigned_to')
+            ->get();
+
+        if ($maintenanceRows->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($maintenanceRows, $facility, $record, $month, $year, $resolveIncident): void {
+            foreach ($maintenanceRows as $maintenance) {
+                $maintenance->delete();
+            }
+
+            if (! $resolveIncident) {
+                return;
+            }
+
+            EnergyIncident::query()
+                ->where('facility_id', $facility->id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->whereNotIn('status', ['Resolved', 'Closed'])
+                ->update([
+                    'status' => 'Resolved',
+                    'resolved_at' => now(),
+                    'description' => 'Auto-generated incident closed because the current reading no longer has a valid Very High or Critical alert.',
+                    'updated_at' => now(),
+                ]);
+        });
     }
 
     private function upsertMaintenanceFromIncidentSeverity(
         Facility $facility,
         EnergyRecord $record,
+        EnergyIncident $incident,
         string $severityKey
     ): void {
         if (! Schema::hasTable('maintenance')) {
@@ -246,6 +474,7 @@ class EnergyRecordObserver
         $hasCompletedDate = Schema::hasColumn('maintenance', 'completed_date');
         $hasRemarks = Schema::hasColumn('maintenance', 'remarks');
         $hasDescription = Schema::hasColumn('maintenance', 'description');
+        $hasEnergyIncidentId = Schema::hasColumn('maintenance', 'energy_incident_id');
 
         $triggerMonth = date('M Y', mktime(0, 0, 0, (int) $record->month, 1, (int) $record->year));
 
@@ -308,6 +537,10 @@ class EnergyRecordObserver
                 'facility_id' => $facility->id,
             ];
 
+            if ($hasEnergyIncidentId) {
+                $payload['energy_incident_id'] = $incident->id;
+            }
+
             if ($hasIssueType) {
                 $payload['issue_type'] = $issueType;
             }
@@ -352,6 +585,9 @@ class EnergyRecordObserver
         if ($hasIssueType) {
             $maintenance->issue_type = $issueType;
         }
+        if ($hasEnergyIncidentId && ! $maintenance->energy_incident_id) {
+            $maintenance->energy_incident_id = $incident->id;
+        }
         if ($hasTrend) {
             $maintenance->trend = $trendIncreasing ? 'Increasing' : 'Stable';
         }
@@ -375,7 +611,7 @@ class EnergyRecordObserver
             return 'open';
         }
 
-        return 'pending';
+        return 'open';
     }
 
     private function buildIncidentDescription(string $severityKey, string $statusKey): string
@@ -390,17 +626,17 @@ class EnergyRecordObserver
 
         if ($statusKey === 'open') {
             return match ($severityKey) {
-                'critical' => 'Critical energy spike is active and requires immediate intervention.',
-                'very-high' => 'Very high energy deviation is active and under close monitoring.',
-                default => 'High energy deviation is active and under monitoring.',
+                'critical' => 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.',
+                'very-high' => 'Very high energy deviation detected and forwarded to CIMM for maintenance action.',
+                default => 'High energy deviation detected and forwarded to CIMM for maintenance assessment.',
             };
         }
 
         return $severityKey === 'critical'
-            ? 'Critical energy spike detected for this billing period and queued for urgent review.'
+            ? 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.'
             : ($severityKey === 'very-high'
-                ? 'Very high energy deviation detected for this billing period and queued for validation.'
-                : 'High energy deviation detected for this billing period and queued for validation.');
+                ? 'Very high energy deviation detected and forwarded to CIMM for maintenance action.'
+                : 'High energy deviation detected and forwarded to CIMM for maintenance assessment.');
     }
 
     private function isSubMeterRecord(EnergyRecord $record): bool

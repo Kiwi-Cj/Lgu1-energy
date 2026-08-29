@@ -45,9 +45,8 @@ This document summarizes the current app access rules implemented in UI, middlew
 - Blocked for `staff`:
   - `reports.energy-export` (Excel)
   - `modules.energy.export-excel` (CSV fallback)
-  - `modules.energy.annual.export-excel` (CSV fallback)
 - Allowed for `staff`:
-  - PDF export routes (report PDFs / annual PDF)
+  - PDF export routes
 
 ## Recommended Future Refactor
 

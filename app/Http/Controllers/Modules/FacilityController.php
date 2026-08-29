@@ -8,16 +8,15 @@ use App\Models\EnergyIncident;
 use App\Models\EnergyIncidentHistory;
 use App\Models\EnergyProfile;
 use App\Models\EnergyRecord;
-use App\Models\FacilityMeter;
 use Illuminate\Http\Request;
 use App\Models\Facility;
 use App\Models\FacilityAuditLog;
 use App\Models\Maintenance;
 use App\Models\MaintenanceHistory;
-use App\Models\Submeter;
-use App\Models\SubmeterEquipment;
 use App\Services\ArchivePruneService;
+use App\Services\CprfFacilitySyncService;
 use App\Support\RoleAccess;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Excel as ExcelWriter;
@@ -67,6 +66,23 @@ class FacilityController extends Controller
     public function update(Request $request, $id)
     {
         $facility = Facility::findOrFail($id);
+
+        // Facilities mirrored from CPRF: identity fields are managed by the
+        // CPRF sync and stay read-only here. Only the photo may be changed
+        // locally; energy data (profiles, meters, baselines) lives in its
+        // own controllers and is unaffected.
+        if ($facility->isCprfManaged()) {
+            $request->validate([
+                'image' => SystemSettings::facilityImageRules(),
+            ]);
+            if ($path = $this->storeFacilityImageToPublic($request)) {
+                $facility->update(['image_path' => $path]);
+                return redirect()->route('facilities.show', $facility->id)->with('success', 'Facility photo updated.');
+            }
+            return redirect()->route('facilities.show', $facility->id)
+                ->with('error', 'This is a public facility managed by the CPRF Facilities Reservation system — its details are synced automatically and cannot be edited here.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
@@ -78,7 +94,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image' => SystemSettings::facilityImageRules(),
         ]);
 
         // Handle image upload if present
@@ -98,6 +114,10 @@ class FacilityController extends Controller
      */
     public function store(Request $request)
     {
+        if (! $request->has('status')) {
+            $request->merge(['status' => SystemSettings::defaultFacilityStatus()]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
@@ -109,7 +129,7 @@ class FacilityController extends Controller
             'year_built' => 'nullable|integer|min:1900|max:' . date('Y'),
             'operating_hours' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive,maintenance',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'image' => SystemSettings::facilityImageRules(),
         ]);
 
         // Handle image upload if present
@@ -124,6 +144,33 @@ class FacilityController extends Controller
 
         return redirect()->route('facilities.index')->with('success', 'Facility added successfully.');
     }
+    /**
+     * Manual "Sync now" for the Public Facilities (CPRF) tab: runs the same
+     * service as the scheduled energy:sync-cprf-facilities command.
+     */
+    public function syncCprf(CprfFacilitySyncService $service)
+    {
+        if (! $this->canManageCprf()) {
+            return redirect()->route('facilities.index', ['source' => 'cprf'])
+                ->with('error', 'You do not have permission to run the CPRF facilities sync.');
+        }
+
+        $result = $service->sync();
+
+        if (! $result['success']) {
+            return redirect()->route('facilities.index', ['source' => 'cprf'])
+                ->with('error', 'CPRF sync failed: ' . ($result['error'] ?? 'unknown error'));
+        }
+
+        return redirect()->route('facilities.index', ['source' => 'cprf'])->with('success', sprintf(
+            'Public facilities synced from CPRF: %d added, %d updated, %d deactivated, %d unchanged.',
+            $result['created'],
+            $result['updated'],
+            $result['deactivated'],
+            $result['unchanged']
+        ));
+    }
+
     /**
      * Show the form for editing the specified facility.
      */
@@ -167,6 +214,11 @@ class FacilityController extends Controller
         return RoleAccess::can(auth()->user(), 'manage_facility_master');
     }
 
+    private function canManageCprf(): bool
+    {
+        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+    }
+
     private function logFacilityAudit(Facility $facility, string $action, ?string $reason = null): void
     {
         try {
@@ -201,6 +253,28 @@ class FacilityController extends Controller
             }
         } else {
             $facilities = Facility::with($facilityRelations)->get();
+        }
+
+        // Source tabs: LGU-owned facilities vs public facilities mirrored
+        // from the CPRF facilities reservation system.
+        $sourceTab = (string) request()->query('source', 'all');
+        if (! in_array($sourceTab, ['all', 'local', 'cprf'], true)) {
+            $sourceTab = 'all';
+        }
+        $canManageCprf = $this->canManageCprf();
+        if ($sourceTab === 'cprf' && ! $canManageCprf) {
+            $sourceTab = 'all';
+        }
+        $allFacilitiesCount = $facilities->count();
+        $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
+        $localFacilitiesCount = $facilities->count() - $publicFacilitiesCount;
+        $cprfIntegrationActive = filled(config('services.cprf_integration.facilities_feed_url'))
+            && filled(config('services.cprf_integration.token'))
+            && Facility::query()->where('source', 'cprf')->exists();
+        if ($sourceTab !== 'all') {
+            $facilities = $facilities
+                ->filter(fn ($f) => (($f->source ?? 'local') === 'cprf') === ($sourceTab === 'cprf'))
+                ->values();
         }
 
         // Compute dynamic facility size from total approved MAIN meter baseline.
@@ -254,147 +328,17 @@ class FacilityController extends Controller
         return view('modules.facilities.index', [
             'facilities' => $facilitiesWithAvg,
             'totalFacilities' => $facilities->count(),
-            'activeFacilities' => $facilities->where('status', 'active')->count(),
-            'inactiveFacilities' => $facilities->where('status', 'inactive')->count(),
-            'maintenanceFacilities' => $facilities->where('status', 'maintenance')->count(),
+            'activeFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'active')->count(),
+            'inactiveFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'inactive')->count(),
+            'maintenanceFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'maintenance')->count(),
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
-        ]);
-    }
-
-    public function equipmentInventory(Request $request, Facility $facility)
-    {
-        $user = $request->user();
-        $canViewInventory = RoleAccess::can($user, 'view_facilities');
-        $canManageInventory = RoleAccess::can($user, 'manage_facility_master');
-
-        if (! $canViewInventory) {
-            return redirect()->route('modules.facilities.index')
-                ->with('error', 'You do not have permission to view equipment inventory.');
-        }
-
-        if ($this->isStaff()) {
-            $assignedFacilityIds = $user->facilities()
-                ->pluck('facilities.id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
-
-            if (! in_array((int) $facility->id, $assignedFacilityIds, true)) {
-                return redirect()->route('modules.facilities.index')
-                    ->with('error', 'You can only view equipment inventory for your assigned facility.');
-            }
-        }
-
-        $selectedMeterScope = strtolower(trim((string) $request->query('meter_scope', 'all')));
-        $selectedSubmeter = $request->filled('submeter_id') ? (int) $request->query('submeter_id') : null;
-        $selectedMainMeter = $request->filled('main_meter_id') ? (int) $request->query('main_meter_id') : null;
-
-        if (! in_array($selectedMeterScope, ['all', 'sub', 'main'], true)) {
-            $selectedMeterScope = 'all';
-        }
-
-        if ($selectedMeterScope === 'sub') {
-            $selectedMainMeter = null;
-        } elseif ($selectedMeterScope === 'main') {
-            $selectedSubmeter = null;
-        } elseif ($selectedSubmeter && $selectedMainMeter) {
-            // Avoid conflicting filters when scope is "all".
-            $selectedMainMeter = null;
-        }
-
-        $submeters = Submeter::query()
-            ->where('facility_id', (int) $facility->id)
-            ->where('status', 'active')
-            ->orderBy('submeter_name')
-            ->get(['id', 'facility_id', 'submeter_name', 'status']);
-
-        $mainMeters = FacilityMeter::query()
-            ->where('facility_id', (int) $facility->id)
-            ->where('meter_type', 'main')
-            ->where('status', 'active')
-            ->whereNotNull('approved_at')
-            ->orderBy('meter_name')
-            ->get(['id', 'facility_id', 'meter_name', 'meter_number', 'status', 'approved_at']);
-
-        if ($selectedSubmeter && ! $submeters->contains(fn (Submeter $submeter) => (int) $submeter->id === $selectedSubmeter)) {
-            $selectedSubmeter = null;
-        }
-
-        if ($selectedMainMeter && ! $mainMeters->contains(fn (FacilityMeter $meter) => (int) $meter->id === $selectedMainMeter)) {
-            $selectedMainMeter = null;
-        }
-
-        $equipmentQuery = SubmeterEquipment::query()
-            ->with([
-                'submeter:id,facility_id,submeter_name,status',
-                'mainMeter:id,facility_id,meter_name,meter_number,meter_type,status,approved_at',
-            ])
-            ->where(function ($query) use ($facility) {
-                $query->where(function ($subQuery) use ($facility) {
-                    $subQuery->where('meter_scope', 'sub')
-                        ->whereHas('submeter', function ($meterQuery) use ($facility) {
-                            $meterQuery->where('facility_id', (int) $facility->id)
-                                ->where('status', 'active');
-                        });
-                })->orWhere(function ($mainQuery) use ($facility) {
-                    $mainQuery->where('meter_scope', 'main')
-                        ->whereHas('mainMeter', function ($meterQuery) use ($facility) {
-                            $meterQuery->where('facility_id', (int) $facility->id)
-                                ->where('meter_type', 'main')
-                                ->where('status', 'active')
-                                ->whereNotNull('approved_at');
-                        });
-                });
-            });
-
-        if ($selectedMeterScope === 'sub') {
-            $equipmentQuery->where('meter_scope', 'sub');
-            if ($selectedSubmeter) {
-                $equipmentQuery->where('submeter_id', $selectedSubmeter);
-            }
-        } elseif ($selectedMeterScope === 'main') {
-            $equipmentQuery->where('meter_scope', 'main');
-            if ($selectedMainMeter) {
-                $equipmentQuery->where('facility_meter_id', $selectedMainMeter);
-            }
-        } else {
-            if ($selectedSubmeter) {
-                $equipmentQuery->where('meter_scope', 'sub')
-                    ->where('submeter_id', $selectedSubmeter);
-            } elseif ($selectedMainMeter) {
-                $equipmentQuery->where('meter_scope', 'main')
-                    ->where('facility_meter_id', $selectedMainMeter);
-            }
-        }
-
-        $summaryRows = (clone $equipmentQuery)
-            ->setEagerLoads([])
-            ->get(['id', 'quantity', 'rated_watts', 'estimated_kwh']);
-        $totals = [
-            'items' => (int) $summaryRows->count(),
-            'total_watts' => (float) $summaryRows->sum(function ($equipment) {
-                $quantity = (int) ($equipment->quantity ?? 0);
-                $watts = (float) ($equipment->rated_watts ?? 0);
-                return $quantity * $watts;
-            }),
-            'estimated_kwh' => (float) $summaryRows->sum(fn ($equipment) => (float) ($equipment->estimated_kwh ?? 0)),
-        ];
-
-        $equipmentRows = $equipmentQuery
-            ->orderByDesc('estimated_kwh')
-            ->orderBy('equipment_name')
-            ->paginate(25)
-            ->withQueryString();
-
-        return view('modules.facilities.equipment-inventory', [
-            'facility' => $facility,
-            'submeters' => $submeters,
-            'mainMeters' => $mainMeters,
-            'selectedMeterScope' => $selectedMeterScope,
-            'selectedSubmeter' => $selectedSubmeter,
-            'selectedMainMeter' => $selectedMainMeter,
-            'equipmentRows' => $equipmentRows,
-            'totals' => $totals,
-            'canManageInventory' => $canManageInventory,
+            'sourceTab' => $sourceTab,
+            'allFacilitiesCount' => $allFacilitiesCount,
+            'localFacilitiesCount' => $localFacilitiesCount,
+            'publicFacilitiesCount' => $publicFacilitiesCount,
+            'cprfIntegrationActive' => $cprfIntegrationActive,
+            'canManageCprf' => $canManageCprf,
+            'canSyncCprf' => $canManageCprf,
         ]);
     }
 
@@ -496,14 +440,6 @@ class FacilityController extends Controller
         if ($highKwhRec) $recommendations[] = $highKwhRec;
         if (empty($recommendations)) $recommendations[] = 'Energy consumption within acceptable range. Continue regular monitoring.';
 
-        // EUI
-        $monthlyEui = $annualEui = null;
-        if ($facility->floor_area && $energyRecords->count()) {
-            $latestKwh = $energyRecords->first()->actual_kwh;
-            $monthlyEui = round($latestKwh / $facility->floor_area, 2);
-            $annualEui = round(($latestKwh * 12) / $facility->floor_area, 2);
-        }
-
         // MAINTENANCE
         $lastMaint = Maintenance::where('facility_id', $facility->id)
             ->whereNotNull('completed_date')
@@ -526,8 +462,6 @@ class FacilityController extends Controller
                 'trend_data' => $trendData,
                 'trend_analysis' => $trendAnalysis,
                 'usage' => $usageRows,
-                'monthly_eui' => $monthlyEui,
-                'annual_eui' => $annualEui,
                 'last_maintenance' => $lastMaint ? $lastMaint->completed_date : null,
                 'next_maintenance' => $nextMaint ? $nextMaint->scheduled_date : null,
                 'recommendations' => $recommendations,
@@ -665,6 +599,17 @@ class FacilityController extends Controller
         }
 
         $facility = Facility::findOrFail($id);
+
+        // CPRF-managed rows are deactivated automatically by the sync when
+        // removed on the CPRF side; archiving them here would just be
+        // undone (restored) by the next sync run.
+        if ($facility->isCprfManaged()) {
+            $message = 'This public facility is managed by the CPRF Facilities Reservation system and cannot be archived here — it deactivates automatically when removed on CPRF.';
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+            return redirect()->back()->with('error', $message);
+        }
         $facility->deleted_by = auth()->id();
         $facility->archive_reason = $archiveReason;
         $facility->saveQuietly();

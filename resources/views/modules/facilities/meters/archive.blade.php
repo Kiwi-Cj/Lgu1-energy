@@ -13,7 +13,9 @@
 
 <style>
     .meter-archive-page {
-        padding: 10px 12px 24px;
+        width:min(1440px,100%);
+        margin:0 auto;
+        padding: 18px;
         color: #1e293b;
     }
 
@@ -22,7 +24,13 @@
         border: 1px solid #e2e8f0;
         border-radius: 18px;
         box-shadow: 0 2px 12px rgba(31, 38, 135, .06);
-        padding: 26px;
+        padding: 24px;
+    }
+
+    .meter-archive-heading { display:flex; align-items:center; gap:13px; }
+    .meter-archive-heading-icon {
+        width:48px; height:48px; display:grid; place-items:center; flex:0 0 auto; border-radius:14px;
+        color:#fff; background:linear-gradient(135deg,#2563eb,#4f46e5); box-shadow:0 10px 22px rgba(37,99,235,.22);
     }
 
     .meter-archive-header {
@@ -35,7 +43,7 @@
 
     .meter-archive-title {
         margin: 0;
-        color: #2563eb;
+        color: #0f172a;
         font-size: clamp(1.55rem, 2.2vw, 2.1rem);
         font-weight: 800;
         letter-spacing: 0;
@@ -77,6 +85,7 @@
         gap: 12px;
         padding: 14px 16px;
         border-bottom: 1px solid #e2e8f0;
+        background:#f8fafc;
     }
 
     .meter-archive-count {
@@ -90,11 +99,25 @@
         text-align: right;
     }
 
+    .meter-archive-policy {
+        display:inline-flex; align-items:center; gap:7px; padding:6px 9px; border:1px solid #fed7aa;
+        border-radius:999px; background:#fff7ed; color:#9a3412; font-size:.75rem; font-weight:800;
+    }
+
     .meter-archive-empty {
+        min-height:190px;
         padding: 34px 16px;
         text-align: center;
         color: #64748b;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex-direction:column;
+        gap:8px;
     }
+    .meter-archive-empty-icon { width:50px; height:50px; display:grid; place-items:center; border-radius:15px; background:#eff6ff; color:#2563eb; font-size:1.05rem; }
+    .meter-archive-empty strong { color:#1e293b; font-size:.98rem; }
+    .meter-archive-empty span { font-size:.83rem; }
 
     .meter-archive-table {
         width: 100%;
@@ -117,12 +140,21 @@
         padding: 14px 16px;
         border-bottom: 1px solid #edf2f7;
         vertical-align: middle;
+        transition:background-color .15s ease;
     }
 
-    .meter-col-name { width: 34%; }
-    .meter-col-reason { width: 27%; }
-    .meter-col-date { width: 21%; }
+    .meter-archive-table tbody tr:hover td { background:#fbfdff; }
+
+    .meter-col-name { width: 32%; }
+    .meter-col-reason { width: 25%; }
+    .meter-col-date { width: 25%; }
     .meter-col-actions { width: 18%; text-align: right; }
+
+    .meter-identity-cell { display:flex; align-items:center; gap:11px; min-width:0; }
+    .meter-identity-icon {
+        width:40px; height:40px; display:grid; place-items:center; flex:0 0 auto; border-radius:12px;
+        background:#eff6ff; color:#2563eb;
+    }
 
     .meter-name {
         color: #0f172a;
@@ -164,6 +196,20 @@
         white-space: nowrap;
     }
 
+    .meter-reason-card {
+        display:flex; align-items:flex-start; gap:9px; padding:9px 10px; border-radius:10px;
+        background:#f8fafc; border:1px solid #e2e8f0;
+    }
+    .meter-reason-card i { color:#64748b; margin-top:2px; flex:0 0 auto; }
+
+    .meter-date-row { display:flex; align-items:center; gap:7px; }
+    .meter-date-row i { color:#2563eb; }
+
+    .meter-retention-pill {
+        display:inline-flex; align-items:center; gap:6px; margin-top:7px; padding:4px 8px; border-radius:999px;
+        background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; font-size:.72rem; font-weight:800;
+    }
+
     .meter-date {
         color: #1e293b;
         font-weight: 800;
@@ -179,8 +225,10 @@
         display: inline-flex;
         justify-content: flex-end;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
+
+    .meter-actions form { margin:0; }
 
     .meter-btn,
     .meter-page-link,
@@ -202,6 +250,8 @@
 
     .meter-btn.restore { background: #16a34a; }
     .meter-btn.danger { background: #e11d48; }
+    .meter-btn { min-height:38px; padding:0 11px; font-size:.8rem; transition:transform .15s ease,filter .15s ease; }
+    .meter-btn:hover { transform:translateY(-1px); filter:brightness(.96); }
 
     .meter-pagination {
         display: flex;
@@ -330,7 +380,47 @@
         color: #fff;
     }
 
+    body.dark-mode .meter-archive-page { color:#e2e8f0; }
+    body.dark-mode .meter-archive-card {
+        background:#0f172a !important;
+        border-color:#334155 !important;
+        box-shadow:0 18px 46px rgba(2,6,23,.42);
+    }
+    body.dark-mode .meter-archive-title { color:#f8fafc !important; }
+    body.dark-mode .meter-archive-subtitle { color:#94a3b8 !important; }
+    body.dark-mode .meter-archive-back { background:#2563eb !important; color:#fff !important; }
+    body.dark-mode .meter-archive-shell { background:#0f172a !important; border-color:#334155 !important; }
+    body.dark-mode .meter-archive-list-head { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .meter-archive-count { color:#f8fafc !important; }
+    body.dark-mode .meter-archive-note { color:#94a3b8 !important; }
+    body.dark-mode .meter-archive-policy { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    body.dark-mode .meter-archive-empty { color:#94a3b8 !important; }
+    body.dark-mode .meter-archive-empty-icon { background:#172554 !important; color:#60a5fa !important; }
+    body.dark-mode .meter-archive-empty strong { color:#f8fafc !important; }
+    body.dark-mode .meter-archive-table th { background:#111827 !important; border-color:#334155 !important; color:#93c5fd !important; }
+    body.dark-mode .meter-archive-table td { background:#0f172a !important; border-color:#263449 !important; color:#e2e8f0 !important; }
+    body.dark-mode .meter-archive-table tbody tr:hover td { background:#111827 !important; }
+    body.dark-mode .meter-name,
+    body.dark-mode .meter-date { color:#f8fafc !important; }
+    body.dark-mode .meter-meta,
+    body.dark-mode .meter-by,
+    body.dark-mode .meter-reason { color:#cbd5e1 !important; }
+    body.dark-mode .meter-pill { background:#172554 !important; color:#bfdbfe !important; }
+    body.dark-mode .meter-pill.neutral { background:#1e293b !important; color:#cbd5e1 !important; }
+    body.dark-mode .meter-identity-icon { background:#172554 !important; color:#60a5fa !important; }
+    body.dark-mode .meter-reason-card { background:#111827 !important; border-color:#334155 !important; }
+    body.dark-mode .meter-retention-pill { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    body.dark-mode .meter-pagination { background:#111827 !important; }
+    body.dark-mode .meter-page-link { background:#1e293b !important; color:#cbd5e1 !important; }
+    body.dark-mode .meter-confirm-overlay { background:rgba(2,6,23,.76) !important; }
+    body.dark-mode .meter-confirm-panel { background:#0f172a !important; border:1px solid #334155; }
+    body.dark-mode .meter-confirm-head { border-color:#334155 !important; }
+    body.dark-mode .meter-confirm-title { color:#f8fafc !important; }
+    body.dark-mode .meter-confirm-message { color:#cbd5e1 !important; }
+    body.dark-mode .meter-confirm-btn.cancel { background:#1e293b !important; color:#e2e8f0 !important; }
+
     @media (max-width: 820px) {
+        .meter-archive-page { padding:10px; }
         .meter-archive-card {
             padding: 18px;
             border-radius: 16px;
@@ -381,6 +471,8 @@
         .meter-actions .meter-btn {
             width: 100%;
         }
+
+        .meter-actions { flex-wrap:wrap; }
     }
 </style>
 
@@ -392,11 +484,14 @@
         <div class="meter-alert error">{{ session('error') }}</div>
     @endif
 
-    <div class="meter-archive-card">
+    <div class="report-card-container meter-archive-card">
         <div class="meter-archive-header">
-            <div>
-                <h2 class="meter-archive-title">{{ $subOnlyMode ? 'Sub-meter Archive' : 'Meter Archive' }}</h2>
-                <p class="meter-archive-subtitle">Facility: <strong>{{ $facility->name }}</strong></p>
+            <div class="meter-archive-heading">
+                <span class="meter-archive-heading-icon"><i class="fa fa-box-archive"></i></span>
+                <div>
+                    <h2 class="meter-archive-title">{{ $subOnlyMode ? 'Sub-meter Archive' : 'Meter Archive' }}</h2>
+                    <p class="meter-archive-subtitle">Review and restore archived meters for <strong>{{ $facility->name }}</strong>.</p>
+                </div>
             </div>
             <a href="{{ $backUrl }}" class="meter-archive-back">
                 <i class="fa fa-arrow-left"></i>
@@ -406,12 +501,16 @@
 
         <div class="meter-archive-shell">
             <div class="meter-archive-list-head">
-                <div class="meter-archive-count">Archived Meters ({{ $archiveCount }})</div>
-                <div class="meter-archive-note">Auto permanent delete after 30 days in archive.</div>
+                <div class="meter-archive-count"><i class="fa fa-box-archive" style="color:#2563eb;margin-right:6px;"></i> Archived Meters ({{ $archiveCount }})</div>
+                <div class="meter-archive-policy"><i class="fa fa-shield-clock"></i> 30-day recovery window</div>
             </div>
 
             @if($archivedMeters->count() === 0)
-                <div class="meter-archive-empty">No archived meters yet.</div>
+                <div class="meter-archive-empty">
+                    <span class="meter-archive-empty-icon"><i class="fa fa-box-open"></i></span>
+                    <strong>No archived meters</strong>
+                    <span>Meters removed from the active directory will appear here for 30 days.</span>
+                </div>
             @else
                 <table class="meter-archive-table">
                     <thead>
@@ -428,29 +527,44 @@
                                 $reason = trim((string) ($meter->archive_reason ?? ''));
                                 $archivedAt = $meter->deleted_at;
                                 $daysLeft = $archivedAt ? max(0, (int) ceil(30 - $archivedAt->diffInDays(now()))) : null;
+                                $expiresAt = $archivedAt ? $archivedAt->copy()->addDays(30) : null;
                             @endphp
                             <tr>
                                 <td class="meter-col-name">
-                                    <div class="meter-name">{{ $meter->meter_name }}</div>
-                                    <div class="meter-meta">
-                                        <span class="meter-pill">{{ strtoupper((string) ($meter->meter_type ?: 'meter')) }}</span>
-                                        <span class="meter-pill neutral">{{ $meter->meter_number ?: 'No number' }}</span>
-                                        <span>{{ $meter->baseline_kwh !== null ? number_format((float) $meter->baseline_kwh, 2) . ' kWh baseline' : 'No baseline' }}</span>
+                                    <div class="meter-identity-cell">
+                                        <span class="meter-identity-icon"><i class="fa fa-gauge-high"></i></span>
+                                        <div>
+                                            <div class="meter-name">{{ $meter->meter_name }}</div>
+                                            <div class="meter-meta">
+                                                <span class="meter-pill">{{ strtoupper((string) ($meter->meter_type ?: 'meter')) }}</span>
+                                                <span class="meter-pill neutral">{{ $meter->meter_number ?: 'No number' }}</span>
+                                                <span>{{ $meter->baseline_kwh !== null ? number_format((float) $meter->baseline_kwh, 2) . ' kWh baseline' : 'No baseline' }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="meter-col-reason">
-                                    <div class="meter-reason" title="{{ $reason !== '' ? $reason : 'No reason provided' }}">
-                                        {{ $reason !== '' ? $reason : 'No reason provided' }}
+                                    <div class="meter-reason-card">
+                                        <i class="fa fa-message"></i>
+                                        <div class="meter-reason" title="{{ $reason !== '' ? $reason : 'No reason provided' }}">
+                                            {{ $reason !== '' ? $reason : 'No reason provided' }}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="meter-col-date">
-                                    <div class="meter-date">{{ $archivedAt ? $archivedAt->format('M d, Y h:i A') : '-' }}</div>
+                                    <div class="meter-date-row">
+                                        <i class="fa fa-calendar-xmark"></i>
+                                        <div class="meter-date">{{ $archivedAt ? $archivedAt->format('M d, Y h:i A') : '-' }}</div>
+                                    </div>
                                     <div class="meter-by">
                                         By {{ $meter->deletedByUser?->full_name ?? $meter->deletedByUser?->name ?? $meter->deletedByUser?->username ?? 'Unknown' }}
-                                        @if($daysLeft !== null)
-                                            <span>- {{ $daysLeft > 0 ? $daysLeft . ' day(s) left' : 'Due for cleanup' }}</span>
-                                        @endif
                                     </div>
+                                    @if($daysLeft !== null)
+                                        <span class="meter-retention-pill" title="{{ $expiresAt ? 'Scheduled cleanup: ' . $expiresAt->format('M d, Y h:i A') : '' }}">
+                                            <i class="fa fa-hourglass-half"></i>
+                                            {{ $daysLeft > 0 ? $daysLeft . ' days remaining' : 'Due for cleanup' }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="meter-col-actions">
                                     <div class="meter-actions">

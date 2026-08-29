@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'block.staff.reports' => \App\Http\Middleware\BlockStaffFromReports::class,
             'download.confirmed' => \App\Http\Middleware\RequireDownloadAuthorization::class,
             'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
+            'cimm.maintenance.sync' => \App\Http\Middleware\AuthenticateCimmMaintenanceSync::class,
+            'cprf.integration' => \App\Http\Middleware\AuthenticateCprfIntegration::class,
+            'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

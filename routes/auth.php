@@ -31,7 +31,10 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 
     Route::get('verify-otp', [OtpVerificationController::class, 'show'])->name('verify.otp.form');
-    Route::post('verify-otp', [OtpVerificationController::class, 'verify'])->name('verify.otp.submit');
+    Route::post('verify-otp', [OtpVerificationController::class, 'verify'])
+        ->middleware('throttle:6,1')
+        ->name('verify.otp.submit');
+    Route::post('verify-otp/resend', [OtpVerificationController::class, 'resend'])->name('verify.otp.resend');
 });
 
 Route::middleware('auth')->group(function () {
@@ -52,6 +55,10 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::post('session/keep-alive', [AuthenticatedSessionController::class, 'keepAlive'])
+        ->middleware('throttle:12,1')
+        ->name('session.keep-alive');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

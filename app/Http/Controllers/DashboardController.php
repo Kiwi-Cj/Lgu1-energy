@@ -104,9 +104,6 @@ class DashboardController extends Controller
             ? $selectedStartMonth->format('F')
             : $selectedStartMonth->format('F Y');
         $periodEndLabel = $selectedEndMonth->format('F Y');
-        $isDefaultRange = $periodStartInput === $defaultStartMonth->format('Y-m')
-            && $periodEndInput === $defaultEndMonth->format('Y-m');
-
         $applyEnergyRecordRange = function ($query) use ($periodStartYm, $periodEndYm) {
             return $query->whereRaw('(year * 100 + month) BETWEEN ? AND ?', [$periodStartYm, $periodEndYm]);
         };
@@ -391,6 +388,23 @@ class DashboardController extends Controller
             $costChartData[] = $cost ?: 0;
         }
 
+        $recordedMonthCount = collect($energyChartData)->filter(fn ($value) => (float) $value > 0)->count();
+        $missingMonthCount = max(0, count($months) - $recordedMonthCount);
+        $periodActualTotal = (float) array_sum($energyChartData);
+        $periodBaselineTotal = (float) array_sum($baselineChartData);
+        $periodVariancePercent = $periodBaselineTotal > 0
+            ? (($periodActualTotal - $periodBaselineTotal) / $periodBaselineTotal) * 100
+            : null;
+        $averageMonthlyKwh = $recordedMonthCount > 0 ? $periodActualTotal / $recordedMonthCount : 0;
+        $averageEnergyRate = $periodActualTotal > 0 ? ((float) array_sum($costChartData)) / $periodActualTotal : 0;
+        $peakUsageValue = ! empty($energyChartData) ? (float) max($energyChartData) : 0;
+        $peakUsageIndex = $peakUsageValue > 0 ? array_search($peakUsageValue, array_map('floatval', $energyChartData), true) : false;
+        $peakUsageLabel = $peakUsageIndex !== false ? ($energyChartLabels[$peakUsageIndex] ?? 'No data') : 'No data';
+
+        // A missing monthly record must be shown as a chart gap, not as zero consumption/cost.
+        $energyChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $energyChartData);
+        $costChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $costChartData);
+
         // 2b. High Consumption Hubs (selected period, average vs. baseline)
         $topFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
             $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
@@ -486,46 +500,9 @@ class DashboardController extends Controller
             $kwhTrend = '';
         }
 
-        // Insert alerts as notifications only for default (latest 6 months) view.
-        if ($isDefaultRange) {
-            foreach ($alerts as $alertItem) {
-                $alertMsg = $alertItem['message'] ?? null;
-                if (!$alertMsg) {
-                    continue;
-                }
-                $alertType = (string) ($alertItem['type'] ?? 'alert');
-                $alertTitle = match ($alertType) {
-                    'incident' => 'Incident Alert',
-                    'maintenance' => 'Maintenance Alert',
-                    'consumption' => 'Consumption Alert',
-                    'record' => 'Energy Alert',
-                    default => 'System Alert',
-                };
-                // Avoid duplicates for the same month even if previously marked as read.
-                // This keeps "Mark all read" stable and prevents the badge from reappearing on reload.
-                $existingNotification = $user->notifications()
-                    ->where('message', $alertMsg)
-                    ->whereYear('created_at', now()->year)
-                    ->whereMonth('created_at', now()->month)
-                    ->first();
-                if ($existingNotification) {
-                    $currentTitle = strtolower(trim((string) ($existingNotification->title ?? '')));
-                    $currentType = strtolower(trim((string) ($existingNotification->type ?? '')));
-                    if ($currentTitle === '' || $currentTitle === 'system alert' || $currentType === '' || $currentType === 'alert') {
-                        $existingNotification->update([
-                            'title' => $alertTitle,
-                            'type' => $alertType,
-                        ]);
-                    }
-                } else {
-                    $user->notifications()->create([
-                        'title' => $alertTitle,
-                        'message' => $alertMsg,
-                        'type' => $alertType,
-                    ]);
-                }
-            }
-        }
+        // Alert cards are read-only here. Bell notifications are created by the
+        // record, incident, maintenance, and recommendation event services so
+        // opening the dashboard cannot create duplicate notification rows.
 
         $role = $userRole;
 
@@ -540,9 +517,18 @@ class DashboardController extends Controller
             'complianceStatus' => $complianceStatus,
             'energyChartLabels' => $energyChartLabels,
             'energyChartData' => $energyChartData,
+            'energyChartDisplayData' => $energyChartDisplayData,
             'baselineChartData' => $baselineChartData,
             'costChartLabels' => $costChartLabels,
             'costChartData' => $costChartData,
+            'costChartDisplayData' => $costChartDisplayData,
+            'recordedMonthCount' => $recordedMonthCount,
+            'missingMonthCount' => $missingMonthCount,
+            'periodVariancePercent' => $periodVariancePercent,
+            'averageMonthlyKwh' => $averageMonthlyKwh,
+            'averageEnergyRate' => $averageEnergyRate,
+            'peakUsageValue' => $peakUsageValue,
+            'peakUsageLabel' => $peakUsageLabel,
             'recentLogs' => $recentLogs,
             'alerts' => $alerts,
             'criticalAlerts' => $criticalAlerts,

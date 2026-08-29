@@ -93,13 +93,14 @@
                         <th>ID</th>
                         <th>Facility</th>
                         <th>Issue Type</th>
-                        <th>Trigger</th>
+                        <th>Trigger Date</th>
                         <th>Trend</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Scheduled</th>
+                        <th>Scheduled Date</th>
                         <th>Assigned</th>
-                        <th>Completed</th>
+                        <th>Completed Date</th>
+                        <th>Proof</th>
                         <th>Remarks</th>
                         @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                         <th>Action</th>
@@ -115,11 +116,13 @@
                                 $row['id'] ?? '',
                                 $row['facility'] ?? '',
                                 $row['issue_type'] ?? '',
-                                $row['trigger_month'] ?? '',
+                                $row['trigger_date'] ?? $row['trigger_month'] ?? '',
                                 $row['trend'] ?? '',
                                 $row['maintenance_type'] ?? '',
                                 $row['maintenance_status'] ?? '',
+                                $row['scheduled_date'] ?? '',
                                 $row['assigned_to'] ?? '',
+                                $row['completed_date'] ?? '',
                                 $row['remarks'] ?? '',
                             ]));
                         @endphp
@@ -127,13 +130,20 @@
                             <td>{{ $row['id'] }}</td>
                             <td class="facility-cell">{{ $row['facility'] }}</td>
                             <td>{{ $row['issue_type'] }}</td>
-                            <td>{{ $row['trigger_month'] }}</td>
+                            <td>{{ $row['trigger_date'] ?? $row['trigger_month'] }}</td>
                             <td>{{ $row['trend'] }}</td>
                             <td>{{ $row['maintenance_type'] }}</td>
                             <td><span class="status-pill {{ $statusClass }}">{{ $row['maintenance_status'] }}</span></td>
                             <td>{{ $row['scheduled_date'] }}</td>
                             <td>{{ $row['assigned_to'] }}</td>
                             <td>{{ $row['completed_date'] }}</td>
+                            <td>
+                                @if(!empty($row['proof_photo_url']))
+                                    <a href="{{ $row['proof_photo_url'] }}" target="_blank" rel="noopener" style="color:#2563eb;font-weight:800;text-decoration:none;white-space:nowrap;"><i class="fa fa-image"></i> View</a>
+                                @else
+                                    <span style="color:#94a3b8;">—</span>
+                                @endif
+                            </td>
                             <td><div class="remarks-cell" title="{{ $row['remarks'] }}">{{ \Illuminate\Support\Str::limit((string) $row['remarks'], 90) }}</div></td>
                             @if(!in_array($userRole, ['staff', 'energy_officer'], true))
                             <td>
@@ -149,11 +159,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No maintenance history found.</td>
+                            <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 12 : 13 }}" class="empty-cell">No maintenance history found.</td>
                         </tr>
                     @endforelse
                     <tr id="historyNoMatchRow" style="display:none;">
-                        <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 11 : 12 }}" class="empty-cell">No matching records found.</td>
+                        <td colspan="{{ in_array($userRole, ['staff', 'energy_officer'], true) ? 12 : 13 }}" class="empty-cell">No matching records found.</td>
                     </tr>
                 </tbody>
             </table>

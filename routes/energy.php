@@ -27,8 +27,12 @@ Route::get('/modules/energy/trend', function (Request $request) {
     $scopeFacilityIds = $facilities->pluck('id')->toArray();
 
     $years = EnergyRecord::query()
-        ->whereHas('meter', function ($meterQuery) {
-            $meterQuery->where('meter_type', 'main');
+        ->where(function ($q) {
+            $q->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })->orWhere(function ($q2) {
+                $q2->whereNull('meter_id')->where('input_source', 'cprf');
+            });
         })
         ->when(!empty($scopeFacilityIds), fn($q) => $q->whereIn('facility_id', $scopeFacilityIds))
         ->select('year')
@@ -56,8 +60,12 @@ Route::get('/modules/energy/trend', function (Request $request) {
     if ($selectedFacilityId > 0 && $selectedYear > 0) {
         $query = EnergyRecord::query()
             ->where('facility_id', $selectedFacilityId)
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
+            ->where(function ($q) {
+                $q->whereHas('meter', function ($meterQuery) {
+                    $meterQuery->where('meter_type', 'main');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
 
         if (!empty($selectedMonth)) {
@@ -178,8 +186,12 @@ Route::get('/modules/energy/export-excel', function (Request $request) {
     }
 
     $query = EnergyRecord::with('facility')
-        ->whereHas('meter', function ($meterQuery) {
-            $meterQuery->where('meter_type', 'main');
+        ->where(function ($q) {
+            $q->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })->orWhere(function ($q2) {
+                $q2->whereNull('meter_id')->where('input_source', 'cprf');
+            });
         });
     if ($request->filled('facility_id')) {
         $query->where('facility_id', $request->facility_id);
@@ -223,8 +235,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/energy/annual/export-excel', function (Request $request) {
         if (RoleAccess::is(auth()->user(), 'staff')) {
             return redirect()
-                ->route('modules.energy.annual', array_filter($request->query()))
-                ->with('error', 'Excel export is not available for staff accounts.');
+                ->route('energy.dashboard')
+                ->with('error', 'Annual Energy Monitoring is no longer available.');
         }
 
         $years = range(date('Y'), date('Y') - 10);
@@ -233,8 +245,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $selectedFacility = $request->query('facility_id', '');
 
         $query = EnergyRecord::with('facility')
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
+            ->where(function ($q) {
+                $q->whereHas('meter', function ($meterQuery) {
+                    $meterQuery->where('meter_type', 'main');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);
@@ -337,8 +353,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         $query = EnergyRecord::with('facility')
-            ->whereHas('meter', function ($meterQuery) {
-                $meterQuery->where('meter_type', 'main');
+            ->where(function ($q) {
+                $q->whereHas('meter', function ($meterQuery) {
+                    $meterQuery->where('meter_type', 'main');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('meter_id')->where('input_source', 'cprf');
+                });
             });
         if ($selectedFacility) {
             $query->where('facility_id', $selectedFacility);

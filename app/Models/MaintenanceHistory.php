@@ -10,9 +10,11 @@ class MaintenanceHistory extends Model
     use HasFactory;
     protected $table = 'maintenance_history';
     protected $fillable = [
+        'original_maintenance_id',
         'facility_id',
         'issue_type',
         'trigger_month',
+        'trigger_date',
         'trend',
         'efficiency_rating',
         'maintenance_type',
@@ -21,6 +23,12 @@ class MaintenanceHistory extends Model
         'assigned_to',
         'completed_date',
         'remarks',
+    ];
+
+    protected $casts = [
+        'trigger_date' => 'date',
+        'scheduled_date' => 'date',
+        'completed_date' => 'date',
     ];
     public function facility()
     {

@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $filterLabels = ['all' => 'All', 'unread' => 'Unread', 'critical' => 'High and above'];
+    $filterLabels = ['all' => 'All', 'unread' => 'Unread', 'critical' => 'High and above', 'unacknowledged' => 'Needs acknowledgement', 'acknowledged' => 'Acknowledged'];
 @endphp
 
 <style>
@@ -13,9 +13,10 @@
     .notifications-page p { margin:6px 0 0; color:#64748b; }
     .notification-period { color:#1d4ed8; background:#dbeafe; border-radius:999px; padding:10px 14px; font-size:.8rem; font-weight:900; white-space:nowrap; }
     .notification-report-card { padding:36px 38px; border:1px solid #e2e8f0; border-radius:22px; background:#fff; box-shadow:0 12px 34px rgba(15,23,42,.06); }
-    .notification-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; margin:0 0 28px; }
+    .notification-summary-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; margin:0 0 28px; }
     .notification-summary-card { min-height:128px; padding:24px 26px; border:1px solid #e2e8f0; border-radius:17px; background:#f8fafc; }
     .notification-summary-card.total { background:#eef4ff; color:#2455d6; }.notification-summary-card.unread { background:#fff8df; color:#a16207; }.notification-summary-card.high { background:#fff0f1; color:#e11d48; }.notification-summary-card.read { background:#ecfdf3; color:#15803d; }
+    .notification-summary-card.acknowledged { background:#f0fdfa; color:#0f766e; }
     .notification-summary-label { display:flex; align-items:center; gap:8px; font-size:.84rem; font-weight:900; text-transform:uppercase; }.notification-summary-value { display:block; margin-top:22px; color:#172b4d; font-size:2.45rem; font-weight:900; line-height:1; }
     .notification-filters { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 20px; padding:18px 20px; border:1px solid #dbe4f0; border-radius:16px; background:#f8fafc; }
     .notification-filter { border:1px solid #cbd5e1; border-radius:999px; padding:7px 13px; color:#334155; background:#fff; font-size:.82rem; font-weight:800; text-decoration:none; }
@@ -36,6 +37,7 @@
     .notification-badge.high { background:#ffedd5; color:#c2410c; }
     .notification-message { display:block; margin-top:7px; color:#475569; font-size:.93rem; line-height:1.5; }
     .notification-time { display:block; margin-top:9px; color:#94a3b8; font-size:.8rem; font-weight:600; }
+    .notification-actions { display:flex; align-items:center; gap:8px; margin-top:10px; }.notification-action { border:1px solid #bfdbfe; border-radius:9px; padding:6px 10px; color:#1d4ed8; background:#eff6ff; font-size:.72rem; font-weight:900; cursor:pointer; text-decoration:none; }.notification-action.acknowledged { border-color:#a7f3d0; color:#047857; background:#ecfdf5; cursor:default; }
     .notification-empty { padding:50px 22px; color:#64748b; text-align:center; }
     .notification-pagination { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:18px; color:#64748b; font-size:.84rem; }
     .notification-page-links { display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
@@ -72,6 +74,7 @@
             <article class="notification-summary-card unread"><span class="notification-summary-label"><i class="fa-solid fa-envelope"></i> Unread</span><strong class="notification-summary-value">{{ $notificationSummary['unread'] }}</strong></article>
             <article class="notification-summary-card high"><span class="notification-summary-label"><i class="fa-solid fa-triangle-exclamation"></i> High and above</span><strong class="notification-summary-value">{{ $notificationSummary['high'] }}</strong></article>
             <article class="notification-summary-card read"><span class="notification-summary-label"><i class="fa-solid fa-circle-check"></i> Read</span><strong class="notification-summary-value">{{ $notificationSummary['read'] }}</strong></article>
+            <article class="notification-summary-card acknowledged"><span class="notification-summary-label"><i class="fa-solid fa-clipboard-check"></i> Acknowledged</span><strong class="notification-summary-value">{{ $notificationSummary['acknowledged'] }}</strong></article>
         </div>
 
         <nav class="notification-filters" aria-label="Notification filters">
@@ -105,6 +108,13 @@
                     </span>
                     <span class="notification-message">{{ $notification->message }}</span>
                     <span class="notification-time"><i class="fa-regular fa-clock"></i> {{ $notification->created_at->diffForHumans() }}</span>
+                    <span class="notification-actions">
+                        @if($notification->acknowledged_at)
+                            <span class="notification-action acknowledged"><i class="fa-solid fa-check"></i> Acknowledged {{ $notification->acknowledged_at->diffForHumans() }}</span>
+                        @else
+                            <button type="button" class="notification-action" data-ack-url="{{ route('notifications.acknowledge', $notification) }}"><i class="fa-solid fa-clipboard-check"></i> Acknowledge</button>
+                        @endif
+                    </span>
                 </span>
             </a>
         @empty
@@ -146,6 +156,19 @@ document.querySelectorAll('.notification-row[data-read-url]').forEach((row) => {
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
             keepalive: true,
         });
+    });
+});
+document.querySelectorAll('[data-ack-url]').forEach((button) => {
+    button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        button.disabled = true;
+        const response = await fetch(button.dataset.ackUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+        });
+        if (!response.ok) { button.disabled = false; return; }
+        button.outerHTML = '<span class="notification-action acknowledged"><i class="fa-solid fa-check"></i> Acknowledged just now</span>';
     });
 });
 </script>

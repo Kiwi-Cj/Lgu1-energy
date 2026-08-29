@@ -30,7 +30,7 @@ All endpoints are `GET` requests and are limited to 60 requests per minute per c
 | `/api/v1/meters` | Main and sub-meter catalog | `facility_id`, `type`, `status`, `page`, `per_page` |
 | `/api/v1/energy-records` | Energy consumption records | `facility_id`, `meter_id`, `year`, `month`, `page`, `per_page` |
 | `/api/v1/incidents` | Energy incidents | `facility_id`, `status`, `page`, `per_page` |
-| `/api/v1/maintenance` | Maintenance schedules and history | `facility_id`, `status`, `scheduled_from`, `scheduled_to`, `updated_since`, `page`, `per_page` |
+| `/api/v1/maintenance` | Active maintenance (Pending/Ongoing/Completed still in the working table) | `facility_id`, `status`, `scheduled_from`, `scheduled_to`, `updated_since`, `page`, `per_page` |
 
 `per_page` defaults to 25 and has a maximum of 100. List responses contain Laravel pagination fields, including `data`, `current_page`, `last_page`, `per_page`, and `total`.
 
@@ -43,3 +43,123 @@ curl "https://your-domain.example/api/v1/energy-records?year=2026&month=7&per_pa
 ```
 
 Treat IDs as stable identifiers when importing data. Use `updated_at` to detect records that changed since a previous import.
+
+## CIMM maintenance sync
+
+A second, self-contained integration backs the CIMM ↔ Energy maintenance sync
+(the "Facilities Needing Maintenance" page ↔ CIMM's `sched.php`). It lives
+under its own prefix and its own token — deliberately **not** the
+`INTEGRATION_API_TOKEN` bearer token above, since that token already gates
+several unrelated read endpoints and may have a real secret configured for
+another consumer. This one is scoped to just this integration and defaults
+to a shared dev key so it works out of the box on local dev:
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/v1/cimm-maintenance-sync/maintenance` | GET | Same data/filters as `/api/v1/maintenance` above |
+| `/api/v1/cimm-maintenance-sync/maintenance-history` | GET | Archived (Completed) maintenance history — `facility_id`, `status`, `updated_since`, `page`, `per_page` |
+| `/api/v1/cimm-maintenance-sync/maintenance/{id}/sync` | POST | Write-back: apply a CIMM-side status/schedule change |
+
+CIMM's `sched.php` imports every row from the two GET endpoints as
+`maintenance_schedule` entries (see
+`lgu-portal/includes/api/cimm_energy_maintenance.php`), tagged with an
+"⚡ Energy" badge. When a CIMM admin edits one of those rows (status,
+scheduled date, assigned team), CIMM POSTs the change to the `/sync`
+endpoint so both systems agree on where the work stands:
+
+```http
+POST /api/v1/cimm-maintenance-sync/maintenance/{id}/sync
+Authorization: Bearer <CIMM_MAINTENANCE_SYNC_TOKEN>
+Content-Type: application/json
+
+{
+  "status": "Ongoing",
+  "scheduled_date": "2026-08-01",
+  "assigned_to": "Engr. Cruz",
+  "completed_date": null
+}
+```
+
+`{id}` is the Energy `maintenance.id` (the active-table record — once a
+record is archived to `maintenance_history` it's terminal and there's
+nothing left to sync). `status` must be one of `Pending`, `Ongoing`,
+`Completed` (`completed_date` is required when `status` is `Completed`).
+Applying the update runs through the exact same logic as this app's own
+"Facilities Needing Maintenance" form (`App\Traits\MaintenanceSyncHelpers`):
+completing a record archives it to history, deletes the active row, flips
+the facility's status, resolves the linked energy incident, and notifies
+the relevant users — a status change looks identical regardless of which
+side made it.
+
+Set `CIMM_MAINTENANCE_SYNC_TOKEN` in `.env` to a long random secret shared
+with the CIMM install (see `config/services.php`); it falls back to a shared
+dev default if left unset, matching how CIMM's own CPRF/RGMAP integrations
+default to a shared key on local dev.
+
+## CPRF (Facilities Reservation) Integration
+
+Energy pulls CPRF facility identities, while CPRF reads Energy-managed
+facility profiles, engineer-approved recommendations, and approved energy
+reports. Auth: `Authorization: Bearer
+{CPRF_INTEGRATION_TOKEN}` (defaults to the shared dev key
+`CPRF_ENERGY_SHARED_KEY_2026`; override in production). Rate limit: 60
+requests/minute.
+
+### POST /api/v1/cprf/facility-readings
+
+CPRF sends reviewed monthly meter readings directly to Energy. Authenticate with
+the CPRF bearer token and include the Energy-mirrored `facility_id`, billing
+period, prior/current meter values, and reading date. The record is approved
+automatically and is updated idempotently when CPRF resubmits the same
+facility and period.
+
+### GET /api/v1/cprf/facilities
+
+Returns only facilities mirrored from CPRF (`source=cprf`) that have a CPRF
+`external_ref`. Local Energy facilities are never included. This catalog lets
+CPRF refresh its mapped facility list and discard entries returned by the old,
+unscoped implementation.
+
+### GET /api/v1/cprf/recommendations
+
+Rows from `energy_saving_recommendations`. Filters: `facility_id`, `year`,
+`month`, `status` (default `approved`; pass `all` to lift), `updated_since`,
+`page`, `per_page` (max 100). Row shape: `id, facility{id,name}, year, month,
+generated_message, engineer_recommendation, status, expected_savings_kwh,
+target_date, reviewed_at, updated_at`.
+
+### GET /api/v1/cprf/energy-reports
+
+Returns approved, Energy-encoded main-meter records for CPRF-managed
+facilities only. Filters: `facility_id`, `meter_id`, `year`, `month`, `page`,
+and `per_page` (max 100). The response includes facility and meter identity,
+period, actual and baseline kWh, cost, deviation, alert, and review details.
+
+### `GET /api/v1/cprf/facility-profiles`
+
+Auth: same `cprf.integration` bearer token as the rest of this section.
+
+Query params: `updated_since` (ISO 8601, optional), `page`, `per_page` (default 25, max 100).
+
+Returns only facilities where `source = 'cprf'`, `external_ref` is set, and an `EnergyProfile` exists. Facilities without a profile yet are omitted, not errored.
+
+Sample row:
+```json
+{
+    "facility_external_ref": 501,
+    "energy_facility_id": 14,
+    "main_meter_name": "Demo Facility 2 Main Meter",
+    "electric_meter_no": "MTR-0042",
+    "utility_provider": "Meralco",
+    "contract_account_no": "1234-5678",
+    "main_energy_source": "Grid",
+    "backup_power": "Generator",
+    "transformer_capacity": "75 kVA",
+    "number_of_meters": 3,
+    "baseline_kwh": 7820.00,
+    "engineer_approved": true,
+    "baseline_locked": true,
+    "baseline_source": "Manual entry",
+    "updated_at": "2026-07-26T08:00:00+00:00"
+}
+```

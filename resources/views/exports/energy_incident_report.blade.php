@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th>Facility</th>
+            <th>Source</th>
             <th>Month/Year</th>
             <th>Date Detected</th>
             <th>Status</th>
@@ -18,6 +19,7 @@
         @foreach($incidentRows as $row)
             <tr>
                 <td>{{ $row['facility'] }}</td>
+                <td>{{ $row['source'] }}</td>
                 <td>{{ $row['period'] }}</td>
                 <td>{{ $row['date_detected'] }}</td>
                 <td>{{ $row['status'] }}</td>

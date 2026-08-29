@@ -2,11 +2,9 @@
 
 use App\Http\Controllers\Api\SubmeterSensorReadingController;
 use App\Http\Controllers\Api\IntegrationDataController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Api\CprfFacilityProfileController;
+use App\Http\Controllers\Api\CprfFacilityReadingController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/settings', [SettingsController::class, 'index']);
-Route::post('/settings', [SettingsController::class, 'update']);
 
 Route::get('/submeter/sensor-readings', function () {
     return response()->json([
@@ -26,9 +24,10 @@ Route::get('/submeter/sensor-readings', function () {
             'reading_end_kwh' => 620,
         ],
     ]);
-});
+})->middleware('feature:submeters');
 
 Route::post('/submeter/sensor-readings', [SubmeterSensorReadingController::class, 'store'])
+    ->middleware('feature:submeters')
     ->name('api.submeter.sensor-readings.store');
 
 Route::prefix('v1')->middleware(['integration.api', 'throttle:60,1'])->group(function () {
@@ -38,4 +37,35 @@ Route::prefix('v1')->middleware(['integration.api', 'throttle:60,1'])->group(fun
     Route::get('/energy-records', [IntegrationDataController::class, 'energyRecords']);
     Route::get('/incidents', [IntegrationDataController::class, 'incidents']);
     Route::get('/maintenance', [IntegrationDataController::class, 'maintenance']);
+});
+
+// CIMM <-> Energy maintenance sync integration (Facilities Needing Maintenance
+// page). Kept on its own prefix/token (services.cimm_maintenance_sync)
+// instead of reusing 'integration.api' above: that token already gates
+// several unrelated read endpoints and may have a real secret configured
+// elsewhere, while this token is scoped to just this integration and
+// defaults to a shared dev key so the sync works out of the box. Read
+// endpoints reuse the same maintenance()/maintenanceHistory() controller
+// methods as their /api/v1/... counterparts -- only the auth differs.
+Route::prefix('v1/cimm-maintenance-sync')->middleware(['cimm.maintenance.sync', 'throttle:60,1'])->group(function () {
+    Route::get('/maintenance', [IntegrationDataController::class, 'maintenance']);
+    Route::get('/maintenance-history', [IntegrationDataController::class, 'maintenanceHistory']);
+    Route::post('/maintenance/{id}/sync', [IntegrationDataController::class, 'updateMaintenance']);
+});
+
+// CPRF (facilities reservation) <-> Energy integration. CPRF facility
+// identities are mirrored separately; CPRF also pushes its own direct
+// electric-only manual meter readings in (facility-readings, re-added -
+// see CprfFacilityReadingController), alongside the UMAN-mediated monthly
+// records path. CPRF pulls facilities, Energy-managed profiles, approved
+// recommendations, and approved energy reports out.
+// Same per-partner token pattern as the CIMM group above (services.cprf_integration).
+// GET endpoints reuse IntegrationDataController methods -- only the auth differs.
+Route::prefix('v1/cprf')->middleware(['cprf.integration', 'throttle:60,1'])->group(function () {
+    Route::get('/facilities', [IntegrationDataController::class, 'cprfFacilities']);
+    Route::get('/energy-reports', [IntegrationDataController::class, 'cprfEnergyReports']);
+    Route::get('/recommendations', [IntegrationDataController::class, 'recommendations']);
+    Route::patch('/recommendations/{recommendation}/implementation', [IntegrationDataController::class, 'updateRecommendationImplementation']);
+    Route::get('/facility-profiles', [CprfFacilityProfileController::class, 'index']);
+    Route::post('/facility-readings', [CprfFacilityReadingController::class, 'store']);
 });

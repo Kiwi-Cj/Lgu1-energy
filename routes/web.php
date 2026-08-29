@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Modules\EnergyMonitoringController;
+use App\Http\Controllers\Modules\IntegrationController;
 use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\Modules\MonthlyRecordActivityController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DownloadAuthorizationController;
 use App\Http\Controllers\NotificationController;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->middleware('auth')->name('notifications.markAllRead');
 Route::get('/notifications', [NotificationController::class, 'index'])->middleware(['auth', 'verified'])->name('notifications.index');
 Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->middleware('auth')->name('notifications.markRead');
+Route::post('/notifications/{notification}/acknowledge', [NotificationController::class, 'acknowledge'])->middleware('auth')->name('notifications.acknowledge');
 Route::post('/downloads/authorize', [DownloadAuthorizationController::class, 'authorize'])->middleware(['auth', 'verified'])->name('downloads.authorize');
 
 // Backward compatibility: allow GET /modules/settings/index to show settings page
@@ -25,13 +28,6 @@ Route::get('/modules/settings/index', function () {
 // Restored for sidebar compatibility: energy.dashboard now points to energy-monitoring index (controller, so $facilities is set)
 Route::get('/modules/energy-monitoring/index', [EnergyMonitoringController::class, 'index'])->name('energy.dashboard');
 
-// OTP routes (should NOT be inside auth middleware)
-Route::get('/otp/request', [\App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
-Route::post('/otp/send', [\App\Http\Controllers\OtpController::class, 'sendOtp'])->name('otp.send');
-Route::get('/otp/verify', [\App\Http\Controllers\OtpController::class, 'showVerifyForm'])->name('otp.verify');
-Route::post('/otp/verify', [\App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify.submit');
-Route::post('/otp/resend', [\App\Http\Controllers\OtpController::class, 'resendOtp'])->name('otp.resend');
-
 // Users & Roles Management - Admin/Energy Officer only
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('modules/users', [\App\Http\Controllers\Modules\UsersController::class, 'index'])->name('users.index');
@@ -39,7 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('modules/users', [\App\Http\Controllers\Modules\UsersController::class, 'store'])->name('users.store');
     Route::get('modules/users/{id}/edit', [\App\Http\Controllers\Modules\UsersController::class, 'edit'])->name('users.edit');
     Route::put('modules/users/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'update'])->name('users.update');
-    Route::get('modules/users/disable/{id}', [\App\Http\Controllers\Modules\UsersController::class, 'disable'])->name('users.disable');
+    Route::patch('modules/users/{id}/status', [\App\Http\Controllers\Modules\UsersController::class, 'updateStatus'])->name('users.status.update');
     Route::get('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'roles'])->name('users.roles');
     Route::post('/users/roles', [\App\Http\Controllers\Modules\UsersController::class, 'storeRole'])->name('users.roles.store');
     Route::delete('/users/roles/{role}', [\App\Http\Controllers\Modules\UsersController::class, 'destroyRole'])->name('users.roles.destroy');
@@ -64,9 +60,11 @@ Route::view('/about', 'pages.about')->name('about.index');
 Route::view('/faqs', 'pages.faqs')->name('faqs.index');
 Route::view('/privacy', 'pages.privacy')->name('privacy.index');
 
-// Maintenance History Route
-Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
-Route::delete('/modules/maintenance/history/{id}', [MaintenanceController::class, 'destroyHistory'])->name('modules.maintenance.history.destroy');
+// Maintenance history contains operational details and must not be public.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/modules/maintenance/history', [MaintenanceController::class, 'history'])->name('maintenance.history');
+    Route::delete('/modules/maintenance/history/{id}', [MaintenanceController::class, 'destroyHistory'])->name('modules.maintenance.history.destroy');
+});
 
 // Include authentication routes (login, register, etc.)
 require __DIR__ . '/auth.php';
@@ -78,6 +76,12 @@ require __DIR__ . '/energy-incidents.php';
 require __DIR__ . '/profile.php';
 require __DIR__ . '/facilities.php';
 require __DIR__ . '/energy.php';
+
+// SSO — receives signed tokens from Main LGU (infragovservices.com hub)
+Route::get('/sso/consume', [\App\Http\Controllers\SsoConsumeController::class, 'consume'])->name('sso.consume');
+
+// Read-only headline metric for the Main LGU SSO hub dashboard
+Route::get('/api/stats', [\App\Http\Controllers\StatsController::class, 'index'])->name('api.stats');
 
 // Public welcome page route
 Route::get('/modules/dashboard/index', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
@@ -92,9 +96,18 @@ Route::get('/modules/energy-monitoring/{facility}/ai-recommendation', [EnergyMon
     ->name('modules.energy-monitoring.ai-recommendation');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/modules/monthly-record-activity', [MonthlyRecordActivityController::class, 'index'])
+        ->name('monthly-record-activity.index');
+    Route::patch('/modules/monthly-record-activity/{record}/review', [MonthlyRecordActivityController::class, 'review'])
+        ->name('monthly-record-activity.review');
+
     // System Settings route for dashboard shortcut - Super Admin only
     Route::get('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/modules/settings', [\App\Http\Controllers\Modules\SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/modules/settings/test-email', [\App\Http\Controllers\Modules\SettingsController::class, 'testEmail'])->name('settings.test-email');
+    Route::get('/modules/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
+    Route::post('/modules/integrations/sync/cimm', [IntegrationController::class, 'syncCimm'])->name('integrations.sync-cimm');
+    Route::post('/modules/integrations/sync/cprf', [IntegrationController::class, 'syncCprf'])->name('integrations.sync-cprf');
 });
 
 require __DIR__ . '/modules.php';

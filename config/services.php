@@ -60,6 +60,41 @@ return [
         'token' => env('INTEGRATION_API_TOKEN'),
     ],
 
+    // SSO — must match SSO_SECRET_ENERGY in Main LGU's .env
+    'sso' => [
+        'secret' => env('SSO_SHARED_SECRET', '400f214e72c54090af8b91ede0c17a23bad10f298b60cfea55d546cb8a44752a'),
+    ],
+
+    // CIMM <-> Energy maintenance sync (Facilities Needing Maintenance page).
+    // Separate from integration_api.token above on purpose: that token gates
+    // read access to ALL integration endpoints (facilities, meters, energy
+    // records, incidents...), which some other consumer may already depend
+    // on with a real secret configured. Sharing it here would silently widen
+    // what that key grants. Keeping CIMM's own key means it can be set (or
+    // rotated) independently.
+    'cimm_maintenance_sync' => [
+        'token' => env('CIMM_MAINTENANCE_SYNC_TOKEN', 'CIMM_ENERGY_SHARED_KEY_2026'),
+    ],
+
+    // CPRF (facilities reservation) <-> Energy integration. Same isolation
+    // rationale as cimm_maintenance_sync above: CPRF gets its own token so it
+    // can be set or rotated independently of the generic integration_api
+    // token. Deliberately NO default here: this token gates a WRITE endpoint
+    // (facility readings), so an unset env must disable the API rather than
+    // fall back to a shared secret (the middleware returns 503 when unset).
+    'cprf_integration' => [
+        'token' => env('CPRF_INTEGRATION_TOKEN'),
+        // Full URL of CPRF's facilities feed, e.g.
+        // https://cprf.infragovservices.com/public/api/energy-facilities-feed.php
+        // Pulled by energy:sync-cprf-facilities using the same token above.
+        'facilities_feed_url' => env('CPRF_FACILITIES_FEED_URL'),
+    ],
+
+    'uman_monthly_records' => [
+        'url' => env('UMAN_MONTHLY_RECORDS_URL'),
+        'key' => env('UMAN_INTEGRATION_API_KEY'),
+    ],
+
     'mqtt' => [
         'host' => env('MQTT_HOST', '127.0.0.1'),
         'port' => env('MQTT_PORT', 1883),
