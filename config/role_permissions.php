@@ -29,5 +29,7 @@ return [
         'view_submeter_alerts' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'encode_main_meter_readings' => ['super_admin', 'admin', 'energy_officer', 'staff'],
         'manage_energy_incidents' => ['super_admin', 'admin', 'energy_officer'],
+        'view_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'manage_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'engineer'],
     ],
 ];

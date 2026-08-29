@@ -631,6 +631,19 @@
         .quick-actions-grid { grid-template-columns:1fr; }
         .chart-insights-grid { grid-template-columns:1fr; }
     }
+
+    a.stat-card {
+        text-decoration: none !important;
+        color: inherit !important;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+    }
+    a.stat-card:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
+    }
 </style>
 
 <div class="dashboard-page" style="width:100%; margin:0 auto;">
@@ -671,42 +684,48 @@
         </div>
 
         @php
-            $trendText = trim((string) ($kwhTrend ?? '0%'));
+            $trendText = trim((string) ($kwhTrend ?? ''));
             $trendIsDown = str_starts_with($trendText, '-');
         @endphp
         <div class="stats-grid">
-            <div class="stat-card kpi-blue">
+            <a href="{{ route('modules.facilities.index') }}" class="stat-card kpi-blue" title="View Facility Registry">
                 <div class="dashboard-kpi-heading"><i class="fas fa-building"></i> Total Facilities</div>
                 <div class="dashboard-kpi-value">{{ $totalFacilities ?? 0 }}</div>
-                <div class="dashboard-kpi-note">Monitored facility portfolio</div>
-            </div>
+                <div class="dashboard-kpi-note">Monitored facility portfolio &rarr;</div>
+            </a>
 
-            <div class="stat-card kpi-green">
+            <a href="{{ route('modules.energy-monitoring.index') }}" class="stat-card kpi-green" title="View Main Meter Energy Monitoring">
                 <div class="dashboard-kpi-heading"><i class="fas fa-bolt"></i> Net Consumption</div>
                 <div class="dashboard-kpi-value">{{ number_format($totalKwh ?? 0) }} <small>kWh</small></div>
-                <div class="dashboard-kpi-note {{ $trendIsDown ? 'is-down' : 'is-up' }}">
-                    <i class="fas {{ $trendIsDown ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
-                    {{ $trendText }} vs previous period
-                </div>
-            </div>
+                @if($trendText !== '')
+                    <div class="dashboard-kpi-note {{ $trendIsDown ? 'is-down' : 'is-up' }}">
+                        <i class="fas {{ $trendIsDown ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
+                        {{ $trendText }} vs previous period &rarr;
+                    </div>
+                @else
+                    <div class="dashboard-kpi-note">
+                        <i class="fas fa-chart-line"></i> Total for selected period &rarr;
+                    </div>
+                @endif
+            </a>
 
-            <div class="stat-card kpi-amber">
+            <a href="{{ route('reports.performance-summary') }}" class="stat-card kpi-amber" title="View Performance Summary & Reports">
                 <div class="dashboard-kpi-heading"><i class="fas fa-coins"></i> Total Expenditure</div>
                 <div class="dashboard-kpi-value">₱{{ number_format($totalCost ?? 0, 0) }}</div>
-                <div class="dashboard-kpi-note">Selected period energy cost</div>
-            </div>
+                <div class="dashboard-kpi-note">Selected period energy cost &rarr;</div>
+            </a>
 
-            <div class="stat-card kpi-red">
+            <a href="{{ route('energy-incidents.index') }}" class="stat-card kpi-red" title="View Energy Incidents">
                 <div class="dashboard-kpi-heading"><i class="fas fa-exclamation-triangle"></i> Unresolved Incidents</div>
                 <div class="dashboard-kpi-value">{{ $unresolvedIncidentCount ?? 0 }}</div>
-                <div class="dashboard-kpi-note">Items requiring follow-up</div>
-            </div>
+                <div class="dashboard-kpi-note">Items requiring follow-up &rarr;</div>
+            </a>
 
-            <div class="stat-card kpi-violet">
+            <a href="{{ url('modules/maintenance/index') }}" class="stat-card kpi-violet" title="View Maintenance Operations">
                 <div class="dashboard-kpi-heading"><i class="fas fa-tools"></i> Ongoing Maintenance</div>
                 <div class="dashboard-kpi-value">{{ $ongoingMaintenance ?? 0 }}</div>
-                <div class="dashboard-kpi-note">Active maintenance activities</div>
-            </div>
+                <div class="dashboard-kpi-note">Active maintenance activities &rarr;</div>
+            </a>
         </div>
 
         <div class="summary-grid">

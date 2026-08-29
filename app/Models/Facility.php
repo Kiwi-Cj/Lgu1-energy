@@ -116,6 +116,11 @@ class Facility extends Model
         return $this->hasMany(FacilityAuditLog::class);
     }
 
+    public function equipments()
+    {
+        return $this->hasMany(SubmeterEquipment::class, 'facility_id');
+    }
+
     /** Baseline fallback for facility-level readings without a specific meter. */
     public function resolveBaselineKwh(): ?float
     {

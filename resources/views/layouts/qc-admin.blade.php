@@ -2466,6 +2466,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             $isEnergyMonitoringMenuActive = request()->routeIs('modules.energy-monitoring.*')
                 || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('modules.ai-alerts.*')
+                || request()->routeIs('modules.load-tracking.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
@@ -2474,6 +2475,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('energy-incidents.*');
             $canViewFacilities = \App\Support\RoleAccess::can($user, 'view_facilities');
             $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
+            $canViewLoadTracking = \App\Support\RoleAccess::can($user, 'view_load_tracking');
             $canViewMonthlyActivity = \App\Support\RoleAccess::can($user, 'view_monthly_record_activity');
             $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
             $canViewSubmeters = config('features.submeters_enabled', false)
@@ -2488,7 +2490,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <ul class="nav-list">
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance)
+            @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance || $canViewLoadTracking)
                 <li class="nav-section-label">Operations</li>
                 @if($canViewFacilities)
                 <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Registry</a></li>
@@ -2506,7 +2508,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     </a>
                 </li>
                 @endif
-                @if($canViewEnergy || $canViewConservation || $canViewSubmeters)
+                @if($canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewLoadTracking)
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}" aria-expanded="{{ $isEnergyMonitoringMenuActive ? 'true' : 'false' }}">
                         <span><i class="fa-solid fa-bolt"></i> Energy Management</span>
@@ -2516,6 +2518,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         @if($canViewEnergy)
                         <li><a href="{{ route('modules.energy-monitoring.index') }}" class="nav-link{{ request()->routeIs('modules.energy-monitoring.*') || request()->routeIs('energy.dashboard') ? ' active' : '' }}"><i class="fa-solid fa-gauge-high"></i> Main Meter Monitoring</a></li>
                         <li><a href="{{ route('modules.ai-alerts.index') }}" class="nav-link{{ request()->routeIs('modules.ai-alerts.*') ? ' active' : '' }}"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Alerts</a></li>
+                        @endif
+                        @if($canViewLoadTracking)
+                        <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-check"></i> Load Tracking</a></li>
                         @endif
                         @if($canViewConservation)
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Conservation Program</a></li>

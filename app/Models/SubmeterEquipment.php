@@ -14,17 +14,22 @@ class SubmeterEquipment extends Model
     protected $table = 'submeter_equipments';
 
     protected $fillable = [
+        'facility_id',
         'meter_scope',
         'submeter_id',
         'facility_meter_id',
         'equipment_name',
+        'category',
+        'location',
         'quantity',
         'rated_watts',
         'operating_hours_per_day',
         'operating_days_per_month',
+        'notes',
     ];
 
     protected $casts = [
+        'facility_id' => 'integer',
         'meter_scope' => 'string',
         'quantity' => 'integer',
         'rated_watts' => 'decimal:2',
@@ -32,6 +37,11 @@ class SubmeterEquipment extends Model
         'operating_days_per_month' => 'integer',
         'estimated_kwh' => 'decimal:2',
     ];
+
+    public function facility(): BelongsTo
+    {
+        return $this->belongsTo(Facility::class);
+    }
 
     public function submeter(): BelongsTo
     {
@@ -54,6 +64,30 @@ class SubmeterEquipment extends Model
         $quantity = is_numeric($this->quantity) ? (int) $this->quantity : 0;
 
         return round($watts * max(0, $quantity), 2);
+    }
+
+    public function getTotalKwAttribute(): float
+    {
+        return round($this->total_watts / 1000, 3);
+    }
+
+    public function getDailyKwhAttribute(): float
+    {
+        $watts = is_numeric($this->rated_watts) ? (float) $this->rated_watts : 0.0;
+        $quantity = is_numeric($this->quantity) ? (int) $this->quantity : 0;
+        $hours = is_numeric($this->operating_hours_per_day) ? (float) $this->operating_hours_per_day : 0.0;
+
+        return round(($watts * max(0, $quantity) * max(0, $hours)) / 1000, 2);
+    }
+
+    public function getMonthlyKwhAttribute(): float
+    {
+        $watts = is_numeric($this->rated_watts) ? (float) $this->rated_watts : 0.0;
+        $quantity = is_numeric($this->quantity) ? (int) $this->quantity : 0;
+        $hours = is_numeric($this->operating_hours_per_day) ? (float) $this->operating_hours_per_day : 0.0;
+        $days = is_numeric($this->operating_days_per_month) ? (int) $this->operating_days_per_month : 0;
+
+        return round(($watts * max(0, $quantity) * max(0, $hours) * max(0, $days)) / 1000, 2);
     }
 
     public function getMeterScopeLabelAttribute(): string

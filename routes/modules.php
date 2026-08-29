@@ -8,6 +8,7 @@ use App\Http\Controllers\Modules\EnergyConservationController;
 use App\Http\Controllers\Modules\FacilityController;
 use App\Http\Controllers\Modules\FacilityMeterController;
 use App\Http\Controllers\Modules\MaintenanceController;
+use App\Http\Controllers\Modules\LoadTrackingController;
 use App\Http\Controllers\Modules\SubmeterMonitoringController;
 use App\Support\EnergyCost;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'updateEnergyTip'])->name('modules.energy-conservation.tips.update');
     Route::patch('/modules/energy-conservation/energy-saving-tips/{recommendation}/progress', [EnergyConservationController::class, 'updateEnergyTipProgress'])->name('modules.energy-conservation.tips.progress');
     Route::delete('/modules/energy-conservation/energy-saving-tips/{recommendation}', [EnergyConservationController::class, 'destroyEnergyTip'])->name('modules.energy-conservation.tips.destroy');
+
+    // Load Tracking & Equipment Energy Computation per Facility
+    Route::get('/modules/load-tracking', [LoadTrackingController::class, 'index'])->name('modules.load-tracking.index');
+    Route::post('/modules/load-tracking/equipment', [LoadTrackingController::class, 'store'])->name('modules.load-tracking.equipment.store');
+    Route::put('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'update'])->name('modules.load-tracking.equipment.update');
+    Route::delete('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'destroy'])->name('modules.load-tracking.equipment.destroy');
+    Route::get('/modules/load-tracking/export/{facility}', [LoadTrackingController::class, 'export'])->name('modules.load-tracking.export');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
