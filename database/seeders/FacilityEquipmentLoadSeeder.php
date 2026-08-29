@@ -223,7 +223,7 @@ class FacilityEquipmentLoadSeeder extends Seeder
                 SubmeterEquipment::create([
                     'facility_id' => $facility->id,
                     'facility_meter_id' => $mainMeterId,
-                    'meter_scope' => $mainMeterId ? 'main' : 'facility',
+                    'meter_scope' => 'main',
                     'equipment_name' => $load['name'],
                     'category' => $load['category'],
                     'location' => $load['location'],
