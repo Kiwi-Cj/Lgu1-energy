@@ -1369,19 +1369,15 @@
                         <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
                         <select id="modalIssueType" class="field-control">
                             <option value="" disabled selected>Select Issue</option>
+                            <option value="High Consumption / Inefficient">High Consumption / Inefficient</option>
+                            <option value="Trend Increasing">Trend Increasing</option>
                             <option value="Electrical - Power Outage">Electrical - Power Outage</option>
                             <option value="Electrical - Circuit Overload">Electrical - Circuit Overload</option>
                             <option value="Lighting - Bulb Replacement">Lighting - Bulb Replacement</option>
                             <option value="Lighting - Fixture Repair">Lighting - Fixture Repair</option>
                             <option value="Aircon - Not Cooling">Aircon - Not Cooling</option>
                             <option value="Aircon - Cleaning Needed">Aircon - Cleaning Needed</option>
-                            <option value="Plumbing - Leak">Plumbing - Leak</option>
-                            <option value="Plumbing - Clogged Drain">Plumbing - Clogged Drain</option>
-                            <option value="Roof - Leak">Roof - Leak</option>
-                            <option value="Roof - Gutter Cleaning">Roof - Gutter Cleaning</option>
-                            <option value="Pest Control">Pest Control</option>
-                            <option value="General - Preventive Check">General - Preventive Check</option>
-                            <option value="General - Other">General - Other</option>
+    
                         </select>
                     </div>
                 </div>
