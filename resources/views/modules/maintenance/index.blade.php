@@ -1369,7 +1369,6 @@
                         <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
                         <select id="modalIssueType" class="field-control">
                             <option value="" disabled selected>Select Issue</option>
-<<<<<<< HEAD
                             <option value="High Consumption / Inefficient">High Consumption / Inefficient</option>
                             <option value="Trend Increasing">Trend Increasing</option>
                             <option value="Electrical - Power Outage">Electrical - Power Outage</option>
@@ -1379,15 +1378,6 @@
                             <option value="Aircon - Not Cooling">Aircon - Not Cooling</option>
                             <option value="Aircon - Cleaning Needed">Aircon - Cleaning Needed</option>
     
-=======
-                            <option value="Electrical - Power Outage">Electrical - Power Outage</option>
-                            <option value="Electrical - Circuit Overload">Electrical - Circuit Overload</option>
-                            <option value="Lighting - Bulb Replacement">Lighting - Bulb Replacement</option>
-                            <option value="Lighting - Fixture Repair">Lighting - Fixture Repair</option>
-                            <option value="Aircon - Not Cooling">Aircon - Not Cooling</option>
-                            <option value="Aircon - Cleaning Needed">Aircon - Cleaning Needed</option>
-                            
->>>>>>> 208907ff6de27711a88bd2a4da94e3465e152881
                         </select>
                     </div>
                 </div>
