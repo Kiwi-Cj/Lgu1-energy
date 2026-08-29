@@ -38,6 +38,7 @@ class EfficiencySummaryReportController extends Controller
 
         $hasOpenMaintenance = Maintenance::query()
             ->whereIn('facility_id', $facilityIds)
+            ->where('maintenance_type', '!=', 'Task')
             ->whereIn('maintenance_status', ['Pending', 'Ongoing'])
             ->select('facility_id')
             ->distinct()
@@ -92,14 +93,34 @@ class EfficiencySummaryReportController extends Controller
                 ? Carbon::parse($lastAudit->completed_date)->format('M d, Y')
                 : '-';
 
-            $flag = ($rating === 'Low') || $hasOpenMaintenance->has($facility->id);
+            $hasMaintenanceIssue = $hasOpenMaintenance->has($facility->id);
+            $flag = ($rating === 'Low') || $hasMaintenanceIssue;
+            $latestPeriod = $records
+                ->sortByDesc(fn ($record) => sprintf('%04d-%02d', (int) $record->year, (int) $record->month))
+                ->first();
+            $latestPeriodLabel = $latestPeriod
+                ? Carbon::create((int) $latestPeriod->year, (int) $latestPeriod->month, 1)->format('M Y')
+                : 'No readings';
+            $attentionReason = match (true) {
+                $rating === 'Low' && $hasMaintenanceIssue => 'Efficiency and maintenance action required',
+                $rating === 'Low' => 'Energy intensity needs improvement',
+                $hasMaintenanceIssue => 'Open maintenance work',
+                $rating === '-' => 'Complete energy or floor-area data',
+                default => 'No immediate action',
+            };
 
             $efficiencyRows[] = [
                 'facility' => $facility->name,
+                'avg_monthly_kwh' => $avgMonthlyKwh !== null ? round($avgMonthlyKwh, 2) : null,
+                'floor_area' => $floorArea > 0 ? $floorArea : null,
                 'eui' => $eui,
                 'rating' => $rating,
+                'months_count' => $monthlyTotals->count(),
+                'latest_period' => $latestPeriodLabel,
                 'last_audit' => $lastAuditDate,
+                'has_open_maintenance' => $hasMaintenanceIssue,
                 'flag' => $flag,
+                'attention_reason' => $attentionReason,
             ];
         }
         $user = auth()->user();

@@ -86,6 +86,7 @@ class EnergyRecommendationService
     {
         $alertLevel = strtolower(trim((string) ($context['alert_level'] ?? 'No Data')));
         $facilityType = trim((string) ($context['facility_type'] ?? ''));
+        $facilityName = trim((string) ($context['facility_name'] ?? ''));
         $trendPercent = $this->toFloat($context['trend_percent'] ?? null);
         $actualKwh = $this->toFloat($context['actual_kwh'] ?? null);
         $baselineKwh = $this->toFloat($context['baseline_kwh'] ?? null);
@@ -121,14 +122,16 @@ class EnergyRecommendationService
             $trendLine = 'Recent trend is ' . ($trendPercent >= 0 ? '+' : '') . number_format($trendPercent, 2) . '%.';
         }
 
-        $facilityFocusLine = $this->buildFacilityFocusLine($facilityType, $alertLevel);
+        $meterPriorityLine = $this->buildMeterPriorityLine((array) ($context['meter_breakdown'] ?? []));
+        $facilityFocusLine = $this->buildFacilityFocusLine($facilityName, $facilityType, $alertLevel);
         $maintenanceLine = $this->buildMaintenanceLine($lastMaintenance, $nextMaintenance, $alertLevel);
 
         return implode(' ', array_filter([
             $primary,
-            $facilityFocusLine,
             $deltaLine,
             $trendLine,
+            $meterPriorityLine,
+            $facilityFocusLine,
             $maintenanceLine,
         ]));
     }
@@ -145,6 +148,15 @@ class EnergyRecommendationService
             'floor_area' => $this->toFloat($context['floor_area'] ?? null),
             'last_maintenance' => (string) ($context['last_maintenance'] ?? ''),
             'next_maintenance' => (string) ($context['next_maintenance'] ?? ''),
+            'trend_spike_detected' => (bool) ($context['trend_spike_detected'] ?? false),
+            'meter_breakdown' => array_values(array_map(function ($meter) {
+                return [
+                    'name' => (string) ($meter['name'] ?? ''),
+                    'actual_kwh' => $this->toFloat($meter['actual_kwh'] ?? null),
+                    'baseline_kwh' => $this->toFloat($meter['baseline_kwh'] ?? null),
+                    'alert_level' => (string) ($meter['alert_level'] ?? ''),
+                ];
+            }, (array) ($context['meter_breakdown'] ?? []))),
         ];
 
         return 'Analyze this facility context and return JSON only with keys "alert_level" and "recommendation": '
@@ -162,7 +174,7 @@ class EnergyRecommendationService
             . ' Avoid generic filler and do not repeat the baseline wording verbatim.';
     }
 
-    private function buildFacilityFocusLine(string $facilityType, string $alertLevel): ?string
+    private function buildFacilityFocusLine(string $facilityName, string $facilityType, string $alertLevel): ?string
     {
         if ($alertLevel === 'no data') {
             return null;
@@ -170,15 +182,52 @@ class EnergyRecommendationService
 
         $type = strtolower($facilityType);
 
-        return match (true) {
-            str_contains($type, 'police') => 'For police operations, check dispatch-room cooling, perimeter and security lighting, workstation clusters, and radio or battery charging loads.',
-            str_contains($type, 'health'), str_contains($type, 'hospital'), str_contains($type, 'clinic') => 'For health facilities, review cooling for treatment rooms, refrigeration loads, sterilization equipment, and after-hours lighting.',
-            str_contains($type, 'school'), str_contains($type, 'campus') => 'For school facilities, verify classroom HVAC, computer labs, pumps, and exterior lighting schedules against actual occupancy.',
-            str_contains($type, 'office'), str_contains($type, 'municipal'), str_contains($type, 'city hall'), str_contains($type, 'barangay') => 'For office facilities, focus on air-conditioning zones, printer and server rooms, pantry equipment, and lighting left on after office hours.',
-            str_contains($type, 'gym'), str_contains($type, 'sports') => 'For sports facilities, inspect court lighting, ventilation fans, sound systems, and event-related loads outside booked hours.',
-            str_contains($type, 'water'), str_contains($type, 'pump') => 'For pump and water facilities, compare pump runtime, pressure settings, and leakage-related cycling against normal operation.',
-            default => 'Check HVAC runtime, lighting schedules, and any continuously energized equipment in the highest-load areas.',
+        $checks = match (true) {
+            str_contains($type, 'police') => ['dispatch-room cooling schedule', 'perimeter lighting timers', 'radio and battery charging stations', '24-hour workstation standby loads'],
+            str_contains($type, 'health'), str_contains($type, 'hospital'), str_contains($type, 'clinic') => ['treatment-room cooling setpoints', 'medicine and vaccine refrigeration seals', 'sterilization equipment shutdown', 'after-hours corridor lighting'],
+            str_contains($type, 'school'), str_contains($type, 'campus') => ['classroom air-conditioning schedules', 'computer laboratory shutdown', 'water-pump runtime', 'exterior lighting timers'],
+            str_contains($type, 'office'), str_contains($type, 'municipal'), str_contains($type, 'city hall'), str_contains($type, 'barangay') => ['air-conditioning zone schedules', 'server and printer-room loads', 'pantry equipment shutdown', 'lighting after office hours'],
+            str_contains($type, 'market'), str_contains($type, 'commercial') => ['stall refrigeration operating hours', 'ventilation and exhaust fans', 'common-area lighting timers', 'idle equipment after closing'],
+            str_contains($type, 'gym'), str_contains($type, 'sports') => ['court lighting schedules', 'ventilation fan runtime', 'sound-system standby loads', 'event loads outside booked hours'],
+            str_contains($type, 'water'), str_contains($type, 'pump') => ['pump runtime and cycling', 'pressure setpoints', 'possible leakage-driven operation', 'motor current imbalance'],
+            default => ['HVAC runtime', 'lighting schedules', 'continuously energized equipment', 'after-hours base load'],
         };
+
+        $seed = abs(crc32(strtolower($facilityName !== '' ? $facilityName : $facilityType)));
+        $first = $seed % count($checks);
+        $second = ($first + 1 + ($seed % (count($checks) - 1))) % count($checks);
+
+        return 'Priority field checks: ' . $checks[$first] . ' and ' . $checks[$second] . '.';
+    }
+
+    private function buildMeterPriorityLine(array $meters): ?string
+    {
+        $ranked = collect($meters)
+            ->map(function ($meter) {
+                $actual = $this->toFloat($meter['actual_kwh'] ?? null);
+                $baseline = $this->toFloat($meter['baseline_kwh'] ?? null);
+                $variance = ($actual !== null && $baseline !== null) ? $actual - $baseline : null;
+
+                return [
+                    'name' => trim((string) ($meter['name'] ?? 'Main Meter')) ?: 'Main Meter',
+                    'actual' => $actual,
+                    'variance' => $variance,
+                ];
+            })
+            ->filter(fn ($meter) => $meter['actual'] !== null)
+            ->sortByDesc(fn ($meter) => $meter['variance'] ?? $meter['actual'])
+            ->values();
+
+        $driver = $ranked->first();
+        if (! $driver || $ranked->count() < 2) {
+            return null;
+        }
+
+        $detail = $driver['variance'] !== null
+            ? (($driver['variance'] >= 0 ? '+' : '') . number_format($driver['variance'], 2) . ' kWh versus baseline')
+            : number_format((float) $driver['actual'], 2) . ' kWh recorded';
+
+        return $driver['name'] . ' is the first meter to investigate (' . $detail . ').';
     }
 
     private function buildMaintenanceLine(string $lastMaintenance, string $nextMaintenance, string $alertLevel): ?string

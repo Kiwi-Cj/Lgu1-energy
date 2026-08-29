@@ -65,6 +65,14 @@ class EnergyMonitoringController extends Controller
             ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
             ->sum('energy_cost');
 
+        $totalConsumptionKwh = EnergyRecord::where('month', $currentMonth)
+            ->where('year', $currentYear)
+            ->whereHas('meter', function ($meterQuery) {
+                $meterQuery->where('meter_type', 'main');
+            })
+            ->when(!empty($facilityIds), fn ($q) => $q->whereIn('facility_id', $facilityIds))
+            ->sum('actual_kwh');
+
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
         $mainMetersByFacility = $this->loadMainMetersByFacility($facilityIds);
         $mainMeterSnapshotsByFacility = $this->loadCurrentMonthMainMeterSnapshots($facilityIds, $currentYear, $currentMonth);
@@ -89,7 +97,11 @@ class EnergyMonitoringController extends Controller
             $facility->main_meter_alert_summary_label = $this->resolveMainMeterAlertSummaryLabel($mainMeters);
             $facility->currentMonthRecord = $currentMonthRecord;
             [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
+            $trendSpikeDetected = $this->hasThreeMonthSpike($facilityRecords, $currentYear, $currentMonth);
             $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+            if ($trendSpikeDetected && in_array($trendAlertLevel, ['Normal', 'Warning'], true)) {
+                $trendAlertLevel = 'High';
+            }
             $alertLevel = $this->resolveFacilityAlertLevel($mainMeters, $trendAlertLevel);
             $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
             $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
@@ -104,12 +116,19 @@ class EnergyMonitoringController extends Controller
                 'facility_name' => (string) ($facility->name ?? ''),
                 'facility_type' => (string) ($facility->type ?? ''),
                 'alert_level' => $alertLevel,
-                'trend_percent' => $trendPercent,
+            'trend_percent' => $trendPercent,
+                'trend_spike_detected' => $trendSpikeDetected,
                 'actual_kwh' => $currentMonthRecord?->actual_kwh,
                 'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
                 'floor_area' => $facility->floor_area,
                 'last_maintenance' => $lastMaintenance?->completed_date,
                 'next_maintenance' => $nextMaintenance?->scheduled_date,
+                'meter_breakdown' => $mainMeters->map(fn ($meter) => [
+                    'name' => (string) ($meter->meter_name ?? 'Main Meter'),
+                    'actual_kwh' => $meter->current_month_kwh ?? null,
+                    'baseline_kwh' => $meter->current_month_baseline_kwh ?? null,
+                    'alert_level' => (string) ($meter->current_month_alert_level ?? 'No Data'),
+                ])->values()->all(),
             ];
             // Keep first render fast: use rules-based text on table load.
             $facility->trend_recommendation = $this->energyRecommendationService
@@ -130,6 +149,7 @@ class EnergyMonitoringController extends Controller
             'facilities',
             'highAlertCount',
             'totalEnergyCost',
+            'totalConsumptionKwh',
             'selectedMonthInput',
             'selectedPeriodLabel'
         ) + ['role' => $role, 'user' => $user]);
@@ -174,7 +194,11 @@ class EnergyMonitoringController extends Controller
         });
 
         [$trendPercent, $trendDisplay] = $this->calculateTrendPercent($facilityRecords, $currentYear, $currentMonth);
+        $trendSpikeDetected = $this->hasThreeMonthSpike($facilityRecords, $currentYear, $currentMonth);
         $trendAlertLevel = $this->resolveAlertLevel($facility, $currentMonthRecord, $trendPercent);
+        if ($trendSpikeDetected && in_array($trendAlertLevel, ['Normal', 'Warning'], true)) {
+            $trendAlertLevel = 'High';
+        }
         $alertLevel = $this->resolveFacilityAlertLevel($mainMeters, $trendAlertLevel);
         $lastMaintenance = $lastMaintenanceByFacility->get($facility->id);
         $nextMaintenance = $nextMaintenanceByFacility->get($facility->id);
@@ -184,11 +208,18 @@ class EnergyMonitoringController extends Controller
             'facility_type' => (string) ($facility->type ?? ''),
             'alert_level' => $alertLevel,
             'trend_percent' => $trendPercent,
+            'trend_spike_detected' => $trendSpikeDetected,
             'actual_kwh' => $currentMonthRecord?->actual_kwh,
             'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
             'floor_area' => $facility->floor_area,
             'last_maintenance' => $lastMaintenance?->completed_date,
             'next_maintenance' => $nextMaintenance?->scheduled_date,
+            'meter_breakdown' => $mainMeters->map(fn ($meter) => [
+                'name' => (string) ($meter->meter_name ?? 'Main Meter'),
+                'actual_kwh' => $meter->current_month_kwh ?? null,
+                'baseline_kwh' => $meter->current_month_baseline_kwh ?? null,
+                'alert_level' => (string) ($meter->current_month_alert_level ?? 'No Data'),
+            ])->values()->all(),
         ], true);
         $resolvedAlertLevel = (string) ($insight['alert_level'] ?? $alertLevel);
         $resolvedRecommendation = (string) ($insight['recommendation'] ?? '');
@@ -475,6 +506,33 @@ class EnergyMonitoringController extends Controller
         $trendDisplay = ($trendPercent >= 0 ? '+' : '') . number_format($trendPercent, 2) . '%';
 
         return [$trendPercent, $trendDisplay];
+    }
+
+    private function hasThreeMonthSpike(Collection $facilityRecords, int $currentYear, int $currentMonth): bool
+    {
+        $monthTotals = $facilityRecords
+            ->groupBy(fn ($row) => sprintf('%04d-%02d', (int) $row->year, (int) $row->month))
+            ->map(fn (Collection $group) => (float) $group->sum('actual_kwh'))
+            ->sortKeys();
+
+        $anchor = Carbon::create($currentYear, $currentMonth, 1);
+        $keys = [
+            $anchor->copy()->subMonths(2)->format('Y-m'),
+            $anchor->copy()->subMonth()->format('Y-m'),
+            $anchor->format('Y-m'),
+        ];
+
+        foreach ($keys as $key) {
+            if (! $monthTotals->has($key)) {
+                return false;
+            }
+        }
+
+        $m1 = (float) $monthTotals->get($keys[0]);
+        $m2 = (float) $monthTotals->get($keys[1]);
+        $m3 = (float) $monthTotals->get($keys[2]);
+
+        return $m3 > $m2 && $m2 > $m1;
     }
 
     private function aggregateFacilityRecordsByMonth(Collection $rows): Collection

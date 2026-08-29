@@ -395,7 +395,7 @@ window.addEventListener('DOMContentLoaded', function() {
                         <span style="background:#e11d48;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.78rem;">{{ $archivedFacilitiesCount }}</span>
                     @endif
                 </a>
-                @if(!in_array(strtolower(Auth::user()->role ?? ''), ['energy_officer', 'staff'], true))
+                @if(\App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
                     <button type="button" id="btnAddFacilityTop" class="btn-gradient">
                         <i class="fa fa-plus-circle"></i> Add New Facility
                     </button>

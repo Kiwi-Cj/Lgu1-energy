@@ -9,6 +9,7 @@ use App\Support\RoleAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class MaintenanceController extends Controller
 {
@@ -26,7 +27,7 @@ class MaintenanceController extends Controller
     {
         $query = \App\Models\MaintenanceHistory::with([
             'facility' => fn ($builder) => $builder->withTrashed()->select('id', 'name'),
-        ]);
+        ])->whereIn('issue_type', $this->maintenanceIssueTypes());
         if (request()->filled('facility_id')) {
             $query->where('facility_id', request('facility_id'));
         }
@@ -100,10 +101,10 @@ class MaintenanceController extends Controller
         ];
         if ($isUpdate) {
             $rules['maintenance_id'] = 'required|integer|exists:maintenance,id';
-            $rules['issue_type'] = 'nullable|string|max:255';
+            $rules['issue_type'] = ['required', 'string', Rule::in($this->maintenanceIssueTypes())];
         } else {
             $rules['facility_id'] = 'required|integer|exists:facilities,id';
-            $rules['issue_type'] = 'required|string';
+            $rules['issue_type'] = ['required', 'string', Rule::in($this->maintenanceIssueTypes())];
             $rules['trigger_month'] = 'required|string';
         }
         if ($request->maintenance_status === 'Completed') {
@@ -246,8 +247,9 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
-    $query = \App\Models\Maintenance::with('facility:id,name')
-        ->whereHas('facility');
+    $query = \App\Models\Maintenance::with('facility:id,name,image_path')
+        ->whereHas('facility')
+        ->whereIn('issue_type', $this->maintenanceIssueTypes());
     if ($facilityIds) {
         $query->whereIn('facility_id', $facilityIds);
     }
@@ -263,7 +265,7 @@ public function index()
     if (request()->filled('maintenance_type')) {
         $query->where('maintenance_type', request('maintenance_type'));
     }
-    $maintenance = $query->get();
+    $maintenance = $query->orderByDesc('id')->get();
         $maintenanceRows = [];
     $needingCount = 0;
     $pendingCount = 0;
@@ -287,7 +289,9 @@ public function index()
 
         $maintenanceRows[] = [
             'id' => $row->id,
+            'facility_id' => $row->facility_id,
             'facility' => $row->facility?->name ?? '-',
+            'facility_image_url' => $row->facility?->resolved_image_url,
             'issue_type' => $row->issue_type,
             'trigger_month' => $row->trigger_month,
             'maintenance_type' => $row->maintenance_type,
@@ -327,6 +331,28 @@ public function index()
         'user' => $user,
         'facilities' => $facilities,
     ]);
+}
+
+private function maintenanceIssueTypes(): array
+{
+    return [
+        'Auto-flagged: High Consumption',
+        'Auto-flagged: Very High Consumption',
+        'Auto-flagged: Critical Consumption',
+        'Electrical - Power Outage',
+        'Electrical - Circuit Overload',
+        'Lighting - Bulb Replacement',
+        'Lighting - Fixture Repair',
+        'Aircon - Not Cooling',
+        'Aircon - Cleaning Needed',
+        'Plumbing - Leak',
+        'Plumbing - Clogged Drain',
+        'Roof - Leak',
+        'Roof - Gutter Cleaning',
+        'Pest Control',
+        'General - Preventive Check',
+        'General - Other',
+    ];
 }
 
 private function parseTriggerMonth(?string $triggerMonth): array

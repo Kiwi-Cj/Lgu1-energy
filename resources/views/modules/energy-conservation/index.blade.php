@@ -4,7 +4,9 @@
 @section('content')
 @php
     $featureCatalog = $featureCatalog ?? [];
-    $featured = collect($featureCatalog)->take(4)->values();
+    $activeFeatures = collect($featureCatalog)->filter(
+        fn (array $feature, string $slug) => ($feature['status'] ?? null) === 'enabled' && $slug !== 'ai-recommendations'
+    );
 @endphp
 
 <style>
@@ -40,22 +42,6 @@
         font-size: .98rem;
         line-height: 1.5;
         max-width: 920px;
-    }
-    .conservation-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .conservation-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(255,255,255,.82);
-        color: #1e3a8a;
-        border: 1px solid #c7d2fe;
-        font-size: .78rem;
-        font-weight: 800;
     }
     .feature-grid {
         display: grid;
@@ -97,25 +83,6 @@
         box-shadow: inset 0 0 0 1px #cffafe;
         flex: 0 0 46px;
     }
-    .feature-status {
-        display: inline-flex;
-        align-items: center;
-        padding: 5px 9px;
-        border-radius: 999px;
-        font-size: .68rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        white-space: nowrap;
-    }
-    .feature-status.enabled {
-        background: #dcfce7;
-        color: #166534;
-    }
-    .feature-status.coming-soon {
-        background: #fef3c7;
-        color: #92400e;
-    }
     .feature-title {
         margin: 0;
         color: #0f172a;
@@ -136,55 +103,17 @@
         font-size: .82rem;
         font-weight: 800;
     }
-    .hero-panel {
-        border-radius: 18px;
-        border: 1px solid #dbe4f0;
-        background: linear-gradient(135deg, #ffffff, #eff6ff);
-        padding: 18px;
-    }
-    .hero-panel-title {
-        margin: 0 0 8px;
-        color: #0f172a;
-        font-size: 1.08rem;
-        font-weight: 900;
-    }
-    .hero-panel-text {
-        color: #475569;
-        line-height: 1.5;
-        font-size: .95rem;
-    }
-    .hero-list {
-        margin-top: 12px;
-        display: grid;
-        gap: 8px;
-    }
-    .hero-item {
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-        color: #334155;
-        font-size: .92rem;
-        line-height: 1.4;
-    }
-    .hero-dot {
-        color: #2563eb;
-        margin-top: 2px;
-    }
     body.dark-mode .conservation-shell,
-    body.dark-mode .feature-card,
-    body.dark-mode .hero-panel {
+    body.dark-mode .feature-card {
         background: #0f172a;
         border-color: #334155;
     }
     body.dark-mode .conservation-title,
-    body.dark-mode .feature-title,
-    body.dark-mode .hero-panel-title {
+    body.dark-mode .feature-title {
         color: #f8fafc;
     }
     body.dark-mode .conservation-subtitle,
-    body.dark-mode .feature-desc,
-    body.dark-mode .hero-panel-text,
-    body.dark-mode .hero-item {
+    body.dark-mode .feature-desc {
         color: #cbd5e1;
     }
     @media (max-width: 900px) {
@@ -204,35 +133,15 @@
         <div class="conservation-kicker">Energy Conservation</div>
         <h1 class="conservation-title">Energy Conservation Program</h1>
         <div class="conservation-subtitle">
-            Nakaayos na ito bilang hub para sa energy-saving tips, goals, ranking, rewards, AI suggestions, campaigns, checklist, savings, suggestions, at reports.
-        </div>
-        <div class="conservation-badges">
-            <span class="conservation-badge">Enabled: Tips</span>
-            <span class="conservation-badge">Enabled: Goals</span>
-            <span class="conservation-badge">Enabled: AI</span>
-            <span class="conservation-badge">Enabled: Checklist</span>
-            <span class="conservation-badge">Coming Soon: Ranking</span>
-            <span class="conservation-badge">Coming Soon: Rewards</span>
-        </div>
-    </div>
-
-    <div class="hero-panel">
-        <h2 class="hero-panel-title">What this module contains</h2>
-        <div class="hero-panel-text">
-            Pili ka ng feature card sa ibaba para buksan ang dedicated page niya. Yung ibang items ay naka-label kung ready na or upcoming pa lang.
-        </div>
-        <div class="hero-list">
-            <div class="hero-item"><span class="hero-dot">•</span><span>Enabled features are ready for content and future wiring.</span></div>
-            <div class="hero-item"><span class="hero-dot">•</span><span>Coming Soon features can be built into pages and workflows next.</span></div>
+            Manage energy-saving activities, daily checklists, recommendations, savings, suggestions, and reports.
         </div>
     </div>
 
     <div class="feature-grid">
-        @foreach($featureCatalog as $slug => $feature)
+        @foreach($activeFeatures as $slug => $feature)
             <a class="feature-card" href="{{ route('modules.energy-conservation.feature', ['feature' => $slug, 'month' => $selectedMonth]) }}">
                 <div class="feature-card-head">
                     <div class="feature-icon"><i class="{{ $feature['icon'] }}"></i></div>
-                    <span class="feature-status {{ $feature['status'] }}">{{ $feature['badge'] }}</span>
                 </div>
                 <div>
                     <h2 class="feature-title">{{ $feature['title'] }}</h2>

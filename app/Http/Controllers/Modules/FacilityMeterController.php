@@ -40,7 +40,7 @@ class FacilityMeterController extends Controller
 
     private function canForceDelete(): bool
     {
-        return RoleAccess::in(auth()->user(), ['super_admin', 'admin']);
+        return RoleAccess::can(auth()->user(), 'manage_facility_master');
     }
 
     private function canApprove(): bool

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\StaffMiddleware::class);
+        $middleware->append(\App\Http\Middleware\EnforceRolePermissions::class);
         $middleware->append(\App\Http\Middleware\AuditTrailMiddleware::class);
         // This needs the web session to be started before it can resolve the
         // logged-in user and load that user's bell notifications.
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => \App\Http\Middleware\StaffMiddleware::class,
             'block.staff.reports' => \App\Http\Middleware\BlockStaffFromReports::class,
             'download.confirmed' => \App\Http\Middleware\RequireDownloadAuthorization::class,
+            'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

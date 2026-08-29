@@ -2,7 +2,7 @@
 @section('title', 'Annual Energy Monitoring')
 
 @php
-    $roleKey = auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')));
+    $canExportReports = \App\Support\RoleAccess::can(auth()->user(), 'export_reports');
 @endphp
 
 @section('content')
@@ -99,12 +99,12 @@
             <p style="margin:6px 0 0; color:#64748b;">Year-level summary of actual vs baseline energy usage.</p>
         </div>
         <div class="annual-energy-actions">
+            @if($canExportReports)
             <a href="{{ route('modules.energy.annual.export-pdf', request()->query()) }}"
                class="annual-btn-action annual-btn-pdf"
                data-secure-download>
                 <i class="fa fa-file-pdf-o"></i> Export PDF
             </a>
-            @if($roleKey !== 'staff')
             <a href="{{ route('modules.energy.annual.export-excel', request()->query()) }}"
                class="annual-btn-action annual-btn-csv"
                data-secure-download>

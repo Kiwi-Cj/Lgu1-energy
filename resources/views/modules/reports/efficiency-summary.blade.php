@@ -10,6 +10,7 @@
     $lowCount = $rows->where('rating', 'Low')->count();
     $flaggedCount = $rows->where('flag', true)->count();
     $numericEui = $rows->pluck('eui')->filter(fn ($v) => is_numeric($v))->map(fn ($v) => (float) $v);
+    $evaluatedCount = $numericEui->count();
     $avgEui = $numericEui->count() ? number_format($numericEui->avg(), 2) : '-';
 @endphp
 
@@ -105,7 +106,7 @@
 
     .eff-kpis {
         display: grid;
-        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        grid-template-columns: repeat(4, minmax(140px, 1fr));
         gap: 10px;
         margin-bottom: 14px;
     }
@@ -214,7 +215,7 @@
     .eff-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 840px;
+        min-width: 980px;
     }
 
     .eff-table thead {
@@ -265,6 +266,14 @@
     .eui-value {
         font-weight: 800;
         color: #0f172a;
+    }
+
+    .cell-subtext {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.72rem;
+        line-height: 1.3;
     }
 
     .rating-badge {
@@ -489,17 +498,9 @@
         <div class="eff-header">
             <div>
                 <h2 class="eff-title"><i class="fa-solid fa-gauge-high"></i> Efficiency Summary Report</h2>
-                <p class="eff-subtitle">Real-time overview of EUI and maintenance-readiness across active facilities.</p>
-                <div class="eff-help">
-                    <b>Computation:</b>
-                    <span class="formula">EUI (kWh/sqm) = Average Monthly kWh / Facility Floor Area</span><br>
-                    Rating rule:
-                    <b>High</b> if EUI &lt; 5,
-                    <b>Medium</b> if EUI &gt;= 5 and &lt; 10,
-                    <b>Low</b> if EUI &gt;= 10.
-                </div>
+                <p class="eff-subtitle">Historical energy intensity and maintenance readiness across facilities.</p>
             </div>
-            @if(($role ?? '') !== 'staff')
+            @if(\App\Support\RoleAccess::can(auth()->user(), 'export_reports'))
                 <div class="eff-actions">
                     <a href="{{ route('reports.efficiency-summary-export', array_merge(request()->query(), ['format' => 'csv'])) }}" class="eff-btn eff-btn-csv" data-secure-download>
                         <i class="fa-solid fa-file-csv"></i> Export CSV
@@ -516,23 +517,19 @@
 
         <div class="eff-kpis">
             <div class="eff-kpi total">
-                <span class="eff-kpi-label">Facilities</span>
-                <div class="eff-kpi-value">{{ $rows->count() }}</div>
+                <span class="eff-kpi-label">Facilities Evaluated</span>
+                <div class="eff-kpi-value">{{ $evaluatedCount }} / {{ $rows->count() }}</div>
             </div>
             <div class="eff-kpi avg">
                 <span class="eff-kpi-label">Average EUI</span>
                 <div class="eff-kpi-value">{{ $avgEui }}</div>
             </div>
             <div class="eff-kpi high">
-                <span class="eff-kpi-label">High Rating</span>
+                <span class="eff-kpi-label">Energy Efficient</span>
                 <div class="eff-kpi-value">{{ $highCount }}</div>
             </div>
-            <div class="eff-kpi medium">
-                <span class="eff-kpi-label">Medium Rating</span>
-                <div class="eff-kpi-value">{{ $mediumCount }}</div>
-            </div>
             <div class="eff-kpi low">
-                <span class="eff-kpi-label">Needs Attention</span>
+                <span class="eff-kpi-label">Requires Action</span>
                 <div class="eff-kpi-value">{{ $flaggedCount }}</div>
             </div>
         </div>
@@ -551,12 +548,12 @@
             </div>
 
             <div class="filter-group">
-                <label for="rating">Efficiency Rating</label>
+                <label for="rating">Efficiency Band</label>
                 <select name="rating" id="rating">
                     <option value="all" {{ (isset($selectedRating) && ($selectedRating == 'all' || $selectedRating == '')) ? 'selected' : '' }}>All Ratings</option>
-                    <option value="High" {{ (isset($selectedRating) && $selectedRating == 'High') ? 'selected' : '' }}>High</option>
-                    <option value="Medium" {{ (isset($selectedRating) && $selectedRating == 'Medium') ? 'selected' : '' }}>Medium</option>
-                    <option value="Low" {{ (isset($selectedRating) && $selectedRating == 'Low') ? 'selected' : '' }}>Low</option>
+                    <option value="High" {{ (isset($selectedRating) && $selectedRating == 'High') ? 'selected' : '' }}>Efficient</option>
+                    <option value="Medium" {{ (isset($selectedRating) && $selectedRating == 'Medium') ? 'selected' : '' }}>Moderate</option>
+                    <option value="Low" {{ (isset($selectedRating) && $selectedRating == 'Low') ? 'selected' : '' }}>Needs Improvement</option>
                 </select>
             </div>
 
@@ -577,10 +574,12 @@
                 <thead>
                     <tr>
                         <th>Facility Name</th>
-                        <th>EUI (kWh/sqm)</th>
-                        <th>Efficiency Rating</th>
-                        <th>Last Audit</th>
-                        <th>Maintenance Status</th>
+                        <th>Avg. Monthly Use</th>
+                        <th>Floor Area</th>
+                        <th>EUI</th>
+                        <th>Efficiency Band</th>
+                        <th>Data Coverage</th>
+                        <th>Action Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -588,9 +587,13 @@
                         @php
                             $ratingText = (string) ($row['rating'] ?? '-');
                             $ratingClass = 'rating-na';
+                            $ratingLabel = 'Not Evaluated';
                             if ($ratingText === 'High') $ratingClass = 'rating-high';
                             if ($ratingText === 'Medium') $ratingClass = 'rating-medium';
                             if ($ratingText === 'Low') $ratingClass = 'rating-low';
+                            if ($ratingText === 'High') $ratingLabel = 'Efficient';
+                            if ($ratingText === 'Medium') $ratingLabel = 'Moderate';
+                            if ($ratingText === 'Low') $ratingLabel = 'Needs Improvement';
                         @endphp
                         <tr class="eff-row" data-search="{{ strtolower((string) ($row['facility'] ?? '')) }}">
                             <td>
@@ -599,28 +602,43 @@
                                     <span>{{ $row['facility'] }}</span>
                                 </div>
                             </td>
-                            <td><span class="eui-value">{{ $row['eui'] }}</span></td>
                             <td>
-                                <span class="rating-badge {{ $ratingClass }}">{{ $ratingText }}</span>
+                                <span class="eui-value">{{ is_numeric($row['avg_monthly_kwh'] ?? null) ? number_format((float) $row['avg_monthly_kwh'], 2) : '-' }}</span>
+                                <span class="cell-subtext">kWh/month</span>
                             </td>
-                            <td>{{ $row['last_audit'] }}</td>
+                            <td>
+                                <span class="eui-value">{{ is_numeric($row['floor_area'] ?? null) ? number_format((float) $row['floor_area'], 0) : '-' }}</span>
+                                <span class="cell-subtext">square meters</span>
+                            </td>
+                            <td><span class="eui-value">{{ $row['eui'] }}</span><span class="cell-subtext">kWh/sqm</span></td>
+                            <td>
+                                <span class="rating-badge {{ $ratingClass }}">{{ $ratingLabel }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ $row['months_count'] ?? 0 }} month(s)</strong>
+                                <span class="cell-subtext">Latest: {{ $row['latest_period'] ?? 'No readings' }}</span>
+                            </td>
                             <td>
                                 @if($row['flag'])
-                                    <span class="status-pill status-flag"><i class="fa fa-flag"></i> Needs Maintenance</span>
+                                    <span class="status-pill status-flag"><i class="fa fa-flag"></i> Requires Action</span>
                                 @else
-                                    <span class="status-pill status-ok"><i class="fa fa-check-circle"></i> Operational</span>
+                                    <span class="status-pill status-ok"><i class="fa fa-check-circle"></i> No Immediate Action</span>
+                                @endif
+                                <span class="cell-subtext">{{ $row['attention_reason'] ?? '-' }}</span>
+                                @if(($row['last_audit'] ?? '-') !== '-')
+                                    <span class="cell-subtext">Last completed maintenance: {{ $row['last_audit'] }}</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 No efficiency data found for the selected filters.
                             </td>
                         </tr>
                     @endforelse
                     <tr id="effNoMatchRow" style="display:none;">
-                        <td colspan="5" class="empty-state">No matching facilities in current result.</td>
+                        <td colspan="7" class="empty-state">No matching facilities in current result.</td>
                     </tr>
                 </tbody>
             </table>

@@ -377,7 +377,7 @@
 
     .monthly-table {
         width: 100%;
-        min-width: 1160px;
+        min-width: 1320px;
         border-collapse: separate;
         border-spacing: 0;
         table-layout: fixed;
@@ -422,38 +422,67 @@
 
     .monthly-table th:nth-child(2),
     .monthly-table td:nth-child(2) {
-        width: 78px;
+        width: 240px;
     }
 
     .monthly-table th:nth-child(3),
     .monthly-table td:nth-child(3) {
-        width: 210px;
+        width: 125px;
     }
 
+    .monthly-table th:nth-child(3),
+    .monthly-table td:nth-child(3),
     .monthly-table th:nth-child(4),
     .monthly-table td:nth-child(4),
-    .monthly-table th:nth-child(5),
-    .monthly-table td:nth-child(5),
+    .monthly-table th:nth-child(7),
+    .monthly-table td:nth-child(7),
     .monthly-table th:nth-child(8),
-    .monthly-table td:nth-child(8),
-    .monthly-table th:nth-child(9),
-    .monthly-table td:nth-child(9) {
+    .monthly-table td:nth-child(8) {
         text-align: right;
     }
 
+    .monthly-table th:nth-child(5),
+    .monthly-table td:nth-child(5),
     .monthly-table th:nth-child(6),
     .monthly-table td:nth-child(6),
-    .monthly-table th:nth-child(7),
-    .monthly-table td:nth-child(7),
+    .monthly-table th:nth-child(9),
+    .monthly-table td:nth-child(9),
     .monthly-table th:nth-child(10),
-    .monthly-table td:nth-child(10),
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
+    .monthly-table td:nth-child(10) {
         text-align: center;
     }
 
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
+    .monthly-table th:nth-child(3),
+    .monthly-table td:nth-child(3),
+    .monthly-table th:nth-child(4),
+    .monthly-table td:nth-child(4),
+    .monthly-table th:nth-child(7),
+    .monthly-table td:nth-child(7) {
+        width: 125px;
+    }
+
+    .monthly-table th:nth-child(5),
+    .monthly-table td:nth-child(5) {
+        width: 145px;
+    }
+
+    .monthly-table th:nth-child(6),
+    .monthly-table td:nth-child(6) {
+        width: 125px;
+    }
+
+    .monthly-table th:nth-child(8),
+    .monthly-table td:nth-child(8) {
+        width: 145px;
+    }
+
+    .monthly-table th:nth-child(9),
+    .monthly-table td:nth-child(9) {
+        width: 100px;
+    }
+
+    .monthly-table th:nth-child(10),
+    .monthly-table td:nth-child(10) {
         width: 82px;
     }
 
@@ -487,6 +516,7 @@
         font-size: .68rem;
         font-weight: 800;
         letter-spacing: .04em;
+        flex: 0 0 auto;
     }
 
     .monthly-scope-cell {
@@ -497,7 +527,8 @@
     }
 
     .monthly-meter-name {
-        min-width: 0;
+        min-width: 140px;
+        flex: 1 1 auto;
         color: #0f172a;
         font-weight: 800;
         line-height: 1.35;
@@ -1257,9 +1288,11 @@
                     <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="monthly-action-btn is-info">
                         <i class="fa fa-bolt"></i>Energy Profile
                     </a>
+                    @if(\App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings'))
                     <button type="button" onclick="openAddModal()" class="monthly-action-btn is-primary">
                         <i class="fa fa-plus"></i> Add Monthly Record
                     </button>
+                    @endif
                 </div>
             </div>
 
@@ -1269,19 +1302,20 @@
     <div class="monthly-card">
         <div class="monthly-card-body">
             <div class="monthly-filters-head">
-                <span class="monthly-table-subtitle">
-                    {{ $approvedMainMeterCount }} approved main meter(s)
-                    @if($pendingMainMeterCount > 0)
-                        | {{ $pendingMainMeterCount }} pending approval
-                    @endif
-                    | {{ $summaryContextLabel }}
-                </span>
-            </div>
-            @if($hasApprovedMainMeter)
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                    <span class="monthly-chip">Main Total: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
+                <div>
+                    <div class="monthly-table-title">Main Meter Overview</div>
+                    <div class="monthly-table-subtitle">
+                        {{ $approvedMainMeterCount }} approved main meter(s)
+                        @if($pendingMainMeterCount > 0)
+                            &middot; {{ $pendingMainMeterCount }} pending approval
+                        @endif
+                        &middot; {{ $summaryContextLabel }}
+                    </div>
                 </div>
-            @endif
+                @if($hasApprovedMainMeter)
+                    <span class="monthly-chip">Total Usage: {{ number_format((float) $overallMainKwh, 2) }} kWh</span>
+                @endif
+            </div>
 
             @if($mainMeterOrganization->isEmpty())
                 <div class="monthly-org-empty">
@@ -1289,64 +1323,27 @@
                     <div style="font-size:.86rem;line-height:1.4;">{{ $mainMeterNoticeText }}</div>
                 </div>
             @else
-                <div class="monthly-org-wrap">
-                    @foreach($mainMeterOrganization as $mainItem)
-                        <div class="monthly-org-block">
-                            <div class="monthly-org-head">
-                                <div class="monthly-org-main">
-                                    <div class="monthly-org-main-name">{{ $mainItem['main_name'] }}</div>
-                                    <div class="monthly-org-main-meta">
-                                        @if($mainItem['main_number'] !== '')
-                                            {{ $mainItem['main_number'] }}
-                                        @else
-                                            Main meter #{{ (int) $mainItem['main_id'] }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="monthly-org-head-right">
-                                    @php
-                                        $mainSourceLabel = (string) ($mainItem['source_label'] ?? 'No Data');
-                                    @endphp
-                                    <span class="monthly-chip">
-                                        Main ({{ $mainSourceLabel }}): {{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh
-                                    </span>
-                                    @if($mainSourceLabel === 'Sensor' && (float) ($mainItem['manual_total_kwh'] ?? 0) > 0)
-                                        <span class="monthly-chip" style="background:#f8fafc;border-color:#cbd5e1;color:#475569;">
-                                            Manual fallback available
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <div class="monthly-card">
-        <div class="monthly-card-body">
-            <div class="monthly-filters-head">
-                <span class="monthly-chip">Per Meter Summary</span>
-                <span class="monthly-table-subtitle">{{ $meterSummaryCards->count() }} meter(s) in selected scope</span>
-            </div>
-            @if($meterSummaryCards->isEmpty())
-                <div style="border:1px dashed #cbd5e1;border-radius:12px;padding:14px;color:#64748b;font-weight:700;">
-                    No meter summary available for the selected filter.
-                </div>
-            @else
                 <div class="monthly-summary">
-                    @foreach($meterSummaryCards as $meterSummary)
+                    @foreach($mainMeterOrganization as $mainItem)
+                        @php
+                            $mainSourceLabel = (string) ($mainItem['source_label'] ?? 'No Data');
+                            $meterSummary = $meterSummaryCards->firstWhere('meter_id', (int) ($mainItem['main_id'] ?? 0));
+                            $meterRecordCount = (int) ($meterSummary['record_count'] ?? 0);
+                            $meterTotalCost = (float) ($meterSummary['total_cost'] ?? 0);
+                        @endphp
                         <div class="item">
-                            <div class="label">{{ $meterSummary['meter_name'] }}</div>
+                            <div class="label">{{ $mainItem['main_name'] }}</div>
                             <div class="meta">
-                                @if($meterSummary['meter_number'] !== '')
-                                    {{ $meterSummary['meter_number'] }} |
+                                @if($mainItem['main_number'] !== '')
+                                    {{ $mainItem['main_number'] }} &middot;
                                 @endif
-                                {{ number_format((int) $meterSummary['record_count']) }} record(s)
+                                {{ number_format($meterRecordCount) }} record(s)
                             </div>
-                            <div class="value">{{ number_format((float) $meterSummary['total_kwh'], 2) }} kWh</div>
-                            <div class="meta">PHP {{ number_format((float) $meterSummary['total_cost'], 2) }}</div>
+                            <div class="value">{{ number_format((float) ($mainItem['main_total_kwh'] ?? 0), 2) }} kWh</div>
+                            <div class="meta">PHP {{ number_format($meterTotalCost, 2) }} &middot; Reading Source: {{ $mainSourceLabel }}</div>
+                            @if($mainSourceLabel === 'Sensor' && (float) ($mainItem['manual_total_kwh'] ?? 0) > 0)
+                                <div class="meta">Manual fallback available</div>
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -1368,8 +1365,8 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <span class="monthly-chip">Total kWh: {{ number_format($tableActualKwhTotal, 2) }}</span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
-                <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}" 
-                   style="display:inline-flex;align-items:center;gap:6px;background:#dc2626;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:0.875rem;font-weight:600;transition:background 0.2s;"
+                <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}"
+                   style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:0.875rem;font-weight:700;transition:all 0.2s;"
                    title="View archived records">
                     <i class="fa fa-archive"></i> Archive
                 </a>
@@ -1417,13 +1414,12 @@
             <table class="monthly-table">
                 <thead>
                     <tr>
-                        <th>Year</th>
                         <th>Month</th>
-                        <th>Record Scope</th>
-                        <th>kWh Used</th>
-                        <th>Baseline kWh (Main Meter)</th>
+                        <th>Main Meter</th>
+                        <th>Usage (kWh)</th>
+                        <th>Baseline (kWh)</th>
                         <th>Change vs Baseline</th>
-                        <th>Alert (Baseline)</th>
+                        <th>Status</th>
                         <th>Rate (PHP/kWh)</th>
                         <th>Energy Cost (PHP)</th>
                         <th>Bill Image</th>
@@ -1506,7 +1502,6 @@
                             }
                         @endphp
                         <tr>
-                            <td>{{ $record->year }}</td>
                             <td>{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }}</td>
                             <td>
                                 <div class="monthly-scope-cell">
@@ -1525,6 +1520,13 @@
                                 <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
                                     {{ $baselineAlertLabel }}
                                 </span>
+                                @if(!empty($record->trend_spike_detected))
+                                    <div style="margin-top:6px;">
+                                        <span class="monthly-status-pill" style="background:#fee2e2;color:#991b1b;">
+                                            3-Month Spike
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="monthly-muted-number">{{ number_format($rate, 2) }}</td>
                             <td class="monthly-cost">{{ number_format($cost, 2) }}</td>
@@ -1538,24 +1540,27 @@
                                 @endif
                             </td>
                             <td>
+                                @if(\App\Support\RoleAccess::can(auth()->user(), 'encode_main_meter_readings'))
                                 <form id="deleteMonthlyRecordForm-{{ $record->id }}"
                                       action="{{ route('energy-records.delete', ['facility' => $facility->id, 'record' => $record->id]) }}"
                                       method="POST"
                                       style="display:inline;">
                                     @csrf
                                     @method('DELETE')
+                                    <input type="hidden" name="archive_reason" value="">
                                     <button type="button"
-                                            title="Delete Record"
+                                            title="Move to Archive"
                                             class="monthly-delete-btn"
                                             onclick="openDeleteMonthlyRecordModal({{ $record->id }}, @js($monthLabels[(int) ($record->month ?? 0)] ?? ''), {{ (int) $record->year }})">
-                                        <i class="fa fa-trash"></i>
+                                        <i class="fa fa-box-archive"></i>
                                     </button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" style="padding:16px;color:#64748b;font-weight:700;">
+                            <td colspan="10" style="padding:16px;color:#64748b;font-weight:700;">
                                 @if($tableFilterApplied)
                                     No records found for the selected table filters.
                                 @else
@@ -1641,11 +1646,18 @@
 <div id="deleteMonthlyRecordModal" class="monthly-modal-overlay">
     <div class="monthly-modal-card compact">
         <button type="button" onclick="closeDeleteMonthlyRecordModal()" class="monthly-modal-close">&times;</button>
-        <h3 class="monthly-modal-title danger">Delete Monthly Record</h3>
+        <h3 class="monthly-modal-title danger">Move Monthly Record to Archive</h3>
         <div id="deleteMonthlyRecordText" style="margin-bottom:16px;color:#334155;font-size:.95rem;"></div>
+        <div class="monthly-field" style="margin-bottom:16px;text-align:left;">
+            <label for="monthlyRecordArchiveReason">Reason for Archiving <span style="color:#e11d48;">*</span></label>
+            <textarea id="monthlyRecordArchiveReason" maxlength="500" rows="3" required
+                placeholder="Example: duplicate entry, incorrect reading, or billing correction"
+                style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font:inherit;box-sizing:border-box;"></textarea>
+            <div id="monthlyRecordArchiveReasonError" style="display:none;margin-top:5px;color:#e11d48;font-size:.82rem;font-weight:600;">Please enter a reason before archiving.</div>
+        </div>
         <div class="monthly-modal-actions">
             <button type="button" onclick="closeDeleteMonthlyRecordModal()" class="monthly-modal-btn neutral">Cancel</button>
-            <button id="confirmDeleteMonthlyRecordBtn" type="button" class="monthly-modal-btn danger">Delete</button>
+            <button id="confirmDeleteMonthlyRecordBtn" type="button" class="monthly-modal-btn danger">Move to Archive</button>
         </div>
     </div>
 </div>
@@ -1707,7 +1719,11 @@ function openDeleteMonthlyRecordModal(recordId, monthName, year) {
     deleteMonthlyRecordId = recordId;
     const text = document.getElementById('deleteMonthlyRecordText');
     const modal = document.getElementById('deleteMonthlyRecordModal');
-    if (text) text.textContent = `Are you sure you want to delete the record for ${monthName} ${year}?`;
+    const reason = document.getElementById('monthlyRecordArchiveReason');
+    const error = document.getElementById('monthlyRecordArchiveReasonError');
+    if (text) text.textContent = `Move the record for ${monthName} ${year} to the archive? You can restore it later from the Monthly Records Archive.`;
+    if (reason) reason.value = '';
+    if (error) error.style.display = 'none';
     if (modal) modal.style.display = 'flex';
 }
 
@@ -1720,7 +1736,19 @@ function closeDeleteMonthlyRecordModal() {
 document.getElementById('confirmDeleteMonthlyRecordBtn')?.addEventListener('click', function () {
     if (!deleteMonthlyRecordId) return;
     const form = document.getElementById(`deleteMonthlyRecordForm-${deleteMonthlyRecordId}`);
-    if (form) form.submit();
+    const reason = document.getElementById('monthlyRecordArchiveReason');
+    const error = document.getElementById('monthlyRecordArchiveReasonError');
+    const value = String(reason?.value || '').trim();
+    if (!value) {
+        if (error) error.style.display = 'block';
+        reason?.focus();
+        return;
+    }
+    if (form) {
+        const hiddenReason = form.querySelector('input[name="archive_reason"]');
+        if (hiddenReason) hiddenReason.value = value;
+        form.submit();
+    }
 });
 
 document.getElementById('add_actual_kwh')?.addEventListener('input', computeEnergyCost);

@@ -21,12 +21,19 @@ $resolvePublicUploadRoot = function (): string {
     return public_path();
 };
 
-// Delete a monthly energy record for a facility
-Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function ($facilityId, $recordId) {
+// Move a monthly energy record to the archive (soft delete)
+Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function (Request $request, $facilityId, $recordId) {
+    $validated = $request->validate([
+        'archive_reason' => ['required', 'string', 'max:500'],
+    ]);
+
     $record = EnergyRecord::where('facility_id', $facilityId)->where('id', $recordId)->firstOrFail();
+    $record->deleted_by = auth()->id();
+    $record->archive_reason = trim($validated['archive_reason']);
+    $record->save();
     $record->delete();
     if (request()->expectsJson() || request()->isJson() || request()->wantsJson()) {
-        return response()->json(['success' => true, 'message' => 'Monthly record archived successfully!']);
+        return response()->json(['success' => true, 'message' => 'Monthly record moved to archive successfully.']);
     }
     // Redirect to the monthly records list for the facility
     return redirect('/modules/facilities/' . $facilityId . '/monthly-records');
@@ -210,4 +217,3 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Facility modal detail for AJAX
     Route::get('/modules/facilities/{facility}/modal-detail', [FacilityController::class, 'modalDetail'])->name('modules.facilities.modal-detail');
 });
-

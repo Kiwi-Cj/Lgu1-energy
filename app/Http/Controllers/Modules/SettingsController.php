@@ -56,6 +56,18 @@ class SettingsController extends Controller
             'alert_level3_xlarge' => '7',
             'alert_level4_xlarge' => '12',
             'alert_level5_xlarge' => '18',
+            'alert_drop_level1_small' => '5',
+            'alert_drop_level2_small' => '10',
+            'alert_drop_level3_small' => '15',
+            'alert_drop_level1_medium' => '4',
+            'alert_drop_level2_medium' => '8',
+            'alert_drop_level3_medium' => '12',
+            'alert_drop_level1_large' => '3',
+            'alert_drop_level2_large' => '6',
+            'alert_drop_level3_large' => '10',
+            'alert_drop_level1_xlarge' => '2',
+            'alert_drop_level2_xlarge' => '4',
+            'alert_drop_level3_xlarge' => '7',
             'auto_log_incident' => '1',
             'facility_image_size' => '5',
             'allowed_image_types' => 'jpg,png,jpeg',
@@ -109,6 +121,9 @@ class SettingsController extends Controller
             for ($level = 1; $level <= 5; $level++) {
                 $rules["alert_level{$level}_{$size}"] = 'required|numeric|min:0|max:500';
             }
+            for ($level = 1; $level <= 3; $level++) {
+                $rules["alert_drop_level{$level}_{$size}"] = 'required|numeric|min:0|max:500';
+            }
         }
         $validated = $request->validate($rules);
 
@@ -127,6 +142,20 @@ class SettingsController extends Controller
                     return back()
                         ->withInput()
                         ->withErrors(["alert_level{$i}_{$size}" => ucfirst($size) . ' thresholds must strictly increase from Level 1 to Level 5.']);
+                }
+            }
+
+            $dropLevels = [
+                (float) $validated["alert_drop_level1_{$size}"],
+                (float) $validated["alert_drop_level2_{$size}"],
+                (float) $validated["alert_drop_level3_{$size}"],
+            ];
+
+            for ($i = 1; $i < count($dropLevels); $i++) {
+                if ($dropLevels[$i] <= $dropLevels[$i - 1]) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(["alert_drop_level{$i}_{$size}" => ucfirst($size) . ' drop thresholds must strictly increase from Level 1 to Level 3.']);
                 }
             }
         }
@@ -151,6 +180,10 @@ class SettingsController extends Controller
                 'alert_level1_medium', 'alert_level2_medium', 'alert_level3_medium', 'alert_level4_medium', 'alert_level5_medium',
                 'alert_level1_large', 'alert_level2_large', 'alert_level3_large', 'alert_level4_large', 'alert_level5_large',
                 'alert_level1_xlarge', 'alert_level2_xlarge', 'alert_level3_xlarge', 'alert_level4_xlarge', 'alert_level5_xlarge',
+                'alert_drop_level1_small', 'alert_drop_level2_small', 'alert_drop_level3_small',
+                'alert_drop_level1_medium', 'alert_drop_level2_medium', 'alert_drop_level3_medium',
+                'alert_drop_level1_large', 'alert_drop_level2_large', 'alert_drop_level3_large',
+                'alert_drop_level1_xlarge', 'alert_drop_level2_xlarge', 'alert_drop_level3_xlarge',
                 'auto_log_incident',
             ],
             'facility' => ['facility_image_size', 'allowed_image_types', 'default_facility_status'],

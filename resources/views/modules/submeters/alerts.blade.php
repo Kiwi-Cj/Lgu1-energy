@@ -2,6 +2,7 @@
 @section('title', 'Submeter Alerts')
 
 @section('content')
+@include('layouts.partials.energy_monitoring_switcher', ['energyTab' => 'sub'])
 <div class="em-page">
     @if(session('success'))
         <div style="margin-bottom:12px;background:#dcfce7;color:#166534;padding:12px 16px;border-radius:12px;font-weight:700;">{{ session('success') }}</div>

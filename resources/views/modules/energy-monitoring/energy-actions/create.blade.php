@@ -42,8 +42,19 @@
         background: linear-gradient(90deg,#1d4ed8,#6366f1);
         box-shadow: 0 4px 16px rgba(55,98,200,0.13);
     }
+    @media (max-width: 640px) {
+        .energy-action-form-card {
+            margin: 0 auto !important;
+            padding: 22px 16px 18px !important;
+            border-radius: 14px !important;
+        }
+
+        .energy-action-form-card h2 {
+            font-size: 1.35rem !important;
+        }
+    }
 </style>
-<div class="modal-content" style="max-width:540px;margin:40px auto;background:#fff;border-radius:18px;box-shadow:0 8px 32px rgba(49,46,129,0.13);padding:32px 28px 24px 28px;">
+<div class="modal-content energy-action-form-card" style="max-width:540px;margin:40px auto;background:#fff;border-radius:18px;box-shadow:0 8px 32px rgba(49,46,129,0.13);padding:32px 28px 24px 28px;">
     <h2 style="font-size:1.6rem;font-weight:800;color:#312e81;margin-bottom:18px;">Create Energy Action</h2>
     <form method="POST" action="{{ url('/energy-actions/store') }}">
         @csrf

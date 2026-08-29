@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UsersTableSeeder::class,
+            LguFacilityMeterDemoSeeder::class,
             FiveFacilitiesEnergySeeder::class,
             DualMainWithSubMonthlySeeder::class,
             TenFacilitiesMultiMeterMonthlySeeder::class,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\RoleAccess;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -9,6 +10,14 @@ class RequireDownloadAuthorization
 {
     public function handle(Request $request, Closure $next)
     {
+        if (RoleAccess::is($request->user(), 'staff') && (
+            $request->is('modules/reports/energy-export')
+            || $request->is('modules/energy/export-excel')
+            || $request->is('modules/energy/annual/export-excel')
+        )) {
+            return $next($request);
+        }
+
         $token = (string) $request->query('download_token', '');
         $sessionKey = 'download_authorizations.' . $token;
         $authorization = $token !== '' ? $request->session()->get($sessionKey) : null;

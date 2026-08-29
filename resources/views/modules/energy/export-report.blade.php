@@ -5,10 +5,45 @@
     $userRole = str_replace(' ', '_', strtolower((string) ($user?->role ?? '')));
 @endphp
 
+<style>
+@media (max-width: 640px) {
+    .coa-export-page {
+        padding: 1rem 0 !important;
+    }
+
+    .coa-export-header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: .8rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .coa-export-header h1 {
+        font-size: 1.55rem !important;
+        line-height: 1.2;
+    }
+
+    .coa-export-card {
+        padding: 1.25rem 1rem !important;
+        border-radius: 16px !important;
+    }
+
+    .coa-export-actions {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .coa-export-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
 @section('content')
-<div class="container" style="padding:2.5rem 0;max-width:900px;">
+<div class="container coa-export-page" style="padding:2.5rem 0;max-width:900px;">
     <!-- Header -->
-    <div style="margin-bottom:2.5rem;display:flex;align-items:center;gap:1.2rem;">
+    <div class="coa-export-header" style="margin-bottom:2.5rem;display:flex;align-items:center;gap:1.2rem;">
         <div style="background:#e0e7ff;padding:1.1rem 1.3rem;border-radius:14px;display:flex;align-items:center;">
             <i class="fa-solid fa-file-arrow-down" style="font-size:2.2rem;color:#3762c8;"></i>
         </div>
@@ -23,7 +58,7 @@
     </div>
 
     <!-- Export Card -->
-    <div style="background:linear-gradient(120deg,#f5f8ff 60%,#e0e7ff 100%);border-radius:20px;padding:2.5rem 2rem 2rem 2rem;box-shadow:0 8px 32px rgba(55,98,200,0.10);">
+    <div class="coa-export-card" style="background:linear-gradient(120deg,#f5f8ff 60%,#e0e7ff 100%);border-radius:20px;padding:2.5rem 2rem 2rem 2rem;box-shadow:0 8px 32px rgba(55,98,200,0.10);">
         <!-- Filters -->
         <form method="GET" action="{{ url('/modules/energy/export-excel') }}" data-secure-download-form id="coaExportForm">
             <input type="hidden" name="format" id="coaExportFormat" value="xlsx">
@@ -50,19 +85,19 @@
             </div>
 
             <!-- Buttons -->
-            <div style="margin-top:1.2rem;display:flex;gap:10px;align-items:center;">
+            @if(\App\Support\RoleAccess::can(auth()->user(), 'export_reports'))
+            <div class="coa-export-actions" style="margin-top:1.2rem;display:flex;gap:10px;align-items:center;">
                 <a href="#" onclick="exportCOAPdf(this);return false;" class="btn btn-danger" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #e11d480a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-pdf"></i> Download PDF
                 </a>
-                @if($userRole !== 'staff')
                 <button type="submit" class="btn btn-success" onclick="document.getElementById('coaExportFormat').value='csv';" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #22c55e0a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-csv"></i> Download CSV
                 </button>
                 <button type="submit" class="btn btn-primary" onclick="document.getElementById('coaExportFormat').value='xlsx';" style="padding:10px 22px;border-radius:8px;font-weight:600;font-size:1.05rem;box-shadow:0 2px 8px #3b82f60a;display:flex;align-items:center;gap:8px;">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </button>
-                @endif
             </div>
+            @endif
             <script>
             function exportCOAPdf(btn) {
                 const form = btn.closest('form');

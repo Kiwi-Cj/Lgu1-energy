@@ -612,6 +612,23 @@ body.dark-mode .settings-file-chip {
                         </div>
                     @endforeach
 
+                    @foreach(['small' => 'Small', 'medium' => 'Medium', 'large' => 'Large', 'xlarge' => 'Extra Large'] as $sizeKey => $sizeLabel)
+                        <div class="settings-subblock">
+                            <h3>{{ $sizeLabel }} Drop Threshold (%)</h3>
+                            <p>Use this when usage falls below baseline. Levels only go from Level 1 to Level 3.</p>
+                            <div class="settings-threshold-grid">
+                                @for($lvl = 1; $lvl <= 3; $lvl++)
+                                    @php $field = "alert_drop_level{$lvl}_{$sizeKey}"; @endphp
+                                    <div class="settings-field">
+                                        <label for="{{ $field }}">Level {{ $lvl }}</label>
+                                        <input type="number" step="0.01" min="0" max="500" id="{{ $field }}" name="{{ $field }}" value="{{ $getSetting($field) }}">
+                                        @error($field) <div class="settings-error">{{ $message }}</div> @enderror
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    @endforeach
+
                     <div class="settings-toggle-grid">
                         <div class="settings-field">
                             <label for="auto_log_incident">Auto Log Incident</label>
@@ -739,6 +756,21 @@ document.getElementById('settingsForm')?.addEventListener('submit', function (e)
                 e.preventDefault();
                 alert(`${size.toUpperCase()} thresholds must be strictly increasing from Level 1 to Level 5.`);
                 const target = document.getElementById(`alert_level${i + 1}_${size}`);
+                if (target) target.focus();
+                return;
+            }
+        }
+
+        const dropLevels = [];
+        for (let i = 1; i <= 3; i += 1) {
+            const el = document.getElementById(`alert_drop_level${i}_${size}`);
+            dropLevels.push(parseFloat(el?.value || '0'));
+        }
+        for (let i = 1; i < dropLevels.length; i += 1) {
+            if (!(dropLevels[i] > dropLevels[i - 1])) {
+                e.preventDefault();
+                alert(`${size.toUpperCase()} drop thresholds must be strictly increasing from Level 1 to Level 3.`);
+                const target = document.getElementById(`alert_drop_level${i + 1}_${size}`);
                 if (target) target.focus();
                 return;
             }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
+use App\Models\FacilityMeter;
 use App\Models\Submeter;
 use App\Models\SubmeterAlert;
 use App\Models\SubmeterBaseline;
@@ -40,6 +41,7 @@ class SubmeterMonitoringController extends Controller
 
         $selectedFacility = $request->query('facility_id');
         $selectedDepartment = trim((string) $request->query('department', ''));
+        $selectedSensorSubmeter = $request->integer('sensor_submeter_id') ?: null;
         $selectedSensorPeriod = (string) $request->query('sensor_period', 'daily');
         if (! in_array($selectedSensorPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
             $selectedSensorPeriod = 'daily';
@@ -149,11 +151,53 @@ class SubmeterMonitoringController extends Controller
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
             ->orderBy('submeter_name')
             ->get(['id', 'facility_id', 'submeter_name', 'status']);
+
+        $submeterLookup = $submeters->keyBy(fn (Submeter $submeter) => $submeter->facility_id.'|'.mb_strtolower(trim($submeter->submeter_name)));
+        $sensorMeterGroups = FacilityMeter::query()
+            ->with(['facility:id,name', 'childMeters' => fn ($query) => $query
+                ->where('meter_type', 'sub')
+                ->where('status', 'active')
+                ->orderBy('meter_name')])
+            ->where('meter_type', 'main')
+            ->where('status', 'active')
+            ->when($selectedFacility, fn ($query) => $query->where('facility_id', $selectedFacility))
+            ->when($facilityScope !== null, fn ($query) => $query->whereIn('facility_id', $facilityScope))
+            ->orderBy('meter_name')
+            ->get()
+            ->map(function (FacilityMeter $mainMeter) use ($submeterLookup) {
+                $linkedSubmeters = $mainMeter->childMeters
+                    ->map(fn (FacilityMeter $child) => $submeterLookup->get(
+                        $mainMeter->facility_id.'|'.mb_strtolower(trim($child->meter_name))
+                    ))
+                    ->filter()
+                    ->values();
+
+                return [
+                    'id' => (int) $mainMeter->id,
+                    'label' => trim(($mainMeter->facility?->name ? $mainMeter->facility->name.' — ' : '').$mainMeter->meter_name),
+                    'submeters' => $linkedSubmeters,
+                ];
+            })
+            ->filter(fn (array $group) => $group['submeters']->isNotEmpty())
+            ->values();
+
+        $selectableSensorIds = $sensorMeterGroups
+            ->flatMap(fn (array $group) => $group['submeters']->pluck('id'))
+            ->map(fn ($id) => (int) $id);
+
+        if ($selectedSensorSubmeter === null || ! $selectableSensorIds->contains($selectedSensorSubmeter)) {
+            $selectedSensorSubmeter = $selectableSensorIds->isNotEmpty()
+                ? (int) $selectableSensorIds->first()
+                : null;
+        }
+        $selectedSensorMainMeter = $sensorMeterGroups
+            ->first(fn (array $group) => $group['submeters']->contains('id', $selectedSensorSubmeter))['id'] ?? null;
         $sensorTrend = $this->buildSensorTrendSeries(
             $selectedSensorPeriod,
             $selectedFacility,
             $selectedDepartment,
-            $facilityScope
+            $facilityScope,
+            $selectedSensorSubmeter
         );
 
         return view('modules.submeters.monitoring', [
@@ -163,6 +207,9 @@ class SubmeterMonitoringController extends Controller
             'selectedFacility' => $selectedFacility,
             'selectedDepartment' => $selectedDepartment,
             'selectedSensorPeriod' => $selectedSensorPeriod,
+            'selectedSensorSubmeter' => $selectedSensorSubmeter,
+            'selectedSensorMainMeter' => $selectedSensorMainMeter,
+            'sensorMeterGroups' => $sensorMeterGroups,
             'facilities' => $facilities,
             'submeters' => $submeters,
             'widgets' => $widgets,
@@ -595,7 +642,8 @@ class SubmeterMonitoringController extends Controller
         string $period,
         mixed $selectedFacility,
         string $selectedDepartment,
-        ?array $facilityScope
+        ?array $facilityScope,
+        ?int $selectedSensorSubmeter = null
     ): array {
         $period = in_array($period, ['daily', 'weekly', 'monthly', 'yearly'], true) ? $period : 'daily';
         $now = now();
@@ -627,6 +675,10 @@ class SubmeterMonitoringController extends Controller
             ->where('input_source', 'iot')
             ->whereBetween(DB::raw('COALESCE(received_at, period_end_date)'), [$start->toDateTimeString(), $end->toDateTimeString()])
             ->whereHas('submeter.facility');
+
+        if ($selectedSensorSubmeter !== null) {
+            $query->where('submeter_id', $selectedSensorSubmeter);
+        }
 
         if ($selectedFacility) {
             $query->whereHas('submeter', fn (Builder $builder) => $builder->where('facility_id', $selectedFacility));

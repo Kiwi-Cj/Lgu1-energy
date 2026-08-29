@@ -9,8 +9,6 @@ use App\Models\FacilityMeter;
 use App\Models\MainMeterReading;
 use App\Models\Submeter;
 use App\Models\SubmeterReading;
-use App\Services\MainMeterBaselineAlertService;
-use App\Services\SubmeterBaselineAlertService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -21,9 +19,6 @@ class LguFacilityMeterDemoSeeder extends Seeder
     public function run(): void
     {
         $this->clearMeterData();
-
-        $mainBaselineService = app(MainMeterBaselineAlertService::class);
-        $submeterBaselineService = app(SubmeterBaselineAlertService::class);
 
         foreach ($this->facilityData() as $index => $data) {
             $facility = Facility::withTrashed()->firstOrNew(['name' => $data['name']]);
@@ -75,8 +70,8 @@ class LguFacilityMeterDemoSeeder extends Seeder
                 'baseline_source' => 'Demo seed baseline',
             ]);
 
-            $this->seedMainMeterReadings($facility, $mainMeter, $data, $mainBaselineService, $index);
-            $this->seedSubmeters($facility, $mainMeter, $data, $submeterBaselineService, $index);
+            $this->seedMainMeterReadings($facility, $mainMeter, $data, $index);
+            $this->seedSubmeters($facility, $mainMeter, $data, $index);
         }
     }
 
@@ -113,7 +108,6 @@ class LguFacilityMeterDemoSeeder extends Seeder
         Facility $facility,
         FacilityMeter $mainMeter,
         array $data,
-        MainMeterBaselineAlertService $baselineService,
         int $facilityIndex
     ): void {
         $recordedBy = (int) (DB::table('users')->value('id') ?? 1);
@@ -161,7 +155,6 @@ class LguFacilityMeterDemoSeeder extends Seeder
                 ),
             ]);
 
-            $baselineService->processReading($reading->fresh(['facility']));
             $meterStart = $readingEnd;
         }
     }
@@ -170,7 +163,6 @@ class LguFacilityMeterDemoSeeder extends Seeder
         Facility $facility,
         FacilityMeter $mainMeter,
         array $data,
-        SubmeterBaselineAlertService $baselineService,
         int $facilityIndex
     ): void {
         foreach ($data['submeters'] as $subIndex => $submeterData) {
@@ -216,8 +208,6 @@ class LguFacilityMeterDemoSeeder extends Seeder
                     'received_at' => $periodEnd->copy()->setTime(8, 45),
                     'approved_at' => now(),
                 ]);
-
-                $baselineService->processReading($reading->fresh(['submeter.facility']));
 
                 EnergyRecord::create([
                     'facility_id' => $facility->id,
@@ -326,6 +316,90 @@ class LguFacilityMeterDemoSeeder extends Seeder
                         'baseline_kwh' => 1960,
                         'starting_kwh' => 21800,
                         'monthly_kwh' => [1840, 1905, 1975, 2040, 2115, 2190],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'LGU Public Market',
+                'type' => 'Commercial Facility',
+                'department' => 'Market Administration',
+                'address' => 'Public Market Complex, Barangay Central',
+                'barangay' => 'Central',
+                'floor_area' => 2980,
+                'floors' => 2,
+                'year_built' => 2016,
+                'operating_hours' => '4:00 AM - 8:00 PM',
+                'baseline_kwh' => 7420,
+                'contract_account_no' => 'LGU-PM-2026-003',
+                'backup_power' => 'Standby generator',
+                'transformer_capacity' => '125 kVA',
+                'main_meter' => [
+                    'name' => 'Public Market Main Meter',
+                    'number' => 'MAIN-LGU-PM-001',
+                    'location' => 'Market Admin Electrical Room',
+                    'starting_kwh' => 132000,
+                ],
+                'main_monthly_kwh' => [7010, 7165, 7320, 7485, 7655, 7830],
+                'submeters' => [
+                    [
+                        'name' => 'Stalls and Common Areas Submeter',
+                        'meter_number' => 'SUB-LGU-PM-STA',
+                        'location' => 'Market Main Panel',
+                        'meter_type' => 'three_phase',
+                        'baseline_kwh' => 4120,
+                        'starting_kwh' => 50100,
+                        'monthly_kwh' => [3860, 3945, 4025, 4120, 4215, 4320],
+                    ],
+                    [
+                        'name' => 'Cold Storage Submeter',
+                        'meter_number' => 'SUB-LGU-PM-COLD',
+                        'location' => 'Cold Storage Room',
+                        'meter_type' => 'single_phase',
+                        'baseline_kwh' => 1680,
+                        'starting_kwh' => 18700,
+                        'monthly_kwh' => [1585, 1620, 1665, 1715, 1760, 1815],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'LGU Engineering Office',
+                'type' => 'Government Office',
+                'department' => 'Engineering Department',
+                'address' => 'Engineering Complex, Barangay North',
+                'barangay' => 'North',
+                'floor_area' => 2240,
+                'floors' => 3,
+                'year_built' => 2014,
+                'operating_hours' => '8:00 AM - 5:00 PM',
+                'baseline_kwh' => 5580,
+                'contract_account_no' => 'LGU-EN-2026-004',
+                'backup_power' => 'UPS backup',
+                'transformer_capacity' => '75 kVA',
+                'main_meter' => [
+                    'name' => 'Engineering Office Main Meter',
+                    'number' => 'MAIN-LGU-EN-001',
+                    'location' => 'Engineering Electrical Room',
+                    'starting_kwh' => 96000,
+                ],
+                'main_monthly_kwh' => [5480, 5560, 5650, 6410, 7025, 6840],
+                'submeters' => [
+                    [
+                        'name' => 'Plans and Design Submeter',
+                        'meter_number' => 'SUB-LGU-EN-DES',
+                        'location' => 'Design Office Panel',
+                        'meter_type' => 'three_phase',
+                        'baseline_kwh' => 2300,
+                        'starting_kwh' => 27100,
+                        'monthly_kwh' => [2200, 2245, 2305, 2555, 2720, 2655],
+                    ],
+                    [
+                        'name' => 'Field Operations Submeter',
+                        'meter_number' => 'SUB-LGU-EN-FLD',
+                        'location' => 'Field Operations Panel',
+                        'meter_type' => 'three_phase',
+                        'baseline_kwh' => 1850,
+                        'starting_kwh' => 21900,
+                        'monthly_kwh' => [1790, 1825, 1870, 2250, 2440, 2360],
                     ],
                 ],
             ],

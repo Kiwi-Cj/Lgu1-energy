@@ -46,6 +46,11 @@
     .submeter-sensor-title { margin: 0; color: #1e293b; font-size: 1rem; font-weight: 900; }
     .submeter-sensor-subtitle { margin-top: 3px; color: #64748b; font-size: .84rem; font-weight: 600; }
     .submeter-sensor-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .submeter-sensor-controls { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+    .submeter-sensor-picker { display: grid; grid-template-columns: repeat(2, minmax(190px, 280px)); gap: 8px; }
+    .submeter-sensor-picker-field { display: grid; gap: 4px; }
+    .submeter-sensor-picker label { color: #475569; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+    .submeter-sensor-picker select { min-height: 36px; padding: 7px 34px 7px 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #0f172a; font-weight: 700; }
     .submeter-sensor-tab { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #334155; padding: 7px 12px; font-weight: 900; text-decoration: none; font-size: .84rem; }
     .submeter-sensor-tab.active { border-color: #22d3ee; background: #ecfeff; color: #0f766e; }
     .submeter-sensor-body { padding: 14px; }
@@ -430,18 +435,113 @@
     }
 
     @media (max-width: 680px) {
+        .submeter-ui,
+        .submeter-ui > *,
+        .submeter-head > *,
+        .submeter-sensor-panel,
+        .submeter-panel { min-width: 0; }
         .submeter-ui { margin: 0; }
-        .report-card-container { padding: 18px; border-radius: 20px; }
+        .report-card-container { padding: 16px; gap: 16px; border-radius: 20px; }
         .submeter-title { font-size: 1.28rem; }
+        .submeter-subtitle { font-size: .92rem; line-height: 1.55; }
+        .submeter-kpis { grid-template-columns: minmax(0, 1fr); }
         .submeter-filter { grid-template-columns: 1fr; }
         .submeter-head-actions { width: 100%; }
         .submeter-head-actions .sm-btn { flex: 1; }
-        .submeter-table-shell { margin: 8px; }
+        .submeter-sensor-head { align-items: stretch; }
+        .submeter-sensor-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+        }
+        .submeter-sensor-tab { width: 100%; padding-inline: 8px; }
+        .submeter-sensor-stats { grid-template-columns: minmax(0, 1fr); }
+        .submeter-sensor-chart { height: 240px; max-height: 240px; }
+        .submeter-table-wrap { overflow: visible; padding: 10px; }
+        .submeter-table-shell { margin: 0; border: 0; overflow: visible; background: transparent; box-shadow: none; }
+        .submeter-table,
+        .submeter-table tbody { display: block; width: 100%; min-width: 0; }
+        .submeter-table colgroup,
+        .submeter-table thead { display: none; }
+        .submeter-table tbody { display: grid; gap: 12px; }
+        .submeter-table tbody tr.submeter-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            overflow: hidden;
+            border: 1px solid #dbe4f2;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, .06);
+        }
+        .submeter-table tbody tr.submeter-row.critical { background: #fef2f2; border-color: #fecaca; }
+        .submeter-table tbody tr.submeter-row.warning { background: #fffbeb; border-color: #fde68a; }
+        .submeter-table tbody tr.submeter-row td {
+            position: static;
+            display: grid;
+            grid-template-columns: minmax(105px, .8fr) minmax(0, 1.2fr);
+            align-items: center;
+            gap: 10px;
+            min-height: 45px;
+            padding: 10px 12px;
+            border: 0;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+            background: transparent;
+            box-shadow: none;
+        }
+        .submeter-table tbody tr.submeter-row td:last-child { border-bottom: 0; }
+        .submeter-table tbody tr.submeter-row td::before {
+            content: attr(data-label);
+            color: #64748b;
+            font-size: .7rem;
+            font-weight: 800;
+            letter-spacing: .045em;
+            text-transform: uppercase;
+        }
+        .submeter-table tbody tr.submeter-row td:first-child {
+            display: block;
+            padding: 14px 12px;
+            background: #f8fbff;
+        }
+        .submeter-table tbody tr.submeter-row td:first-child::before {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .submeter-table tbody tr.submeter-row.critical td:first-child { background: #fee2e2; }
+        .submeter-table tbody tr.submeter-row.warning td:first-child { background: #fef3c7; }
+        .submeter-table .facility-cell {
+            display: grid;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+        .submeter-table .baseline-pill,
+        .submeter-table .alert-pill { justify-self: start; }
+        .submeter-table .ai-rec-btn { justify-self: start; }
+        .submeter-table tbody tr:not(.submeter-row) { display: block; }
+        .submeter-table .submeter-empty-row { display: block; width: 100%; border: 1px solid #dbe4f2; border-radius: 12px; }
+        body.dark-mode .submeter-table tbody tr.submeter-row {
+            background: #111827;
+            border-color: #334155;
+        }
+        body.dark-mode .submeter-table tbody tr.submeter-row.critical { background: #3b1f29; border-color: #7f1d1d; }
+        body.dark-mode .submeter-table tbody tr.submeter-row.warning { background: #3a3319; border-color: #854d0e; }
+        body.dark-mode .submeter-table tbody tr.submeter-row td { background: transparent; border-color: #334155; box-shadow: none; }
+        body.dark-mode .submeter-table tbody tr.submeter-row td:first-child { background: #182437; }
+        body.dark-mode .submeter-table tbody tr.submeter-row.critical td:first-child { background: #4c1d2a; }
+        body.dark-mode .submeter-table tbody tr.submeter-row.warning td:first-child { background: #463b16; }
+        body.dark-mode .submeter-table tbody tr.submeter-row td::before { color: #94a3b8; }
         .submeter-modal-head { padding: 18px 16px 10px; padding-right: 52px; }
         .submeter-modal-alert { margin: 10px 16px 0; }
         .submeter-modal-text { margin: 8px 16px 0; font-size: .95rem; }
         .submeter-modal-foot { padding: 12px 16px 14px; }
         .submeter-modal-title { font-size: 1.12rem; }
+    }
+
+    @media (max-width: 380px) {
+        .report-card-container { padding: 13px; border-radius: 16px; }
+        .submeter-title { font-size: 1.16rem; }
+        .submeter-sensor-head,
+        .submeter-sensor-body { padding: 12px; }
     }
 </style>
 
@@ -498,7 +598,31 @@
                     <h3 class="submeter-sensor-title">Submeter Sensor Graph</h3>
                     <div class="submeter-sensor-subtitle">IoT source readings grouped by selected time range.</div>
                 </div>
-                <div class="submeter-sensor-tabs">
+                <div class="submeter-sensor-controls">
+                    <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-sensor-picker">
+                        <input type="hidden" name="period_type" value="{{ $periodType }}">
+                        <input type="hidden" name="month" value="{{ $selectedMonth }}">
+                        <input type="hidden" name="facility_id" value="{{ $selectedFacility }}">
+                        <input type="hidden" name="department" value="{{ $selectedDepartment }}">
+                        <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                        <div class="submeter-sensor-picker-field">
+                            <label for="sensor_main_meter_id">Main Meter</label>
+                            <select id="sensor_main_meter_id">
+                                @foreach($sensorMeterGroups as $meterGroup)
+                                    <option value="{{ $meterGroup['id'] }}" @selected((int) $selectedSensorMainMeter === (int) $meterGroup['id'])>{{ $meterGroup['label'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="submeter-sensor-picker-field">
+                            <label for="sensor_submeter_id">Submeter</label>
+                            <select id="sensor_submeter_id" name="sensor_submeter_id" onchange="this.form.submit()">
+                                @foreach(($sensorMeterGroups->firstWhere('id', $selectedSensorMainMeter)['submeters'] ?? collect()) as $sensorSubmeter)
+                                    <option value="{{ $sensorSubmeter->id }}" @selected((int) $selectedSensorSubmeter === (int) $sensorSubmeter->id)>{{ $sensorSubmeter->submeter_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
+                    <div class="submeter-sensor-tabs">
                     @foreach(['daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'yearly' => 'Yearly'] as $periodKey => $periodLabel)
                         <a
                             href="{{ route('modules.submeters.monitoring', array_filter([
@@ -507,12 +631,14 @@
                                 'facility_id' => $selectedFacility,
                                 'department' => $selectedDepartment,
                                 'sensor_period' => $periodKey,
+                                'sensor_submeter_id' => $selectedSensorSubmeter,
                             ], fn ($value) => $value !== null && $value !== '')) }}"
                             class="submeter-sensor-tab{{ $selectedSensorPeriod === $periodKey ? ' active' : '' }}"
                         >
                             {{ $periodLabel }}
                         </a>
                     @endforeach
+                    </div>
                 </div>
             </div>
             <div class="submeter-sensor-body">
@@ -535,6 +661,7 @@
         <section class="submeter-panel">
             <form method="GET" action="{{ route('modules.submeters.monitoring') }}" class="submeter-filter">
                 <input type="hidden" name="sensor_period" value="{{ $selectedSensorPeriod }}">
+                <input type="hidden" name="sensor_submeter_id" value="{{ $selectedSensorSubmeter }}">
                 <div class="submeter-field">
                     <label for="period_type">Period Type</label>
                     <select id="period_type" name="period_type" class="submeter-input">
@@ -649,7 +776,7 @@
                                 data-fallback-recommendation="{{ $fallbackRecommendationForAi }}"
                                 data-submeter-name="{{ $row->submeter?->submeter_name }}"
                             >
-                                <td class="sticky-col">
+                                <td class="sticky-col" data-label="Submeter">
                                     <div class="submeter-name">
                                         <a href="{{ route('modules.submeters.show', $row->submeter_id) }}" class="submeter-name-link">{{ $row->submeter?->submeter_name }}</a>
                                     </div>
@@ -659,17 +786,17 @@
                                         <div class="submeter-meta muted">No submitted reading for {{ $selectedMonth }}</div>
                                     @endif
                                 </td>
-                                <td class="facility-cell" title="{{ $row->submeter?->facility?->name ?? '-' }}">{{ $row->submeter?->facility?->name ?? '-' }}</td>
-                                <td class="num metric">{{ ($row->monitor_has_reading ?? false) ? number_format((float) $row->kwh_used, 2) : '-' }}</td>
-                                <td class="num metric base">{{ $row->monitor_baseline_kwh !== null ? number_format((float) $row->monitor_baseline_kwh, 2) : '-' }}</td>
-                                <td class="center">
+                                <td class="facility-cell" data-label="Facility" title="{{ $row->submeter?->facility?->name ?? '-' }}">{{ $row->submeter?->facility?->name ?? '-' }}</td>
+                                <td class="num metric" data-label="Actual (kWh)">{{ ($row->monitor_has_reading ?? false) ? number_format((float) $row->kwh_used, 2) : '-' }}</td>
+                                <td class="num metric base" data-label="Baseline (kWh)">{{ $row->monitor_baseline_kwh !== null ? number_format((float) $row->monitor_baseline_kwh, 2) : '-' }}</td>
+                                <td class="center" data-label="Baseline Method">
                                     <span class="baseline-pill {{ $baselineSourceClass }}">{{ $baselineSourceLabel }}</span>
                                 </td>
-                                <td class="num metric inc {{ ($increase ?? 0) > 0 ? 'up' : 'down' }}">{{ $increase !== null ? number_format((float) $increase, 2) . '%' : '-' }}</td>
-                                <td class="center">
+                                <td class="num metric inc {{ ($increase ?? 0) > 0 ? 'up' : 'down' }}" data-label="Variance">{{ $increase !== null ? number_format((float) $increase, 2) . '%' : '-' }}</td>
+                                <td class="center" data-label="Alert Status">
                                     <span data-alert-pill data-alert-level="{{ strtolower($fallbackAlertForAi) }}" class="alert-pill {{ $alertPillClass }}">{{ $alertDisplay }}</span>
                                 </td>
-                                <td class="recommendation-cell">
+                                <td class="recommendation-cell" data-label="Recommendation">
                                     <button
                                         type="button"
                                         class="ai-rec-btn"
@@ -720,7 +847,30 @@
 <script>
 const submeterAiCache = {};
 
+const sensorMeterGroups = @json($sensorMeterGroups->map(fn ($group) => [
+    'id' => $group['id'],
+    'submeters' => $group['submeters']->map(fn ($submeter) => ['id' => $submeter->id, 'name' => $submeter->submeter_name])->values(),
+])->values());
+
 window.addEventListener('DOMContentLoaded', function () {
+    const mainMeterSelect = document.getElementById('sensor_main_meter_id');
+    const submeterSelect = document.getElementById('sensor_submeter_id');
+    if (mainMeterSelect && submeterSelect) {
+        mainMeterSelect.addEventListener('change', function () {
+            const group = sensorMeterGroups.find((item) => String(item.id) === String(this.value));
+            submeterSelect.innerHTML = '';
+            (group?.submeters || []).forEach((submeter) => {
+                const option = document.createElement('option');
+                option.value = submeter.id;
+                option.textContent = submeter.name;
+                submeterSelect.appendChild(option);
+            });
+            if (submeterSelect.options.length > 0) {
+                submeterSelect.form.submit();
+            }
+        });
+    }
+
     if (typeof Chart === 'undefined') {
         return;
     }

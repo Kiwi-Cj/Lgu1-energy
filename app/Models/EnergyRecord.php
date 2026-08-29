@@ -32,6 +32,8 @@ class EnergyRecord extends Model
         'baseline_kwh',
         'deviation',
         'alert',
+        'deleted_by',
+        'archive_reason',
     ];
 
     protected $casts = [
@@ -59,6 +61,11 @@ class EnergyRecord extends Model
     public function meter()
     {
         return $this->belongsTo(FacilityMeter::class, 'meter_id');
+    }
+
+    public function deletedByUser()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     public function getDeviationAttribute($value): ?float
@@ -95,6 +102,23 @@ class EnergyRecord extends Model
         $thresholds = $thresholds ?? static::alertThresholdsBySize();
         $sizeKey = static::resolveSizeKeyFromBaseline($baselineKwh);
         $t = $thresholds[$sizeKey] ?? $thresholds['small'];
+
+        if ($deviation < 0) {
+            $drop = abs($deviation);
+            $dropThresholds = $t['drop'] ?? [];
+
+            if ($drop > (float) ($dropThresholds['level3'] ?? 0)) {
+                return 'Drop Critical';
+            }
+            if ($drop > (float) ($dropThresholds['level2'] ?? 0)) {
+                return 'Drop High';
+            }
+            if ($drop > (float) ($dropThresholds['level1'] ?? 0)) {
+                return 'Drop Warning';
+            }
+
+            return 'Normal';
+        }
 
         if ($deviation > (float) $t['level5']) {
             return 'Critical';
@@ -135,10 +159,10 @@ class EnergyRecord extends Model
         }
 
         $defaults = [
-            'small' => ['level1' => 5, 'level2' => 10, 'level3' => 15, 'level4' => 25, 'level5' => 35],
-            'medium' => ['level1' => 4, 'level2' => 8, 'level3' => 12, 'level4' => 20, 'level5' => 30],
-            'large' => ['level1' => 3, 'level2' => 6, 'level3' => 10, 'level4' => 16, 'level5' => 24],
-            'xlarge' => ['level1' => 2, 'level2' => 4, 'level3' => 7, 'level4' => 12, 'level5' => 18],
+            'small' => ['level1' => 5, 'level2' => 10, 'level3' => 15, 'level4' => 25, 'level5' => 35, 'drop' => ['level1' => 5, 'level2' => 10, 'level3' => 15]],
+            'medium' => ['level1' => 4, 'level2' => 8, 'level3' => 12, 'level4' => 20, 'level5' => 30, 'drop' => ['level1' => 4, 'level2' => 8, 'level3' => 12]],
+            'large' => ['level1' => 3, 'level2' => 6, 'level3' => 10, 'level4' => 16, 'level5' => 24, 'drop' => ['level1' => 3, 'level2' => 6, 'level3' => 10]],
+            'xlarge' => ['level1' => 2, 'level2' => 4, 'level3' => 7, 'level4' => 12, 'level5' => 18, 'drop' => ['level1' => 2, 'level2' => 4, 'level3' => 7]],
         ];
 
         try {
@@ -159,6 +183,16 @@ class EnergyRecord extends Model
             foreach ($defaults as $sizeKey => $levels) {
                 $resolved[$sizeKey] = [];
                 foreach ($levels as $levelKey => $defaultValue) {
+                    if ($levelKey === 'drop') {
+                        $resolved[$sizeKey]['drop'] = [];
+                        foreach ($defaultValue as $dropLevelKey => $dropDefaultValue) {
+                            $settingKey = "alert_drop_{$dropLevelKey}_{$sizeKey}";
+                            $raw = $settings[$settingKey] ?? $dropDefaultValue;
+                            $resolved[$sizeKey]['drop'][$dropLevelKey] = is_numeric($raw) ? (float) $raw : (float) $dropDefaultValue;
+                        }
+                        continue;
+                    }
+
                     $settingKey = "alert_{$levelKey}_{$sizeKey}";
                     $raw = $settings[$settingKey] ?? $defaultValue;
                     $resolved[$sizeKey][$levelKey] = is_numeric($raw) ? (float) $raw : (float) $defaultValue;
