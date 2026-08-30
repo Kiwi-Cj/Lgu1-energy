@@ -575,6 +575,67 @@
         padding: 4px 10px;
     }
 
+    /* CPRF Meter Reading Dials Chip */
+    .monthly-dial-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        padding: 4px 9px;
+        border-radius: 7px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        font-size: 0.74rem;
+        font-weight: 750;
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .monthly-dial-chip i {
+        color: #15803d;
+        font-size: 0.74rem;
+    }
+    .monthly-dial-chip .dial-arrow {
+        color: #22c55e;
+        font-weight: 900;
+        font-size: 0.76rem;
+    }
+
+    /* CPRF Integration Tag */
+    .monthly-cprf-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 6px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #047857;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .monthly-cprf-tag i {
+        font-size: 0.65rem;
+    }
+
+    .monthly-scope-cell {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+
+    .monthly-meter-name {
+        font-weight: 750;
+        color: #1e293b;
+        font-size: 0.85rem;
+        line-height: 1.35;
+    }
+
     .monthly-table-wrap {
         overflow-x: auto;
         border-top: 1px solid #dbe4f0;
@@ -601,10 +662,10 @@
 
     .monthly-table {
         width: 100%;
-        min-width: 1460px;
+        min-width: 1380px;
         border-collapse: separate;
         border-spacing: 0;
-        table-layout: fixed;
+        table-layout: auto;
     }
 
     .monthly-table thead tr {
@@ -614,7 +675,7 @@
     .monthly-table th,
     .monthly-table td {
         border-bottom: 1px solid #eef2f7;
-        padding: 11px 10px;
+        padding: 12px 14px;
         box-sizing: border-box;
     }
 
@@ -643,82 +704,52 @@
 
     .monthly-table th:nth-child(1),
     .monthly-table td:nth-child(1) {
-        width: 76px;
+        width: 260px;
+        min-width: 240px;
         padding-left: 20px;
+        text-align: left;
     }
 
     .monthly-table th:nth-child(2),
     .monthly-table td:nth-child(2) {
         width: 220px;
+        min-width: 210px;
+        text-align: left;
     }
 
     .monthly-table th:nth-child(3),
     .monthly-table td:nth-child(3) {
-        width: 115px;
+        width: 210px;
+        min-width: 200px;
+        text-align: left;
     }
 
-    .monthly-table th:nth-child(3),
-    .monthly-table td:nth-child(3),
     .monthly-table th:nth-child(4),
-    .monthly-table td:nth-child(4),
-    .monthly-table th:nth-child(7),
-    .monthly-table td:nth-child(7),
-    .monthly-table th:nth-child(8),
-    .monthly-table td:nth-child(8) {
-        text-align: right;
-    }
-
-    .monthly-table th:nth-child(5),
-    .monthly-table td:nth-child(5),
-    .monthly-table th:nth-child(6),
-    .monthly-table td:nth-child(6),
-    .monthly-table th:nth-child(10),
-    .monthly-table td:nth-child(10),
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11),
-    .monthly-table th:nth-child(12),
-    .monthly-table td:nth-child(12) {
-        text-align: center;
-    }
-
-    .monthly-table th:nth-child(3),
-    .monthly-table td:nth-child(3),
-    .monthly-table th:nth-child(4),
-    .monthly-table td:nth-child(4),
-    .monthly-table th:nth-child(7),
-    .monthly-table td:nth-child(7) {
-        width: 115px;
+    .monthly-table td:nth-child(4) {
+        width: 180px;
+        min-width: 170px;
+        text-align: left;
     }
 
     .monthly-table th:nth-child(5),
     .monthly-table td:nth-child(5) {
-        width: 135px;
+        width: 170px;
+        min-width: 160px;
+        text-align: left;
     }
 
     .monthly-table th:nth-child(6),
     .monthly-table td:nth-child(6) {
-        width: 115px;
+        width: 180px;
+        min-width: 170px;
+        text-align: left;
     }
 
-    .monthly-table th:nth-child(8),
-    .monthly-table td:nth-child(8) {
-        width: 135px;
-    }
-
-    .monthly-table th:nth-child(9),
-    .monthly-table td:nth-child(9) {
-        width: 115px;
+    .monthly-table th:nth-child(7),
+    .monthly-table td:nth-child(7) {
+        width: 140px;
+        min-width: 130px;
         text-align: center;
-    }
-
-    .monthly-table th:nth-child(10),
-    .monthly-table td:nth-child(10) {
-        width: 82px;
-    }
-
-    .monthly-table th:nth-child(11),
-    .monthly-table td:nth-child(11) {
-        width: 135px;
     }
 
     .monthly-table th:nth-child(12),
@@ -2095,6 +2126,16 @@
     $primaryBillingMeter = $primaryBillingMeter ?? null;
     $oldMeterId = (string) ($oldMeterId ?? old('meter_id', ''));
 
+    $latestMeterDials = $meterOptions->mapWithKeys(function ($m) use ($facility) {
+        $lastRec = \App\Models\EnergyRecord::where('facility_id', $facility->id)
+            ->where('meter_id', $m->id)
+            ->whereNotNull('current_reading_kwh')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->first();
+        return [(int) $m->id => $lastRec ? (float) $lastRec->current_reading_kwh : null];
+    });
+
     $years = collect($years ?? [date('Y')])->map(fn ($year) => (int) $year)->values();
     if ($years->isEmpty()) {
         $years = collect([(int) date('Y')]);
@@ -2664,13 +2705,27 @@
                         <tr>
                             <td data-label="Period / Main Meter">
                                 <div class="monthly-period-label">{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }} {{ (int) ($record->year ?? $selectedYear) }}</div>
-                                <div class="monthly-scope-cell"><span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span><span class="monthly-meter-name">{{ $scopeNameRow }}</span></div>
+                                <div class="monthly-scope-cell">
+                                    <span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span>
+                                    <span class="monthly-meter-name">{{ $scopeNameRow }}</span>
+                                    @if($sourceKey === 'cprf' || str_contains(strtolower((string)($record->external_source ?? '')), 'cprf'))
+                                        <span class="monthly-cprf-tag" title="Imported from CPRF meter reading integration"><i class="fa-solid fa-cloud-arrow-down"></i> CPRF</span>
+                                    @endif
+                                </div>
                             </td>
                             <td data-label="Consumption">
                                 <div class="monthly-record-comparison">
                                     <div class="monthly-record-metric"><span>Actual</span><strong class="monthly-number">{{ $record->actual_kwh !== null ? number_format((float) $record->actual_kwh, 2).' kWh' : '-' }}</strong></div>
                                     <div class="monthly-record-metric"><span>Baseline</span><strong class="monthly-muted-number">{{ $baselineRow !== null ? number_format($baselineRow, 2).' kWh' : '-' }}</strong></div>
                                 </div>
+                                @if($record->previous_reading_kwh !== null && $record->current_reading_kwh !== null)
+                                    <div class="monthly-dial-chip" title="Meter Dial: Previous {{ number_format((float) $record->previous_reading_kwh, 2) }} kWh &rarr; Current {{ number_format((float) $record->current_reading_kwh, 2) }} kWh (Net Consumption: +{{ number_format((float) $record->actual_kwh, 2) }} kWh)">
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                        <span>{{ number_format((float) $record->previous_reading_kwh, 0) }}</span>
+                                        <span class="dial-arrow">&rarr;</span>
+                                        <span>{{ number_format((float) $record->current_reading_kwh, 0) }}</span>
+                                    </div>
+                                @endif
                             </td>
                             <td data-label="Performance"><div class="monthly-performance-cell">
                                 @if($reviewStatus === 'approved')
@@ -2797,10 +2852,10 @@
                                             <small>{{ $previousChange !== null ? (($previousChange >= 0 ? '+' : '') . number_format($previousChange, 2) . '% month over month') : 'Comparison unavailable' }}</small>
                                         </div>
                                         @if($record->previous_reading_kwh !== null && $record->current_reading_kwh !== null)
-                                        <div class="monthly-record-breakdown-item">
-                                            <span>Meter reading</span>
-                                            <strong>{{ number_format((float) $record->previous_reading_kwh, 2) }} &rarr; {{ number_format((float) $record->current_reading_kwh, 2) }} kWh</strong>
-                                            <small>As encoded on the source meter (previous &rarr; current dial)</small>
+                                        <div class="monthly-record-breakdown-item" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px;">
+                                            <span style="color:#166534; font-weight:750; font-size:0.75rem;"><i class="fa-solid fa-gauge-high"></i> Meter Dial Readings</span>
+                                            <strong style="color:#15803d; font-size:0.96rem; margin-top:3px;">{{ number_format((float) $record->previous_reading_kwh, 2) }} &rarr; {{ number_format((float) $record->current_reading_kwh, 2) }} kWh</strong>
+                                            <small style="color:#166534; margin-top:2px;">Dial computation: {{ number_format((float) $record->current_reading_kwh, 2) }} (Current) &minus; {{ number_format((float) $record->previous_reading_kwh, 2) }} (Previous) = {{ number_format((float) $record->actual_kwh, 2) }} kWh consumed</small>
                                         </div>
                                         @endif
                                         <div class="monthly-record-breakdown-item">
@@ -2878,7 +2933,7 @@
 
             <div class="monthly-field">
                 <label for="add_meter_id">Main Meter <span style="color:#e11d48;">*</span></label>
-                <select id="add_meter_id" name="meter_id" required>
+                <select id="add_meter_id" name="meter_id" required onchange="handleMeterSelectionChange(); syncAddSaveButtonState();">
                     <option value="">Select Main Meter</option>
                     @forelse($meterOptions as $meterOption)
                         <option value="{{ $meterOption->id }}" @selected($oldMeterId === (string) $meterOption->id)>
@@ -2900,15 +2955,31 @@
                 @endif
             </div>
 
+            <div class="monthly-form-section-title"><i class="fa-solid fa-gauge-high"></i> Meter Dial Readings (Optional)</div>
+            <div class="monthly-pair-grid">
+                <div class="monthly-field">
+                    <label for="add_previous_reading_kwh">Previous Meter Reading (kWh)</label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_previous_reading_kwh" name="previous_reading_kwh" value="{{ old('previous_reading_kwh') }}" placeholder="e.g. 15000.00" oninput="calculateConsumptionFromDials()">
+                    <span id="prev_dial_hint" class="monthly-upload-help" style="display:none; color:#2563eb; font-weight:600;"></span>
+                </div>
+                <div class="monthly-field">
+                    <label for="add_current_reading_kwh">Current Meter Reading (kWh)</label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_current_reading_kwh" name="current_reading_kwh" value="{{ old('current_reading_kwh') }}" placeholder="e.g. 16250.50" oninput="calculateConsumptionFromDials()">
+                </div>
+            </div>
+
             <div class="monthly-form-section-title"><i class="fa-solid fa-bolt"></i> Consumption &amp; Cost</div>
             <div class="monthly-pair-grid">
                 <div class="monthly-field">
-                    <label for="add_actual_kwh">Current Consumption (kWh) <span style="color:#e11d48;">*</span></label>
-                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_actual_kwh" name="actual_kwh" value="{{ old('actual_kwh') }}" placeholder="e.g. 1250.50" required>
+                    <label for="add_actual_kwh">Total Consumption (kWh) <span style="color:#e11d48;">*</span></label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_actual_kwh" name="actual_kwh" value="{{ old('actual_kwh') }}" placeholder="e.g. 1250.50" required oninput="computeEnergyCost(); syncAddSaveButtonState();">
+                    <span id="dial_calc_hint" class="monthly-upload-help" style="display:none; color:#16a34a; font-weight:700; margin-top:4px;">
+                        <i class="fa-solid fa-circle-check"></i> Auto-computed from dials
+                    </span>
                 </div>
                 <div class="monthly-field">
                     <label for="add_rate_per_kwh">Rate (PHP/kWh) <span style="color:#e11d48;">*</span></label>
-                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required oninput="computeEnergyCost(); syncAddSaveButtonState();">
                 </div>
             </div>
 
@@ -2970,12 +3041,76 @@ function openAddModal() {
     modal.style.display = 'flex';
     syncMonthlyModalScrollLock();
     if (form) form.scrollTop = 0;
+    handleMeterSelectionChange();
     computeEnergyCost();
     syncAddSaveButtonState();
     window.requestAnimationFrame(function () {
         const firstIncomplete = form?.querySelector(':required:invalid');
         (firstIncomplete || document.getElementById('add_actual_kwh'))?.focus();
     });
+}
+
+const meterLatestDials = @json($latestMeterDials ?? []);
+
+function handleMeterSelectionChange() {
+    const meterSelect = document.getElementById('add_meter_id');
+    const prevInput = document.getElementById('add_previous_reading_kwh');
+    const prevHint = document.getElementById('prev_dial_hint');
+    if (!meterSelect || !prevInput) return;
+    
+    const meterId = parseInt(meterSelect.value, 10);
+    if (meterId && meterLatestDials[meterId] !== undefined && meterLatestDials[meterId] !== null) {
+        if (!prevInput.value || prevInput.dataset.autoFilled === 'true') {
+            prevInput.value = parseFloat(meterLatestDials[meterId]).toFixed(2);
+            prevInput.dataset.autoFilled = 'true';
+            if (prevHint) {
+                prevHint.style.display = 'block';
+                prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from last month\'s closing dial';
+            }
+            calculateConsumptionFromDials();
+        }
+    } else {
+        if (prevInput.dataset.autoFilled === 'true') {
+            prevInput.value = '';
+            prevInput.dataset.autoFilled = 'false';
+            if (prevHint) prevHint.style.display = 'none';
+        }
+    }
+}
+
+function calculateConsumptionFromDials() {
+    const prevInput = document.getElementById('add_previous_reading_kwh');
+    const currInput = document.getElementById('add_current_reading_kwh');
+    const kwhInput = document.getElementById('add_actual_kwh');
+    const hint = document.getElementById('dial_calc_hint');
+    if (!prevInput || !currInput || !kwhInput) return;
+
+    const prevStr = String(prevInput.value || '').trim();
+    const currStr = String(currInput.value || '').trim();
+
+    if (prevStr !== '' && currStr !== '') {
+        const prev = parseFloat(prevStr);
+        const curr = parseFloat(currStr);
+        if (!isNaN(prev) && !isNaN(curr)) {
+            if (curr >= prev) {
+                const diff = curr - prev;
+                kwhInput.value = diff.toFixed(2);
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + curr.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' &minus; ' + prev.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' = <strong>' + diff.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' kWh</strong>';
+                }
+                computeEnergyCost();
+                syncAddSaveButtonState();
+            } else {
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.innerHTML = '<span style="color:#e11d48;"><i class="fa-solid fa-triangle-exclamation"></i> Current reading must be &ge; previous reading.</span>';
+                }
+            }
+        }
+    } else {
+        if (hint) hint.style.display = 'none';
+    }
 }
 
 function closeAddModal() {

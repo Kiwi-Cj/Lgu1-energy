@@ -40,6 +40,40 @@ test('energy users manually encode records for a CPRF-managed facility', functio
     ]);
 });
 
+test('manual monthly record saves previous and current meter readings', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create();
+    $meter = FacilityMeter::create([
+        'facility_id' => $facility->id,
+        'meter_name' => 'Main Meter',
+        'meter_number' => 'MAIN-001',
+        'meter_type' => 'main',
+        'status' => 'active',
+        'approved_by_user_id' => $admin->id,
+        'approved_at' => now(),
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('energy-records.store', ['facility' => $facility->id]), [
+            'date' => '2026-09-01',
+            'meter_id' => $meter->id,
+            'previous_reading_kwh' => 20000,
+            'current_reading_kwh' => 21500,
+            'actual_kwh' => 1500,
+            'rate_per_kwh' => 12.5,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('energy_records', [
+        'facility_id' => $facility->id,
+        'meter_id' => $meter->id,
+        'input_source' => 'manual',
+        'previous_reading_kwh' => 20000,
+        'current_reading_kwh' => 21500,
+        'actual_kwh' => 1500,
+    ]);
+});
+
 test('CPRF-managed monthly records page provides Energy-owned entry controls', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $facility = Facility::factory()->create([

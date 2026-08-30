@@ -105,6 +105,48 @@ class LoadTrackingController extends Controller
             'days_per_month' => 30,
         ],
         [
+            'name' => 'Stadium High-Mast LED Floodlight (1500W)',
+            'category' => 'Lighting',
+            'rated_watts' => 1500,
+            'hours_per_day' => 6,
+            'days_per_month' => 26,
+        ],
+        [
+            'name' => 'Central VRF Chiller Unit (15 HP / 11 kW)',
+            'category' => 'HVAC / Cooling',
+            'rated_watts' => 11000,
+            'hours_per_day' => 10,
+            'days_per_month' => 22,
+        ],
+        [
+            'name' => 'Commercial / Olympic Pool Circulation Pump (7.5 HP)',
+            'category' => 'Pumps & Motors',
+            'rated_watts' => 5500,
+            'hours_per_day' => 18,
+            'days_per_month' => 30,
+        ],
+        [
+            'name' => 'Medical Precision Chiller / Imaging Suite',
+            'category' => 'Medical & Specialized',
+            'rated_watts' => 16000,
+            'hours_per_day' => 24,
+            'days_per_month' => 30,
+        ],
+        [
+            'name' => 'Emergency Command Video Wall Display',
+            'category' => 'IT & Office Equipment',
+            'rated_watts' => 5800,
+            'hours_per_day' => 24,
+            'days_per_month' => 30,
+        ],
+        [
+            'name' => 'Vaccine & Biological Storage Refrigerator',
+            'category' => 'Appliances & Pantry',
+            'rated_watts' => 750,
+            'hours_per_day' => 24,
+            'days_per_month' => 30,
+        ],
+        [
             'name' => 'Water Dispenser (Hot & Cold)',
             'category' => 'Appliances & Pantry',
             'rated_watts' => 500,
@@ -283,6 +325,11 @@ class LoadTrackingController extends Controller
             'baseline_variance' => $baselineVariance,
             'baseline_variance_percent' => $baselineVariancePercent,
             'baseline_status' => $baselineStatus,
+            'cooling_watts' => (float) $equipments->where('category', 'HVAC / Cooling')->sum(fn ($eq) => $eq->total_watts),
+            'lighting_watts' => (float) $equipments->where('category', 'Lighting')->sum(fn ($eq) => $eq->total_watts),
+            'cooling_lighting_watts' => (float) $equipments->whereIn('category', ['HVAC / Cooling', 'Lighting'])->sum(fn ($eq) => $eq->total_watts),
+            'pumps_watts' => (float) $equipments->where('category', 'Pumps & Motors')->sum(fn ($eq) => $eq->total_watts),
+            'it_watts' => (float) $equipments->where('category', 'IT & Office Equipment')->sum(fn ($eq) => $eq->total_watts),
         ];
 
         // Group equipment by category for Donut chart
@@ -608,6 +655,11 @@ class LoadTrackingController extends Controller
             'baseline_variance' => null,
             'baseline_variance_percent' => null,
             'baseline_status' => 'No Data',
+            'cooling_watts' => 0,
+            'lighting_watts' => 0,
+            'cooling_lighting_watts' => 0,
+            'pumps_watts' => 0,
+            'it_watts' => 0,
         ];
     }
 }

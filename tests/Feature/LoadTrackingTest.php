@@ -131,3 +131,65 @@ test('user can export facility load schedule as CSV', function () {
     $response->assertOk();
     expect($response->headers->get('content-type'))->toContain('text/csv');
 });
+
+test('load tracking summary includes category specific wattages and simulator targets', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Sports Center', 'baseline_kwh' => 45000]);
+
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Stadium Floodlights',
+        'category' => 'Lighting',
+        'quantity' => 10,
+        'rated_watts' => 1500, // 15,000 W
+        'operating_hours_per_day' => 6,
+        'operating_days_per_month' => 26,
+    ]);
+
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Arena AC',
+        'category' => 'HVAC / Cooling',
+        'quantity' => 2,
+        'rated_watts' => 10000, // 20,000 W
+        'operating_hours_per_day' => 10,
+        'operating_days_per_month' => 26,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('modules.load-tracking.index', ['facility_id' => $facility->id]));
+
+    $response->assertOk();
+    $summary = $response->viewData('summary');
+    expect($summary['lighting_watts'])->toEqual(15000.0);
+    expect($summary['cooling_watts'])->toEqual(20000.0);
+    expect($summary['cooling_lighting_watts'])->toEqual(35000.0);
+    expect($summary['total_connected_watts'])->toEqual(35000.0);
+
+    // Verify What-If simulator target pills are rendered
+    $response->assertSee('Select Target Load Category')
+        ->assertSee('Cooling + Lighting')
+        ->assertSee('Cooling Only')
+        ->assertSee('Lighting Only')
+        ->assertSee('All Loads');
+});
+
+test('seeder populates realistic equipment for Amoranto Sports Complex', function () {
+    $facility = Facility::firstOrCreate(
+        ['name' => 'Amoranto Sports Complex'],
+        ['baseline_kwh' => 45000]
+    );
+
+    $seeder = new \Database\Seeders\FacilityEquipmentLoadSeeder();
+    $seeder->run();
+
+    $equipments = SubmeterEquipment::where('facility_id', $facility->id)->get();
+    expect($equipments->count())->toBeGreaterThanOrEqual(5);
+
+    // Check specific realistic sports complex equipment
+    $equipmentNames = $equipments->pluck('equipment_name')->toArray();
+    expect(collect($equipmentNames)->some(fn ($n) => str_contains(strtolower($n), 'floodlight')))->toBeTrue();
+    expect(collect($equipmentNames)->some(fn ($n) => str_contains(strtolower($n), 'pool')))->toBeTrue();
+    expect(collect($equipmentNames)->some(fn ($n) => str_contains(strtolower($n), 'scoreboard')))->toBeTrue();
+});
+

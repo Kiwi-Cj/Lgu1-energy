@@ -106,10 +106,28 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     $validated = $request->validate([
         'date' => 'required|date',
         'meter_id' => 'required|integer',
+        'previous_reading_kwh' => 'nullable|numeric|min:0',
+        'current_reading_kwh' => 'nullable|numeric|min:0',
         'actual_kwh' => 'required|numeric|min:0',
         'rate_per_kwh' => 'nullable|numeric|min:0',
         'bill_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096',
     ]);
+
+    $prevReading = isset($validated['previous_reading_kwh']) && is_numeric($validated['previous_reading_kwh'])
+        ? (float) $validated['previous_reading_kwh']
+        : null;
+    $currReading = isset($validated['current_reading_kwh']) && is_numeric($validated['current_reading_kwh'])
+        ? (float) $validated['current_reading_kwh']
+        : null;
+
+    if ($prevReading !== null && $currReading !== null && $currReading >= $prevReading) {
+        $validated['previous_reading_kwh'] = $prevReading;
+        $validated['current_reading_kwh'] = $currReading;
+        $validated['actual_kwh'] = round($currReading - $prevReading, 2);
+    } else {
+        $validated['previous_reading_kwh'] = $prevReading;
+        $validated['current_reading_kwh'] = $currReading;
+    }
 
     $date = date_create($validated['date']);
     $validated['year'] = $date->format('Y');

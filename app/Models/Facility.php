@@ -66,6 +66,11 @@ class Facility extends Model
      | RELATIONSHIPS
      ======================= */
 
+    public function utilityBudgets()
+    {
+        return $this->hasMany(\App\Models\FacilityUtilityBudget::class);
+    }
+
     public function maintenance()
     {
         return $this->hasMany(\App\Models\Maintenance::class, 'facility_id');

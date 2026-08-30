@@ -33,8 +33,11 @@ class CprfFacilityReadingController extends Controller
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
             'month' => ['required', 'integer', 'min:1', 'max:12'],
             'previous_reading_kwh' => ['required', 'numeric', 'min:0'],
-            'current_reading_kwh' => ['required', 'numeric', 'gte:previous_reading_kwh'],
+            'current_reading_kwh' => ['required', 'numeric', 'min:0'],
             'reading_date' => ['required', 'date'],
+            'is_rollover' => ['nullable', 'boolean'],
+            'is_meter_reset' => ['nullable', 'boolean'],
+            'dial_capacity' => ['nullable', 'numeric', 'min:1'],
             'energy_cost' => ['nullable', 'numeric', 'min:0'],
             'rate_per_kwh' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -42,6 +45,38 @@ class CprfFacilityReadingController extends Controller
             'recorded_by_name' => ['nullable', 'string', 'max:255'],
             'recorded_by_email' => ['nullable', 'email', 'max:255'],
         ]);
+
+        $prev = (float) $validated['previous_reading_kwh'];
+        $curr = (float) $validated['current_reading_kwh'];
+        $isRollover = ! empty($validated['is_rollover']);
+        $isReset = ! empty($validated['is_meter_reset']);
+
+        if ($curr < $prev && ! $isRollover && ! $isReset) {
+            return response()->json([
+                'message' => "Current dial reading ({$curr}) is lower than previous dial reading ({$prev}). If the meter rolled over its dial or was replaced, pass 'is_rollover': true or 'is_meter_reset': true.",
+                'errors' => [
+                    'current_reading_kwh' => [
+                        "Current reading must be greater than or equal to previous reading unless 'is_rollover' or 'is_meter_reset' is specified.",
+                    ],
+                ],
+            ], 422);
+        }
+
+        if ($isReset) {
+            // New meter installed or dial reset to 0
+            $actualKwh = round($curr, 2);
+        } elseif ($isRollover) {
+            // Dial rollover past maximum capacity
+            $capacity = ! empty($validated['dial_capacity'])
+                ? (float) $validated['dial_capacity']
+                : pow(10, max(4, (int) ceil(log10(max(10, $prev + 1)))));
+            $actualKwh = round(($capacity - $prev) + $curr, 2);
+        } else {
+            $actualKwh = round($curr - $prev, 2);
+        }
+
+        // Negative consumption guard
+        $actualKwh = max(0.0, $actualKwh);
 
         /** @var Facility $facility */
         $facility = Facility::query()->findOrFail((int) $validated['facility_id']);
@@ -52,10 +87,25 @@ class CprfFacilityReadingController extends Controller
         );
         $meter = $this->resolveOrCreateMainMeter($facility);
 
-        $actualKwh = round((float) $validated['current_reading_kwh'] - (float) $validated['previous_reading_kwh'], 2);
         $baseline = BaselineResolver::forFacility($facility, $meter);
         $deviation = EnergyRecord::calculateDeviation($actualKwh, $baseline);
         $alert = EnergyRecord::resolveAlertLevel($deviation, $baseline);
+
+        // Anomaly / abnormal spike guard
+        $isAnomalousSpike = false;
+        $isZeroConsumption = ($actualKwh == 0.0);
+        $spikeWarnings = [];
+
+        if ($baseline !== null && $baseline > 0 && $actualKwh >= ($baseline * 3)) {
+            $isAnomalousSpike = true;
+            $alert = 'Critical';
+            $pct = round(($actualKwh / $baseline) * 100);
+            $spikeWarnings[] = "Abnormal consumption spike: {$actualKwh} kWh is {$pct}% of monthly baseline ({$baseline} kWh).";
+        }
+
+        if ($isZeroConsumption) {
+            $spikeWarnings[] = 'Zero consumption reported. Verify facility operation or meter status.';
+        }
 
         $attributes = [
             'facility_id' => $facility->id,
@@ -144,6 +194,13 @@ class CprfFacilityReadingController extends Controller
                 'input_source' => $record->input_source,
                 'recorded_by' => $record->recorded_by,
                 'review_status' => $record->review_status,
+            ],
+            'guards' => [
+                'is_rollover' => $isRollover,
+                'is_meter_reset' => $isReset,
+                'is_anomalous_spike' => $isAnomalousSpike,
+                'is_zero_consumption' => $isZeroConsumption,
+                'warnings' => $spikeWarnings,
             ],
         ], $wasExisting ? 200 : 201, [], JSON_PRESERVE_ZERO_FRACTION);
     }

@@ -1113,7 +1113,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $baselinePlans = $mainMeters->mapWithKeys(
             fn ($meter) => [(int) $meter->id => $baselineEstablishmentService->summary($meter)]
         );
-        // 3-Month average update logic removed
+        $historicalMonthlyReadings = \App\Models\EnergyRecord::query()
+            ->where('facility_id', $facilityModel->id)
+            ->where('review_status', 'approved')
+            ->whereNotNull('actual_kwh')
+            ->where('actual_kwh', '>', 0)
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->get(['year', 'month', 'actual_kwh'])
+            ->unique(fn ($r) => sprintf('%04d-%02d', $r->year, $r->month))
+            ->take(6)
+            ->sortBy(fn ($r) => sprintf('%04d-%02d', $r->year, $r->month))
+            ->values();
+
+        $facilityEquipments = \App\Models\SubmeterEquipment::query()
+            ->where(function ($q) use ($facilityModel) {
+                $q->where('facility_id', $facilityModel->id)
+                    ->orWhereHas('mainMeter', fn ($m) => $m->where('facility_id', $facilityModel->id))
+                    ->orWhereHas('submeter', fn ($s) => $s->where('facility_id', $facilityModel->id));
+            })
+            ->orderByDesc('rated_watts')
+            ->get();
+
         return view('modules.facilities.energy-profile.index', compact(
             'facilityModel',
             'energyProfiles',
@@ -1134,7 +1155,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'canApproveMeters',
             'canEncodeMainReadings',
             'latestEnergyRecord',
-            'baselinePlans'
+            'baselinePlans',
+            'historicalMonthlyReadings',
+            'facilityEquipments'
         ));
     })->name('modules.facilities.energy-profile.index');
 
@@ -1159,4 +1182,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/modules/facilities/{facility}/energy-profile', function () {
         abort(405, 'Profile ID required for delete.');
     });
+
+    // ============================================================
+    // UTILITY CASH FLOW & BUDGET TRACKING
+    // ============================================================
+    Route::get('/modules/cashflow', [\App\Http\Controllers\Modules\CashFlowController::class, 'index'])->name('modules.cashflow.index');
+    Route::post('/modules/cashflow/budget', [\App\Http\Controllers\Modules\CashFlowController::class, 'updateBudget'])->name('modules.cashflow.budget.update');
+    Route::get('/modules/cashflow/export', [\App\Http\Controllers\Modules\CashFlowController::class, 'export'])->name('modules.cashflow.export');
 });

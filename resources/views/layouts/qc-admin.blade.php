@@ -2467,6 +2467,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 || request()->routeIs('modules.energy-conservation.*')
                 || request()->routeIs('modules.ai-alerts.*')
                 || request()->routeIs('modules.load-tracking.*')
+                || request()->routeIs('modules.cashflow.*')
                 || request()->routeIs('energy.dashboard')
                 || request()->routeIs('modules.submeters.*');
             $isReportsMenuActive = request()->is('modules/reports*')
@@ -2476,6 +2477,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
             $canViewFacilities = \App\Support\RoleAccess::can($user, 'view_facilities');
             $canViewEnergy = \App\Support\RoleAccess::can($user, 'view_energy_monitoring');
             $canViewLoadTracking = \App\Support\RoleAccess::can($user, 'view_load_tracking');
+            $canViewCashflow = \App\Support\RoleAccess::can($user, 'view_cashflow');
             $canViewMonthlyActivity = \App\Support\RoleAccess::can($user, 'view_monthly_record_activity');
             $canViewConservation = \App\Support\RoleAccess::can($user, 'access_energy_conservation');
             $canViewSubmeters = config('features.submeters_enabled', false)
@@ -2490,7 +2492,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         <ul class="nav-list">
             <li><a href="{{ $p('modules/dashboard/index') }}" class="nav-link{{ request()->is('modules/dashboard/index') ? ' active' : '' }}"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
 
-            @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance || $canViewLoadTracking)
+            @if($canViewFacilities || $canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewMaintenance || $canViewLoadTracking || $canViewCashflow)
                 <li class="nav-section-label">Operations</li>
                 @if($canViewFacilities)
                 <li><a href="{{ $p('modules/facilities/index') }}" class="nav-link{{ request()->is('modules/facilities*') ? ' active' : '' }}"><i class="fa-solid fa-building"></i> Facility Registry</a></li>
@@ -2508,7 +2510,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                     </a>
                 </li>
                 @endif
-                @if($canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewLoadTracking)
+                @if($canViewEnergy || $canViewConservation || $canViewSubmeters || $canViewLoadTracking || $canViewCashflow)
                 <li class="nav-item-has-submenu">
                     <a href="#" class="nav-link submenu-toggle{{ $isEnergyMonitoringMenuActive ? ' active' : '' }}" aria-expanded="{{ $isEnergyMonitoringMenuActive ? 'true' : 'false' }}">
                         <span><i class="fa-solid fa-bolt"></i> Energy Management</span>
@@ -2521,6 +2523,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         @endif
                         @if($canViewLoadTracking)
                         <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-check"></i> Load Tracking</a></li>
+                        @endif
+                        @if($canViewCashflow)
+                        <li><a href="{{ route('modules.cashflow.index') }}" class="nav-link{{ request()->routeIs('modules.cashflow.*') ? ' active' : '' }}"><i class="fa-solid fa-money-bill-trend-up"></i> Cash Flow &amp; Budget</a></li>
                         @endif
                         @if($canViewConservation)
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Conservation Program</a></li>

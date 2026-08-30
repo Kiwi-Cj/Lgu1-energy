@@ -31,5 +31,7 @@ return [
         'manage_energy_incidents' => ['super_admin', 'admin', 'energy_officer'],
         'view_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
         'manage_load_tracking' => ['super_admin', 'admin', 'energy_officer', 'engineer'],
+        'view_cashflow' => ['super_admin', 'admin', 'energy_officer', 'staff', 'engineer'],
+        'manage_cashflow' => ['super_admin', 'admin', 'energy_officer'],
     ],
 ];

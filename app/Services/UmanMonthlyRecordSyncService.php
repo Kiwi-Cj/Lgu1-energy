@@ -203,7 +203,12 @@ class UmanMonthlyRecordSyncService
             ? Carbon::parse((string) $row['recorded_at'])
             : Carbon::create($year, $month, 1);
 
-        $baseline = BaselineResolver::forFacility($facility, $meter);
+        $previousReading = is_numeric($row['previous_reading_kwh'] ?? null)
+            ? (float) $row['previous_reading_kwh']
+            : (is_numeric($row['previous_reading'] ?? null) ? (float) $row['previous_reading'] : null);
+        $currentReading = is_numeric($row['current_reading_kwh'] ?? null)
+            ? (float) $row['current_reading_kwh']
+            : (is_numeric($row['current_reading'] ?? null) ? (float) $row['current_reading'] : null);
 
         $record->fill([
             'facility_id' => $facility->id,
@@ -212,6 +217,8 @@ class UmanMonthlyRecordSyncService
             'month' => $month,
             'day' => $recordedAt->day,
             'actual_kwh' => $actualKwh,
+            'previous_reading_kwh' => $previousReading ?? $record->previous_reading_kwh,
+            'current_reading_kwh' => $currentReading ?? $record->current_reading_kwh,
             'energy_cost' => $cost,
             'rate_per_kwh' => $rate,
             'recorded_by' => null,
