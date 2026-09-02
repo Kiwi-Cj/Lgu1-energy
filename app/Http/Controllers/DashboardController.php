@@ -401,12 +401,38 @@ class DashboardController extends Controller
         $peakUsageIndex = $peakUsageValue > 0 ? array_search($peakUsageValue, array_map('floatval', $energyChartData), true) : false;
         $peakUsageLabel = $peakUsageIndex !== false ? ($energyChartLabels[$peakUsageIndex] ?? 'No data') : 'No data';
 
+        // Sustainability & Executive Metrics (Philippine DOE Grid Emission Factor: 0.7122 kg CO2e / kWh)
+        // GEMP (Government Energy Management Program) RA 11285: Mandatory 10% reduction benchmark
+        $carbonEmissionsMt = $periodActualTotal > 0 ? ($periodActualTotal * 0.0007122) : 0;
+        $treesEquivalent = (int) round($carbonEmissionsMt * 16.5); // ~16.5 mature trees needed to offset 1 MT CO2e/year
+        $gempTargetKwh = $periodBaselineTotal > 0 ? ($periodBaselineTotal * 0.90) : 0;
+        $gempReductionAchievedPercent = $periodBaselineTotal > 0
+            ? (($periodBaselineTotal - $periodActualTotal) / $periodBaselineTotal) * 100
+            : null;
+        $gempStatus = 'N/A';
+        $gempPercentageLabel = null;
+        $gempTone = 'neutral';
+        if ($periodBaselineTotal > 0 && $periodActualTotal > 0) {
+            if ($gempReductionAchievedPercent >= 10.0) {
+                $gempStatus = 'Target Met';
+                $gempPercentageLabel = '-' . number_format($gempReductionAchievedPercent, 1) . '% Saved';
+                $gempTone = 'good';
+            } elseif ($gempReductionAchievedPercent > 0) {
+                $gempStatus = 'Partial Target';
+                $gempPercentageLabel = '-' . number_format($gempReductionAchievedPercent, 1) . '% Saved';
+                $gempTone = 'warn';
+            } else {
+                $gempStatus = 'Above Target';
+                $gempPercentageLabel = '+' . number_format(abs($gempReductionAchievedPercent), 1) . '% over';
+                $gempTone = 'danger';
+            }
+        }
+
         // A missing monthly record must be shown as a chart gap, not as zero consumption/cost.
         $energyChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $energyChartData);
         $costChartDisplayData = array_map(fn ($value) => (float) $value > 0 ? (float) $value : null, $costChartData);
 
-        // 2b. High Consumption Hubs (selected period, average vs. baseline)
-        $topFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
+        $evaluatedFacilities = Facility::with(['energyRecords' => function ($q) use ($periodStartDate, $periodEndDate) {
             $q->whereDate('created_at', '>=', $periodStartDate->toDateString())
                 ->whereDate('created_at', '<=', $periodEndDate->toDateString())
                 ->where(function ($mainScope) {
@@ -444,17 +470,38 @@ class DashboardController extends Controller
                     }
                 }
 
+                $kwhSaved = ($totalBaseline > $totalKwh && $totalKwh > 0) ? ($totalBaseline - $totalKwh) : 0;
+
                 return (object) [
+                    'id' => $facility->id,
                     'name' => $facility->name,
+                    'type' => $facility->type ?? 'Government Facility',
                     'total_kwh' => round($totalKwh, 2),
                     'baseline_kwh' => round($totalBaseline, 2),
                     'deviation' => round($deviation, 2),
+                    'kwh_saved' => round($kwhSaved, 2),
                     'status' => $status,
                     'trend_spike_detected' => $trendSpikeDetected,
                 ];
-            })
+            });
+
+        $topFacilities = $evaluatedFacilities
             ->sortByDesc('deviation')
             ->values();
+
+        $topSavers = $evaluatedFacilities
+            ->filter(fn ($f) => $f->deviation < 0 && $f->total_kwh > 0)
+            ->sortBy('deviation')
+            ->take(5)
+            ->values();
+
+        // City Energy Performance Index (Score out of 100 based on baseline compliance and variance)
+        $efficiencyScore = 85;
+        if ($periodBaselineTotal > 0 && $periodActualTotal > 0) {
+            $variance = ($periodActualTotal - $periodBaselineTotal) / $periodBaselineTotal;
+            // 100 is meeting exactly or under baseline, drops with overconsumption, gains bonus with savings
+            $efficiencyScore = (int) max(40, min(99, round(100 - ($variance * 100))));
+        }
 
         // 3. Recent Activity (last 8 actions) - Filter by facility for Staff
         $recentLogs = [];
@@ -533,9 +580,18 @@ class DashboardController extends Controller
             'alerts' => $alerts,
             'criticalAlerts' => $criticalAlerts,
             'topFacilities' => $topFacilities,
+            'topSavers' => $topSavers,
+            'efficiencyScore' => $efficiencyScore,
             'kwhTrend' => $kwhTrend,
             'role' => $role,
             'user' => $user,
+            'carbonEmissionsMt' => $carbonEmissionsMt,
+            'treesEquivalent' => $treesEquivalent,
+            'gempTargetKwh' => $gempTargetKwh,
+            'gempReductionAchievedPercent' => $gempReductionAchievedPercent,
+            'gempStatus' => $gempStatus,
+            'gempPercentageLabel' => $gempPercentageLabel,
+            'gempTone' => $gempTone,
             'periodStartLabel' => $periodStartLabel,
             'periodEndLabel' => $periodEndLabel,
             'periodStartInput' => $periodStartInput,

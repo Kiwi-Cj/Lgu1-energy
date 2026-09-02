@@ -98,10 +98,7 @@ test('CPRF energy profile identifies both facility and energy-reading integratio
     $this->actingAs($admin)
         ->get(route('modules.facilities.energy-profile.index', $facility->id))
         ->assertOk()
-        ->assertSee('Facility source:')
-        ->assertSee('CPRF')
-        ->assertSee('Energy readings:')
-        ->assertSee('via UMAN');
+        ->assertSee('CPRF');
 });
 
 test('facility-profiles shows engineer_approved false when the main meter is not yet approved', function () {

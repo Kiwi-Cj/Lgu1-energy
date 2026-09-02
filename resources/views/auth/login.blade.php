@@ -80,6 +80,16 @@
             font: inherit;
         }
 
+        input::-ms-reveal,
+        input::-ms-clear,
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            pointer-events: none !important;
+        }
+
         .autofill-trap {
             position: fixed !important;
             top: -10000px !important;

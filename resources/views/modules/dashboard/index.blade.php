@@ -365,37 +365,214 @@
     .dashboard-kpi-note.is-up { color:#be123c; }
     .dashboard-kpi-note.is-down { color:#15803d; }
 
-    .dashboard-page .summary-grid { grid-template-columns:1.3fr 1fr; gap:14px; margin-bottom:22px; }
-    .dashboard-page .summary-card { padding:15px 16px; border-color:#dbe5f2; background:#f8fafc; }
-    .summary-card-heading { display:flex; align-items:center; gap:7px; margin-bottom:11px; color:#475569; font-size:.7rem; font-weight:850; text-transform:uppercase; letter-spacing:.045em; }
-    .operational-pills { display:flex; flex-wrap:wrap; gap:8px; }
-    .operational-pill { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid; border-radius:999px; font-size:.74rem; font-weight:800; }
-    .operational-pill i { font-size:.45rem; }
-    .operational-pill.active { color:#166534; background:#ecfdf5; border-color:#bbf7d0; }
-    .operational-pill.maintenance { color:#92400e; background:#fffbeb; border-color:#fde68a; }
-    .operational-pill.inactive { color:#991b1b; background:#fef2f2; border-color:#fecaca; }
-    .quick-actions-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
-    .dashboard-page .quick-action-btn { justify-content:center; min-height:40px; padding:8px 9px; font-size:.72rem; }
+    .dashboard-page .summary-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(420px, 1.45fr);
+        gap: 16px;
+        margin-bottom: 22px;
+        align-items: stretch;
+    }
+    @media (max-width: 992px) {
+        .dashboard-page .summary-grid { grid-template-columns: 1fr; }
+    }
+    .dashboard-page .summary-card {
+        padding: 16px 18px;
+        border-color: #dbe5f2;
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .summary-card-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .summary-card-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0;
+        color: #334155;
+        font-size: 0.75rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+    }
+    .snapshot-total-badge, .quick-actions-subtitle {
+        font-size: 0.68rem;
+        font-weight: 750;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 3px 9px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+    .operational-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .operational-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 11px;
+        border: 1px solid;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 750;
+    }
+    .operational-pill .pill-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .operational-pill.active { color: #166534; background: #ecfdf5; border-color: #bbf7d0; }
+    .operational-pill.active .pill-dot { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.2); }
+    .operational-pill.maintenance { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+    .operational-pill.maintenance .pill-dot { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); }
+    .operational-pill.inactive { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+    .operational-pill.inactive .pill-dot { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.2); }
+
+    .operational-status-bar {
+        height: 6px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+        display: flex;
+        margin-bottom: 8px;
+    }
+    .operational-status-bar .bar-segment { height: 100%; transition: width 0.3s ease; }
+    .operational-status-bar .seg-active { background: #22c55e; }
+    .operational-status-bar .seg-maintenance { background: #f59e0b; }
+    .operational-status-bar .seg-inactive { background: #ef4444; }
+
+    .operational-status-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.68rem;
+        font-weight: 650;
+        color: #64748b;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+    @media (max-width: 640px) {
+        .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .dashboard-page .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 7px 10px;
+        border-radius: 11px;
+        font-weight: 750;
+        font-size: 0.74rem;
+        text-decoration: none;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
+        background: #f8fafc;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .dashboard-page .quick-action-btn:hover {
+        transform: translateY(-2px);
+        background: #ffffff;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        border-color: #cbd5e1;
+    }
+    .qa-icon-wrap {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        transition: transform 0.18s ease;
+    }
+    .dashboard-page .quick-action-btn:hover .qa-icon-wrap {
+        transform: scale(1.12);
+    }
+    .qa-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .qa-badge {
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 999px;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .qa-badge-danger { background: #fee2e2; color: #b91c1c; }
+    .qa-badge-warning { background: #fef3c7; color: #b45309; }
+    .qa-badge-violet { background: #ede9fe; color: #6d28d9; }
+
+    /* Module specific accent styling */
+    .qa-ai .qa-icon-wrap { background: #eef2ff; color: #6366f1; }
+    .qa-ai:hover { border-color: #a5b4fc !important; }
+
+    .qa-load .qa-icon-wrap { background: #e0f2fe; color: #0284c7; }
+    .qa-load:hover { border-color: #7dd3fc !important; }
+
+    .qa-facilities .qa-icon-wrap { background: #ecfdf5; color: #059669; }
+    .qa-facilities:hover { border-color: #6ee7b7 !important; }
+
+    .qa-meter .qa-icon-wrap { background: #fef3c7; color: #d97706; }
+    .qa-meter:hover { border-color: #fcd34d !important; }
+
+    .qa-incidents .qa-icon-wrap { background: #ffe4e6; color: #e11d48; }
+    .qa-incidents:hover { border-color: #fda4af !important; }
+
+    .qa-maintenance .qa-icon-wrap { background: #ede9fe; color: #7c3aed; }
+    .qa-maintenance:hover { border-color: #c4b5fd !important; }
 
     .dashboard-page .chart-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px !important; margin-bottom:22px !important; }
     .dashboard-page .chart-container { padding:18px; border-color:#dbe5f2; box-shadow:0 7px 20px rgba(15,23,42,.035); }
     .dashboard-chart-title { display:flex; align-items:center; gap:9px; margin:0 0 15px; color:#334155; font-size:.9rem; font-weight:850; }
-    .chart-insights-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .chart-insights-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
     .chart-insight-card {
-        min-width:0; padding:11px 12px; border:1px solid #dbe5f2; border-radius:12px; background:#f8fafc;
+        min-width:0; padding:11px 12px; border:1px solid #dbe5f2; border-radius:12px; background:#f8fafc; transition:transform .16s ease,box-shadow .16s ease;
     }
+    .chart-insight-card:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(15,23,42,.04); border-color:#cbd5e1; }
+    .chart-insight-card.sustainability { border-color:#bbf7d0; background:linear-gradient(180deg,#ffffff 0%,#f0fdf4 100%); }
+    .chart-insight-card.gemp { border-color:#fed7aa; background:linear-gradient(180deg,#ffffff 0%,#fff7ed 100%); }
     .chart-insight-label { display:flex; align-items:center; gap:6px; color:#64748b; font-size:.62rem; font-weight:850; text-transform:uppercase; letter-spacing:.04em; }
     .chart-insight-label i { color:#2563eb; }
-    .chart-insight-value { margin-top:5px; overflow:hidden; color:#0f172a; font-size:1rem; font-weight:850; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-insight-card.sustainability .chart-insight-label i { color:#16a34a; }
+    .chart-insight-value { margin-top:5px; color:#0f172a; font-size:.92rem; font-weight:850; line-height:1.2; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
     .chart-insight-value.negative { color:#15803d; }
     .chart-insight-value.positive { color:#be123c; }
-    .chart-insight-note { margin-top:3px; color:#94a3b8; font-size:.61rem; font-weight:650; }
+    .chart-insight-value.tone-good { color:#16a34a; }
+    .chart-insight-value.tone-warn { color:#d97706; }
+    .chart-insight-value.tone-danger { color:#dc2626; }
+    .gemp-badge { display:inline-block; font-size:.68rem; font-weight:750; padding:2px 6px; border-radius:6px; background:#fee2e2; color:#b91c1c; white-space:nowrap; }
+    .gemp-badge.good { background:#dcfce7; color:#15803d; }
+    .gemp-badge.warn { background:#fef3c7; color:#b45309; }
+    .chart-insight-note { margin-top:4px; color:#94a3b8; font-size:.61rem; font-weight:650; }
     .chart-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
     .chart-card-subtitle { margin:-8px 0 14px 17px; color:#94a3b8; font-size:.65rem; font-weight:650; }
     .chart-footnote { display:flex; align-items:flex-start; gap:7px; margin-top:10px; padding:8px 10px; border-radius:9px; background:#fffbeb; color:#92400e; font-size:.65rem; font-weight:700; }
 
     body.dark-mode .dashboard-page .chart-insight-card { background:#111827; border-color:#334155; }
+    body.dark-mode .dashboard-page .chart-insight-card.sustainability { background:linear-gradient(180deg,#111827 0%,#052e16 100%); border-color:#166534; }
+    body.dark-mode .dashboard-page .chart-insight-card.gemp { background:linear-gradient(180deg,#111827 0%,#431407 100%); border-color:#9a3412; }
     body.dark-mode .dashboard-page .chart-insight-value { color:#f8fafc; }
+    body.dark-mode .dashboard-page .gemp-badge { background:rgba(239,68,68,.2); color:#fca5a5; }
+    body.dark-mode .dashboard-page .gemp-badge.good { background:rgba(34,197,94,.2); color:#86efac; }
+    body.dark-mode .dashboard-page .gemp-badge.warn { background:rgba(245,158,11,.2); color:#fde68a; }
     body.dark-mode .dashboard-page .chart-footnote { background:rgba(245,158,11,.12); color:#fde68a; }
 
     /* Dashboard Dark Mode */
@@ -428,6 +605,8 @@
         color: #cbd5e1 !important;
     }
 
+
+
     body.dark-mode .dashboard-page .custom-table tbody tr:hover {
         background: #1f2937 !important;
     }
@@ -435,12 +614,39 @@
     body.dark-mode .dashboard-page .quick-action-btn {
         background: #111827 !important;
         border-color: #334155 !important;
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;
     }
 
     body.dark-mode .dashboard-page .quick-action-btn:hover {
+        background: #1e293b !important;
+        border-color: #475569 !important;
         box-shadow: 0 8px 18px rgba(2, 6, 23, 0.5) !important;
     }
+
+    body.dark-mode .dashboard-page .summary-card-heading {
+        color: #f1f5f9;
+    }
+
+    body.dark-mode .dashboard-page .snapshot-total-badge,
+    body.dark-mode .dashboard-page .quick-actions-subtitle {
+        background: #1e293b;
+        color: #94a3b8;
+    }
+
+    body.dark-mode .dashboard-page .operational-status-bar {
+        background: #1e293b;
+    }
+
+    body.dark-mode .dashboard-page .operational-status-meta {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .dashboard-page .qa-ai .qa-icon-wrap { background: rgba(99, 102, 241, 0.18); color: #818cf8; }
+    body.dark-mode .dashboard-page .qa-load .qa-icon-wrap { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
+    body.dark-mode .dashboard-page .qa-facilities .qa-icon-wrap { background: rgba(5, 150, 105, 0.18); color: #34d399; }
+    body.dark-mode .dashboard-page .qa-meter .qa-icon-wrap { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+    body.dark-mode .dashboard-page .qa-incidents .qa-icon-wrap { background: rgba(225, 29, 72, 0.18); color: #fb7185; }
+    body.dark-mode .dashboard-page .qa-maintenance .qa-icon-wrap { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
 
     body.dark-mode .dashboard-page .dashboard-filter-panel,
     body.dark-mode .dashboard-page .dashboard-filter-field input {
@@ -563,7 +769,7 @@
         .dashboard-page .stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
         .dashboard-page .summary-grid { grid-template-columns:1fr; }
         .dashboard-page .chart-grid { grid-template-columns:1fr; }
-        .chart-insights-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .chart-insights-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
         .quick-actions-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
     }
 
@@ -644,11 +850,306 @@
         transform: translateY(-4px) !important;
         box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12) !important;
     }
+
+    /* Executive Presentation Bar & Top Savers */
+    .executive-score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        font-size: 0.8rem;
+        font-weight: 800;
+    }
+    .executive-score-badge .score-val {
+        font-size: 1.15rem;
+        font-weight: 900;
+        color: #047857;
+    }
+    body.dark-mode .dashboard-page .executive-score-badge {
+        background: rgba(6,95,70,0.25);
+        border-color: #065f46;
+        color: #6ee7b7;
+    }
+    body.dark-mode .dashboard-page .executive-score-badge .score-val {
+        color: #34d399;
+    }
+
+    /* Top Energy Savers Showcase Section */
+    .top-savers-section {
+        margin-top: 22px;
+        border: 1px solid #d1fae5;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.035);
+        padding: 18px 22px;
+    }
+    body.dark-mode .dashboard-page .top-savers-section {
+        background: #111827 !important;
+        border-color: #1e3a29 !important;
+        box-shadow: none !important;
+    }
+    .top-savers-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+    .top-savers-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .top-savers-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #fef9c3;
+        border: 1px solid #fef08a;
+        color: #ca8a04;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+    }
+    body.dark-mode .dashboard-page .top-savers-icon {
+        background: #36280b;
+        border-color: #713f12;
+        color: #fde047;
+    }
+    .top-savers-title {
+        margin: 0;
+        font-size: 0.96rem;
+        font-weight: 850;
+        color: #065f46;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+    }
+    body.dark-mode .dashboard-page .top-savers-title {
+        color: #6ee7b7 !important;
+    }
+    .top-savers-subtitle {
+        margin: 2px 0 0;
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    body.dark-mode .dashboard-page .top-savers-subtitle {
+        color: #94a3b8 !important;
+    }
+    .top-savers-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #047857;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.035em;
+    }
+    body.dark-mode .dashboard-page .top-savers-badge {
+        background: rgba(6, 95, 70, 0.3) !important;
+        border-color: #065f46 !important;
+        color: #6ee7b7 !important;
+    }
+    .top-savers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+    }
+    .top-saver-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        text-decoration: none !important;
+        color: inherit !important;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    .top-saver-card:hover {
+        transform: translateY(-2px);
+        border-color: #86efac;
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.08);
+        background: #ffffff;
+    }
+    body.dark-mode .dashboard-page .top-saver-card {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+    body.dark-mode .dashboard-page .top-saver-card:hover {
+        border-color: #10b981 !important;
+        background: #1e293b !important;
+    }
+    .top-saver-rank {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 900;
+        flex-shrink: 0;
+        background: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+    .top-saver-rank.rank-1 {
+        background: #fef08a;
+        color: #854d0e;
+        border-color: #fde047;
+    }
+    .top-saver-rank.rank-2 {
+        background: #f1f5f9;
+        color: #475569;
+        border-color: #cbd5e1;
+    }
+    .top-saver-rank.rank-3 {
+        background: #ffedd5;
+        color: #9a3412;
+        border-color: #fed7aa;
+    }
+    body.dark-mode .dashboard-page .top-saver-rank {
+        background: #064e3b;
+        color: #a7f3d0;
+        border-color: #047857;
+    }
+    body.dark-mode .dashboard-page .top-saver-rank.rank-1 {
+        background: #713f12;
+        color: #fef08a;
+        border-color: #a16207;
+    }
+    body.dark-mode .dashboard-page .top-saver-rank.rank-2 {
+        background: #334155;
+        color: #e2e8f0;
+        border-color: #475569;
+    }
+    body.dark-mode .dashboard-page .top-saver-rank.rank-3 {
+        background: #7c2d12;
+        color: #fed7aa;
+        border-color: #9a3412;
+    }
+    .top-saver-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .top-saver-name {
+        font-size: 0.84rem;
+        font-weight: 750;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+    body.dark-mode .dashboard-page .top-saver-name {
+        color: #f8fafc !important;
+    }
+    .top-saver-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+        font-size: 0.72rem;
+    }
+    .top-saver-reduction {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        background: #dcfce7;
+        color: #15803d;
+        font-weight: 800;
+    }
+    body.dark-mode .dashboard-page .top-saver-reduction {
+        background: rgba(34, 197, 94, 0.18) !important;
+        color: #86efac !important;
+    }
+    .top-saver-kwh {
+        color: #64748b;
+        font-weight: 600;
+    }
+    body.dark-mode .dashboard-page .top-saver-kwh {
+        color: #94a3b8 !important;
+    }
+
+    /* Print / Export Report Mode */
+    @media print {
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+        .top-header,
+        .sidebar,
+        .dashboard-filter-panel form,
+        .quick-action-btn,
+        .insight-header-action,
+        .insight-card-footer,
+        .dashboard-filter-button,
+        .btn-print-dashboard {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        .report-card-container {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .chart-grid {
+            page-break-inside: avoid;
+        }
+        .chart-insights-grid {
+            grid-template-columns: repeat(6, 1fr) !important;
+        }
+        .print-header-stamp {
+            display: block !important;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #0f172a;
+        }
+    }
+    .print-header-stamp {
+        display: none;
+    }
 </style>
 
 <div class="dashboard-page" style="width:100%; margin:0 auto;">
     <div class="report-card-container">
         
+        <div class="print-header-stamp">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:900; color:#0f172a; margin:0;">QUEZON CITY LOCAL GOVERNMENT</h2>
+                    <p style="font-size:0.85rem; color:#475569; margin:2px 0 0;">Energy Management & Efficiency Executive Summary Report</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#64748b;">REPORTING PERIOD</div>
+                    <strong style="font-size:0.9rem; color:#0f172a;">{{ $periodStartLabel ?? 'N/A' }} - {{ $periodEndLabel ?? 'N/A' }}</strong>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard-header">
             <div class="dashboard-title-row">
                 <span class="dashboard-title-icon" aria-hidden="true"><i class="fas fa-bolt"></i></span>
@@ -657,7 +1158,15 @@
                     <p class="dashboard-subtitle">Period-based energy monitoring, cost analysis, and operational alerts.</p>
                 </div>
             </div>
-            <span class="dashboard-role-badge"><i class="fas fa-shield-alt"></i> {{ Auth::user()->role ?? 'Administrator' }}</span>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div class="executive-score-badge" title="Overall Energy Performance Rating based on Baseline and GEMP benchmarks">
+                    <i class="fa-solid fa-gauge"></i>
+                    <span>Efficiency Score:</span>
+                    <span class="score-val">{{ $efficiencyScore ?? 85 }}</span>
+                    <small style="font-size:0.65rem; color:#059669;">/ 100</small>
+                </div>
+                <span class="dashboard-role-badge"><i class="fas fa-shield-alt"></i> {{ Auth::user()->role ?? 'Administrator' }}</span>
+            </div>
         </div>
 
         <div class="dashboard-filter-panel">
@@ -680,6 +1189,9 @@
                 </div>
                 <button type="submit" class="dashboard-filter-button primary"><i class="fas fa-filter"></i>&nbsp; Apply</button>
                 <a href="{{ route('dashboard.index') }}" class="dashboard-filter-button secondary">Reset</a>
+                <button type="button" data-secure-print class="dashboard-filter-button btn-print-dashboard" style="background:#0f172a; color:#fff; border:1px solid #1e293b;" title="Print or Save as Executive Summary PDF">
+                    <i class="fa-solid fa-print"></i>&nbsp; Print Report
+                </button>
             </form>
         </div>
 
@@ -730,20 +1242,82 @@
 
         <div class="summary-grid">
             <div class="summary-card">
-                <div class="summary-card-heading"><i class="fas fa-signal"></i> Facility Operational Snapshot</div>
+                <div class="summary-card-header-row">
+                    <div class="summary-card-heading"><i class="fas fa-signal" style="color:#0284c7;"></i> Facility Operational Snapshot</div>
+                    @php
+                        $actCount = optional($facilityStatusCounts)->active_count ?? 0;
+                        $maintCount = optional($facilityStatusCounts)->maintenance_count ?? 0;
+                        $inactCount = optional($facilityStatusCounts)->inactive_count ?? 0;
+                        $totalKnownFac = $actCount + $maintCount + $inactCount;
+                        $actPct = $totalKnownFac > 0 ? round(($actCount / $totalKnownFac) * 100) : 0;
+                        $maintPct = $totalKnownFac > 0 ? round(($maintCount / $totalKnownFac) * 100) : 0;
+                        $inactPct = $totalKnownFac > 0 ? (100 - $actPct - $maintPct) : 0;
+                    @endphp
+                    <span class="snapshot-total-badge">{{ $totalKnownFac }} Total Monitored</span>
+                </div>
                 <div class="operational-pills">
-                    <span class="operational-pill active"><i class="fas fa-circle"></i> Active <strong>{{ optional($facilityStatusCounts)->active_count ?? 0 }}</strong></span>
-                    <span class="operational-pill maintenance"><i class="fas fa-circle"></i> Maintenance <strong>{{ optional($facilityStatusCounts)->maintenance_count ?? 0 }}</strong></span>
-                    <span class="operational-pill inactive"><i class="fas fa-circle"></i> Inactive <strong>{{ optional($facilityStatusCounts)->inactive_count ?? 0 }}</strong></span>
+                    <span class="operational-pill active" title="Operational & Metered">
+                        <span class="pill-dot"></span> Active <strong>{{ $actCount }}</strong>
+                    </span>
+                    <span class="operational-pill maintenance" title="Under Repair or Scheduled Service">
+                        <span class="pill-dot"></span> Maintenance <strong>{{ $maintCount }}</strong>
+                    </span>
+                    <span class="operational-pill inactive" title="Offline or Decommissioned">
+                        <span class="pill-dot"></span> Inactive <strong>{{ $inactCount }}</strong>
+                    </span>
+                </div>
+                <div>
+                    <div class="operational-status-bar" title="Operational Distribution: {{ $actPct }}% Active, {{ $maintPct }}% Maintenance, {{ $inactPct }}% Inactive">
+                        <div class="bar-segment seg-active" style="width: {{ $actPct }}%;"></div>
+                        <div class="bar-segment seg-maintenance" style="width: {{ $maintPct }}%;"></div>
+                        <div class="bar-segment seg-inactive" style="width: {{ $inactPct }}%;"></div>
+                    </div>
+                    <div class="operational-status-meta">
+                        <span><i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> {{ $actPct }}% operational</span>
+                        <span>{{ $maintCount > 0 ? $maintCount . ' pending service' : 'All systems nominal' }}</span>
+                    </div>
                 </div>
             </div>
 
             <div class="summary-card">
-                <div class="summary-card-heading"><i class="fas fa-bolt"></i> Quick Actions</div>
+                <div class="summary-card-header-row">
+                    <div class="summary-card-heading"><i class="fas fa-bolt" style="color:#eab308;"></i> Quick Actions</div>
+                    <span class="quick-actions-subtitle">Operational Shortcuts</span>
+                </div>
                 <div class="quick-actions-grid">
-                    <a href="{{ route('modules.facilities.index') }}" class="quick-action-btn"><i class="fa-solid fa-building"></i> Facilities</a>
-                    <a href="{{ route('energy.dashboard') }}" class="quick-action-btn"><i class="fa-solid fa-gauge-high"></i> Main Meter Monitoring</a>
-                    <a href="{{ route('energy-incidents.index') }}" class="quick-action-btn"><i class="fa-solid fa-triangle-exclamation"></i> Incidents</a>
+                    <a href="{{ route('modules.ai-alerts.index') }}" class="quick-action-btn qa-ai" title="View AI Alerts & Operational Triage">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                        <span class="qa-label">AI Alerts</span>
+                        @if(($activeAlerts ?? 0) > 0)
+                            <span class="qa-badge qa-badge-danger">{{ $activeAlerts }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('modules.load-tracking.index') }}" class="quick-action-btn qa-load" title="Inspect Equipment Load Inventory & Schedules">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-plug-circle-bolt"></i></span>
+                        <span class="qa-label">Load Tracking</span>
+                    </a>
+                    <a href="{{ route('modules.facilities.index') }}" class="quick-action-btn qa-facilities" title="Manage Facilities & Baselines">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-building"></i></span>
+                        <span class="qa-label">Facilities</span>
+                    </a>
+                    <a href="{{ route('energy.dashboard') }}" class="quick-action-btn qa-meter" title="View Real-Time Main Meter Dashboard">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-gauge-high"></i></span>
+                        <span class="qa-label">Main Meter</span>
+                    </a>
+                    <a href="{{ route('energy-incidents.index') }}" class="quick-action-btn qa-incidents" title="Track & Manage Energy Incidents">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                        <span class="qa-label">Incidents</span>
+                        @if(($unresolvedIncidentCount ?? 0) > 0)
+                            <span class="qa-badge qa-badge-danger">{{ $unresolvedIncidentCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ url('modules/maintenance/index') }}" class="quick-action-btn qa-maintenance" title="Inspect Ongoing & Scheduled Maintenance">
+                        <span class="qa-icon-wrap"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                        <span class="qa-label">Maintenance</span>
+                        @if(($ongoingMaintenance ?? 0) > 0)
+                            <span class="qa-badge qa-badge-violet">{{ $ongoingMaintenance }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
         </div>
@@ -760,6 +1334,21 @@
                     {{ $varianceValue === null ? 'N/A' : $variancePrefix . number_format($varianceValue, 1) . '%' }}
                 </div>
                 <div class="chart-insight-note">{{ $varianceValue !== null && $varianceValue > 0 ? 'Consumption is above target' : 'Compared with period baseline' }}</div>
+            </div>
+            <div class="chart-insight-card sustainability">
+                <div class="chart-insight-label"><i class="fa-solid fa-leaf"></i> Carbon Footprint</div>
+                <div class="chart-insight-value">{{ number_format($carbonEmissionsMt ?? 0, 2) }} <small style="font-size:.65rem; font-weight:700;">MT CO₂e</small></div>
+                <div class="chart-insight-note">~{{ number_format($treesEquivalent ?? 0) }} mature trees offset equivalent</div>
+            </div>
+            <div class="chart-insight-card gemp">
+                <div class="chart-insight-label"><i class="fa-solid fa-award"></i> GEMP RA 11285 Target</div>
+                <div class="chart-insight-value tone-{{ $gempTone ?? 'neutral' }}">
+                    <span>{{ $gempStatus ?? 'N/A' }}</span>
+                    @if(!empty($gempPercentageLabel))
+                        <span class="gemp-badge {{ $gempTone ?? 'warn' }}">{{ $gempPercentageLabel }}</span>
+                    @endif
+                </div>
+                <div class="chart-insight-note">10% Mandatory Gov't Reduction Goal</div>
             </div>
             <div class="chart-insight-card">
                 <div class="chart-insight-label"><i class="fas fa-chart-bar"></i> Peak Usage Month</div>
@@ -846,8 +1435,8 @@
                                 $theme = $statusStyles[$status] ?? $statusStyles['Normal'];
                                 $deviationColor = $deviation >= 0 ? '#e11d48' : '#16a34a';
                             @endphp
-                            <tr>
-                                <td class="facility-name"><span class="facility-rank">{{ $loop->iteration }}</span><span class="facility-name-text">{{ $facility->name }}</span></td>
+                            <tr onclick="window.location.href='{{ route('facilities.monthly-records', ['facility' => $facility->id]) }}'" style="cursor:pointer;" title="Click to view monthly records for {{ $facility->name }}">
+                                <td class="facility-name"><span class="facility-rank">{{ $loop->iteration }}</span><a href="{{ route('facilities.monthly-records', ['facility' => $facility->id]) }}" class="facility-name-text" title="Click to view monthly records for {{ $facility->name }}" style="text-decoration:none; color:inherit; font-weight:700;">{{ $facility->name }}</a></td>
                                 <td class="value-kwh" style="text-align:center;">{{ number_format($facility->total_kwh, 2) }}</td>
                                 <td class="value-baseline" style="text-align:center;">{{ number_format($facility->baseline_kwh, 2) }}</td>
                                 <td class="value-deviation" style="text-align:center; color:{{ $deviationColor }};">{{ number_format($deviation, 2) }}%</td>
@@ -917,6 +1506,50 @@
             </div>
 
         </div>
+
+        @if(collect($topSavers ?? [])->isNotEmpty())
+            <div class="top-savers-section">
+                <div class="top-savers-header">
+                    <div class="top-savers-title-wrap">
+                        <div class="top-savers-icon">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div>
+                            <h3 class="top-savers-title">Top Energy Efficiency Champions</h3>
+                            <p class="top-savers-subtitle">Government facilities generating the largest energy reductions below target baseline</p>
+                        </div>
+                    </div>
+                    <span class="top-savers-badge">
+                        <i class="fa-solid fa-leaf"></i> {{ collect($topSavers)->count() }} Leading Facilities
+                    </span>
+                </div>
+
+                <div class="top-savers-grid">
+                    @foreach($topSavers as $saver)
+                        <a href="{{ route('facilities.monthly-records', ['facility' => $saver->id]) }}" class="top-saver-card" title="Click to view monthly records for {{ $saver->name }}">
+                            <div class="top-saver-rank rank-{{ $loop->iteration }}">
+                                @if($loop->iteration === 1)
+                                    <i class="fa-solid fa-crown" style="font-size:0.75rem;"></i>
+                                @else
+                                    #{{ $loop->iteration }}
+                                @endif
+                            </div>
+                            <div class="top-saver-info">
+                                <span class="top-saver-name">{{ $saver->name }}</span>
+                                <div class="top-saver-meta">
+                                    <span class="top-saver-reduction">
+                                        <i class="fa-solid fa-arrow-trend-down"></i> {{ number_format(abs($saver->deviation), 1) }}% saved
+                                    </span>
+                                    <span class="top-saver-kwh">
+                                        {{ number_format($saver->kwh_saved, 0) }} kWh reduced
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 

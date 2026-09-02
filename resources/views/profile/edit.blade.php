@@ -279,6 +279,14 @@
     font-size: .82rem;
 }
 
+.profile-edit-card input::-ms-reveal,
+.profile-edit-card input::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+
 .profile-edit-card input[type="file"]::file-selector-button {
     margin: -5px 10px -5px -6px;
     padding: 7px 11px;

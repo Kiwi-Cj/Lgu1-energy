@@ -124,6 +124,13 @@
             background: #fff;
             color: var(--ink);
         }
+        .field input::-ms-reveal,
+        .field input::-ms-clear {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            pointer-events: none !important;
+        }
         .field input:focus {
             outline: none;
             border-color: var(--primary);

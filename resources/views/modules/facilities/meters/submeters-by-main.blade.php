@@ -860,18 +860,96 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @if($canManageMeters)
+@php
+    $mainMeterBaseline = is_numeric($mainMeter->baseline_kwh) ? (float) $mainMeter->baseline_kwh : 0;
+    $historyReadings = $historicalMonthlyReadings ?? collect();
+    $equipList = $facilityEquipments ?? collect();
+    $equipTotalMonthlyKwh = round((float) $equipList->sum(fn ($eq) => $eq->monthly_kwh), 2);
+    $equipTotalWatts = (float) $equipList->sum(fn ($eq) => $eq->total_watts);
+    $equipTotalUnits = (int) $equipList->sum('quantity');
+    $equipTotalItems = $equipList->count();
+@endphp
+
+<style>
+.submeter-calc-tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #475569;
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.submeter-calc-tab-btn.active {
+    background: #ffffff;
+    color: #2563eb;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+.submeter-calc-tab-btn:hover:not(.active) {
+    color: #0f172a;
+}
+.submeter-dur-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #475569;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.submeter-dur-btn.active {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(37,99,235,0.3);
+}
+.submeter-month-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 8px;
+}
+.submeter-month-input {
+    width: 100%;
+    padding: 5px 6px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 750;
+    color: #0f172a;
+    box-sizing: border-box;
+}
+</style>
+
+{{-- Add Sub-meter Modal --}}
 <div id="addLinkedSubmeterModal"
      style="display:none;position:fixed;inset:0;z-index:10060;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:min(760px,100%);background:#fff;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:20px;position:relative;">
-        <button type="button" onclick="closeAddLinkedSubmeterModal()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.35rem;color:#64748b;cursor:pointer;">&times;</button>
-        <h3 style="margin:0 0 6px;color:#2563eb;font-weight:800;">Add Sub-meter</h3>
-        <div style="margin-bottom:12px;color:#475569;font-weight:600;">
-            Main Meter: <span style="color:#0f172a;font-weight:800;">{{ $mainMeter->meter_name ?? 'N/A' }}</span>
+    <div style="width:min(780px,100%);max-height:92vh;overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 20px 45px rgba(0,0,0,.25);padding:24px;position:relative;">
+        <button type="button" onclick="closeAddLinkedSubmeterModal()" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:1.4rem;color:#64748b;cursor:pointer;">&times;</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="width:36px;height:36px;border-radius:10px;background:#eff6ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;"><i class="fa-solid fa-plus"></i></span>
+            <div>
+                <h3 style="margin:0;color:#0f172a;font-weight:800;font-size:1.2rem;">Add Sub-meter</h3>
+                <div style="color:#64748b;font-size:0.84rem;font-weight:600;">
+                    Main Meter: <span style="color:#0f172a;font-weight:800;">{{ $mainMeter->meter_name ?? 'N/A' }}</span>
+                    @if($mainMeterBaseline > 0)
+                        &bull; <span style="color:#2563eb;font-weight:800;">Main Baseline: {{ number_format($mainMeterBaseline, 2) }} kWh</span>
+                    @endif
+                </div>
+            </div>
         </div>
 
         <form method="POST"
               action="{{ route('modules.facilities.meters.store', $facility->id) }}"
-              style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+              style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;">
             @csrf
             <input type="hidden" name="_redirect_to" value="main_submeters">
             <input type="hidden" name="_submeter_modal" value="add">
@@ -882,24 +960,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Name <span style="color:#e11d48;">*</span></label>
                 <input type="text" name="meter_name" required maxlength="255" value="{{ old('meter_name') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. 2F Lighting">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Number</label>
                 <input type="text" name="meter_number" maxlength="255" value="{{ old('meter_number') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. SM-2026-001">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Location</label>
                 <input type="text" name="location" maxlength="255" value="{{ old('location') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. Panel 3">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Status <span style="color:#e11d48;">*</span></label>
-                <select name="status" required style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;">
+                <select name="status" required style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;">
                     <option value="active" @selected(old('status', 'active') === 'active')>Active</option>
                     <option value="inactive" @selected(old('status') === 'inactive')>Inactive</option>
                 </select>
@@ -907,38 +985,206 @@ document.addEventListener('DOMContentLoaded', function() {
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier <span style="color:#e11d48;">*</span></label>
                 <input type="number" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}" required
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="1.0000">
             </div>
-            <div>
-                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Baseline kWh</label>
-                <input type="number" name="baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
-                       placeholder="e.g. 1200.00">
-                <div style="margin-top:5px;color:#64748b;font-size:.82rem;font-weight:600;">Recommended for sub-meter alert comparison.</div>
+
+            {{-- Smart Sub-meter Baseline kWh Field with 3-Option Calculator --}}
+            <div style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; box-sizing: border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <div>
+                        <label style="font-weight:800; color:#1e293b; margin:0; font-size:0.88rem;">
+                            Sub-meter Baseline kWh
+                        </label>
+                        <span style="display:block; font-size:0.75rem; color:#64748b; font-weight:600;">Monthly target consumption for this sub-meter (portion of Main Meter).</span>
+                    </div>
+                    @if($mainMeterBaseline > 0)
+                        <span style="font-size:0.76rem; font-weight:800; background:#eff6ff; color:#1d4ed8; padding:3px 9px; border-radius:8px; border:1px solid #bfdbfe;">
+                            <i class="fa-solid fa-gauge-high"></i> Main Baseline: <strong>{{ number_format($mainMeterBaseline, 2) }} kWh</strong>
+                        </span>
+                    @endif
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" name="baseline_kwh" id="add_baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
+                           oninput="validateSubmeterBaseline('add')"
+                           style="flex:1; border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; font-size:1rem; font-weight:800; color:#0f172a; font-family:monospace; box-sizing:border-box;"
+                           placeholder="e.g. 1200.00">
+                    <button type="button" onclick="toggleSubmeterBaselineCalc('add')"
+                            style="display:inline-flex; align-items:center; gap:6px; background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:800; font-size:0.82rem; cursor:pointer; white-space:nowrap; box-shadow:0 2px 6px rgba(37,99,235,0.2);">
+                        <i class="fa-solid fa-calculator"></i> <span id="add_calc_btn_text">Baseline Calculator</span>
+                    </button>
+                </div>
+
+                <div id="add_baseline_warning" style="display:none; margin-top:8px; padding:8px 12px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#b91c1c; font-size:0.78rem; font-weight:750;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Notice:</strong> The entered baseline (<span id="add_warn_val">0</span> kWh) meets or exceeds the Main Meter baseline ({{ number_format($mainMeterBaseline, 2) }} kWh). A sub-meter baseline should represent only a portion of the Main Meter.
+                </div>
+
+                {{-- Interactive 3-Tab Calculator Expandable Panel --}}
+                <div id="add_baseline_calc_box" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1;">
+                    <div style="display:flex; gap:4px; background:#e2e8f0; padding:3px; border-radius:10px; margin-bottom:12px;">
+                        <button type="button" class="submeter-calc-tab-btn active" id="add_tab_btn_pct" onclick="switchSubmeterBaselineTab('add', 'pct')">
+                            <i class="fa-solid fa-percent"></i> % Share of Main Meter
+                        </button>
+                        <button type="button" class="submeter-calc-tab-btn" id="add_tab_btn_bills" onclick="switchSubmeterBaselineTab('add', 'bills')">
+                            <i class="fa-solid fa-clock-rotate-left"></i> 3–6 Months Bills
+                        </button>
+                        <button type="button" class="submeter-calc-tab-btn" id="add_tab_btn_equip" onclick="switchSubmeterBaselineTab('add', 'equip')">
+                            <i class="fa-solid fa-plug-circle-bolt"></i> Equipment Load @if($equipTotalMonthlyKwh > 0)({{ number_format($equipTotalMonthlyKwh, 0) }} kWh)@endif
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: % Share of Main Meter -->
+                    <div id="add_tab_content_pct" style="display:block;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            <strong style="display:block; font-size:0.82rem; color:#0f172a; margin-bottom:6px;">
+                                <i class="fa-solid fa-percent" style="color:#2563eb;"></i> Option A: Percentage (% Share) of Main Meter
+                            </strong>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="number" id="add_calc_pct" min="1" max="100" step="1" placeholder="e.g. 20"
+                                       oninput="previewCalcPct('add')"
+                                       style="width:80px; border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-weight:800; text-align:center; font-size:0.9rem;">
+                                <span style="font-weight:800; color:#475569;">%</span>
+                                <button type="button" onclick="applyCalcPct('add')"
+                                        style="flex:1; background:#059669; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:800; font-size:0.8rem; cursor:pointer;">
+                                    Apply to Baseline (<span id="add_calc_pct_val">0.00</span> kWh)
+                                </button>
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748b; margin-top:6px;">
+                                Example: 20% of {{ number_format($mainMeterBaseline, 0) }} kWh Main Meter baseline.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Past 3-6 Months Bills -->
+                    <div id="add_tab_content_bills" style="display:none;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            @php
+                                $threeMoAvg = $historyReadings->count() >= 3 ? round($historyReadings->take(3)->avg('actual_kwh'), 2) : null;
+                                $sixMoAvg = $historyReadings->count() >= 6 ? round($historyReadings->take(6)->avg('actual_kwh'), 2) : null;
+                            @endphp
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px;">
+                                <span style="font-size:0.75rem; font-weight:800; color:#334155;">
+                                    <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> Evaluation Period:
+                                </span>
+                                <div style="display:inline-flex; background:#e2e8f0; padding:2px; border-radius:8px;">
+                                    <button type="button" class="submeter-dur-btn active" id="add_dur_btn_3" onclick="setSubmeterBaselineDuration('add', 3, {{ $threeMoAvg ?? 'null' }})">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> 3 Months
+                                    </button>
+                                    <button type="button" class="submeter-dur-btn" id="add_dur_btn_6" onclick="setSubmeterBaselineDuration('add', 6, {{ $sixMoAvg ?? 'null' }})">
+                                        <i class="fa-solid fa-calendar-check"></i> 6 Months
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px;" id="add_calc_months_grid">
+                                @for($m = 1; $m <= 6; $m++)
+                                    @php
+                                        $histItem = $historyReadings->get($m - 1);
+                                        $monthName = $histItem ? date('M Y', mktime(0, 0, 0, (int)$histItem->month, 1, (int)$histItem->year)) : "Month {$m}";
+                                        $val = $histItem ? round((float)$histItem->actual_kwh, 2) : '';
+                                    @endphp
+                                    <div class="submeter-month-card" id="add_calc_card_m{{ $m }}" style="{{ $m > 3 ? 'display:none;' : 'display:block;' }}">
+                                        <label style="display:block; font-size:0.68rem; font-weight:750; color:#64748b; margin-bottom:2px;">{{ $monthName }}</label>
+                                        <input type="number" step="0.01" min="0" class="submeter-month-input" id="add_calc_m{{ $m }}" placeholder="0.00" value="{{ $val }}" oninput="recomputeSubmeterBillsCalc('add')">
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem;">
+                                <div>
+                                    <span style="color:#64748b;">Average:</span> <strong id="add_calc_avg" style="color:#2563eb; font-size:0.9rem;">0.00 kWh</strong>
+                                    <span style="color:#94a3b8; margin-left:6px;">(<span id="add_calc_count">0</span> months)</span>
+                                </div>
+                                <button type="button" onclick="applySubmeterBillsAvg('add')" style="background:#059669; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-weight:800; font-size:0.75rem; cursor:pointer;">
+                                    Apply Average
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Connected Equipment Load -->
+                    <div id="add_tab_content_equip" style="display:none;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            @if($equipTotalMonthlyKwh > 0)
+                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                    <div>
+                                        <span style="font-size:0.68rem; color:#166534; font-weight:800; text-transform:uppercase;">Sub-meter Registered Equipment</span>
+                                        <strong style="display:block; font-size:1.1rem; color:#047857; font-weight:900;">{{ number_format($equipTotalMonthlyKwh, 2) }} <small style="font-size:0.75rem;">kWh/mo</small></strong>
+                                        <span style="font-size:0.7rem; color:#64748b;">{{ $equipTotalItems }} equipment types &bull; {{ number_format($equipTotalUnits) }} units</span>
+                                    </div>
+                                    <button type="button" onclick="quickApplySubmeterAvg('add', {{ $equipTotalMonthlyKwh }})" style="background:#059669; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:800; font-size:0.76rem; cursor:pointer;">
+                                        <i class="fa-solid fa-plug-circle-bolt"></i> Apply Equipment Baseline
+                                    </button>
+                                </div>
+                            @else
+                                <div style="display:flex; align-items:center; gap:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:0.78rem; color:#0369a1;">
+                                    <i class="fa-solid fa-circle-info" style="font-size:1.1rem; color:#0284c7;"></i>
+                                    <div>
+                                        <strong>No equipment assigned to this sub-meter yet.</strong>
+                                        <div style="font-size:0.72rem; color:#0284c7; margin-top:2px;">Use the formula below to calculate estimated monthly consumption of connected devices.</div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <strong style="display:block; font-size:0.78rem; color:#0f172a; margin-bottom:6px;">
+                                <i class="fa-solid fa-calculator" style="color:#d97706;"></i> Custom Connected Load Formula:
+                            </strong>
+                            <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                                <input type="number" id="add_calc_kw" step="0.1" min="0" placeholder="kW"
+                                       oninput="previewCalcLoad('add')"
+                                       style="width:65px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Total kW">
+                                <span style="font-size:0.74rem; color:#64748b;">kW ×</span>
+                                <input type="number" id="add_calc_hrs" step="0.5" min="0" max="24" value="8" placeholder="hrs"
+                                       oninput="previewCalcLoad('add')"
+                                       style="width:50px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Hours per day">
+                                <span style="font-size:0.74rem; color:#64748b;">h/d ×</span>
+                                <input type="number" id="add_calc_days" step="1" min="1" max="31" value="22" placeholder="days"
+                                       oninput="previewCalcLoad('add')"
+                                       style="width:50px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Days per month">
+                                <span style="font-size:0.74rem; color:#64748b;">d/mo</span>
+                                <button type="button" onclick="applyCalcLoad('add')"
+                                        style="background:#059669; color:#fff; border:none; border-radius:8px; padding:6px 12px; font-weight:800; font-size:0.76rem; cursor:pointer;">
+                                    Apply (<span id="add_calc_load_val">0.00</span> kWh)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div style="grid-column:1/-1;">
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Notes</label>
                 <textarea name="notes" rows="3" maxlength="2000"
-                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;"
-                          placeholder="Optional notes">{{ old('notes') }}</textarea>
+                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;box-sizing:border-box;"
+                          placeholder="Optional notes (e.g. connected area, purpose, feeder panel)">{{ old('notes') }}</textarea>
             </div>
 
-            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;">
-                <button type="button" onclick="closeAddLinkedSubmeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Cancel</button>
-                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Save Sub-meter</button>
+            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+                <button type="button" onclick="closeAddLinkedSubmeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">Cancel</button>
+                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.25);">Save Sub-meter</button>
             </div>
         </form>
     </div>
 </div>
 
+{{-- Edit Sub-meter Modal --}}
 <div id="editLinkedSubmeterModal"
      style="display:none;position:fixed;inset:0;z-index:10061;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:min(760px,100%);background:#fff;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.2);padding:20px;position:relative;">
-        <button type="button" onclick="closeEditLinkedSubmeterModal()" style="position:absolute;top:10px;right:12px;border:none;background:none;font-size:1.35rem;color:#64748b;cursor:pointer;">&times;</button>
-        <h3 style="margin:0 0 6px;color:#2563eb;font-weight:800;">Edit Sub-meter</h3>
-        <div style="margin-bottom:12px;color:#475569;font-weight:600;">
-            Main Meter: <span style="color:#0f172a;font-weight:800;">{{ $mainMeter->meter_name ?? 'N/A' }}</span>
+    <div style="width:min(780px,100%);max-height:92vh;overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 20px 45px rgba(0,0,0,.25);padding:24px;position:relative;">
+        <button type="button" onclick="closeEditLinkedSubmeterModal()" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:1.4rem;color:#64748b;cursor:pointer;">&times;</button>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="width:36px;height:36px;border-radius:10px;background:#eff6ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;"><i class="fa-solid fa-pen-to-square"></i></span>
+            <div>
+                <h3 style="margin:0;color:#0f172a;font-weight:800;font-size:1.2rem;">Edit Sub-meter</h3>
+                <div style="color:#64748b;font-size:0.84rem;font-weight:600;">
+                    Main Meter: <span style="color:#0f172a;font-weight:800;">{{ $mainMeter->meter_name ?? 'N/A' }}</span>
+                    @if($mainMeterBaseline > 0)
+                        &bull; <span style="color:#2563eb;font-weight:800;">Main Baseline: {{ number_format($mainMeterBaseline, 2) }} kWh</span>
+                    @endif
+                </div>
+            </div>
         </div>
 
         @php
@@ -950,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <form id="editLinkedSubmeterForm"
               method="POST"
               action="{{ $oldEditAction }}"
-              style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+              style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;">
             @csrf
             @method('PUT')
             <input type="hidden" name="_redirect_to" value="main_submeters">
@@ -963,24 +1209,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Name <span style="color:#e11d48;">*</span></label>
                 <input type="text" id="edit_meter_name" name="meter_name" required maxlength="255" value="{{ old('meter_name') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. 2F Lighting">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Meter Number</label>
                 <input type="text" id="edit_meter_number" name="meter_number" maxlength="255" value="{{ old('meter_number') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. SM-2026-001">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Location</label>
                 <input type="text" id="edit_location" name="location" maxlength="255" value="{{ old('location') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="e.g. Panel 3">
             </div>
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Status <span style="color:#e11d48;">*</span></label>
-                <select id="edit_status" name="status" required style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;">
+                <select id="edit_status" name="status" required style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;">
                     <option value="active" @selected(old('status', 'active') === 'active')>Active</option>
                     <option value="inactive" @selected(old('status') === 'inactive')>Inactive</option>
                 </select>
@@ -988,26 +1234,185 @@ document.addEventListener('DOMContentLoaded', function() {
             <div>
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Multiplier <span style="color:#e11d48;">*</span></label>
                 <input type="number" id="edit_multiplier" name="multiplier" min="0.0001" max="999999" step="0.0001" value="{{ old('multiplier', '1') }}" required
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
+                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;"
                        placeholder="1.0000">
             </div>
-            <div>
-                <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Baseline kWh</label>
-                <input type="number" id="edit_baseline_kwh" name="baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
-                       style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;"
-                       placeholder="e.g. 1200.00">
-                <div style="margin-top:5px;color:#64748b;font-size:.82rem;font-weight:600;">Recommended for sub-meter alert comparison.</div>
+
+            {{-- Smart Sub-meter Baseline kWh Field with 3-Option Calculator --}}
+            <div style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; box-sizing: border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <div>
+                        <label style="font-weight:800; color:#1e293b; margin:0; font-size:0.88rem;">
+                            Sub-meter Baseline kWh
+                        </label>
+                        <span style="display:block; font-size:0.75rem; color:#64748b; font-weight:600;">Monthly target consumption for this sub-meter (portion of Main Meter).</span>
+                    </div>
+                    @if($mainMeterBaseline > 0)
+                        <span style="font-size:0.76rem; font-weight:800; background:#eff6ff; color:#1d4ed8; padding:3px 9px; border-radius:8px; border:1px solid #bfdbfe;">
+                            <i class="fa-solid fa-gauge-high"></i> Main Baseline: <strong>{{ number_format($mainMeterBaseline, 2) }} kWh</strong>
+                        </span>
+                    @endif
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" id="edit_baseline_kwh" name="baseline_kwh" min="0" step="0.01" value="{{ old('baseline_kwh') }}"
+                           oninput="validateSubmeterBaseline('edit')"
+                           style="flex:1; border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; font-size:1rem; font-weight:800; color:#0f172a; font-family:monospace; box-sizing:border-box;"
+                           placeholder="e.g. 1200.00">
+                    <button type="button" onclick="toggleSubmeterBaselineCalc('edit')"
+                            style="display:inline-flex; align-items:center; gap:6px; background:#2563eb; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:800; font-size:0.82rem; cursor:pointer; white-space:nowrap; box-shadow:0 2px 6px rgba(37,99,235,0.2);">
+                        <i class="fa-solid fa-calculator"></i> <span id="edit_calc_btn_text">Baseline Calculator</span>
+                    </button>
+                </div>
+
+                <div id="edit_baseline_warning" style="display:none; margin-top:8px; padding:8px 12px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#b91c1c; font-size:0.78rem; font-weight:750;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Notice:</strong> The entered baseline (<span id="edit_warn_val">0</span> kWh) meets or exceeds the Main Meter baseline ({{ number_format($mainMeterBaseline, 2) }} kWh). A sub-meter baseline should represent only a portion of the Main Meter.
+                </div>
+
+                {{-- Interactive 3-Tab Calculator Expandable Panel --}}
+                <div id="edit_baseline_calc_box" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1;">
+                    <div style="display:flex; gap:4px; background:#e2e8f0; padding:3px; border-radius:10px; margin-bottom:12px;">
+                        <button type="button" class="submeter-calc-tab-btn active" id="edit_tab_btn_pct" onclick="switchSubmeterBaselineTab('edit', 'pct')">
+                            <i class="fa-solid fa-percent"></i> % Share of Main Meter
+                        </button>
+                        <button type="button" class="submeter-calc-tab-btn" id="edit_tab_btn_bills" onclick="switchSubmeterBaselineTab('edit', 'bills')">
+                            <i class="fa-solid fa-clock-rotate-left"></i> 3–6 Months Bills
+                        </button>
+                        <button type="button" class="submeter-calc-tab-btn" id="edit_tab_btn_equip" onclick="switchSubmeterBaselineTab('edit', 'equip')">
+                            <i class="fa-solid fa-plug-circle-bolt"></i> Equipment Load @if($equipTotalMonthlyKwh > 0)({{ number_format($equipTotalMonthlyKwh, 0) }} kWh)@endif
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: % Share of Main Meter -->
+                    <div id="edit_tab_content_pct" style="display:block;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            <strong style="display:block; font-size:0.82rem; color:#0f172a; margin-bottom:6px;">
+                                <i class="fa-solid fa-percent" style="color:#2563eb;"></i> Option A: Percentage (% Share) of Main Meter
+                            </strong>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="number" id="edit_calc_pct" min="1" max="100" step="1" placeholder="e.g. 20"
+                                       oninput="previewCalcPct('edit')"
+                                       style="width:80px; border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-weight:800; text-align:center; font-size:0.9rem;">
+                                <span style="font-weight:800; color:#475569;">%</span>
+                                <button type="button" onclick="applyCalcPct('edit')"
+                                        style="flex:1; background:#059669; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:800; font-size:0.8rem; cursor:pointer;">
+                                    Apply to Baseline (<span id="edit_calc_pct_val">0.00</span> kWh)
+                                </button>
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748b; margin-top:6px;">
+                                Example: 20% of {{ number_format($mainMeterBaseline, 0) }} kWh Main Meter baseline.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Past 3-6 Months Bills -->
+                    <div id="edit_tab_content_bills" style="display:none;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            @php
+                                $threeMoAvg = $historyReadings->count() >= 3 ? round($historyReadings->take(3)->avg('actual_kwh'), 2) : null;
+                                $sixMoAvg = $historyReadings->count() >= 6 ? round($historyReadings->take(6)->avg('actual_kwh'), 2) : null;
+                            @endphp
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px;">
+                                <span style="font-size:0.75rem; font-weight:800; color:#334155;">
+                                    <i class="fa-solid fa-calendar-days" style="color:#2563eb;"></i> Evaluation Period:
+                                </span>
+                                <div style="display:inline-flex; background:#e2e8f0; padding:2px; border-radius:8px;">
+                                    <button type="button" class="submeter-dur-btn active" id="edit_dur_btn_3" onclick="setSubmeterBaselineDuration('edit', 3, {{ $threeMoAvg ?? 'null' }})">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> 3 Months
+                                    </button>
+                                    <button type="button" class="submeter-dur-btn" id="edit_dur_btn_6" onclick="setSubmeterBaselineDuration('edit', 6, {{ $sixMoAvg ?? 'null' }})">
+                                        <i class="fa-solid fa-calendar-check"></i> 6 Months
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px;" id="edit_calc_months_grid">
+                                @for($m = 1; $m <= 6; $m++)
+                                    @php
+                                        $histItem = $historyReadings->get($m - 1);
+                                        $monthName = $histItem ? date('M Y', mktime(0, 0, 0, (int)$histItem->month, 1, (int)$histItem->year)) : "Month {$m}";
+                                        $val = $histItem ? round((float)$histItem->actual_kwh, 2) : '';
+                                    @endphp
+                                    <div class="submeter-month-card" id="edit_calc_card_m{{ $m }}" style="{{ $m > 3 ? 'display:none;' : 'display:block;' }}">
+                                        <label style="display:block; font-size:0.68rem; font-weight:750; color:#64748b; margin-bottom:2px;">{{ $monthName }}</label>
+                                        <input type="number" step="0.01" min="0" class="submeter-month-input" id="edit_calc_m{{ $m }}" placeholder="0.00" value="{{ $val }}" oninput="recomputeSubmeterBillsCalc('edit')">
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem;">
+                                <div>
+                                    <span style="color:#64748b;">Average:</span> <strong id="edit_calc_avg" style="color:#2563eb; font-size:0.9rem;">0.00 kWh</strong>
+                                    <span style="color:#94a3b8; margin-left:6px;">(<span id="edit_calc_count">0</span> months)</span>
+                                </div>
+                                <button type="button" onclick="applySubmeterBillsAvg('edit')" style="background:#059669; color:#fff; border:none; border-radius:6px; padding:5px 10px; font-weight:800; font-size:0.75rem; cursor:pointer;">
+                                    Apply Average
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Connected Equipment Load -->
+                    <div id="edit_tab_content_equip" style="display:none;">
+                        <div style="background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+                            @if($equipTotalMonthlyKwh > 0)
+                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                    <div>
+                                        <span style="font-size:0.68rem; color:#166534; font-weight:800; text-transform:uppercase;">Sub-meter Registered Equipment</span>
+                                        <strong style="display:block; font-size:1.1rem; color:#047857; font-weight:900;">{{ number_format($equipTotalMonthlyKwh, 2) }} <small style="font-size:0.75rem;">kWh/mo</small></strong>
+                                        <span style="font-size:0.7rem; color:#64748b;">{{ $equipTotalItems }} equipment types &bull; {{ number_format($equipTotalUnits) }} units</span>
+                                    </div>
+                                    <button type="button" onclick="quickApplySubmeterAvg('edit', {{ $equipTotalMonthlyKwh }})" style="background:#059669; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:800; font-size:0.76rem; cursor:pointer;">
+                                        <i class="fa-solid fa-plug-circle-bolt"></i> Apply Equipment Baseline
+                                    </button>
+                                </div>
+                            @else
+                                <div style="display:flex; align-items:center; gap:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:0.78rem; color:#0369a1;">
+                                    <i class="fa-solid fa-circle-info" style="font-size:1.1rem; color:#0284c7;"></i>
+                                    <div>
+                                        <strong>No equipment assigned to this sub-meter yet.</strong>
+                                        <div style="font-size:0.72rem; color:#0284c7; margin-top:2px;">Use the formula below to calculate estimated monthly consumption of connected devices.</div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <strong style="display:block; font-size:0.78rem; color:#0f172a; margin-bottom:6px;">
+                                <i class="fa-solid fa-calculator" style="color:#d97706;"></i> Custom Connected Load Formula:
+                            </strong>
+                            <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                                <input type="number" id="edit_calc_kw" step="0.1" min="0" placeholder="kW"
+                                       oninput="previewCalcLoad('edit')"
+                                       style="width:65px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Total kW">
+                                <span style="font-size:0.74rem; color:#64748b;">kW ×</span>
+                                <input type="number" id="edit_calc_hrs" step="0.5" min="0" max="24" value="8" placeholder="hrs"
+                                       oninput="previewCalcLoad('edit')"
+                                       style="width:50px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Hours per day">
+                                <span style="font-size:0.74rem; color:#64748b;">h/d ×</span>
+                                <input type="number" id="edit_calc_days" step="1" min="1" max="31" value="22" placeholder="days"
+                                       oninput="previewCalcLoad('edit')"
+                                       style="width:50px; border:1px solid #cbd5e1; border-radius:6px; padding:6px; font-size:0.8rem;" title="Days per month">
+                                <span style="font-size:0.74rem; color:#64748b;">d/mo</span>
+                                <button type="button" onclick="applyCalcLoad('edit')"
+                                        style="background:#059669; color:#fff; border:none; border-radius:8px; padding:6px 12px; font-weight:800; font-size:0.76rem; cursor:pointer;">
+                                    Apply (<span id="edit_calc_load_val">0.00</span> kWh)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div style="grid-column:1/-1;">
                 <label style="display:block;font-weight:700;color:#334155;margin-bottom:6px;">Notes</label>
                 <textarea id="edit_notes" name="notes" rows="3" maxlength="2000"
-                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;"
+                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;box-sizing:border-box;"
                           placeholder="Optional notes">{{ old('notes') }}</textarea>
             </div>
 
-            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;">
-                <button type="button" onclick="closeEditLinkedSubmeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Cancel</button>
-                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;">Update Sub-meter</button>
+            <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+                <button type="button" onclick="closeEditLinkedSubmeterModal()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;">Cancel</button>
+                <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.25);">Update Sub-meter</button>
             </div>
         </form>
     </div>
@@ -1037,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', function() {
                           required
                           maxlength="500"
                           rows="4"
-                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;"
+                          style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;box-sizing:border-box;"
                           placeholder="Example: removed panel, duplicate entry, no longer in use">{{ old('archive_reason') }}</textarea>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px;">
@@ -1049,10 +1454,185 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
+const mainMeterBaselineKwh = {{ $mainMeterBaseline }};
+window.submeterBaselineDuration = window.submeterBaselineDuration || { add: 3, edit: 3 };
+
+function toggleSubmeterBaselineCalc(prefix) {
+    const box = document.getElementById(prefix + '_baseline_calc_box');
+    const text = document.getElementById(prefix + '_calc_btn_text');
+    if (!box) return;
+    const isHidden = box.style.display === 'none';
+    box.style.display = isHidden ? 'block' : 'none';
+    if (text) {
+        text.textContent = isHidden ? 'Close Calculator' : 'Baseline Calculator';
+    }
+    if (isHidden) {
+        previewCalcPct(prefix);
+        previewCalcLoad(prefix);
+        setSubmeterBaselineDuration(prefix, window.submeterBaselineDuration[prefix] || 3);
+    }
+}
+
+function switchSubmeterBaselineTab(prefix, tab) {
+    const tabs = ['pct', 'bills', 'equip'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(prefix + '_tab_btn_' + t);
+        const content = document.getElementById(prefix + '_tab_content_' + t);
+        if (btn) btn.classList.toggle('active', t === tab);
+        if (content) content.style.display = (t === tab) ? 'block' : 'none';
+    });
+}
+
+function setSubmeterBaselineDuration(prefix, duration, maybeValue) {
+    window.submeterBaselineDuration[prefix] = duration;
+
+    // Show/hide month cards: if 3, show 1 to 3, hide 4 to 6; if 6, show 1 to 6
+    for (let m = 1; m <= 6; m++) {
+        const card = document.getElementById(prefix + '_calc_card_m' + m);
+        if (card) {
+            card.style.display = (m <= duration) ? 'block' : 'none';
+        }
+    }
+
+    // Toggle active button styling
+    const btn3 = document.getElementById(prefix + '_dur_btn_3');
+    const btn6 = document.getElementById(prefix + '_dur_btn_6');
+    if (btn3 && btn6) {
+        btn3.classList.toggle('active', duration === 3);
+        btn6.classList.toggle('active', duration === 6);
+    }
+
+    // Recompute summary for visible cards
+    recomputeSubmeterBillsCalc(prefix);
+
+    // If a value is provided, apply to baseline input
+    if (maybeValue !== undefined && maybeValue !== null && maybeValue > 0) {
+        quickApplySubmeterAvg(prefix, maybeValue);
+    }
+}
+
+function validateSubmeterBaseline(prefix) {
+    const input = document.getElementById(prefix === 'add' ? 'add_baseline_kwh' : 'edit_baseline_kwh');
+    const warnBox = document.getElementById(prefix + '_baseline_warning');
+    const warnVal = document.getElementById(prefix + '_warn_val');
+    if (!input || !warnBox) return;
+
+    const val = parseFloat(input.value || '0');
+    if (mainMeterBaselineKwh > 0 && val >= mainMeterBaselineKwh && val > 0) {
+        if (warnVal) warnVal.textContent = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        warnBox.style.display = 'block';
+    } else {
+        warnBox.style.display = 'none';
+    }
+}
+
+function previewCalcPct(prefix) {
+    const pctInput = document.getElementById(prefix + '_calc_pct');
+    const previewSpan = document.getElementById(prefix + '_calc_pct_val');
+    if (!pctInput || !previewSpan) return;
+
+    const pct = parseFloat(pctInput.value || '0');
+    const calculated = (mainMeterBaselineKwh > 0 && pct > 0) ? (mainMeterBaselineKwh * (pct / 100)) : 0;
+    previewSpan.textContent = calculated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function applyCalcPct(prefix) {
+    const pctInput = document.getElementById(prefix + '_calc_pct');
+    const baseInput = document.getElementById(prefix === 'add' ? 'add_baseline_kwh' : 'edit_baseline_kwh');
+    if (!pctInput || !baseInput) return;
+
+    const pct = parseFloat(pctInput.value || '0');
+    if (pct > 0 && mainMeterBaselineKwh > 0) {
+        const calculated = mainMeterBaselineKwh * (pct / 100);
+        baseInput.value = calculated.toFixed(2);
+        validateSubmeterBaseline(prefix);
+    }
+}
+
+function recomputeSubmeterBillsCalc(prefix) {
+    const maxMonths = (window.submeterBaselineDuration && window.submeterBaselineDuration[prefix]) ? window.submeterBaselineDuration[prefix] : 3;
+    let count = 0;
+    let sum = 0;
+    for (let m = 1; m <= maxMonths; m++) {
+        const inp = document.getElementById(prefix + '_calc_m' + m);
+        if (inp) {
+            const val = parseFloat(inp.value || '0');
+            if (!isNaN(val) && val > 0) {
+                count++;
+                sum += val;
+            }
+        }
+    }
+    const avg = count > 0 ? (sum / count) : 0;
+    const countSpan = document.getElementById(prefix + '_calc_count');
+    const avgSpan = document.getElementById(prefix + '_calc_avg');
+    if (countSpan) countSpan.textContent = count;
+    if (avgSpan) avgSpan.textContent = avg.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kWh';
+}
+
+function applySubmeterBillsAvg(prefix) {
+    const maxMonths = (window.submeterBaselineDuration && window.submeterBaselineDuration[prefix]) ? window.submeterBaselineDuration[prefix] : 3;
+    let count = 0;
+    let sum = 0;
+    for (let m = 1; m <= maxMonths; m++) {
+        const inp = document.getElementById(prefix + '_calc_m' + m);
+        if (inp) {
+            const val = parseFloat(inp.value || '0');
+            if (!isNaN(val) && val > 0) {
+                count++;
+                sum += val;
+            }
+        }
+    }
+    if (count > 0) {
+        const avg = sum / count;
+        const baseInput = document.getElementById(prefix === 'add' ? 'add_baseline_kwh' : 'edit_baseline_kwh');
+        if (baseInput) {
+            baseInput.value = avg.toFixed(2);
+            validateSubmeterBaseline(prefix);
+        }
+    }
+}
+
+function quickApplySubmeterAvg(prefix, val) {
+    const baseInput = document.getElementById(prefix === 'add' ? 'add_baseline_kwh' : 'edit_baseline_kwh');
+    if (baseInput && val > 0) {
+        baseInput.value = parseFloat(val).toFixed(2);
+        validateSubmeterBaseline(prefix);
+    }
+}
+
+function previewCalcLoad(prefix) {
+    const kw = parseFloat(document.getElementById(prefix + '_calc_kw')?.value || '0');
+    const hrs = parseFloat(document.getElementById(prefix + '_calc_hrs')?.value || '8');
+    const days = parseFloat(document.getElementById(prefix + '_calc_days')?.value || '22');
+    const previewSpan = document.getElementById(prefix + '_calc_load_val');
+    if (!previewSpan) return;
+
+    const monthlyKwh = (kw > 0 && hrs > 0 && days > 0) ? (kw * hrs * days) : 0;
+    previewSpan.textContent = monthlyKwh.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function applyCalcLoad(prefix) {
+    const kw = parseFloat(document.getElementById(prefix + '_calc_kw')?.value || '0');
+    const hrs = parseFloat(document.getElementById(prefix + '_calc_hrs')?.value || '8');
+    const days = parseFloat(document.getElementById(prefix + '_calc_days')?.value || '22');
+    const baseInput = document.getElementById(prefix === 'add' ? 'add_baseline_kwh' : 'edit_baseline_kwh');
+    if (!baseInput) return;
+
+    if (kw > 0 && hrs > 0 && days > 0) {
+        const monthlyKwh = kw * hrs * days;
+        baseInput.value = monthlyKwh.toFixed(2);
+        validateSubmeterBaseline(prefix);
+    }
+}
+
 function openAddLinkedSubmeterModal() {
     const modal = document.getElementById('addLinkedSubmeterModal');
     if (!modal) return;
     modal.style.display = 'flex';
+    validateSubmeterBaseline('add');
+    setSubmeterBaselineDuration('add', 3);
 }
 
 function closeAddLinkedSubmeterModal() {
@@ -1076,6 +1656,8 @@ function openEditLinkedSubmeterModal(submeter) {
     document.getElementById('edit_baseline_kwh').value = submeter.baseline_kwh ?? '';
     document.getElementById('edit_notes').value = submeter.notes ?? '';
 
+    validateSubmeterBaseline('edit');
+    setSubmeterBaselineDuration('edit', 3);
     modal.style.display = 'flex';
 }
 

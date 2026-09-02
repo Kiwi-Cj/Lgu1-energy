@@ -134,8 +134,16 @@ test('user can export cash flow statement as csv', function () {
         'review_status' => 'approved',
     ]);
 
-    $response = $this->actingAs($admin)
-        ->get(route('modules.cashflow.export', ['facility_id' => $facility->id, 'year' => 2026]));
+    $authResponse = $this->actingAs($admin)
+        ->postJson(route('downloads.authorize'), [
+            'download_password' => 'password',
+            'target' => route('modules.cashflow.export', ['facility_id' => $facility->id, 'year' => 2026]),
+        ]);
+
+    $authResponse->assertOk()->assertJson(['success' => true]);
+    $redirectUrl = $authResponse->json('redirect_url');
+
+    $response = $this->actingAs($admin)->get($redirectUrl);
 
     $response->assertOk()
         ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');

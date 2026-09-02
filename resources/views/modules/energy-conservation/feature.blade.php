@@ -217,15 +217,37 @@
     .back-link:hover { text-decoration: underline; }
     .stat-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
     }
     .stat-card {
-        padding: 14px;
-        border-radius: 14px;
+        padding: 16px 18px;
+        border-radius: 16px;
         border: 1px solid #dbe4f0;
-        background: #f8fbff;
+        background: #ffffff;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .03);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        transition: .17s ease;
     }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .06);
+    }
+    .stat-card-icon {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.15rem;
+    }
+    .stat-card-icon.green { background: #dcfce7; color: #15803d; }
+    .stat-card-icon.blue { background: #dbeafe; color: #1d4ed8; }
+    .stat-card-icon.amber { background: #fef3c7; color: #b45309; }
+    .stat-card-body { min-width: 0; flex: 1; }
     .stat-label {
         color: #64748b;
         font-size: .72rem;
@@ -235,16 +257,149 @@
     }
     .stat-value {
         color: #0f172a;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
         font-weight: 900;
-        margin-top: 5px;
+        margin-top: 3px;
+        line-height: 1.2;
+    }
+    .stat-value.is-text {
+        font-size: 1rem;
+        color: #b45309;
     }
     .stat-sub {
         color: #64748b;
-        font-size: .82rem;
-        margin-top: 3px;
+        font-size: .74rem;
+        margin-top: 4px;
         line-height: 1.35;
     }
+
+    /* Empty Data Alert */
+    .empty-data-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+        margin-top: 4px;
+    }
+    .empty-data-alert-icon {
+        font-size: 1.35rem;
+        color: #d97706;
+        margin-top: 2px;
+    }
+    .empty-data-alert-content {
+        min-width: 0;
+        flex: 1;
+    }
+    .empty-data-alert-content h4 {
+        margin: 0 0 4px;
+        font-size: .88rem;
+        font-weight: 900;
+        color: #78350f;
+    }
+    .empty-data-alert-content p {
+        margin: 0;
+        font-size: .78rem;
+        line-height: 1.45;
+        color: #92400e;
+    }
+    .empty-data-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    .empty-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border-radius: 10px;
+        background: #fff;
+        border: 1px solid #d97706;
+        color: #b45309;
+        font-size: .74rem;
+        font-weight: 850;
+        text-decoration: none;
+        transition: .15s ease;
+    }
+    .empty-action-btn.primary {
+        background: #d97706;
+        color: #fff;
+    }
+    .empty-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(180,83,9,.15);
+    }
+
+    /* Preset Recommendation Chips */
+    .preset-chips-wrap {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+    }
+    .preset-chips-label {
+        font-size: .72rem;
+        font-weight: 900;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .preset-chips-label i { color: #0284c7; }
+    .preset-chips-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .preset-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 11px;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #1e293b;
+        font-size: .74rem;
+        font-weight: 750;
+        cursor: pointer;
+        transition: .16s ease;
+    }
+    .preset-chip:hover {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        color: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(37,99,235,.1);
+    }
+    .preset-chip i { color: #2563eb; }
+
+    /* Category Badges for Recommendations */
+    .rec-cat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: .65rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .rec-cat-badge.cat-ac { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .rec-cat-badge.cat-lighting { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .rec-cat-badge.cat-equipment { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    .rec-cat-badge.cat-maintenance { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+    .rec-cat-badge.cat-general { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
     .summary-period {
         display: flex;
         align-items: center;
@@ -1214,12 +1369,39 @@
     .checklist-filter { grid-template-columns: minmax(240px, 1fr) 220px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 14px; background: #f8fafc; }
     .checklist-filter .field select,
     .checklist-filter .field input { background: #fff; }
-    .checklist-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .checklist-overview-card { padding: 14px 15px; border: 1px solid #e2e8f0; border-radius: 13px; background: #fff; }
+    .checklist-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .checklist-overview-card {
+        padding: 16px 18px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .03);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        transition: .17s ease;
+    }
+    .checklist-overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .06);
+    }
+    .checklist-overview-icon {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.15rem;
+    }
+    .checklist-overview-icon.blue { background: #dbeafe; color: #1d4ed8; }
+    .checklist-overview-icon.amber { background: #fef3c7; color: #b45309; }
+    .checklist-overview-icon.indigo { background: #e0e7ff; color: #4338ca; }
+    .checklist-overview-body { min-width: 0; flex: 1; }
     .checklist-overview-label { color: #64748b; font-size: .68rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-    .checklist-overview-value { margin-top: 4px; color: #0f172a; font-size: 1.15rem; font-weight: 900; }
-    .checklist-overview-copy { margin-top: 3px; color: #64748b; font-size: .7rem; }
-    .checklist-completion-track { height: 6px; margin-top: 9px; overflow: hidden; border-radius: 999px; background: #e2e8f0; }
+    .checklist-overview-value { margin-top: 3px; color: #0f172a; font-size: 1.25rem; font-weight: 900; line-height: 1.2; }
+    .checklist-overview-copy { margin-top: 3px; color: #64748b; font-size: .72rem; }
+    .checklist-completion-track { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: #e2e8f0; }
     .checklist-completion-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2563eb, #16a34a); }
     .checklist-progress { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 12px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-weight: 800; }
     .checklist-task-form { padding: 20px; border: 1px solid #bfdbfe; border-radius: 16px; background: linear-gradient(135deg, #f8fbff 0%, #eff6ff 100%); box-shadow: 0 8px 20px rgba(37, 99, 235, .06); }
@@ -1227,19 +1409,173 @@
     .checklist-task-heading-icon { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border-radius: 12px; background: #dbeafe; color: #2563eb; font-size: 1rem; }
     .checklist-task-heading-title { color: #1e3a8a; font-size: .82rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
     .checklist-task-heading-copy { margin-top: 2px; color: #64748b; font-size: .76rem; }
-    .checklist-section { display: grid; gap: 9px; }
-    .checklist-section-title { color: #334155; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-    .checklist-item { display: flex; align-items: flex-start; gap: 11px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 13px; background: #fff; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
-    .checklist-item:hover { border-color: #93c5fd; box-shadow: 0 6px 16px rgba(37, 99, 235, .08); transform: translateY(-1px); }
-    .checklist-item:has(input:checked) { border-color: #86efac; background: #f0fdf4; }
-    .checklist-item input { width: 20px; height: 20px; margin-top: 1px; accent-color: #16a34a; }
-    .checklist-task-delete { min-width: 40px; min-height: 40px; margin-left: auto; padding: 8px 11px; color: #dc2626; }
-    .checklist-item-text { color: #1e293b; line-height: 1.4; }
-    .checklist-item-meta { margin-top: 3px; color: #64748b; font-size: .73rem; }
-    .checklist-empty { display: grid; justify-items: center; gap: 8px; padding: 34px 20px; border: 1px dashed #bfdbfe; border-radius: 16px; background: #f8fbff; text-align: center; }
-    .checklist-empty-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; background: #dbeafe; color: #2563eb; font-size: 1.1rem; }
-    .checklist-empty-title { color: #1e293b; font-size: .95rem; font-weight: 900; }
-    .checklist-empty-copy { max-width: 520px; color: #64748b; font-size: .82rem; line-height: 1.5; }
+    .checklist-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, .03);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .checklist-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+    .checklist-section-header.opening {
+        background: linear-gradient(135deg, #fffdf5 0%, #fef3c7 100%);
+        border-bottom: 1px solid #fde68a;
+    }
+    .checklist-section-header.closing {
+        background: linear-gradient(135deg, #f8faff 0%, #e0e7ff 100%);
+        border-bottom: 1px solid #c7d2fe;
+    }
+    .checklist-section-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .checklist-section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 1rem;
+    }
+    .checklist-section-icon.opening { background: #fde68a; color: #b45309; }
+    .checklist-section-icon.closing { background: #c7d2fe; color: #4338ca; }
+    .checklist-section-title {
+        font-size: 0.92rem;
+        font-weight: 850;
+        color: #0f172a;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .checklist-section-desc {
+        font-size: 0.74rem;
+        color: #64748b;
+        margin-top: 2px;
+    }
+    .checklist-count-badge {
+        font-size: .68rem;
+        font-weight: 850;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(15,23,42,.05);
+    }
+    .checklist-items-list {
+        display: grid;
+        gap: 9px;
+        padding: 16px 18px;
+    }
+    .checklist-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        background: #ffffff;
+        cursor: pointer;
+        transition: all .18s ease;
+    }
+    .checklist-item:hover {
+        border-color: #93c5fd;
+        background: #f8fbff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, .06);
+    }
+    .checklist-item.is-completed,
+    .checklist-item:has(input:checked) {
+        border-color: #86efac;
+        background: #f0fdf4;
+    }
+    .checklist-item-check-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        cursor: pointer;
+    }
+    .checklist-item-check-wrap input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: #16a34a;
+    }
+    .checklist-item-type-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: 0.88rem;
+        flex: 0 0 34px;
+    }
+    .checklist-item-type-icon.meter { background: #dbeafe; color: #1d4ed8; }
+    .checklist-item-type-icon.ac { background: #e0f2fe; color: #0284c7; }
+    .checklist-item-type-icon.light { background: #fef3c7; color: #d97706; }
+    .checklist-item-type-icon.equipment { background: #f3e8ff; color: #7e22ce; }
+    .checklist-item-type-icon.inspect { background: #ffedd5; color: #ea580c; }
+    .checklist-item-type-icon.general { background: #dcfce7; color: #166534; }
+    .checklist-item-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .checklist-item-text {
+        color: #1e293b;
+        font-size: 0.91rem;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    .checklist-item:has(input:checked) .checklist-item-text {
+        color: #15803d;
+    }
+    .checklist-item-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .checklist-task-delete {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #94a3b8;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: all .15s ease;
+        flex: 0 0 34px;
+        margin-left: auto;
+    }
+    .checklist-task-delete:hover {
+        background: #fee2e2;
+        color: #dc2626;
+        border-color: #fca5a5;
+    }
+    .checklist-empty { display: grid; justify-items: center; gap: 10px; padding: 38px 22px; border: 1px dashed #bfdbfe; border-radius: 18px; background: #f8fbff; text-align: center; }
+    .checklist-empty-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 16px; background: #dbeafe; color: #2563eb; font-size: 1.3rem; }
+    .checklist-empty-title { color: #1e293b; font-size: 1.05rem; font-weight: 900; }
+    .checklist-empty-copy { max-width: 540px; color: #64748b; font-size: .84rem; line-height: 1.5; }
+    .checklist-empty-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
     .checklist-task-modal { position: fixed; inset: 0; width: min(760px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; border: 0; border-radius: 18px; background: #fff; box-sizing: border-box; box-shadow: 0 24px 70px rgba(15, 23, 42, .3); overflow: auto; }
     .checklist-task-modal::backdrop { background: rgba(15, 23, 42, .6); backdrop-filter: blur(3px); }
     .checklist-task-modal .checklist-task-form { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
@@ -1551,20 +1887,29 @@
                     @endphp
                     <div class="checklist-overview" aria-label="Daily checklist summary">
                         <div class="checklist-overview-card">
-                            <div class="checklist-overview-label">Completion</div>
-                            <div class="checklist-overview-value">{{ $completedChecklistCount }} / {{ $checklistTotal }}</div>
-                            <div class="checklist-overview-copy">Tasks completed for this date</div>
-                            <div class="checklist-completion-track"><span style="width: {{ min(100, max(0, $checklistCompletionPercent)) }}%"></span></div>
+                            <div class="checklist-overview-icon blue"><i class="fa-solid fa-clipboard-check"></i></div>
+                            <div class="checklist-overview-body">
+                                <div class="checklist-overview-label">Completion</div>
+                                <div class="checklist-overview-value">{{ $completedChecklistCount }} / {{ $checklistTotal }}</div>
+                                <div class="checklist-overview-copy">Tasks completed for this date</div>
+                                <div class="checklist-completion-track"><span style="width: {{ min(100, max(0, $checklistCompletionPercent)) }}%"></span></div>
+                            </div>
                         </div>
                         <div class="checklist-overview-card">
-                            <div class="checklist-overview-label">Opening Routine</div>
-                            <div class="checklist-overview-value">{{ $openingChecklistCount }}</div>
-                            <div class="checklist-overview-copy">Assigned opening tasks</div>
+                            <div class="checklist-overview-icon amber"><i class="fa-solid fa-sun"></i></div>
+                            <div class="checklist-overview-body">
+                                <div class="checklist-overview-label">Opening Routine</div>
+                                <div class="checklist-overview-value">{{ $openingChecklistCount }}</div>
+                                <div class="checklist-overview-copy">Assigned opening tasks</div>
+                            </div>
                         </div>
                         <div class="checklist-overview-card">
-                            <div class="checklist-overview-label">Closing Routine</div>
-                            <div class="checklist-overview-value">{{ $closingChecklistCount }}</div>
-                            <div class="checklist-overview-copy">Assigned closing tasks</div>
+                            <div class="checklist-overview-icon indigo"><i class="fa-solid fa-moon"></i></div>
+                            <div class="checklist-overview-body">
+                                <div class="checklist-overview-label">Closing Routine</div>
+                                <div class="checklist-overview-value">{{ $closingChecklistCount }}</div>
+                                <div class="checklist-overview-copy">Assigned closing tasks</div>
+                            </div>
                         </div>
                     </div>
 
@@ -1651,35 +1996,70 @@
                         @else
                             <div class="form-grid">
                         @endif
-                            @foreach(['opening' => 'Opening Routine', 'closing' => 'Closing Routine'] as $checklistPeriod => $checklistTitle)
-                                <div class="checklist-section">
-                                    <div class="checklist-section-title">{{ $checklistTitle }}</div>
-                                    @foreach($dailyChecklist->where('period', $checklistPeriod) as $item)
-                                        @php $record = $item['record']; @endphp
-                                        <div class="checklist-item">
-                                            <input type="checkbox" name="tasks[{{ $item['key'] }}]" value="1" @checked((bool) ($record?->is_completed ?? false)) @disabled(!$canCompleteChecklist) onchange="this.form.requestSubmit()">
-                                            <span>
-                                                <span class="checklist-item-text">{{ $item['label'] }}</span>
-                                                @if($record?->completed_at)
-                                                    <span class="checklist-item-meta">Completed {{ $record->completed_at->format('M d, Y h:i A') }} by {{ $record->completedBy?->full_name ?? $record->completedBy?->username ?? 'user' }}</span>
-                                                @endif
-                                            </span>
-                                            @if($canManageChecklistTasks)
-                                                <button
-                                                    type="button"
-                                                    class="btn-main btn-secondary checklist-task-delete"
-                                                    title="Remove task"
-                                                    aria-label="Remove {{ $item['label'] }}"
-                                                    data-delete-checklist-task-url="{{ route('modules.energy-conservation.daily-checklist.tasks.destroy', $item['id']) }}"
-                                                ><i class="fa-solid fa-trash"></i></button>
-                                            @endif
+                            @foreach(['opening' => ['title' => 'Opening Routine', 'desc' => 'Morning facility walk-through & equipment verification', 'icon' => 'fa-sun', 'class' => 'opening'], 'closing' => ['title' => 'Closing Routine', 'desc' => 'End-of-day equipment power-down & security check', 'icon' => 'fa-moon', 'class' => 'closing']] as $checklistPeriod => $routineMeta)
+                                @php $periodItems = $dailyChecklist->where('period', $checklistPeriod); @endphp
+                                @continue($periodItems->isEmpty())
+                                <div class="checklist-section {{ $routineMeta['class'] }}">
+                                    <div class="checklist-section-header {{ $routineMeta['class'] }}">
+                                        <div class="checklist-section-title-wrap">
+                                            <div class="checklist-section-icon {{ $routineMeta['class'] }}">
+                                                <i class="fa-solid {{ $routineMeta['icon'] }}"></i>
+                                            </div>
+                                            <div>
+                                                <div class="checklist-section-title">{{ $routineMeta['title'] }}</div>
+                                                <div class="checklist-section-desc">{{ $routineMeta['desc'] }}</div>
+                                            </div>
                                         </div>
-                                    @endforeach
+                                        <span class="checklist-count-badge">{{ $periodItems->count() }} {{ Str::plural('task', $periodItems->count()) }}</span>
+                                    </div>
+                                    <div class="checklist-items-list">
+                                        @foreach($periodItems as $item)
+                                            @php
+                                                $record = $item['record'];
+                                                $isCompleted = (bool) ($record?->is_completed ?? false);
+                                                $itemTextLower = strtolower($item['label'] ?? '');
+                                                $typeIcon = match(true) {
+                                                    str_contains($itemTextLower, 'meter') => ['icon' => 'fa-gauge-high', 'class' => 'meter'],
+                                                    str_contains($itemTextLower, 'air-conditioning') || str_contains($itemTextLower, 'aircon') || str_contains($itemTextLower, 'celsius') || str_contains($itemTextLower, 'cooling') => ['icon' => 'fa-snowflake', 'class' => 'ac'],
+                                                    str_contains($itemTextLower, 'light') || str_contains($itemTextLower, 'lamp') || str_contains($itemTextLower, 'daylight') => ['icon' => 'fa-lightbulb', 'class' => 'light'],
+                                                    str_contains($itemTextLower, 'computer') || str_contains($itemTextLower, 'printer') || str_contains($itemTextLower, 'equipment') || str_contains($itemTextLower, 'charger') || str_contains($itemTextLower, 'appliance') || str_contains($itemTextLower, 'unplug') => ['icon' => 'fa-plug', 'class' => 'equipment'],
+                                                    str_contains($itemTextLower, 'inspect') || str_contains($itemTextLower, 'noise') || str_contains($itemTextLower, 'leak') || str_contains($itemTextLower, 'pump') || str_contains($itemTextLower, 'vibration') => ['icon' => 'fa-wrench', 'class' => 'inspect'],
+                                                    default => ['icon' => 'fa-circle-check', 'class' => 'general'],
+                                                };
+                                            @endphp
+                                            <div class="checklist-item {{ $isCompleted ? 'is-completed' : '' }}">
+                                                <label class="checklist-item-check-wrap">
+                                                    <input type="checkbox" name="tasks[{{ $item['key'] }}]" value="1" @checked($isCompleted) @disabled(!$canCompleteChecklist) onchange="this.form.requestSubmit()">
+                                                </label>
+                                                <div class="checklist-item-type-icon {{ $typeIcon['class'] }}">
+                                                    <i class="fa-solid {{ $typeIcon['icon'] }}"></i>
+                                                </div>
+                                                <div class="checklist-item-content">
+                                                    <div class="checklist-item-text">{{ $item['label'] }}</div>
+                                                    @if($record?->completed_at)
+                                                        <div class="checklist-item-meta">
+                                                            <i class="fa-solid fa-circle-check"></i>
+                                                            <span>Completed {{ $record->completed_at->format('M d, Y h:i A') }} by {{ $record->completedBy?->full_name ?? $record->completedBy?->username ?? 'user' }}</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                @if($canManageChecklistTasks)
+                                                    <button
+                                                        type="button"
+                                                        class="checklist-task-delete"
+                                                        title="Remove task"
+                                                        aria-label="Remove {{ $item['label'] }}"
+                                                        data-delete-checklist-task-url="{{ route('modules.energy-conservation.daily-checklist.tasks.destroy', $item['id']) }}"
+                                                    ><i class="fa-solid fa-trash"></i></button>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endforeach
                             @if($canCompleteChecklist)
                                 <div class="action-row">
-                                    <span class="help-text">Changes are saved automatically when a task is checked or unchecked.</span>
+                                    <span class="help-text"><i class="fa-solid fa-bolt" style="color:#2563eb;"></i> Changes are saved automatically when a task is checked or unchecked.</span>
                                 </div>
                                 </form>
                             @else
@@ -1702,15 +2082,25 @@
                                 @if(!$selectedFacility)
                                     Add or synchronize a facility before creating its daily energy checklist.
                                 @elseif($canManageChecklistTasks)
-                                    Add the first opening or closing task for {{ $selectedFacility->name }}.
+                                    Add the first opening or closing task for {{ $selectedFacility->name }}. You can also instantly load the standard 10-task LGU Energy Management routine below.
                                 @else
                                     An administrator or Energy Officer must assign checklist tasks to this facility first.
                                 @endif
                             </div>
                             @if($selectedFacility && $canManageChecklistTasks)
-                                <button class="btn-main" type="button" onclick="document.getElementById('checklistTaskModal')?.showModal()">
-                                    <i class="fa-solid fa-plus"></i> Add First Task
-                                </button>
+                                <div class="checklist-empty-actions">
+                                    <form method="POST" action="{{ route('modules.energy-conservation.daily-checklist.populate-default') }}">
+                                        @csrf
+                                        <input type="hidden" name="facility_id" value="{{ $selectedFacilityId }}">
+                                        <input type="hidden" name="return_date" value="{{ $checklistDate }}">
+                                        <button class="btn-main" type="submit" style="background:#059669;border-color:#059669;">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Load Standard LGU Routine (10 Tasks)
+                                        </button>
+                                    </form>
+                                    <button class="btn-main btn-secondary" type="button" onclick="document.getElementById('checklistTaskModal')?.showModal()">
+                                        <i class="fa-solid fa-plus"></i> Add First Task
+                                    </button>
+                                </div>
                             @endif
                         </div>
                     @endif
@@ -1851,34 +2241,63 @@
                     </div>
                     <div class="stat-grid">
                         <div class="stat-card">
-                            <div class="stat-label">{{ $selectedRecordContext ? 'Selected Facility' : 'Monitored Facilities' }}</div>
-                            <div class="stat-value">{{ number_format((int) ($recommendationTotals['monitored_facilities'] ?? 0)) }}</div>
-                            <div class="stat-sub">{{ $selectedRecordContext ? 'Facility covered by this recommendation.' : 'Facilities with records for '.($overview['periodLabel'] ?? 'the selected month').'.' }}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Actual kWh</div>
-                            <div class="stat-value">{{ number_format((float) ($recommendationTotals['actual_kwh'] ?? 0), 2) }}</div>
-                            <div class="stat-sub">{{ $selectedRecordContext ? 'Main-meter consumption for the selected facility and month.' : 'Total main-meter consumption for '.($overview['periodLabel'] ?? 'the selected month').'.' }}</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">
-                                Potential Avoidable Cost
-                                <span class="metric-info"
-                                      tabindex="0"
-                                      title="Estimated as max(0, actual kWh minus baseline kWh) multiplied by the applicable PHP/kWh rate for the selected month."
-                                      aria-label="Avoidable Cost formula: excess consumption above baseline multiplied by the applicable electricity rate.">
-                                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                                </span>
+                            <div class="stat-card-icon green"><i class="fa-solid fa-building"></i></div>
+                            <div class="stat-card-body">
+                                <div class="stat-label">{{ $selectedRecordContext ? 'Selected Facility' : 'Monitored Facilities' }}</div>
+                                <div class="stat-value">{{ number_format((int) ($recommendationTotals['monitored_facilities'] ?? 0)) }}</div>
+                                <div class="stat-sub">{{ $selectedRecordContext ? 'Facility covered by this recommendation.' : 'Facilities with records for '.($overview['periodLabel'] ?? 'the selected month').'.' }}</div>
                             </div>
-                            @if(($recommendationTotals['avoidable_cost'] ?? null) === null)
-                                <div class="stat-value is-text">Baseline required</div>
-                                <div class="stat-sub">Set an approved baseline before estimating excess cost.</div>
-                            @else
-                                <div class="stat-value">PHP {{ number_format((float) $recommendationTotals['avoidable_cost'], 2) }}</div>
-                                <div class="stat-sub">Estimated excess cost above the approved baseline for {{ $overview['periodLabel'] ?? 'the selected month' }}.</div>
-                            @endif
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon blue"><i class="fa-solid fa-bolt"></i></div>
+                            <div class="stat-card-body">
+                                <div class="stat-label">Actual kWh</div>
+                                <div class="stat-value">{{ number_format((float) ($recommendationTotals['actual_kwh'] ?? 0), 2) }}</div>
+                                <div class="stat-sub">{{ $selectedRecordContext ? 'Main-meter consumption for the selected facility and month.' : 'Total main-meter consumption for '.($overview['periodLabel'] ?? 'the selected month').'.' }}</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-icon amber"><i class="fa-solid fa-coins"></i></div>
+                            <div class="stat-card-body">
+                                <div class="stat-label">
+                                    Potential Avoidable Cost
+                                    <span class="metric-info"
+                                          tabindex="0"
+                                          title="Estimated as max(0, actual kWh minus baseline kWh) multiplied by the applicable PHP/kWh rate for the selected month."
+                                          aria-label="Avoidable Cost formula: excess consumption above baseline multiplied by the applicable electricity rate.">
+                                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                                    </span>
+                                </div>
+                                @if(($recommendationTotals['avoidable_cost'] ?? null) === null)
+                                    <div class="stat-value is-text">Baseline required</div>
+                                    <div class="stat-sub">Set an approved baseline before estimating excess cost.</div>
+                                @else
+                                    <div class="stat-value">PHP {{ number_format((float) $recommendationTotals['avoidable_cost'], 2) }}</div>
+                                    <div class="stat-sub">Estimated excess cost above the approved baseline for {{ $overview['periodLabel'] ?? 'the selected month' }}.</div>
+                                @endif
+                            </div>
                         </div>
                     </div>
+
+                    @if((int)($recommendationTotals['monitored_facilities'] ?? 0) === 0 || (float)($recommendationTotals['actual_kwh'] ?? 0) <= 0)
+                        <div class="empty-data-alert">
+                            <div class="empty-data-alert-icon"><i class="fa-solid fa-circle-info"></i></div>
+                            <div class="empty-data-alert-content">
+                                <h4>No Monthly Record for {{ $overview['periodLabel'] ?? 'Selected Month' }}</h4>
+                                <p>{{ $selectedFacility?->name ?? 'This facility' }} has no approved main-meter energy readings for {{ $overview['periodLabel'] ?? 'this month' }}.</p>
+                                <div class="empty-data-actions">
+                                    @if(!empty($latestRecordMonth) && $latestRecordMonth !== $selectedMonth)
+                                        <a class="empty-action-btn primary" href="{{ route('modules.energy-conservation.feature', ['feature' => 'energy-saving-tips', 'facility_id' => $selectedFacilityId, 'month' => $latestRecordMonth]) }}">
+                                            <i class="fa-regular fa-calendar-check"></i> View {{ $latestRecordMonthLabel }} Data
+                                        </a>
+                                    @endif
+                                    <a class="empty-action-btn" href="{{ route('facilities.monthly-records', ['facility' => $selectedFacilityId, 'year' => (int)substr($selectedMonth, 0, 4)]) }}">
+                                        <i class="fa-solid fa-plus"></i> Add Monthly Record
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     @if($featureSlug === 'energy-saving-tips' && $selectedRecordContext)
                         <div class="record-context" aria-label="Selected monthly record context">
@@ -2070,7 +2489,27 @@
                                                 </button>
                                                 <span class="ai-source-status" data-ai-source-status aria-live="polite"></span>
                                             </div>
-                                            <div class="tip-field-help">AI fills an editable draft only. Review and revise it before publishing.</div>
+                                            <div class="preset-chips-wrap">
+                                                <div class="preset-chips-label"><i class="fa-solid fa-bolt"></i> Quick Recommendation Presets:</div>
+                                                <div class="preset-chips-list">
+                                                    <button type="button" class="preset-chip" data-preset="Maintain air-conditioning thermostat strictly between 24°C and 26°C. Enforce a 4:30 PM cooling cutoff before 5:00 PM office closing.">
+                                                        <i class="fa-solid fa-snowflake"></i> AC 24°C–26°C Policy
+                                                    </button>
+                                                    <button type="button" class="preset-chip" data-preset="Maximize natural daylighting across perimeter corridors and offices. Enforce lighting switch-off during the 12:00 PM – 1:00 PM lunch break.">
+                                                        <i class="fa-solid fa-lightbulb"></i> Lunch Break Light Shutoff
+                                                    </button>
+                                                    <button type="button" class="preset-chip" data-preset="Ensure all desktop PCs, monitors, and photocopiers are shut down at 5:00 PM. Unplug water dispensers and pantry appliances to eliminate phantom loads.">
+                                                        <i class="fa-solid fa-plug"></i> IT & Phantom Load Cutoff
+                                                    </button>
+                                                    <button type="button" class="preset-chip" data-preset="Schedule routine cleaning of air-conditioning filters and condenser coils to restore cooling efficiency and reduce motor strain.">
+                                                        <i class="fa-solid fa-wrench"></i> AC Maintenance & Filter Clean
+                                                    </button>
+                                                    <button type="button" class="preset-chip" data-preset="Stagger the startup schedule of heavy mechanical motors and pumps to avoid high peak demand kW surcharges.">
+                                                        <i class="fa-solid fa-gauge-high"></i> Stagger Heavy Motor Loads
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="tip-field-help">Click a preset chip or use AI Draft to fill an editable recommendation before publishing.</div>
                                         </div>
                                         @if($isCprfIntegrationPeriod)
                                             <div class="tip-review-field">
@@ -2116,6 +2555,14 @@
                                         'dismissed' => 'is-dismissed',
                                         default => 'is-review',
                                     };
+                                    $recTextLower = strtolower($recommendation->engineer_recommendation ?? '');
+                                    $categoryTag = match(true) {
+                                        str_contains($recTextLower, 'aircon') || str_contains($recTextLower, 'air-conditioning') || str_contains($recTextLower, 'ac ') || str_contains($recTextLower, 'cooling') || str_contains($recTextLower, 'thermostat') => ['icon' => 'fa-snowflake', 'label' => 'Air-Conditioning', 'class' => 'cat-ac'],
+                                        str_contains($recTextLower, 'light') || str_contains($recTextLower, 'led') || str_contains($recTextLower, 'daylight') || str_contains($recTextLower, 'lamp') => ['icon' => 'fa-lightbulb', 'label' => 'Lighting', 'class' => 'cat-lighting'],
+                                        str_contains($recTextLower, 'computer') || str_contains($recTextLower, 'pc') || str_contains($recTextLower, 'printer') || str_contains($recTextLower, 'unplug') || str_contains($recTextLower, 'phantom') || str_contains($recTextLower, 'appliance') => ['icon' => 'fa-plug', 'label' => 'Equipment & IT', 'class' => 'cat-equipment'],
+                                        str_contains($recTextLower, 'clean') || str_contains($recTextLower, 'filter') || str_contains($recTextLower, 'coil') || str_contains($recTextLower, 'maintenance') || str_contains($recTextLower, 'leak') || str_contains($recTextLower, 'pump') => ['icon' => 'fa-wrench', 'label' => 'Maintenance', 'class' => 'cat-maintenance'],
+                                        default => ['icon' => 'fa-leaf', 'label' => 'Energy Efficiency', 'class' => 'cat-general'],
+                                    };
                                 @endphp
                                 <article class="added-recommendation-card recommendation-row"
                                          data-recommendation-dialog="recommendationModal{{ $recommendation->id }}"
@@ -2123,7 +2570,12 @@
                                     <div class="recommendation-row-icon"><i class="fa-solid fa-user-pen"></i></div>
                                     <div class="added-recommendation-content">
                                         <div class="added-recommendation-top">
-                                            <div class="added-recommendation-title">Energy Recommendation</div>
+                                            <div class="added-recommendation-title">
+                                                Energy Recommendation
+                                                <span class="rec-cat-badge {{ $categoryTag['class'] }}">
+                                                    <i class="fa-solid {{ $categoryTag['icon'] }}"></i> {{ $categoryTag['label'] }}
+                                                </span>
+                                            </div>
                                             <span class="recommendation-pill {{ $approvalClass }}">
                                                 {{ ucwords(str_replace('_', ' ', $recommendation->status)) }}
                                             </span>
@@ -2394,6 +2846,22 @@
                     button.innerHTML = originalHtml;
                     window.setTimeout(() => recommendationInput.focus(), 150);
                 }
+            });
+        });
+
+        document.querySelectorAll('.preset-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const recommendationInput = document.getElementById('manualRecommendationText');
+                const panel = document.getElementById('recommendationActionPanel');
+                if (panel) panel.open = true;
+                if (!recommendationInput) return;
+                const textToAdd = chip.dataset.preset || '';
+                if (recommendationInput.value.trim() === '') {
+                    recommendationInput.value = textToAdd;
+                } else {
+                    recommendationInput.value = recommendationInput.value.trim() + '\n' + textToAdd;
+                }
+                recommendationInput.focus();
             });
         });
 

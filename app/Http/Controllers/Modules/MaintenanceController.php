@@ -268,7 +268,7 @@ public function index()
     $user = auth()->user();
     $role = RoleAccess::normalize($user);
     $facilityIds = ($role === 'staff') ? $user->facilities->pluck('id')->toArray() : null;
-    $query = \App\Models\Maintenance::with('facility:id,name,image_path')
+    $query = \App\Models\Maintenance::with(['facility:id,name,image_path', 'energyIncident:id,affected_asset,category,status'])
         ->whereHas('facility')
         ->whereIn('issue_type', $this->maintenanceIssueTypes());
     if ($facilityIds) {
@@ -297,10 +297,17 @@ public function index()
     foreach ($maintenance as $row) {
         // Only count if facility is assigned (for staff)
         if ($facilityIds && !in_array($row->facility_id, $facilityIds)) continue;
-        if (in_array($row->maintenance_status, ['Pending','Ongoing'])) $needingCount++;
-        if ($row->maintenance_status === 'Pending') $pendingCount++;
-        if ($row->maintenance_status === 'Ongoing') $ongoingCount++;
-        if ($row->maintenance_status === 'Completed') $completedCount++;
+
+        $statusKey = strtolower(trim((string) $row->maintenance_status));
+        $isPending = in_array($statusKey, ['pending', 'open']);
+        $isOngoing = in_array($statusKey, ['ongoing', 'in progress', 'in-progress']);
+        $isCompleted = in_array($statusKey, ['completed', 'resolved']);
+
+        if ($isPending || $isOngoing) $needingCount++;
+        if ($isPending) $pendingCount++;
+        if ($isOngoing) $ongoingCount++;
+        if ($isCompleted) $completedCount++;
+
         $resolvedRemarks = $this->resolveMaintenanceRemarks(
             $row->remarks,
             $row->issue_type,
@@ -310,11 +317,25 @@ public function index()
         $scheduledDate = filled($row->scheduled_date) ? Carbon::parse($row->scheduled_date) : null;
         $isOverdue = $scheduledDate
             && $scheduledDate->isBefore(today())
-            && strtolower((string) $row->maintenance_status) !== 'completed';
+            && ! $isCompleted;
+
+        $affectedAsset = $row->energyIncident?->affected_asset ?: 'Main Utility Meter';
+
+        $actionHtml = $isPending
+            ? '<button class="btn btn-sm schedule-btn" style="background:#2563eb;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Schedule Maintenance"><i class="fa fa-calendar-plus"></i> Schedule</button>'
+            : ($isOngoing
+                ? (
+                    $role === 'energy_officer'
+                    ? '<button class="btn btn-sm schedule-btn" style="background:#0ea5e9;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Update Maintenance"><i class="fa fa-pen"></i> Update</button>'
+                    : '<button class="btn btn-sm schedule-btn" style="background:#059669;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Manage Maintenance"><i class="fa fa-screwdriver-wrench"></i> Manage</button>'
+                )
+                : '<button class="btn btn-sm schedule-btn" style="background:#64748b;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="View Details"><i class="fa fa-eye"></i> Details</button>');
 
         $maintenanceRows[] = [
             'id' => $row->id,
             'facility_id' => $row->facility_id,
+            'energy_incident_id' => $row->energy_incident_id,
+            'affected_asset' => $affectedAsset,
             'facility' => $row->facility?->name ?? '-',
             'facility_image_url' => $row->facility?->resolved_image_url,
             'issue_type' => $row->issue_type,
@@ -333,17 +354,25 @@ public function index()
                 : null,
             'photo_requirement' => $row->photo_requirement ?? 'Optional',
             'remarks' => $resolvedRemarks,
-            'action' => $row->maintenance_status === 'Pending'
-                ? '<button class="btn btn-sm" style="background:#2563eb;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Schedule Maintenance"><i class="fa fa-calendar-plus"></i> Schedule</button>'
-                : ($row->maintenance_status === 'Ongoing'
-                    ? (
-                        $role === 'energy_officer'
-                        ? '<button class="btn btn-sm" style="background:#0ea5e9;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Update Maintenance"><i class="fa fa-pen"></i> Update</button>'
-                        : '<button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;" title="Mark as Complete"><i class="fa fa-check-circle"></i> Complete</button>'
-                    )
-                    : '-')
+            'action' => $actionHtml,
         ];
     }
+
+    // Include completed tasks from history
+    $historyCountQuery = \App\Models\MaintenanceHistory::query();
+    if ($facilityIds) {
+        $historyCountQuery->whereIn('facility_id', $facilityIds);
+    }
+    if (request()->filled('facility_id')) {
+        $historyCountQuery->where('facility_id', request('facility_id'));
+    }
+    if (request()->filled('month')) {
+        $historyCountQuery->whereMonth('scheduled_date', request('month'));
+    }
+    if (request()->filled('maintenance_type')) {
+        $historyCountQuery->where('maintenance_type', request('maintenance_type'));
+    }
+    $completedCount += $historyCountQuery->count();
 
     // Optional: count re-flagged (facilities with completed + new pending)
     $completed = $maintenance->where('maintenance_status','Completed')->pluck('facility_id')->unique();
@@ -504,8 +533,11 @@ private function maintenancePriority(?string $issueType): string
 
     if (
         str_contains($issue, 'very high')
+        || str_contains($issue, 'peak load')
+        || str_contains($issue, 'high load')
         || str_contains($issue, 'leak')
         || str_contains($issue, 'not cooling')
+        || str_contains($issue, 'anomaly')
     ) {
         return 'High';
     }

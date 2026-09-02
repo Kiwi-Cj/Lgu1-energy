@@ -151,21 +151,22 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
             'meter_id' => 'Selected meter is not approved. Approve the meter first.',
         ]);
     }
-    if (strtolower((string) ($selectedMeter->meter_type ?? '')) !== 'main') {
+    $allowedTypes = config('features.submeters_enabled', false) ? ['main', 'sub'] : ['main'];
+    if (! in_array(strtolower((string) ($selectedMeter->meter_type ?? '')), $allowedTypes, true)) {
         return redirect()->back()->withInput()->withErrors([
             'meter_id' => 'Monthly Energy Records in this module accept Main Meter only.',
         ]);
     }
     $validated['meter_id'] = $selectedMeter->id;
 
-    // Prevent duplicate entry for the same facility, month/year, and main meter.
+    // Prevent duplicate entry for the same facility, month/year, and meter.
     $existsQuery = EnergyRecord::where('facility_id', $facilityId)
         ->where('month', $validated['month'])
         ->where('year', $validated['year'])
         ->where('meter_id', $validated['meter_id']);
     $exists = $existsQuery->exists();
     if ($exists) {
-        $targetLabel = 'the selected main meter';
+        $targetLabel = $selectedMeter->meter_type === 'sub' ? 'the selected sub-meter' : 'the selected main meter';
         return redirect()->back()->withInput()->withErrors(['duplicate' => "An energy record for {$targetLabel} and month/year already exists."]);
     }
 

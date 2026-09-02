@@ -210,6 +210,8 @@ class UmanMonthlyRecordSyncService
             ? (float) $row['current_reading_kwh']
             : (is_numeric($row['current_reading'] ?? null) ? (float) $row['current_reading'] : null);
 
+        $baseline = BaselineResolver::forFacility($facility, $meter);
+
         $record->fill([
             'facility_id' => $facility->id,
             'meter_id' => $meter->id,

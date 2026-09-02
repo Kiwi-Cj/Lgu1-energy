@@ -9,14 +9,23 @@
 
 @section('content')
 <style>
+    .maintenance-page {
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
     /* Report Card Container */
-    .report-card {
+    .report-card-container {
         background: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-        padding: 30px;
-        border: 1px solid #eef2f6;
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(31, 38, 135, 0.06);
+        padding: 26px 28px;
         margin-bottom: 2rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        box-sizing: border-box;
+        width: 100%;
+        border: 1px solid #e2e8f0;
     }
 
     /* Page Header */
@@ -24,18 +33,27 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 30px;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #f1f5f9;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 16px;
     }
     .page-header h2 {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: #1e293b;
+        font-size: 1.55rem;
+        font-weight: 850;
+        color: #0f172a;
         margin: 0;
-        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     .page-header h2 span { color: #2563eb; }
+    .page-header p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.88rem;
+    }
     .page-title-group {
         display: flex;
         align-items: center;
@@ -50,104 +68,127 @@
     .quick-add-btn,
     .history-link-btn {
         color: #fff;
-        padding: 10px 20px;
+        padding: 9px 16px;
         border-radius: 10px;
-        font-weight: 700;
+        font-weight: 750;
+        font-size: 0.84rem;
         border: none;
         cursor: pointer;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        transition: all 0.15s ease;
     }
-    .quick-add-btn { background: #10b981; }
-    .history-link-btn { background: #2563eb; }
-    .quick-add-btn:hover,
-    .history-link-btn:hover {
-        opacity: 0.92;
-        transform: translateY(-1px);
-    }
+    .quick-add-btn { background: #059669; box-shadow: 0 2px 6px rgba(5,150,105,0.2); }
+    .history-link-btn { background: #2563eb; box-shadow: 0 2px 6px rgba(37,99,235,0.2); }
+    .quick-add-btn:hover { background: #047857; transform: translateY(-1px); }
+    .history-link-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 
     /* Stats Grid */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: 1fr; }
     }
     .stat-box {
-        padding: 24px 20px;
+        background: #ffffff;
+        padding: 18px 20px;
         border-radius: 14px;
-        transition: transform 0.2s;
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
-    .stat-box:hover { transform: translateY(-3px); }
-    .stat-label { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-    .stat-value { font-size: 2.2rem; font-weight: 800; margin-top: 10px; color: #1e293b; }
-    .stat-needing { background: #fff1f2; }
-    .stat-needing .stat-label { color: #e11d48; }
-    .stat-pending { background: #fefce8; }
-    .stat-pending .stat-label { color: #a16207; }
-    .stat-ongoing { background: #f0fdf4; }
-    .stat-ongoing .stat-label { color: #15803d; }
-    .stat-completed { background: #ecfeff; }
-    .stat-completed .stat-label { color: #0e7490; }
+    .stat-box:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08); }
+    .stat-label { font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 8px; }
+    .stat-value { font-size: 1.85rem; font-weight: 850; margin-top: 8px; color: #0f172a; line-height: 1.1; }
+    .stat-needing { border-top: 4px solid #ef4444; }
+    .stat-needing .stat-label { color: #dc2626; }
+    .stat-pending { border-top: 4px solid #f59e0b; }
+    .stat-pending .stat-label { color: #d97706; }
+    .stat-ongoing { border-top: 4px solid #0284c7; }
+    .stat-ongoing .stat-label { color: #0284c7; }
+    .stat-completed { border-top: 4px solid #10b981; }
+    .stat-completed .stat-label { color: #059669; }
 
     /* Filter Section */
     .filter-section {
         background: #f8fafc;
-        padding: 20px;
-        border-radius: 12px;
+        padding: 16px 20px;
+        border-radius: 14px;
         border: 1px solid #e2e8f0;
-        margin-bottom: 25px;
+        margin-bottom: 24px;
         display: flex;
-        gap: 18px;
+        gap: 14px;
         flex-wrap: wrap;
         align-items: flex-end;
     }
-    .filter-group { display: flex; flex-direction: column; gap: 6px; }
-    .filter-group label { font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
+    .filter-group label { font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; }
     .filter-group select, .filter-group input {
         padding: 8px 12px;
         border-radius: 8px;
         border: 1px solid #cbd5e1;
-        min-width: 160px;
-        background: #fff;
-        font-size: 0.95rem;
+        min-width: 140px;
+        background: #ffffff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #0f172a;
+        box-sizing: border-box;
+    }
+    .filter-group select:focus, .filter-group input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .btn-filter {
-        background: linear-gradient(90deg,#2563eb,#6366f1);
+        background: #2563eb;
         color: #fff;
         border: none;
-        padding: 10px 25px;
+        padding: 8px 20px;
         border-radius: 8px;
-        font-weight: 700;
+        font-weight: 800;
+        font-size: 0.84rem;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all 0.15s ease;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
-    .btn-filter:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-filter:hover { background: #1d4ed8; transform: translateY(-1px); }
     .btn-filter.btn-reset {
-        background: #fff;
-        color: #334155;
+        background: #ffffff;
+        color: #475569;
         border: 1px solid #cbd5e1;
         text-decoration: none;
     }
+    .btn-filter.btn-reset:hover { background: #f1f5f9; }
 
     /* Maintenance work queue */
     .maintenance-table-card {
         overflow: hidden;
-        border: 1px solid #dbe5f2;
+        border: 1px solid #e2e8f0;
         border-radius: 16px;
         background: #fff;
-        box-shadow: 0 10px 28px rgba(15, 23, 42, .055);
+        box-shadow: 0 4px 16px rgba(15, 23, 42, .04);
     }
     .maintenance-table-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 18px;
-        padding: 18px 20px;
+        padding: 16px 20px;
         border-bottom: 1px solid #e7edf5;
         background: linear-gradient(135deg, #fbfdff 0%, #f5f8ff 100%);
     }
@@ -160,14 +201,14 @@
         font-weight: 850;
     }
     .maintenance-table-title-icon {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        flex: 0 0 38px;
+        flex: 0 0 36px;
         border: 1px solid #bfdbfe;
-        border-radius: 11px;
+        border-radius: 10px;
         background: #eff6ff;
         color: #2563eb;
     }
@@ -183,7 +224,7 @@
         gap: 7px;
         border: 1px solid #dbe5f2;
         border-radius: 999px;
-        padding: 7px 11px;
+        padding: 6px 12px;
         background: #fff;
         color: #475569;
         font-size: .78rem;
@@ -211,7 +252,7 @@
         top: 0;
         z-index: 5;
         padding: 12px 16px;
-        border-bottom: 1px solid #dbe5f2;
+        border-bottom: 1px solid #e2e8f0;
         background: #f8fafc;
         color: #64748b;
         font-size: .72rem;
@@ -221,10 +262,10 @@
         white-space: nowrap;
     }
     .maint-table td {
-        padding: 15px 16px;
-        border-bottom: 1px solid #edf2f7;
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f5f9;
         color: #334155;
-        font-size: .9rem;
+        font-size: .88rem;
         vertical-align: middle;
     }
     .maint-table tbody tr[data-maintenance-row] {
@@ -233,14 +274,14 @@
     }
     .maint-table tbody tr[data-maintenance-row]:hover {
         background: #f8fbff;
-        box-shadow: inset 3px 0 0 #93c5fd;
+        box-shadow: inset 3px 0 0 #3b82f6;
     }
-    .maint-table th:nth-child(1) { width: 18%; }
+    .maint-table th:nth-child(1) { width: 19%; }
     .maint-table th:nth-child(2) { width: 18%; }
     .maint-table th:nth-child(3) { width: 11%; }
     .maint-table th:nth-child(4) { width: 10%; }
     .maint-table th:nth-child(5) { width: 17%; }
-    .maint-table th:nth-child(6) { width: 16%; }
+    .maint-table th:nth-child(6) { width: 15%; }
     .maint-table th:nth-child(7) { width: 10%; }
     .maint-table .action-cell { text-align: center; }
     .table-toolbar {
@@ -248,7 +289,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 20px;
+        padding: 12px 20px;
         border-bottom: 1px solid #edf2f7;
         background: #fff;
         flex-wrap: wrap;
@@ -268,49 +309,71 @@
     .table-search {
         width: 100%;
         border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        padding: 10px 13px 10px 38px;
-        font-size: 0.92rem;
+        border-radius: 8px;
+        padding: 8px 12px 8px 36px;
+        font-size: 0.88rem;
         color: #1e293b;
         background: #fff;
     }
     .table-search:focus {
         outline: none;
-        border-color: #93c5fd;
-        box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.25);
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .result-count {
         color: #64748b;
-        font-size: 0.86rem;
+        font-size: 0.82rem;
         font-weight: 700;
     }
     .status-pill {
         display: inline-flex;
         align-items: center;
         border-radius: 999px;
-        gap: 7px;
-        padding: 5px 10px;
-        font-size: 0.76rem;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.74rem;
         font-weight: 800;
         border: 1px solid transparent;
     }
-    .status-pill.pending { background: #fffbeb; color: #a16207; border-color: #fde68a; }
-    .status-pill.ongoing { background: #ecfeff; color: #0e7490; border-color: #bae6fd; }
-    .status-pill.completed { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .status-pill.pending { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .status-pill.ongoing { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .status-pill.completed { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
     .status-pill::before {
         content: '';
-        width: 7px;
-        height: 7px;
-        flex: 0 0 7px;
+        width: 6px;
+        height: 6px;
+        flex: 0 0 6px;
         border-radius: 50%;
         background: currentColor;
-        box-shadow: 0 0 0 3px rgba(100, 116, 139, .12);
     }
-    .priority-pill { display:inline-flex; margin-top:5px; padding:3px 7px; border-radius:999px; font-size:.67rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
-    .priority-pill.normal { background:#f1f5f9; color:#475569; }
-    .priority-pill.high { background:#fff7ed; color:#c2410c; }
-    .priority-pill.critical { background:#fee2e2; color:#b91c1c; }
-    .overdue-label { display:block; margin-top:4px; color:#dc2626; font-size:.7rem; font-weight:800; white-space:nowrap; }
+    .priority-pill {
+        display: inline-flex;
+        margin-top: 4px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border: 1px solid transparent;
+    }
+    .priority-pill.normal { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .priority-pill.high { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+    .priority-pill.critical { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    .overdue-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fca5a5;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
     .proof-link { display:inline-flex; align-items:center; gap:5px; margin-top:5px; color:#2563eb; font-size:.72rem; font-weight:800; text-decoration:none; }
     .remarks-cell {
         color: #64748b;
@@ -320,13 +383,14 @@
         display: -webkit-box;
         overflow: hidden;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         line-height: 1.45;
+        font-size: 0.82rem;
     }
     .remarks-label {
         display:block;
-        margin-bottom:4px;
+        margin-bottom:3px;
         color:#94a3b8;
         font-size:.62rem;
         font-weight:850;
@@ -339,17 +403,20 @@
     .facility-name {
         display: block;
         color: #0f172a;
-        font-size: .94rem;
+        font-size: .92rem;
         font-weight: 850;
         line-height: 1.3;
     }
     .facility-record-id {
-        display: block;
-        margin-top: 4px;
+        display: inline-block;
+        margin-top: 3px;
         color: #94a3b8;
-        font-size: .69rem;
+        font-size: .67rem;
         font-weight: 750;
         letter-spacing: .03em;
+        background: #f1f5f9;
+        padding: 1px 6px;
+        border-radius: 4px;
     }
     .facility-identity {
         display: flex;
@@ -359,9 +426,9 @@
     }
     .facility-thumbnail,
     .facility-thumbnail-fallback {
-        width: 44px;
-        height: 44px;
-        flex: 0 0 44px;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
         border-radius: 10px;
         border: 1px solid #dbeafe;
     }
@@ -371,69 +438,281 @@
         gap: 9px;
     }
     .issue-cell-icon {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        flex: 0 0 30px;
-        border-radius: 9px;
+        flex: 0 0 28px;
+        border-radius: 8px;
         background: #fff7ed;
         color: #ea580c;
+        font-size: 0.8rem;
     }
-    .issue-name { color:#1e293b; font-weight:800; line-height:1.35; }
-    .date-stack { display:grid; gap:4px; color:#334155; font-weight:700; }
+    .issue-name { color:#1e293b; font-weight:800; line-height:1.35; font-size: 0.88rem; }
+    .date-stack { display:grid; gap:4px; color:#334155; font-weight:700; font-size: 0.84rem; }
     .date-stack > span { display:inline-flex; align-items:center; gap:6px; }
     .date-stack i { width:13px; color:#94a3b8; }
     .assignee-name { color:#64748b; font-size:.75rem; font-weight:700; }
-    .work-plan-stack { display:grid; gap:7px; }
-    .work-plan-item { display:flex; align-items:center; gap:8px; min-width:0; }
+    .work-plan-stack { display:grid; gap:4px; }
+    .work-plan-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 4px 7px;
+        min-width: 0;
+    }
     .work-plan-icon {
-        width:27px;
-        height:27px;
-        flex:0 0 27px;
+        width:22px;
+        height:22px;
+        flex:0 0 22px;
         display:grid;
         place-items:center;
-        border-radius:8px;
+        border-radius:6px;
         background:#eff6ff;
         color:#2563eb;
-        font-size:.7rem;
+        font-size:.65rem;
     }
     .work-plan-item.is-awaiting .work-plan-icon { background:#fff7ed; color:#d97706; }
     .work-plan-copy { min-width:0; display:grid; gap:1px; }
-    .work-plan-copy small { color:#94a3b8; font-size:.61rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
-    .work-plan-copy strong { overflow:hidden; color:#334155; font-size:.76rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+    .work-plan-copy small { color:#94a3b8; font-size:.58rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+    .work-plan-copy strong { overflow:hidden; color:#334155; font-size:.74rem; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
     .work-plan-item.is-awaiting .work-plan-copy strong { color:#92400e; }
     .schedule-btn {
-        min-width: 92px;
-        min-height: 36px;
+        min-width: 86px;
+        min-height: 34px;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 7px !important;
-        border: 1px solid #bfdbfe !important;
-        border-radius: 9px !important;
-        padding: 8px 10px !important;
-        background: #eff6ff !important;
-        color: #1d4ed8 !important;
+        gap: 6px !important;
+        border: 1px solid #2563eb !important;
+        border-radius: 8px !important;
+        padding: 7px 12px !important;
+        background: #2563eb !important;
+        color: #ffffff !important;
         font-size: .76rem !important;
         font-weight: 850 !important;
-        box-shadow: none !important;
+        box-shadow: 0 1px 3px rgba(37,99,235,0.2) !important;
+        transition: all 0.15s ease !important;
     }
-    .schedule-btn:hover { border-color:#93c5fd !important; background:#dbeafe !important; }
-    tr[data-status="ongoing"] .schedule-btn { border-color:#a7f3d0 !important; background:#ecfdf5 !important; color:#047857 !important; }
-    .facility-thumbnail {
-        display: block;
-        object-fit: cover;
-        background: #f1f5f9;
+    .schedule-btn:hover { border-color:#1d4ed8 !important; background:#1d4ed8 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 10px rgba(37,99,235,0.3) !important; }
+    tr[data-status="ongoing"] .schedule-btn { border-color:#059669 !important; background:#059669 !important; color:#ffffff !important; }
+    tr[data-status="ongoing"] .schedule-btn:hover { border-color:#047857 !important; background:#047857 !important; }
+
+    /* DARK MODE */
+    body.dark-mode .maintenance-page .report-card-container {
+        background: #111827;
+        border-color: #334155;
     }
-    .facility-thumbnail-fallback {
+    body.dark-mode .page-header { border-bottom-color: #334155; }
+    body.dark-mode .page-header h2 { color: #f8fafc; }
+    body.dark-mode .page-header p { color: #94a3b8; }
+    body.dark-mode .stat-box {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark-mode .stat-value { color: #f8fafc; }
+    body.dark-mode .filter-section {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark-mode .filter-group label { color: #94a3b8; }
+    body.dark-mode .filter-group select,
+    body.dark-mode .filter-group input {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    body.dark-mode .btn-filter.btn-reset {
+        background: #0f172a;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .maintenance-table-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark-mode .maintenance-table-head {
+        background: #0f172a;
+        border-bottom-color: #334155;
+    }
+    body.dark-mode .maintenance-table-title { color: #f8fafc; }
+    body.dark-mode .maintenance-table-subtitle { color: #94a3b8; }
+    body.dark-mode .table-count-chip {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .table-toolbar {
+        background: #1e293b;
+        border-bottom-color: #334155;
+    }
+    body.dark-mode .table-search {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    body.dark-mode .maint-table {
+        background: #1e293b;
+    }
+    body.dark-mode .maint-table th {
+        background: #0f172a;
+        border-bottom-color: #334155;
+        color: #94a3b8;
+    }
+    body.dark-mode .maint-table td {
+        border-bottom-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .maint-table tbody tr[data-maintenance-row]:hover {
+        background: #0f172a;
+    }
+    body.dark-mode .facility-name { color: #f8fafc; }
+    body.dark-mode .facility-record-id { background: #0f172a; color: #94a3b8; }
+    body.dark-mode .issue-name { color: #f8fafc; }
+    body.dark-mode .work-plan-item {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark-mode .work-plan-copy strong { color: #e2e8f0; }
+    body.dark-mode .remarks-cell { color: #94a3b8; }
+    body.dark-mode .maintenance-modal-tabs { background: #0f172a; border-bottom-color: #334155; }
+    body.dark-mode .modal-tab-btn { color: #94a3b8; }
+    body.dark-mode .modal-tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; background: #1e293b; }
+    body.dark-mode .maint-detail-hero { background: #0f172a; border-color: #334155; }
+    body.dark-mode .maint-detail-hero-info h4 { color: #f8fafc; }
+    body.dark-mode .maint-detail-hero-info p { color: #94a3b8; }
+    body.dark-mode .maint-detail-card { background: #0f172a; border-color: #334155; }
+    body.dark-mode .maint-detail-card label { color: #94a3b8; }
+    body.dark-mode .maint-detail-card span,
+    body.dark-mode .maint-detail-card strong { color: #f8fafc; }
+    body.dark-mode .maint-detail-remarks-block { background: #0f172a; border-color: #334155; color: #cbd5e1; border-left-color: #3b82f6; }
+
+    /* MODAL TABS */
+    .maintenance-modal-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 0 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .modal-tab-btn {
+        padding: 11px 18px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-size: 0.84rem;
+        font-weight: 800;
+        color: #64748b;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s ease;
+    }
+    .modal-tab-btn.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+        background: #ffffff;
+    }
+    .modal-tab-btn:hover:not(.active) {
+        color: #1e293b;
+    }
+
+    /* DETAILS VIEW CARDS */
+    .maintenance-details-view {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px 0 24px;
+    }
+    .maint-detail-hero {
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: #eff6ff;
-        color: #60a5fa;
+        justify-content: space-between;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        gap: 14px;
+        flex-wrap: wrap;
     }
+    .maint-detail-hero-info h4 {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 850;
+        color: #0f172a;
+    }
+    .maint-detail-hero-info p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .maint-detail-hero-chips {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .maint-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    @media (max-width: 640px) {
+        .maint-detail-grid { grid-template-columns: 1fr; }
+    }
+    .maint-detail-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .maint-detail-card label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .maint-detail-card span,
+    .maint-detail-card strong {
+        font-size: 0.88rem;
+        font-weight: 750;
+        color: #0f172a;
+    }
+    .maint-detail-remarks-block {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #2563eb;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 0.86rem;
+        color: #334155;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .maint-detail-proof-box {
+        margin-top: 10px;
+    }
+    .maint-detail-proof-box img {
+        max-height: 160px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        object-fit: cover;
+    }
+
     .facility-issues-toggle {
         display: inline-flex;
         align-items: center;
@@ -1042,17 +1321,17 @@
 @endif
 
 <div class="maintenance-page">
-<div class="report-card">
+<div class="report-card-container">
     <div class="page-header">
         <div class="page-title-group">
-            <h2>Facilities Needing <span>Maintenance</span></h2>
+            <div>
+                <h2><i class="fa-solid fa-screwdriver-wrench" style="color: #2563eb;"></i> Facilities Needing <span>Maintenance</span></h2>
+                <p>Track equipment defects, schedule corrective tasks, and monitor CIMM maintenance work orders.</p>
+            </div>
         </div>
         <div class="header-actions">
-             <button id="addMaintenanceBtn" class="btn btn-primary quick-add-btn">
-                <i class="fa fa-plus"></i> Add Manual
-            </button>
             <a href="{{ route('maintenance.history') }}" class="history-link-btn">
-                <i class="fa fa-history"></i> History
+                <i class="fa-solid fa-clock-rotate-left"></i> History
             </a>
         </div>
     </div>
@@ -1183,6 +1462,8 @@
                     data-maintenance-item
                     data-facility_name="{{ $row['facility'] ?? '' }}"
                     data-issue_type="{{ $row['issue_type'] ?? '' }}"
+                    data-affected_asset="{{ $row['affected_asset'] ?? 'Main Utility Meter' }}"
+                    data-incident_id="{{ $row['energy_incident_id'] ?? '' }}"
                     data-remarks="{{ $row['remarks'] ?? '' }}"
                     data-trigger_month="{{ $row['trigger_month'] ?? '' }}"
                     data-status="{{ $statusClass }}"
@@ -1283,6 +1564,8 @@
                                         data-id="{{ $issue['id'] }}"
                                         data-facility_name="{{ $issue['facility'] ?? '' }}"
                                         data-issue_type="{{ $issue['issue_type'] ?? '' }}"
+                                        data-affected_asset="{{ $issue['affected_asset'] ?? 'Main Utility Meter' }}"
+                                        data-incident_id="{{ $issue['energy_incident_id'] ?? '' }}"
                                         data-trigger_month="{{ $issue['trigger_month'] ?? '' }}"
                                         data-maintenance_type="{{ $issue['maintenance_type'] ?? '' }}"
                                         data-scheduled_date="{{ $issue['scheduled_date'] ?? '' }}"
@@ -1327,157 +1610,240 @@
         <div class="maintenance-modal-header">
             <div class="maintenance-modal-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
             <div class="maintenance-modal-heading">
-                <h3 id="modalTitle" class="maintenance-modal-title">Schedule Maintenance</h3>
-                <p class="maintenance-modal-subtitle">Set the work schedule, assignee, requirements, and completion status.</p>
+                <h3 id="modalTitle" class="maintenance-modal-title">Maintenance Task Details</h3>
+                <p id="modalSubtitle" class="maintenance-modal-subtitle">Review complete equipment defect details, work plan, and assignment.</p>
             </div>
             <button type="button" onclick="closeScheduleModal()" class="maintenance-modal-close" aria-label="Close maintenance form"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="maintenance-modal-body">
-            <form id="scheduleForm" class="maintenance-form">
-                <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
 
-                <div class="maintenance-form-section-title"><i class="fa-solid fa-clipboard-list"></i> Work Details</div>
-                <div class="field-group">
-                    <label for="modalFacility" class="field-label">Facility <span class="field-required">Required</span></label>
-                    <select id="modalFacility" class="field-control">
-                        <option value="" disabled selected>Select Facility</option>
-                        @foreach($facilities as $facility)
-                            <option value="{{ $facility->id }}">{{ $facility->name }}</option>
-                        @endforeach
-                    </select>
+        <div class="maintenance-modal-tabs">
+            <button type="button" id="tabDetailsBtn" class="modal-tab-btn active" onclick="switchMaintenanceModalTab('details')">
+                <i class="fa-solid fa-file-lines"></i> Task Details
+            </button>
+            @if($userRole !== 'staff')
+            <button type="button" id="tabScheduleBtn" class="modal-tab-btn" onclick="switchMaintenanceModalTab('schedule')">
+                <i class="fa-solid fa-pen-to-square"></i> Schedule & Edit
+            </button>
+            @endif
+        </div>
+
+        <div class="maintenance-modal-body">
+            {{-- VIEW 1: READ-ONLY TASK DETAILS INSPECTION --}}
+            <div id="modalDetailsView" class="maintenance-details-view">
+                <div class="maint-detail-hero">
+                    <div class="maint-detail-hero-info">
+                        <h4 id="detailFacilityName">-</h4>
+                        <p id="detailPeriodText">-</p>
+                    </div>
+                    <div class="maint-detail-hero-chips">
+                        <span id="detailStatusPill" class="status-pill pending">Pending</span>
+                        <span id="detailPriorityPill" class="priority-pill normal">Normal priority</span>
+                    </div>
                 </div>
 
-                <div class="maintenance-form-grid">
+                <div class="maint-detail-grid">
+                    <div class="maint-detail-card">
+                        <label><i class="fa-solid fa-triangle-exclamation"></i> Issue Type</label>
+                        <strong id="detailIssueType">-</strong>
+                    </div>
+                    <div class="maint-detail-card">
+                        <label><i class="fa-solid fa-bolt"></i> Affected Meter / Panel</label>
+                        <strong id="detailAffectedAsset">Main Utility Meter</strong>
+                    </div>
+                    <div class="maint-detail-card">
+                        <label><i class="fa-solid fa-screwdriver-wrench"></i> Maintenance Type</label>
+                        <strong id="detailMaintType">Corrective</strong>
+                    </div>
+                    <div class="maint-detail-card">
+                        <label><i class="fa-regular fa-calendar-check"></i> Work Schedule</label>
+                        <strong id="detailScheduleDate">Awaiting CIMM Schedule</strong>
+                    </div>
+                    <div class="maint-detail-card">
+                        <label><i class="fa-regular fa-user"></i> Assigned Technician</label>
+                        <strong id="detailAssignee">Awaiting CIMM Assignment</strong>
+                    </div>
+                    <div class="maint-detail-card">
+                        <label><i class="fa-solid fa-link"></i> Source / Incident</label>
+                        <strong id="detailIncidentLink">CIMM Work Order</strong>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="maintenance-form-section-title"><i class="fa-solid fa-comment-dots"></i> Latest Technical Remarks & Work Notes</div>
+                    <div id="detailRemarksText" class="maint-detail-remarks-block">No remarks provided.</div>
+                </div>
+
+                <div id="detailProofContainer" style="display:none;">
+                    <div class="maintenance-form-section-title"><i class="fa-solid fa-image"></i> Completion Evidence / Proof Photo</div>
+                    <div class="maint-detail-proof-box">
+                        <a id="detailProofLink" href="#" target="_blank" rel="noopener">
+                            <img id="detailProofImg" src="" alt="Proof photo">
+                        </a>
+                    </div>
+                </div>
+
+                <div id="detailCompletionBadge" style="display:none;" class="assignment-note">
+                    <i class="fa-solid fa-circle-check" style="color:#059669;"></i>
+                    <span id="detailCompletionText" style="color:#065f46; font-weight:700;">Task Completed</span>
+                </div>
+
+                <div class="maintenance-modal-actions">
+                    @if($userRole !== 'staff')
+                    <button type="button" onclick="switchMaintenanceModalTab('schedule')" class="maintenance-btn-save">
+                        <i class="fa-solid fa-pen-to-square"></i> Update Schedule / Edit
+                    </button>
+                    @endif
+                    <button type="button" onclick="closeScheduleModal()" class="maintenance-btn-cancel">Close</button>
+                </div>
+            </div>
+
+            {{-- VIEW 2: SCHEDULE & EDIT FORM --}}
+            <div id="modalScheduleView" class="maintenance-schedule-view" style="display:none;">
+                <form id="scheduleForm" class="maintenance-form">
+                    <input type="hidden" name="maintenance_id" id="modalMaintenanceId">
+
+                    <div class="maintenance-form-section-title"><i class="fa-solid fa-clipboard-list"></i> Work Details</div>
                     <div class="field-group">
-                        <label for="modalTriggerMonth" class="field-label">Trigger Month and Year <span class="field-required">Required</span></label>
-                        <div class="trigger-grid">
-                            <select id="modalTriggerMonth" class="field-control">
-                                @foreach(range(1,12) as $m)
-                                    <option value="{{ str_pad($m,2,'0',STR_PAD_LEFT) }}">{{ date('F', mktime(0,0,0,$m,1)) }}</option>
-                                @endforeach
+                        <label for="modalFacility" class="field-label">Facility <span class="field-required">Required</span></label>
+                        <select id="modalFacility" class="field-control">
+                            <option value="" disabled selected>Select Facility</option>
+                            @foreach($facilities as $facility)
+                                <option value="{{ $facility->id }}">{{ $facility->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="maintenance-form-grid">
+                        <div class="field-group">
+                            <label for="modalTriggerMonth" class="field-label">Trigger Month and Year <span class="field-required">Required</span></label>
+                            <div class="trigger-grid">
+                                <select id="modalTriggerMonth" class="field-control">
+                                    @foreach(range(1,12) as $m)
+                                        <option value="{{ str_pad($m,2,'0',STR_PAD_LEFT) }}">{{ date('F', mktime(0,0,0,$m,1)) }}</option>
+                                    @endforeach
+                                </select>
+                                <select id="modalTriggerYear" class="field-control">
+                                    @php $currentYear = date('Y'); @endphp
+                                    @for($y = $currentYear-2; $y <= $currentYear+2; $y++)
+                                        <option value="{{ $y }}" @if($y==$currentYear) selected @endif>{{ $y }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
+                            <select id="modalIssueType" class="field-control">
+                                <option value="" disabled selected>Select Energy Issue</option>
+                                <option value="High Energy Consumption">High Energy Consumption</option>
+                                <option value="Critical Usage Spike (>20% Baseline)">Critical Usage Spike (&gt;20% Baseline)</option>
+                                <option value="Increasing Consumption Trend">Increasing Consumption Trend</option>
+                                <option value="Off-Hours / Phantom Load Waste">Off-Hours / Phantom Load Waste</option>
+                                <option value="Peak Demand Load Surge">Peak Demand Load Surge</option>
+                                <option value="Main Meter vs Submeter Discrepancy">Main Meter vs Submeter Discrepancy</option>
+                                <option value="Abnormal Consumption Drop / Meter Stoppage">Abnormal Consumption Drop / Meter Stoppage</option>
+                                <option value="Energy Audit &amp; Verification Check">Energy Audit &amp; Verification Check</option>
                             </select>
-                            <select id="modalTriggerYear" class="field-control">
-                                @php $currentYear = date('Y'); @endphp
-                                @for($y = $currentYear-2; $y <= $currentYear+2; $y++)
-                                    <option value="{{ $y }}" @if($y==$currentYear) selected @endif>{{ $y }}</option>
-                                @endfor
+                        </div>
+                    </div>
+
+                    <div class="maintenance-form-grid">
+                        <div class="field-group">
+                            <label for="modalMaintType" class="field-label">Maintenance Type <span class="field-required">Required</span></label>
+                            <select id="modalMaintType" class="field-control">
+                                <option value="Preventive">Preventive</option>
+                                <option value="Corrective">Corrective</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="modalScheduleDate" class="field-label">Scheduled Date <span class="field-optional">Optional</span></label>
+                            <input type="date" id="modalScheduleDate" class="field-control">
+                            <small class="field-help">CIMM may set the schedule later when left blank.</small>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-form-section-title"><i class="fa-solid fa-user-gear"></i> Assignment</div>
+                    <div class="field-group">
+                        <label for="modalAssignmentMode" class="field-label">Assignment Method</label>
+                        <select id="modalAssignmentMode" class="field-control">
+                            <option value="cimm">Let CIMM assign (Recommended)</option>
+                            <option value="manual">Assign now</option>
+                        </select>
+                        <div id="cimmAssignmentNote" class="assignment-note">
+                            <i class="fa-solid fa-people-arrows"></i>
+                            <span><strong>Forward without an assignee.</strong> CIMM can select the responsible person and sync the assignment back here.</span>
+                        </div>
+                    </div>
+                    <div class="maintenance-form-grid" id="manualAssignmentFields">
+                        <div class="field-group">
+                            <label for="modalAssigneeRole" class="field-label">Assignee Category <span class="field-required">Required when assigning</span></label>
+                            <select id="modalAssigneeRole" class="field-control">
+                                <option value="">Select category</option>
+                                <option value="engineer">Engineer</option>
+                                <option value="energy_officer">Energy Officer</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="modalAssignedTo" class="field-label">Assigned To <span class="field-required">Required when assigning</span></label>
+                            <select id="modalAssignedTo" class="field-control" disabled>
+                                <option value="">Select a category first</option>
+                                @foreach($assignableUsers ?? collect() as $assignableUser)
+                                    <option value="{{ $assignableUser['name'] }}" data-role="{{ $assignableUser['role'] }}">
+                                        {{ $assignableUser['name'] }}{{ ($assignableUser['is_self'] ?? false) ? ' (You)' : '' }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
 
                     <div class="field-group">
-                        <label for="modalIssueType" class="field-label">Issue Type <span class="field-required">Required</span></label>
-                        <select id="modalIssueType" class="field-control">
-                            <option value="" disabled selected>Select Issue</option>
-                            <option value="High Consumption / Inefficient">High Consumption / Inefficient</option>
-                            <option value="Trend Increasing">Trend Increasing</option>
-                            <option value="Electrical - Power Outage">Electrical - Power Outage</option>
-                            <option value="Electrical - Circuit Overload">Electrical - Circuit Overload</option>
-                            <option value="Lighting - Bulb Replacement">Lighting - Bulb Replacement</option>
-                            <option value="Lighting - Fixture Repair">Lighting - Fixture Repair</option>
-                            <option value="Aircon - Not Cooling">Aircon - Not Cooling</option>
-                            <option value="Aircon - Cleaning Needed">Aircon - Cleaning Needed</option>
-    
-                        </select>
-                    </div>
-                </div>
-
-                <div class="maintenance-form-grid">
-                    <div class="field-group">
-                        <label for="modalMaintType" class="field-label">Maintenance Type <span class="field-required">Required</span></label>
-                        <select id="modalMaintType" class="field-control">
-                            <option value="Preventive">Preventive</option>
-                            <option value="Corrective">Corrective</option>
-                        </select>
+                        <label for="modalRemarks" class="field-label">Remarks <span class="field-optional">Optional</span></label>
+                        <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
+                        <small class="field-help">Useful for the exact location, affected equipment, access instructions, or safety concerns.</small>
                     </div>
 
-                    <div class="field-group">
-                        <label for="modalScheduleDate" class="field-label">Scheduled Date <span class="field-optional">Optional</span></label>
-                        <input type="date" id="modalScheduleDate" class="field-control">
-                        <small class="field-help">CIMM may set the schedule later when left blank.</small>
-                    </div>
-                </div>
-
-                <div class="maintenance-form-section-title"><i class="fa-solid fa-user-gear"></i> Assignment</div>
-                <div class="field-group">
-                    <label for="modalAssignmentMode" class="field-label">Assignment Method</label>
-                    <select id="modalAssignmentMode" class="field-control">
-                        <option value="cimm">Let CIMM assign (Recommended)</option>
-                        <option value="manual">Assign now</option>
-                    </select>
-                    <div id="cimmAssignmentNote" class="assignment-note">
-                        <i class="fa-solid fa-people-arrows"></i>
-                        <span><strong>Forward without an assignee.</strong> CIMM can select the responsible person and sync the assignment back here.</span>
-                    </div>
-                </div>
-                <div class="maintenance-form-grid" id="manualAssignmentFields">
-                    <div class="field-group">
-                        <label for="modalAssigneeRole" class="field-label">Assignee Category <span class="field-required">Required when assigning</span></label>
-                        <select id="modalAssigneeRole" class="field-control">
-                            <option value="">Select category</option>
-                            <option value="engineer">Engineer</option>
-                            <option value="energy_officer">Energy Officer</option>
-                        </select>
+                    <div class="maintenance-form-section-title"><i class="fa-solid fa-circle-check"></i> Completion &amp; Evidence</div>
+                    <div class="maintenance-form-grid">
+                        <div class="field-group">
+                            <label for="modalPhotoRequirement" class="field-label">Completion Photo</label>
+                            <select id="modalPhotoRequirement" class="field-control">
+                                <option value="Optional">Optional</option>
+                                <option value="Required">Required</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label for="modalProofPhoto" class="field-label">Proof Photo <span class="field-optional">Optional until completion</span></label>
+                            <input type="file" id="modalProofPhoto" class="field-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                            <a id="modalExistingProof" class="proof-link" href="#" target="_blank" rel="noopener" style="display:none;"><i class="fa fa-image"></i> View existing proof</a>
+                        </div>
                     </div>
 
-                    <div class="field-group">
-                        <label for="modalAssignedTo" class="field-label">Assigned To <span class="field-required">Required when assigning</span></label>
-                        <select id="modalAssignedTo" class="field-control" disabled>
-                            <option value="">Select a category first</option>
-                            @foreach($assignableUsers ?? collect() as $assignableUser)
-                                <option value="{{ $assignableUser['name'] }}" data-role="{{ $assignableUser['role'] }}">
-                                    {{ $assignableUser['name'] }}{{ ($assignableUser['is_self'] ?? false) ? ' (You)' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                    <div class="maintenance-form-grid">
+                        <div class="field-group">
+                            <label for="modalStatus" class="field-label">Status <span class="field-required">Required</span></label>
+                            <select id="modalStatus" class="field-control">
+                                <option value="Pending">Pending</option>
+                                <option value="Ongoing">Ongoing</option>
+                                @if($userRole !== 'energy_officer')
+                                <option value="Completed">Completed</option>
+                                @endif
+                            </select>
+                        </div>
 
-                <div class="field-group">
-                    <label for="modalRemarks" class="field-label">Remarks <span class="field-optional">Optional</span></label>
-                    <textarea id="modalRemarks" class="field-control" placeholder="Add notes or maintenance details..."></textarea>
-                    <small class="field-help">Useful for the exact location, affected equipment, access instructions, or safety concerns.</small>
-                </div>
-
-                <div class="maintenance-form-section-title"><i class="fa-solid fa-circle-check"></i> Completion &amp; Evidence</div>
-                <div class="maintenance-form-grid">
-                    <div class="field-group">
-                        <label for="modalPhotoRequirement" class="field-label">Completion Photo</label>
-                        <select id="modalPhotoRequirement" class="field-control">
-                            <option value="Optional">Optional</option>
-                            <option value="Required">Required</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label for="modalProofPhoto" class="field-label">Proof Photo <span class="field-optional">Optional until completion</span></label>
-                        <input type="file" id="modalProofPhoto" class="field-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-                        <a id="modalExistingProof" class="proof-link" href="#" target="_blank" rel="noopener" style="display:none;"><i class="fa fa-image"></i> View existing proof</a>
-                    </div>
-                </div>
-
-                <div class="maintenance-form-grid">
-                    <div class="field-group">
-                        <label for="modalStatus" class="field-label">Status <span class="field-required">Required</span></label>
-                        <select id="modalStatus" class="field-control">
-                            <option value="Pending">Pending</option>
-                            <option value="Ongoing">Ongoing</option>
-                            @if($userRole !== 'energy_officer')
-                            <option value="Completed">Completed</option>
-                            @endif
-                        </select>
+                        <div class="field-group">
+                            <label for="modalCompletedDate" class="field-label">Completed Date <span class="field-optional">Required only when completed</span></label>
+                            <input type="date" id="modalCompletedDate" class="field-control" disabled>
+                        </div>
                     </div>
 
-                    <div class="field-group">
-                        <label for="modalCompletedDate" class="field-label">Completed Date <span class="field-optional">Required only when completed</span></label>
-                        <input type="date" id="modalCompletedDate" class="field-control" disabled>
+                    <div class="maintenance-modal-actions">
+                        <button type="button" onclick="switchMaintenanceModalTab('details')" class="maintenance-btn-cancel"><i class="fa-solid fa-arrow-left"></i> Back to Details</button>
+                        <button type="submit" class="maintenance-btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Maintenance</button>
                     </div>
-                </div>
-
-                <div class="maintenance-modal-actions">
-                    <button type="button" onclick="closeScheduleModal()" class="maintenance-btn-cancel">Cancel</button>
-                    <button type="submit" class="maintenance-btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Maintenance</button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -1652,84 +2018,219 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    function switchMaintenanceModalTab(tab) {
+        const tabDetailsBtn = document.getElementById('tabDetailsBtn');
+        const tabScheduleBtn = document.getElementById('tabScheduleBtn');
+        const modalDetailsView = document.getElementById('modalDetailsView');
+        const modalScheduleView = document.getElementById('modalScheduleView');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+
+        if (tab === 'schedule') {
+            if (tabDetailsBtn) tabDetailsBtn.classList.remove('active');
+            if (tabScheduleBtn) tabScheduleBtn.classList.add('active');
+            if (modalDetailsView) modalDetailsView.style.display = 'none';
+            if (modalScheduleView) modalScheduleView.style.display = 'block';
+            if (modalTitle) modalTitle.innerText = 'Schedule / Edit Maintenance';
+            if (modalSubtitle) modalSubtitle.innerText = 'Set the work schedule, assignee, requirements, and completion status.';
+        } else {
+            if (tabDetailsBtn) tabDetailsBtn.classList.add('active');
+            if (tabScheduleBtn) tabScheduleBtn.classList.remove('active');
+            if (modalDetailsView) modalDetailsView.style.display = 'flex';
+            if (modalScheduleView) modalScheduleView.style.display = 'none';
+            if (modalTitle) modalTitle.innerText = 'Maintenance Task Details';
+            if (modalSubtitle) modalSubtitle.innerText = 'Review complete equipment defect details, work plan, and assignment.';
+        }
+    }
+    window.switchMaintenanceModalTab = switchMaintenanceModalTab;
+
+    function populateAndOpenMaintenanceModal(row, initialTab = 'details') {
+        if (!row) return;
+
+        const facilityName = row.getAttribute('data-facility_name') || '';
+        const issueType = row.getAttribute('data-issue_type') || '';
+        const triggerMonthText = row.getAttribute('data-trigger_month') || '';
+        const maintType = row.getAttribute('data-maintenance_type') || 'Corrective';
+        const scheduledDate = row.getAttribute('data-scheduled_date') || '';
+        const assignedTo = row.getAttribute('data-assigned_to') || '';
+        const remarksText = row.getAttribute('data-remarks') || '';
+        const statusText = row.querySelector('.status-pill')?.innerText?.trim() || 'Pending';
+        const priorityPillEl = row.querySelector('.priority-pill');
+        const priorityText = priorityPillEl ? priorityPillEl.innerText.trim() : 'Normal priority';
+        const completedDate = row.getAttribute('data-completed_date') || '';
+        const photoReq = row.getAttribute('data-photo_requirement') || 'Optional';
+        const proofUrl = row.getAttribute('data-proof_photo_url') || '';
+
+        const affectedAsset = row.getAttribute('data-affected_asset') || 'Main Utility Meter';
+        const incidentId = row.getAttribute('data-incident_id') || '';
+
+        // POPULATE DETAILS VIEW
+        const detailFacilityName = document.getElementById('detailFacilityName');
+        const detailPeriodText = document.getElementById('detailPeriodText');
+        const detailStatusPill = document.getElementById('detailStatusPill');
+        const detailPriorityPill = document.getElementById('detailPriorityPill');
+        const detailIssueType = document.getElementById('detailIssueType');
+        const detailAffectedAsset = document.getElementById('detailAffectedAsset');
+        const detailIncidentLink = document.getElementById('detailIncidentLink');
+        const detailMaintType = document.getElementById('detailMaintType');
+        const detailScheduleDate = document.getElementById('detailScheduleDate');
+        const detailAssignee = document.getElementById('detailAssignee');
+        const detailRemarksText = document.getElementById('detailRemarksText');
+        const detailProofContainer = document.getElementById('detailProofContainer');
+        const detailProofImg = document.getElementById('detailProofImg');
+        const detailProofLink = document.getElementById('detailProofLink');
+        const detailCompletionBadge = document.getElementById('detailCompletionBadge');
+        const detailCompletionText = document.getElementById('detailCompletionText');
+
+        if (detailFacilityName) detailFacilityName.textContent = facilityName || 'Facility Details';
+        if (detailPeriodText) detailPeriodText.textContent = triggerMonthText ? `Reported Period: ${triggerMonthText}` : 'Maintenance Task';
+
+        if (detailStatusPill) {
+            const stLower = statusText.toLowerCase();
+            const statusClass = stLower.includes('complete') ? 'completed' : (stLower.includes('ongoing') ? 'ongoing' : 'pending');
+            detailStatusPill.className = `status-pill ${statusClass}`;
+            detailStatusPill.textContent = statusText;
+        }
+
+        if (detailPriorityPill) {
+            const prioLower = priorityText.toLowerCase();
+            const prioClass = prioLower.includes('crit') ? 'critical' : (prioLower.includes('high') ? 'high' : 'normal');
+            detailPriorityPill.className = `priority-pill ${prioClass}`;
+            detailPriorityPill.textContent = priorityText;
+        }
+
+        if (detailIssueType) detailIssueType.textContent = issueType || '-';
+        if (detailAffectedAsset) detailAffectedAsset.textContent = affectedAsset;
+        if (detailIncidentLink) {
+            if (incidentId) {
+                detailIncidentLink.innerHTML = `<span style="color:#2563eb; font-weight:750;"><i class="fa-solid fa-shield-halved"></i> Incident #${incidentId}</span>`;
+            } else {
+                detailIncidentLink.textContent = 'Auto / CIMM Integration';
+            }
+        }
+        if (detailMaintType) detailMaintType.textContent = maintType || 'Corrective';
+        if (detailScheduleDate) detailScheduleDate.textContent = scheduledDate || 'Awaiting CIMM Schedule';
+        if (detailAssignee) detailAssignee.textContent = assignedTo || 'Awaiting CIMM Assignment';
+        if (detailRemarksText) detailRemarksText.textContent = (remarksText && remarksText !== '-') ? remarksText : 'No additional remarks provided.';
+
+        if (detailProofContainer) {
+            if (proofUrl) {
+                detailProofContainer.style.display = 'block';
+                if (detailProofImg) detailProofImg.src = proofUrl;
+                if (detailProofLink) detailProofLink.href = proofUrl;
+            } else {
+                detailProofContainer.style.display = 'none';
+            }
+        }
+
+        if (detailCompletionBadge) {
+            if (statusText.toLowerCase().includes('complete') || completedDate) {
+                detailCompletionBadge.style.display = 'flex';
+                if (detailCompletionText) detailCompletionText.textContent = completedDate ? `Task Completed on ${completedDate}` : 'Task Completed';
+            } else {
+                detailCompletionBadge.style.display = 'none';
+            }
+        }
+
+        // POPULATE FORM VIEW
+        if (modalMaintenanceId) modalMaintenanceId.value = row.getAttribute('data-id') || '';
+
+        if (modalFacility && facilityName) {
+            for (let i = 0; i < modalFacility.options.length; i++) {
+                if (modalFacility.options[i].text === facilityName) {
+                    modalFacility.selectedIndex = i;
+                    break;
+                }
+            }
+            modalFacility.disabled = true;
+        }
+
+        if (modalIssueType) {
+            if (issueType && !Array.from(modalIssueType.options).some(o => o.value === issueType)) {
+                modalIssueType.add(new Option(issueType, issueType));
+            }
+            modalIssueType.value = issueType;
+        }
+
+        const parsed = parseTriggerMonth(triggerMonthText);
+        if (modalTriggerMonth) {
+            if (parsed.month) modalTriggerMonth.value = parsed.month;
+            modalTriggerMonth.disabled = true;
+        }
+        if (modalTriggerYear) {
+            if (parsed.year) modalTriggerYear.value = parsed.year;
+            modalTriggerYear.disabled = true;
+        }
+
+        if (modalMaintType) modalMaintType.value = maintType;
+        if (modalScheduleDate) modalScheduleDate.value = scheduledDate;
+        if (modalAssignedTo) {
+            const matchingAssignee = assigneeOptions.find((option) => option.value === assignedTo);
+
+            if (modalAssignmentMode) {
+                modalAssignmentMode.value = assignedTo ? 'manual' : 'cimm';
+            }
+            updateAssignmentMode();
+
+            if (modalAssigneeRole) {
+                modalAssigneeRole.value = matchingAssignee?.role || '';
+            }
+            filterAssignees(matchingAssignee?.role || '', assignedTo);
+
+            if (assignedTo && !matchingAssignee) {
+                modalAssignedTo.disabled = false;
+                modalAssignedTo.add(new Option(`${assignedTo} · Existing assignment`, assignedTo));
+                modalAssignedTo.value = assignedTo;
+            }
+        }
+        if (modalRemarks) {
+            modalRemarks.value = (remarksText === '-' ? '' : remarksText);
+        }
+        if (modalStatus) {
+            const canUseStatus = Array.from(modalStatus.options || []).some((opt) => opt.value === statusText);
+            modalStatus.value = canUseStatus ? statusText : 'Ongoing';
+        }
+        if (modalCompletedDate) modalCompletedDate.value = completedDate;
+        if (modalPhotoRequirement) modalPhotoRequirement.value = photoReq;
+        if (modalProofPhoto) modalProofPhoto.value = '';
+        if (modalExistingProof) {
+            modalExistingProof.href = proofUrl || '#';
+            modalExistingProof.dataset.hasProof = proofUrl ? '1' : '0';
+            modalExistingProof.style.display = proofUrl ? 'inline-flex' : 'none';
+        }
+        updateCompletedDateState();
+        updateIssueTypeState();
+
+        switchMaintenanceModalTab(initialTab);
+        openScheduleModal();
+    }
+
     document.querySelectorAll('.schedule-btn').forEach((btn) => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             const row = this.closest('[data-maintenance-item]');
-            if (!row) return;
+            if (row) populateAndOpenMaintenanceModal(row, 'details');
+        });
+    });
 
-            if (modalTitle) modalTitle.innerText = 'Update Maintenance';
-            if (modalMaintenanceId) modalMaintenanceId.value = row.getAttribute('data-id') || '';
+    document.querySelectorAll('tr[data-maintenance-row]').forEach((row) => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('.facility-issues-toggle') || e.target.closest('a') || e.target.closest('button')) {
+                return;
+            }
+            populateAndOpenMaintenanceModal(this, 'details');
+        });
+    });
 
-            const facilityName = row.getAttribute('data-facility_name') || '';
-            if (modalFacility && facilityName) {
-                for (let i = 0; i < modalFacility.options.length; i++) {
-                    if (modalFacility.options[i].text === facilityName) {
-                        modalFacility.selectedIndex = i;
-                        break;
-                    }
-                }
-                modalFacility.disabled = true;
+    document.querySelectorAll('.facility-issue-item').forEach((item) => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function(e) {
+            if (e.target.closest('a') || e.target.closest('button')) {
+                return;
             }
-
-            if (modalIssueType) {
-                modalIssueType.value = row.getAttribute('data-issue_type') || '';
-            }
-
-            const triggerMonthText = row.getAttribute('data-trigger_month') || '';
-            const parsed = parseTriggerMonth(triggerMonthText);
-            if (modalTriggerMonth) {
-                if (parsed.month) modalTriggerMonth.value = parsed.month;
-                modalTriggerMonth.disabled = true;
-            }
-            if (modalTriggerYear) {
-                if (parsed.year) modalTriggerYear.value = parsed.year;
-                modalTriggerYear.disabled = true;
-            }
-
-            if (modalMaintType) modalMaintType.value = row.getAttribute('data-maintenance_type') || 'Preventive';
-            if (modalScheduleDate) modalScheduleDate.value = row.getAttribute('data-scheduled_date') || '';
-            if (modalAssignedTo) {
-                const assignedTo = row.getAttribute('data-assigned_to') || '';
-                const matchingAssignee = assigneeOptions.find((option) => option.value === assignedTo);
-
-                if (modalAssignmentMode) {
-                    modalAssignmentMode.value = assignedTo ? 'manual' : 'cimm';
-                }
-                updateAssignmentMode();
-
-                if (modalAssigneeRole) {
-                    modalAssigneeRole.value = matchingAssignee?.role || '';
-                }
-                filterAssignees(matchingAssignee?.role || '', assignedTo);
-
-                if (assignedTo && !matchingAssignee) {
-                    modalAssignedTo.disabled = false;
-                    modalAssignedTo.add(new Option(`${assignedTo} · Existing assignment`, assignedTo));
-                    modalAssignedTo.value = assignedTo;
-                }
-            }
-            if (modalRemarks) {
-                const remarksText = row.getAttribute('data-remarks') || '';
-                modalRemarks.value = remarksText === '-' ? '' : remarksText;
-            }
-            if (modalStatus) {
-                const statusText = row.querySelector('.status-pill')?.innerText?.trim() || 'Pending';
-                const canUseStatus = Array.from(modalStatus.options || []).some((opt) => opt.value === statusText);
-                modalStatus.value = canUseStatus ? statusText : 'Ongoing';
-            }
-            if (modalCompletedDate) modalCompletedDate.value = row.getAttribute('data-completed_date') || '';
-            if (modalPhotoRequirement) modalPhotoRequirement.value = row.getAttribute('data-photo_requirement') || 'Optional';
-            if (modalProofPhoto) modalProofPhoto.value = '';
-            if (modalExistingProof) {
-                const proofUrl = row.getAttribute('data-proof_photo_url') || '';
-                modalExistingProof.href = proofUrl || '#';
-                modalExistingProof.dataset.hasProof = proofUrl ? '1' : '0';
-                modalExistingProof.style.display = proofUrl ? 'inline-flex' : 'none';
-            }
-            updateCompletedDateState();
-            updateIssueTypeState();
-            openScheduleModal();
+            populateAndOpenMaintenanceModal(this, 'details');
         });
     });
 
@@ -1737,7 +2238,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addMaintenanceBtn) {
         addMaintenanceBtn.addEventListener('click', function() {
             if (scheduleForm) scheduleForm.reset();
-            if (modalTitle) modalTitle.innerText = 'Schedule Maintenance';
             if (modalMaintenanceId) modalMaintenanceId.value = '';
             if (modalFacility) modalFacility.disabled = false;
             if (modalIssueType) modalIssueType.disabled = false;
@@ -1756,6 +2256,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateCompletedDateState();
             updateIssueTypeState();
+            switchMaintenanceModalTab('schedule');
             openScheduleModal();
         });
     }
@@ -1853,6 +2354,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') closeScheduleModal();
     });
 });
+
+function openScheduleModal() {
+    const scheduleModal = document.getElementById('scheduleModal');
+    if (scheduleModal) {
+        scheduleModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
 
 function closeScheduleModal() {
     const scheduleModal = document.getElementById('scheduleModal');

@@ -37,10 +37,23 @@ class EnergyIncidentController extends Controller
         $this->syncIncidentNotifications($incidents->getCollection());
         $yearOptions = $this->incidentYearOptions($role, $user);
         $reportFacilities = $role === 'staff'
-            ? $user->facilities()->orderBy('name')->get(['facilities.id', 'facilities.name'])
-            : Facility::query()->orderBy('name')->get(['id', 'name']);
-        $manualIncidentCategories = collect($this->manualIncidentCategories())
-            ->map(fn (array $category, string $key) => ['key' => $key, 'label' => $category['label']])
+            ? $user->facilities()->with(['submeters' => fn ($q) => $q->orderBy('submeter_name')])->orderBy('name')->get(['facilities.id', 'facilities.name'])
+            : Facility::query()->with(['submeters' => fn ($q) => $q->orderBy('submeter_name')])->orderBy('name')->get(['id', 'name']);
+        $selectableCategoryKeys = [
+            'critical_usage_spike',
+            'peak_demand_surge',
+            'meter_defect_discrepancy',
+            'phantom_load_waste',
+            'circuit_overload',
+            'grounded_power_leak',
+            'abnormal_consumption_drop',
+            'power_outage',
+            'energy_audit_check',
+            'other_energy_issue',
+        ];
+        $allCategories = $this->manualIncidentCategories();
+        $manualIncidentCategories = collect($selectableCategoryKeys)
+            ->map(fn (string $key) => ['key' => $key, 'label' => $allCategories[$key]['label'] ?? $key])
             ->values();
 
         return view('modules.energy-incident.incidents', compact(
@@ -227,10 +240,119 @@ class EnergyIncidentController extends Controller
     {
         abort_unless(RoleAccess::can($request->user(), 'manage_energy_incidents'), 403);
 
-        return redirect()->route('energy-incidents.index')->with(
-            'error',
-            'Incident status is managed by CIMM. Update the linked maintenance action in CIMM instead.'
-        );
+        $validated = $request->validate([
+            'status' => ['nullable', 'string', Rule::in(['Open', 'Ongoing', 'Resolved', 'Closed'])],
+            'triage_action' => ['nullable', 'string', Rule::in(['escalate_maintenance', 'operational_event', 'direct_update'])],
+            'operational_reason' => 'nullable|string|max:500',
+            'immediate_action' => 'nullable|string|max:1000',
+            'resolution_summary' => 'nullable|string|max:2000',
+            'preventive_recommendation' => 'nullable|string|max:1000',
+            'affected_asset' => 'nullable|string|max:255',
+        ]);
+
+        $triageAction = $validated['triage_action'] ?? 'direct_update';
+
+        if ($triageAction === 'operational_event') {
+            $status = 'Resolved';
+            $validated['resolution_summary'] = $validated['resolution_summary']
+                ?? ('Operational Event (Non-Defect): ' . ($validated['operational_reason'] ?? 'Approved high-usage event. No physical equipment repair required.'));
+            $validated['preventive_recommendation'] = $validated['preventive_recommendation']
+                ?? 'Monitor baseline during future scheduled community events.';
+        } elseif ($triageAction === 'escalate_maintenance') {
+            $status = 'Ongoing';
+            $validated['immediate_action'] = $validated['immediate_action']
+                ?? 'Escalated and dispatched to CIMM Maintenance team for physical inspection.';
+        } else {
+            $status = $validated['status'] ?? $energyIncident->status ?? 'Open';
+        }
+
+        $isResolved = in_array(strtolower($status), ['resolved', 'closed'], true);
+        $isOngoing = strtolower($status) === 'ongoing';
+
+        DB::transaction(function () use ($energyIncident, $validated, $status, $isResolved, $isOngoing, $triageAction) {
+            $updateData = [
+                'status' => $status,
+                'immediate_action' => $validated['immediate_action'] ?? $energyIncident->immediate_action,
+                'resolution_summary' => $validated['resolution_summary'] ?? $energyIncident->resolution_summary,
+                'preventive_recommendation' => $validated['preventive_recommendation'] ?? $energyIncident->preventive_recommendation,
+            ];
+
+            if (!empty($validated['affected_asset'])) {
+                $updateData['affected_asset'] = $validated['affected_asset'];
+            }
+
+            if ($isResolved) {
+                $updateData['resolved_at'] = now();
+            } else {
+                $updateData['resolved_at'] = null;
+            }
+
+            $energyIncident->update($updateData);
+
+            // Dual-Sync with linked Maintenance (CIMM) record
+            $maintenance = $energyIncident->maintenance;
+
+            if ($triageAction === 'escalate_maintenance') {
+                if (!$maintenance && $energyIncident->facility_id) {
+                    $triggerMonth = ($energyIncident->month && $energyIncident->year)
+                        ? date('M Y', mktime(0, 0, 0, (int) $energyIncident->month, 1, (int) $energyIncident->year))
+                        : date('M Y');
+
+                    Maintenance::create([
+                        'facility_id' => $energyIncident->facility_id,
+                        'energy_incident_id' => $energyIncident->id,
+                        'issue_type' => 'Auto-flagged: Critical Consumption',
+                        'trigger_month' => $triggerMonth,
+                        'maintenance_type' => 'Corrective',
+                        'maintenance_status' => 'Pending',
+                        'remarks' => "Dispatched from Energy Incident #{$energyIncident->id}. On-site technician inspection required.",
+                    ]);
+                } elseif ($maintenance) {
+                    $maintenance->update([
+                        'maintenance_status' => in_array($maintenance->maintenance_status, ['Completed'], true) ? 'Pending' : ($maintenance->maintenance_status ?: 'Pending'),
+                        'remarks' => trim(($maintenance->remarks ? $maintenance->remarks . "\n" : '') . "Dispatched from Energy Incident #{$energyIncident->id}."),
+                    ]);
+                }
+            } elseif ($triageAction === 'operational_event') {
+                if ($maintenance) {
+                    $maintenance->update([
+                        'maintenance_status' => 'Completed',
+                        'completed_date' => now()->toDateString(),
+                        'remarks' => trim(($maintenance->remarks ? $maintenance->remarks . "\n" : '') . "Closed: Verified as operational event by Energy Team. No physical repair needed."),
+                    ]);
+                }
+            } elseif ($maintenance) {
+                if ($isResolved) {
+                    $maintUpdate = [
+                        'maintenance_status' => 'Completed',
+                        'completed_date' => now()->toDateString(),
+                    ];
+                    if (!empty($validated['resolution_summary'])) {
+                        $maintUpdate['remarks'] = trim(($maintenance->remarks ? $maintenance->remarks . "\n" : '') . "Resolution: " . $validated['resolution_summary']);
+                    }
+                    $maintenance->update($maintUpdate);
+                } elseif ($isOngoing && $maintenance->maintenance_status === 'Pending') {
+                    $maintenance->update([
+                        'maintenance_status' => 'In Progress',
+                    ]);
+                } elseif (strtolower($status) === 'open' && $maintenance->maintenance_status === 'Completed') {
+                    $maintenance->update([
+                        'maintenance_status' => 'Pending',
+                        'completed_date' => null,
+                    ]);
+                }
+            }
+        });
+
+        $msg = $triageAction === 'operational_event'
+            ? "Incident #{$energyIncident->id} validated as Operational Event and resolved without dispatching maintenance."
+            : ($triageAction === 'escalate_maintenance'
+                ? "Incident #{$energyIncident->id} escalated and dispatched to CIMM Maintenance."
+                : ($isResolved
+                    ? "Incident #{$energyIncident->id} marked as Resolved and moved to History."
+                    : "Incident #{$energyIncident->id} status updated to {$status}."));
+
+        return redirect()->route('energy-incidents.index')->with('success', $msg);
     }
 
     public function history(Request $request)
@@ -240,6 +362,8 @@ class EnergyIncidentController extends Controller
         $historiesQuery = EnergyIncident::with([
                 'facility:id,name,baseline_kwh,source,external_ref',
                 'energyRecord:id,facility_id,baseline_kwh,actual_kwh,alert,input_source',
+                'creator:id,full_name,name,username',
+                'maintenance',
             ])
             ->where(function ($query) {
                 $query->where('status', 'like', '%resolved%')
@@ -585,13 +709,22 @@ class EnergyIncidentController extends Controller
     private function manualIncidentCategories(): array
     {
         return [
-            'power_outage' => ['label' => 'Power Outage', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Power Outage'],
-            'circuit_overload' => ['label' => 'Circuit Overload', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Circuit Overload'],
-            'smoke_or_burning_smell' => ['label' => 'Smoke or Burning Smell', 'severity' => 'critical', 'maintenance_issue' => 'General - Other'],
-            'equipment_overheating' => ['label' => 'Equipment Overheating', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
-            'damaged_equipment' => ['label' => 'Damaged Equipment', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
-            'meter_issue' => ['label' => 'Meter Issue', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
-            'unusual_noise_or_smell' => ['label' => 'Unusual Noise or Smell', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
+            'critical_usage_spike' => ['label' => 'Critical Consumption Spike (>20% Baseline)', 'severity' => 'critical', 'maintenance_issue' => 'Critical Usage Spike (>20% Baseline)'],
+            'peak_demand_surge' => ['label' => 'Peak Demand Load Surge', 'severity' => 'critical', 'maintenance_issue' => 'Peak Demand Load Surge'],
+            'meter_defect_discrepancy' => ['label' => 'Main Meter vs Sub-meter Discrepancy', 'severity' => 'high', 'maintenance_issue' => 'Main Meter vs Submeter Discrepancy'],
+            'phantom_load_waste' => ['label' => 'Off-Hours / Phantom Load Waste', 'severity' => 'high', 'maintenance_issue' => 'Off-Hours / Phantom Load Waste'],
+            'circuit_overload' => ['label' => 'Circuit Overload / Phase Imbalance', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Circuit Overload'],
+            'grounded_power_leak' => ['label' => 'Grounded Power Leak / Current Loss', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Grounded Line'],
+            'abnormal_consumption_drop' => ['label' => 'Abnormal Consumption Drop / Meter Stoppage', 'severity' => 'high', 'maintenance_issue' => 'Abnormal Consumption Drop / Meter Stoppage'],
+            'power_outage' => ['label' => 'Power Outage / Line Trip', 'severity' => 'high', 'maintenance_issue' => 'Electrical - Power Outage'],
+            'energy_audit_check' => ['label' => 'Energy Audit & Verification Check', 'severity' => 'warning', 'maintenance_issue' => 'Energy Audit & Verification Check'],
+            'other_energy_issue' => ['label' => 'Other Energy / Electrical Anomaly', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
+
+            // Legacy mappings to preserve compatibility with existing historical test data
+            'equipment_overheating' => ['label' => 'Equipment High Temperature / Overheating', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
+            'meter_issue' => ['label' => 'Meter Issue / Calibration Defect', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
+            'smoke_or_burning_smell' => ['label' => 'Electrical Arcing / Burning', 'severity' => 'critical', 'maintenance_issue' => 'General - Other'],
+            'damaged_equipment' => ['label' => 'Damaged Electrical Equipment', 'severity' => 'high', 'maintenance_issue' => 'General - Other'],
             'other' => ['label' => 'Other', 'severity' => 'warning', 'maintenance_issue' => 'General - Other'],
         ];
     }

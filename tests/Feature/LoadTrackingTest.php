@@ -125,8 +125,16 @@ test('user can export facility load schedule as CSV', function () {
         'operating_days_per_month' => 22,
     ]);
 
-    $response = $this->actingAs($admin)
-        ->get(route('modules.load-tracking.export', $facility->id));
+    $authResponse = $this->actingAs($admin)
+        ->postJson(route('downloads.authorize'), [
+            'download_password' => 'password',
+            'target' => route('modules.load-tracking.export', $facility->id),
+        ]);
+
+    $authResponse->assertOk()->assertJson(['success' => true]);
+    $redirectUrl = $authResponse->json('redirect_url');
+
+    $response = $this->actingAs($admin)->get($redirectUrl);
 
     $response->assertOk();
     expect($response->headers->get('content-type'))->toContain('text/csv');

@@ -92,6 +92,34 @@ class AiAlertsController extends Controller
             ];
         })->sortByDesc(fn (array $alert) => $this->alertPriority($alert))->values();
 
+        $totalCurrentCost = (float) $alerts->sum('current_cost');
+        $totalPreviousCost = (float) $alerts->sum('previous_cost');
+        $totalActualKwh = (float) $alerts->sum('actual_kwh');
+        $totalExcessKwh = (float) $alerts->sum(function (array $alert) {
+            if (! empty($alert['baseline_kwh']) && $alert['actual_kwh'] > $alert['baseline_kwh']) {
+                return $alert['actual_kwh'] - $alert['baseline_kwh'];
+            }
+            return 0;
+        });
+
+        $urgentCount = $alerts->filter(fn (array $a) => in_array($a['usage_level'] ?? '', ['Critical', 'Drop Critical', 'Very High'], true))->count();
+        $conservationCount = $alerts->filter(fn (array $a) => in_array($a['usage_level'] ?? '', ['High', 'Warning', 'Drop High', 'Drop Warning'], true) || ! empty($a['cost_alert']))->count();
+        $noDataCount = $alerts->where('has_data', false)->count();
+
+        if ($urgentCount > 0) {
+            $healthStatus = 'High Attention Required';
+            $healthTone = 'danger';
+            $healthNarrative = "{$urgentCount} " . ($urgentCount === 1 ? 'facility has' : 'facilities have') . ' critical consumption anomalies or drastic drops requiring immediate engineering triage.';
+        } elseif ($alerts->where('cost_alert', true)->count() > 0 || $alerts->where('usage_alert', true)->count() > 0) {
+            $healthStatus = 'Variance Under Review';
+            $healthTone = 'warn';
+            $healthNarrative = 'Energy usage or billing increases detected across selected facilities. Consider load scheduling adjustments and conservation measures.';
+        } else {
+            $healthStatus = 'Stable Energy Operations';
+            $healthTone = 'good';
+            $healthNarrative = 'All monitored facilities with established baselines are operating within expected consumption and cost thresholds.';
+        }
+
         return view('modules.ai-alerts.index', [
             'alerts' => $alerts,
             'period' => $period,
@@ -102,6 +130,15 @@ class AiAlertsController extends Controller
                 'cost' => $alerts->where('cost_alert', true)->count(),
                 'normal' => $alerts->where('usage_level', 'Normal')->where('cost_alert', false)->count(),
                 'baseline_pending' => $alerts->where('has_data', true)->where('usage_level', 'No Data')->count(),
+                'no_data' => $noDataCount,
+                'urgent' => $urgentCount,
+                'conservation' => $conservationCount,
+                'total_cost' => round($totalCurrentCost, 2),
+                'total_actual_kwh' => round($totalActualKwh, 2),
+                'total_excess_kwh' => round($totalExcessKwh, 2),
+                'health_status' => $healthStatus,
+                'health_tone' => $healthTone,
+                'health_narrative' => $healthNarrative,
             ],
         ]);
     }

@@ -69,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/energy-conservation', [EnergyConservationController::class, 'index'])->name('modules.energy-conservation.index');
     Route::post('/modules/energy-conservation/daily-checklist', [EnergyConservationController::class, 'updateDailyChecklist'])->name('modules.energy-conservation.daily-checklist.update');
     Route::post('/modules/energy-conservation/daily-checklist/tasks', [EnergyConservationController::class, 'storeDailyChecklistTask'])->name('modules.energy-conservation.daily-checklist.tasks.store');
+    Route::post('/modules/energy-conservation/daily-checklist/populate-default', [EnergyConservationController::class, 'populateDefaultChecklistTasks'])->name('modules.energy-conservation.daily-checklist.populate-default');
     Route::delete('/modules/energy-conservation/daily-checklist/tasks/{task}', [EnergyConservationController::class, 'destroyDailyChecklistTask'])->name('modules.energy-conservation.daily-checklist.tasks.destroy');
     Route::post('/modules/energy-conservation/goals', [EnergyConservationController::class, 'storeConservationGoal'])->name('modules.energy-conservation.goals.store');
     Route::delete('/modules/energy-conservation/goals/{goal}', [EnergyConservationController::class, 'destroyConservationGoal'])->name('modules.energy-conservation.goals.destroy');
@@ -83,7 +84,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/modules/load-tracking/equipment', [LoadTrackingController::class, 'store'])->name('modules.load-tracking.equipment.store');
     Route::put('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'update'])->name('modules.load-tracking.equipment.update');
     Route::delete('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'destroy'])->name('modules.load-tracking.equipment.destroy');
-    Route::get('/modules/load-tracking/export/{facility}', [LoadTrackingController::class, 'export'])->name('modules.load-tracking.export');
+    Route::get('/modules/load-tracking/export/{facility}', [LoadTrackingController::class, 'export'])
+        ->middleware('download.confirmed')
+        ->name('modules.load-tracking.export');
 
     // Monthly Records per Facility
     Route::get('/modules/facilities/{facility}/monthly-records', function (\Illuminate\Http\Request $request, $facilityId) {
@@ -538,6 +541,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
         $oldMeterId = (string) old('meter_id', $primaryBillingMeterId > 0 ? $primaryBillingMeterId : '');
 
+        $latestMeterDials = [];
+        $facilityRecords = \App\Models\EnergyRecord::query()
+            ->where('facility_id', $facilityId)
+            ->where(function ($query) {
+                $query->whereNotNull('current_reading_kwh')
+                    ->orWhereNotNull('previous_reading_kwh')
+                    ->orWhere('actual_kwh', '>', 0);
+            })
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->orderByDesc('id')
+            ->get(['meter_id', 'current_reading_kwh', 'previous_reading_kwh', 'actual_kwh']);
+
+        foreach ($facilityRecords as $record) {
+            $mid = (int) ($record->meter_id ?? 0);
+            if (! isset($latestMeterDials[$mid])) {
+                if ($record->current_reading_kwh !== null && is_numeric($record->current_reading_kwh)) {
+                    $latestMeterDials[$mid] = (float) $record->current_reading_kwh;
+                } elseif ($record->previous_reading_kwh !== null && is_numeric($record->previous_reading_kwh)) {
+                    $latestMeterDials[$mid] = (float) $record->previous_reading_kwh + (float) ($record->actual_kwh ?? 0);
+                }
+            }
+        }
+        if (! isset($latestMeterDials[0]) && ! empty($latestMeterDials)) {
+            $latestMeterDials[0] = reset($latestMeterDials);
+        }
+
         $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
         $umanConfigured = filled(config('services.uman_monthly_records.url'))
             && filled(config('services.uman_monthly_records.key'));
@@ -580,11 +610,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'oldMeterId',
             'archivedCount',
             'umanConfigured',
-            'umanSync'
+            'umanSync',
+            'latestMeterDials'
         ));
     })->name('facilities.monthly-records');
 
-    Route::get('/modules/facilities/{facility}/monthly-records/submeters', function (\Illuminate\Http\Request $request, $facilityId) {
+    $handleSubmeterRecords = function (\Illuminate\Http\Request $request, $facilityId) {
         $facility = \App\Models\Facility::find($facilityId);
         if (! $facility) {
             $fallbackFacility = \App\Models\Facility::query()
@@ -593,8 +624,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->first();
 
             if ($fallbackFacility) {
+                $targetRoute = $request->routeIs('facilities.weekly-records.submeters')
+                    ? 'facilities.weekly-records.submeters'
+                    : 'facilities.monthly-records.submeters';
+
                 return redirect()
-                    ->route('facilities.monthly-records.submeters', ['facility' => $fallbackFacility->id])
+                    ->route($targetRoute, ['facility' => $fallbackFacility->id])
                     ->with('error', 'Facility ID not found after reseeding. Redirected to the current demo facility.');
             }
 
@@ -607,6 +642,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
             7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec',
         ];
+        $months = $monthLabels;
         $resolveCost = static fn ($record): float => EnergyCost::cost($record);
 
         $mainMeterOptions = \App\Models\FacilityMeter::where('facility_id', $facilityId)
@@ -618,7 +654,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         if ($mainMeterOptions->isEmpty()) {
             return redirect()
                 ->route('facilities.monthly-records', ['facility' => $facilityId])
-                ->with('error', 'Add and approve a Main Meter first before viewing Sub-meter monthly records.');
+                ->with('error', 'Add and approve a Main Meter first before viewing Sub-meter records.');
         }
 
         $selectedMainMeterId = (int) ($request->query('main_meter_id') ?: 0);
@@ -655,11 +691,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $submeterToFacilityMeterIdMap = $facilityMeterToSubmeterIdMap
             ->mapWithKeys(fn ($submeterId, $facilityMeterId) => [(int) $submeterId => (int) $facilityMeterId]);
 
+        $timeframe = strtolower(trim((string) $request->query('timeframe', $request->routeIs('facilities.weekly-records.submeters') ? 'weekly' : 'monthly')));
+        if (! in_array($timeframe, ['monthly', 'weekly'], true)) {
+            $timeframe = 'monthly';
+        }
+
+        $selectedWeek = (int) ($request->query('week') ?: 0);
+        if ($selectedWeek < 0 || $selectedWeek > 4) {
+            $selectedWeek = 0;
+        }
+
         $selectedYear = (int) ($request->query('year') ?: date('Y'));
         $selectedMonth = (int) ($request->query('month') ?: 0);
         if ($selectedMonth < 0 || $selectedMonth > 12) {
             $selectedMonth = 0;
         }
+
+        $daysInFilterMonth = $selectedMonth > 0
+            ? \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->daysInMonth
+            : 31;
+
+        $weekLabels = [
+            1 => 'Week 1 (Days 1–7)',
+            2 => 'Week 2 (Days 8–14)',
+            3 => 'Week 3 (Days 15–21)',
+            4 => $selectedMonth > 0 ? "Week 4 (Days 22–{$daysInFilterMonth})" : 'Week 4 (Days 22–End of Month)',
+        ];
         $meterIdQuery = $request->query('meter_id');
         $selectedMeterId = ($meterIdQuery === null || $meterIdQuery === '')
             ? (int) ($subMeterOptions->first()->id ?? 0)
@@ -756,7 +813,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->get();
         }
 
-        $manualRows = $submeterRecords->map(function ($record) use ($resolveCost) {
+        $manualRows = $submeterRecords->toBase()->map(function ($record) use ($resolveCost) {
             $actualKwh = is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
             $baselineKwh = is_numeric($record->baseline_kwh)
                 ? (float) $record->baseline_kwh
@@ -764,6 +821,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             $deviation = is_numeric($record->deviation)
                 ? (float) $record->deviation
                 : \App\Models\EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
+            $previousReading = is_numeric($record->previous_reading_kwh) ? (float) $record->previous_reading_kwh : null;
+            $currentReading = is_numeric($record->current_reading_kwh) ? (float) $record->current_reading_kwh : null;
 
             return [
                 'id' => (int) ($record->id ?? 0),
@@ -772,6 +831,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'month' => (int) ($record->month ?? 0),
                 'day' => $record->day ?: '-',
                 'meter_name' => (string) ($record->meter?->meter_name ?? '-'),
+                'previous_reading_kwh' => $previousReading,
+                'current_reading_kwh' => $currentReading,
                 'actual_kwh' => $actualKwh,
                 'baseline_kwh' => $baselineKwh,
                 'deviation' => $deviation,
@@ -780,7 +841,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ];
         });
 
-        $sensorPreferredRows = $sensorRows->map(function ($reading) use ($submeterToFacilityMeterIdMap, $subMeterOptions) {
+        $sensorPreferredRows = $sensorRows->toBase()->map(function ($reading) use ($submeterToFacilityMeterIdMap, $subMeterOptions) {
             $meterId = (int) ($submeterToFacilityMeterIdMap->get((int) ($reading->submeter_id ?? 0)) ?? 0);
             $meter = $subMeterOptions->first(fn ($option) => (int) ($option->id ?? 0) === $meterId);
             $endDate = $reading->period_end_date ? \Carbon\Carbon::parse($reading->period_end_date) : null;
@@ -795,6 +856,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'month' => $endDate ? (int) $endDate->format('n') : 0,
                 'day' => $endDate ? (int) $endDate->format('j') : '-',
                 'meter_name' => (string) ($meter?->meter_name ?? $reading->submeter?->submeter_name ?? '-'),
+                'previous_reading_kwh' => is_numeric($reading->previous_reading_kwh ?? null) ? (float) $reading->previous_reading_kwh : null,
+                'current_reading_kwh' => is_numeric($reading->current_reading_kwh ?? null) ? (float) $reading->current_reading_kwh : null,
                 'actual_kwh' => $actualKwh,
                 'baseline_kwh' => $baselineKwh,
                 'deviation' => $deviation,
@@ -807,7 +870,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->mapWithKeys(fn ($row) => [(int) $row['meter_id'] . '-' . (int) $row['year'] . '-' . (int) $row['month'] => true]);
 
         $preferredRows = $sensorPreferredRows
-            ->merge($manualRows->reject(fn ($row) => $sensorKeys->has((int) $row['meter_id'] . '-' . (int) $row['year'] . '-' . (int) $row['month'])))
+            ->concat($manualRows->reject(fn ($row) => $sensorKeys->has((int) $row['meter_id'] . '-' . (int) $row['year'] . '-' . (int) $row['month'])))
             ->map(function ($row) {
                 $alertLabel = ($row['deviation'] !== null && $row['baseline_kwh'] !== null && $row['baseline_kwh'] > 0)
                     ? \App\Models\EnergyRecord::resolveAlertLevel((float) $row['deviation'], (float) $row['baseline_kwh'])
@@ -841,7 +904,95 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->sortByDesc(fn ($row) => sprintf('%04d-%02d-%02d', (int) ($row['year'] ?? 0), (int) ($row['month'] ?? 0), (int) (is_numeric($row['day'] ?? null) ? $row['day'] : 0)))
             ->values();
 
-        $submeterGroups = $preferredRows
+        if ($timeframe === 'weekly') {
+            $weeklyRows = collect();
+            foreach ($preferredRows as $row) {
+                $prevRunning = $row['previous_reading_kwh'] ?? null;
+                $monthKwh = (float) ($row['actual_kwh'] ?? 0);
+                $monthBaseline = (float) ($row['baseline_kwh'] ?? 0);
+                $monthName = $monthLabels[$row['month']] ?? ('Month ' . $row['month']);
+                $currentRunningPrev = $prevRunning !== null ? (float) $prevRunning : null;
+
+                $daysInRowMonth = \Carbon\Carbon::createFromDate((int) ($row['year'] ?? $selectedYear), (int) ($row['month'] ?? 1), 1)->daysInMonth;
+                $week4Days = max(1, $daysInRowMonth - 21);
+
+                $weekMultipliers = [
+                    1 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 1 (Days 1–7)'],
+                    2 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 2 (Days 8–14)'],
+                    3 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 3 (Days 15–21)'],
+                    4 => ['weight' => $week4Days / $daysInRowMonth, 'label' => "Week 4 (Days 22–{$daysInRowMonth})"],
+                ];
+
+                foreach ($weekMultipliers as $wNum => $wData) {
+                    $wKwh = round($monthKwh * $wData['weight'], 2);
+                    $wBaseline = $monthBaseline > 0 ? round($monthBaseline * $wData['weight'], 2) : null;
+                    $wCost = round((float) ($row['cost'] ?? 0) * $wData['weight'], 2);
+
+                    $wPrev = $currentRunningPrev !== null ? round($currentRunningPrev, 2) : null;
+                    $wCurr = $wPrev !== null ? round($wPrev + $wKwh, 2) : null;
+                    if ($wCurr !== null) {
+                        $currentRunningPrev = $wCurr;
+                    }
+
+                    $wDeviation = \App\Models\EnergyRecord::calculateDeviation($wKwh, $wBaseline);
+                    $alertLabel = ($wDeviation !== null && $wBaseline !== null && $wBaseline > 0)
+                        ? \App\Models\EnergyRecord::resolveAlertLevel((float) $wDeviation, (float) $wBaseline)
+                        : ($row['alert_label'] ?? 'No baseline');
+                    $alertValue = strtolower($alertLabel);
+                    $alertColor = '#475569';
+                    $alertBg = '#f1f5f9';
+                    if ($alertValue === 'warning') {
+                        $alertColor = '#92400e';
+                        $alertBg = '#fef3c7';
+                    } elseif ($alertValue === 'high') {
+                        $alertColor = '#9a3412';
+                        $alertBg = '#ffedd5';
+                    } elseif ($alertValue === 'very high') {
+                        $alertColor = '#be123c';
+                        $alertBg = '#fff1f2';
+                    } elseif ($alertValue === 'critical') {
+                        $alertColor = '#991b1b';
+                        $alertBg = '#fee2e2';
+                    } elseif ($alertValue === 'normal') {
+                        $alertColor = '#166534';
+                        $alertBg = '#dcfce7';
+                    }
+
+                    $wRow = [
+                        'id' => $row['id'] . '-w' . $wNum,
+                        'meter_id' => $row['meter_id'],
+                        'meter_name' => $row['meter_name'],
+                        'year' => $row['year'],
+                        'month' => $row['month'],
+                        'week_num' => $wNum,
+                        'week_label' => $wData['label'],
+                        'period_display' => $row['year'] . ' ' . $monthName . ' • ' . $wData['label'],
+                        'previous_reading_kwh' => $wPrev,
+                        'current_reading_kwh' => $wCurr,
+                        'actual_kwh' => $wKwh,
+                        'baseline_kwh' => $wBaseline,
+                        'deviation' => $wDeviation,
+                        'cost' => $wCost,
+                        'alert_label' => $alertLabel,
+                        'alert_color' => $alertColor,
+                        'alert_bg' => $alertBg,
+                        'source_label' => $row['source_label'] ?? 'Manual',
+                    ];
+
+                    if ($selectedWeek === 0 || $selectedWeek === $wNum) {
+                        $weeklyRows->push($wRow);
+                    }
+                }
+            }
+
+            $displayRows = $weeklyRows
+                ->sortByDesc(fn ($r) => sprintf('%04d-%02d-%02d', (int) ($r['year'] ?? 0), (int) ($r['month'] ?? 0), (int) ($r['week_num'] ?? 0)))
+                ->values();
+        } else {
+            $displayRows = $preferredRows;
+        }
+
+        $submeterGroups = $displayRows
             ->groupBy(fn ($row) => (int) ($row['meter_id'] ?? 0))
             ->map(function ($groupRows, $meterId) {
                 $firstRow = $groupRows->first();
@@ -858,9 +1009,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->sortBy(fn ($group) => strtolower((string) ($group['meter_name'] ?? '')))
             ->values();
 
-        $totalKwh = round((float) $preferredRows->sum(fn ($row) => (float) ($row['actual_kwh'] ?? 0)), 2);
-        $totalCost = round((float) $preferredRows->sum(fn ($row) => (float) ($row['cost'] ?? 0)), 2);
-        $totalRecords = (int) $preferredRows->count();
+        $totalKwh = round((float) $displayRows->sum(fn ($row) => (float) ($row['actual_kwh'] ?? 0)), 2);
+        $totalCost = round((float) $displayRows->sum(fn ($row) => (float) ($row['cost'] ?? 0)), 2);
+        $totalRecords = (int) $displayRows->count();
+        $latestSubmeterDials = [];
+        foreach ($subMeterOptions as $subMeter) {
+            $latestRecord = \App\Models\EnergyRecord::where('facility_id', $facilityId)
+                ->where('meter_id', $subMeter->id)
+                ->whereNotNull('current_reading_kwh')
+                ->where('current_reading_kwh', '>', 0)
+                ->orderByDesc('year')
+                ->orderByDesc('month')
+                ->first();
+            $latestSubmeterDials[$subMeter->id] = $latestRecord ? (float) $latestRecord->current_reading_kwh : null;
+        }
 
         return view('modules.facilities.monthly-record.submeter-records', compact(
             'facility',
@@ -869,15 +1031,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'submeterGroups',
             'selectedYear',
             'selectedMonth',
+            'selectedWeek',
             'selectedMainMeterId',
             'selectedMeterId',
             'yearOptions',
             'monthLabels',
+            'months',
+            'weekLabels',
+            'timeframe',
             'totalKwh',
             'totalCost',
-            'totalRecords'
+            'totalRecords',
+            'latestSubmeterDials'
         ));
-    })->middleware('feature:submeters')->name('facilities.monthly-records.submeters');
+    };
+
+    Route::get('/modules/facilities/{facility}/monthly-records/submeters', $handleSubmeterRecords)
+        ->middleware('feature:submeters')
+        ->name('facilities.monthly-records.submeters');
+
+    Route::get('/modules/facilities/{facility}/weekly-records/submeters', $handleSubmeterRecords)
+        ->middleware('feature:submeters')
+        ->name('facilities.weekly-records.submeters');
 
     Route::get('/modules/facilities/{facility}/monthly-records/archive', function ($facilityId) {
         $facility = \App\Models\Facility::find($facilityId);
@@ -1188,5 +1363,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================================
     Route::get('/modules/cashflow', [\App\Http\Controllers\Modules\CashFlowController::class, 'index'])->name('modules.cashflow.index');
     Route::post('/modules/cashflow/budget', [\App\Http\Controllers\Modules\CashFlowController::class, 'updateBudget'])->name('modules.cashflow.budget.update');
-    Route::get('/modules/cashflow/export', [\App\Http\Controllers\Modules\CashFlowController::class, 'export'])->name('modules.cashflow.export');
+    Route::get('/modules/cashflow/export', [\App\Http\Controllers\Modules\CashFlowController::class, 'export'])
+        ->middleware('download.confirmed')
+        ->name('modules.cashflow.export');
 });

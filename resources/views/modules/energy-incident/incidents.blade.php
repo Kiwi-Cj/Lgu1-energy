@@ -254,6 +254,13 @@
                         <div class="meta-col">
                             <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
                             <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
+                            <div class="incident-pipeline-stepper {{ $statusKey }}">
+                                <span class="pipe-step {{ $statusKey === 'open' ? 'current' : 'done' }}" title="1. Detected"><i class="fa-solid fa-circle-dot"></i> Detected</span>
+                                <i class="fa-solid fa-chevron-right pipe-arrow"></i>
+                                <span class="pipe-step {{ $statusKey === 'ongoing' ? 'current' : ($statusKey === 'resolved' ? 'done' : 'next') }}" title="2. In Progress"><i class="fa-solid fa-wrench"></i> In Progress</span>
+                                <i class="fa-solid fa-chevron-right pipe-arrow"></i>
+                                <span class="pipe-step {{ $statusKey === 'resolved' ? 'done' : 'next' }}" title="3. Resolved"><i class="fa-solid fa-circle-check"></i> Resolved</span>
+                            </div>
                         </div>
                         <div class="value-col">
                             <div class="value-label">Deviation</div>
@@ -296,6 +303,116 @@
                         </div>
 
                         <div class="incident-modal-body">
+                            <!-- Progress Lifecycle Pipeline -->
+                            <div class="modal-lifecycle-pipeline {{ $statusKey }}">
+                                <div class="pipe-item {{ $statusKey === 'open' ? 'active' : 'done' }}">
+                                    <div class="pipe-icon"><i class="fa-solid {{ $statusKey === 'open' ? 'fa-triangle-exclamation' : 'fa-check' }}"></i></div>
+                                    <div class="pipe-text"><strong>1. Detected</strong><span>Anomaly logged</span></div>
+                                </div>
+                                <div class="pipe-connector {{ $statusKey !== 'open' ? 'done' : '' }}"></div>
+                                <div class="pipe-item {{ $statusKey === 'ongoing' ? 'active' : ($statusKey === 'resolved' ? 'done' : 'pending') }}">
+                                    <div class="pipe-icon"><i class="fa-solid {{ $statusKey === 'ongoing' ? 'fa-screwdriver-wrench' : ($statusKey === 'resolved' ? 'fa-check' : 'fa-clock') }}"></i></div>
+                                    <div class="pipe-text"><strong>2. In Progress</strong><span>Maintenance action</span></div>
+                                </div>
+                                <div class="pipe-connector {{ $statusKey === 'resolved' ? 'done' : '' }}"></div>
+                                <div class="pipe-item {{ $statusKey === 'resolved' ? 'done' : 'pending' }}">
+                                    <div class="pipe-icon"><i class="fa-solid {{ $statusKey === 'resolved' ? 'fa-circle-check' : 'fa-flag-checkered' }}"></i></div>
+                                    <div class="pipe-text"><strong>3. Resolved</strong><span>Stabilized & archived</span></div>
+                                </div>
+                            </div>
+
+                            @if($canReportIncidents)
+                            <!-- Triage & Action Form -->
+                            <section class="incident-detail-section incident-action-section">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                    <h4 class="incident-section-title" style="margin: 0;"><i class="fa-solid fa-sliders"></i> Triage Decision &amp; Workflow Action</h4>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button type="button" class="triage-quick-btn dispatch" onclick="setTriageAction('{{ $incident->id }}', 'escalate_maintenance')">
+                                            <i class="fa-solid fa-screwdriver-wrench"></i> Dispatch Maintenance
+                                        </button>
+                                        <button type="button" class="triage-quick-btn event" onclick="setTriageAction('{{ $incident->id }}', 'operational_event')">
+                                            <i class="fa-solid fa-calendar-check"></i> Valid Event (No Repair)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form method="POST" action="{{ route('energy-incidents.update', $incident) }}" class="incident-action-form" id="incident_form_{{ $incident->id }}" onclick="event.stopPropagation()">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="triage_action" id="triage_action_{{ $incident->id }}" value="direct_update">
+
+                                    <div id="operational_event_box_{{ $incident->id }}" class="operational-event-box" style="display: none; margin-bottom: 14px; padding: 12px 14px; border-radius: 10px; background: #ecfdf5; border: 1px solid #a7f3d0;">
+                                        <div style="font-weight: 800; font-size: 0.85rem; color: #065f46; margin-bottom: 6px;">
+                                            <i class="fa-solid fa-circle-info"></i> Resolving as Operational Event (Non-Defect)
+                                        </div>
+                                        <p style="font-size: 0.78rem; color: #047857; margin: 0 0 8px 0;">
+                                            This will resolve the incident as a known high-usage activity and prevent sending an unnecessary repair order to the maintenance team.
+                                        </p>
+                                        <label for="op_reason_{{ $incident->id }}" style="font-size: 0.75rem; font-weight: 700; color: #065f46; display: block; margin-bottom: 4px;">Reason / Event Name:</label>
+                                        <select name="operational_reason" id="op_reason_{{ $incident->id }}" class="action-select" style="background: #ffffff;">
+                                            <option value="Community / Sports Tournament Event">Community / Sports Tournament Event</option>
+                                            <option value="Barangay Fiesta / Cultural Celebration">Barangay Fiesta / Cultural Celebration</option>
+                                            <option value="Emergency Disaster Response / Evacuation Center">Emergency Disaster Response / Evacuation Center</option>
+                                            <option value="Seasonal Weather Overload (Extreme Summer Heat)">Seasonal Weather Overload (Extreme Summer Heat)</option>
+                                            <option value="Authorized System Load Testing / Calibration">Authorized System Load Testing / Calibration</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="action-form-grid">
+                                        <div class="action-field">
+                                            <label for="incident_status_{{ $incident->id }}">Workflow Status *</label>
+                                            <select name="status" id="incident_status_{{ $incident->id }}" class="action-select" required>
+                                                <option value="Open" {{ $statusKey === 'open' ? 'selected' : '' }}>🟡 Open / Under Evaluation</option>
+                                                <option value="Ongoing" {{ $statusKey === 'ongoing' ? 'selected' : '' }}>🔵 Ongoing / Dispatched to CIMM</option>
+                                                <option value="Resolved" {{ $statusKey === 'resolved' ? 'selected' : '' }}>🟢 Resolved &amp; Stabilized</option>
+                                            </select>
+                                        </div>
+                                        <div class="action-field">
+                                            <label for="incident_asset_{{ $incident->id }}">Affected Meter / Sub-meter</label>
+                                            <select name="affected_asset" id="incident_asset_{{ $incident->id }}" class="action-select">
+                                                <option value="">-- Select Meter / Sub-meter --</option>
+                                                <optgroup label="⚡ Main Meter &amp; Panel">
+                                                    <option value="Main Utility Meter" {{ $incident->affected_asset === 'Main Utility Meter' ? 'selected' : '' }}>Main Utility Meter</option>
+                                                    <option value="Main Distribution Panel (MDP)" {{ $incident->affected_asset === 'Main Distribution Panel (MDP)' ? 'selected' : '' }}>Main Distribution Panel (MDP)</option>
+                                                </optgroup>
+                                                @if($incident->facility && $incident->facility->submeters && $incident->facility->submeters->count() > 0)
+                                                    <optgroup label="📊 Facility Sub-meters">
+                                                        @foreach($incident->facility->submeters as $sub)
+                                                            <option value="Sub-meter: {{ $sub->submeter_name }}" {{ $incident->affected_asset === 'Sub-meter: ' . $sub->submeter_name ? 'selected' : '' }}>Sub-meter: {{ $sub->submeter_name }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endif
+                                                <optgroup label="🔌 Other Electrical Line">
+                                                    <option value="Other Electrical Line / Feeder" {{ $incident->affected_asset === 'Other Electrical Line / Feeder' ? 'selected' : '' }}>Other Electrical Line / Feeder</option>
+                                                </optgroup>
+                                                @if(!empty($incident->affected_asset) && !in_array($incident->affected_asset, [
+                                                    'Main Utility Meter', 'Main Distribution Panel (MDP)', 'Other Electrical Line / Feeder'
+                                                ], true) && !str_starts_with($incident->affected_asset, 'Sub-meter:'))
+                                                    <option value="{{ $incident->affected_asset }}" selected>{{ $incident->affected_asset }}</option>
+                                                @endif
+                                            </select>
+                                        </div>
+                                        <div class="action-field full">
+                                            <label for="incident_action_{{ $incident->id }}">Immediate Action Taken</label>
+                                            <input type="text" name="immediate_action" id="incident_action_{{ $incident->id }}" class="action-input" value="{{ $incident->immediate_action }}" placeholder="e.g. Isolated faulty sub-panel and dispatched technician">
+                                        </div>
+                                        <div class="action-field full">
+                                            <label for="incident_resolution_{{ $incident->id }}">Resolution Summary / Technical Findings</label>
+                                            <textarea name="resolution_summary" id="incident_resolution_{{ $incident->id }}" rows="2" class="action-textarea" placeholder="Detail the root cause and repair action completed...">{{ $incident->resolution_summary }}</textarea>
+                                        </div>
+                                        <div class="action-field full">
+                                            <label for="incident_prev_{{ $incident->id }}">Preventive Recommendation</label>
+                                            <input type="text" name="preventive_recommendation" id="incident_prev_{{ $incident->id }}" class="action-input" value="{{ $incident->preventive_recommendation }}" placeholder="e.g. Schedule bi-weekly load audit">
+                                        </div>
+                                    </div>
+                                    <div class="action-form-footer">
+                                        <span class="sync-hint"><i class="fa-solid fa-arrows-rotate"></i> Syncs directly with CIMM Maintenance</span>
+                                        <button type="submit" class="action-submit-btn"><i class="fa-solid fa-floppy-disk"></i> Save &amp; Sync Workflow</button>
+                                    </div>
+                                </form>
+                            </section>
+                            @endif
+
                             <section class="incident-detail-section">
                                 <h4 class="incident-section-title"><i class="fa-solid fa-chart-simple"></i> Incident snapshot</h4>
                                 <div class="detail-grid">
@@ -394,10 +511,12 @@
             @csrf
             <div class="report-field">
                 <label for="report_facility_id">Facility *</label>
-                <select id="report_facility_id" name="facility_id" required>
+                <select id="report_facility_id" name="facility_id" required onchange="onReportFacilityChange()">
                     <option value="">Select facility</option>
                     @foreach($reportFacilities ?? [] as $facility)
-                        <option value="{{ $facility->id }}" @selected((string) old('facility_id', request('facility_id')) === (string) $facility->id)>{{ $facility->name }}</option>
+                        <option value="{{ $facility->id }}" 
+                                data-submeters="{{ json_encode($facility->submeters?->map(fn($s) => ['id' => $s->id, 'name' => $s->submeter_name]) ?? []) }}"
+                                @selected((string) old('facility_id', request('facility_id')) === (string) $facility->id)>{{ $facility->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -410,13 +529,19 @@
                     @endforeach
                 </select>
             </div>
+            <div class="report-field full">
+                <label for="report_affected_asset">Affected Meter / Equipment / Panel</label>
+                <select id="report_affected_asset" name="affected_asset" class="action-select">
+                    <option value="Main Utility Meter">⚡ Main Utility Meter (Facility Main)</option>
+                    <option value="Main Distribution Panel (MDP)">Main Distribution Panel (MDP)</option>
+                </select>
+                <small class="field-help" style="font-size: 0.73rem; color: #64748b; margin-top: 4px; display: block;">
+                    Choose <strong>Main Meter</strong> or select the specific <strong>Sub-meter</strong> / equipment affected.
+                </small>
+            </div>
             <div class="report-field">
                 <label for="report_detected_at">Date and Time Detected *</label>
                 <input id="report_detected_at" type="datetime-local" name="detected_at" value="{{ old('detected_at', now()->format('Y-m-d\TH:i')) }}" max="{{ now()->format('Y-m-d\TH:i') }}" required>
-            </div>
-            <div class="report-field">
-                <label for="report_affected_asset">Affected Meter/Equipment</label>
-                <input id="report_affected_asset" type="text" name="affected_asset" value="{{ old('affected_asset') }}" maxlength="255" placeholder="e.g. Main panel, AHU-02, Main meter">
             </div>
             <div class="report-field full">
                 <label for="report_description">Observed Problem *</label>
@@ -437,6 +562,59 @@
 @endif
 
 <script>
+function onReportFacilityChange() {
+    const facSelect = document.getElementById('report_facility_id');
+    const assetSelect = document.getElementById('report_affected_asset');
+    if (!facSelect || !assetSelect) return;
+    
+    assetSelect.innerHTML = '';
+
+    const selectedOpt = facSelect.options[facSelect.selectedIndex];
+    const facName = selectedOpt && selectedOpt.value ? selectedOpt.textContent.trim() : '';
+
+    if (!facName) {
+        assetSelect.add(new Option('-- Select Facility first --', ''));
+        assetSelect.add(new Option('⚡ Main Utility Meter (Facility Main)', 'Main Utility Meter'));
+        return;
+    }
+
+    // Category 1: Main Meter
+    const optMain = document.createElement('optgroup');
+    optMain.label = '⚡ Main Facility Meter';
+    const mainOpt = new Option('Main Utility Meter (' + facName + ')', 'Main Utility Meter');
+    mainOpt.selected = true;
+    optMain.appendChild(mainOpt);
+    optMain.appendChild(new Option('Main Distribution Panel (MDP)', 'Main Distribution Panel (MDP)'));
+    assetSelect.appendChild(optMain);
+
+    // Category 2: Facility Sub-meters
+    let submeters = [];
+    if (selectedOpt.dataset.submeters) {
+        try {
+            submeters = JSON.parse(selectedOpt.dataset.submeters);
+        } catch(e){}
+    }
+
+    const optSub = document.createElement('optgroup');
+    optSub.label = '📊 Sub-meters in ' + facName;
+    if (submeters && submeters.length > 0) {
+        submeters.forEach(s => {
+            optSub.appendChild(new Option('Sub-meter: ' + s.name, 'Sub-meter: ' + s.name));
+        });
+    } else {
+        const noSubOpt = new Option('(No sub-meters registered for this facility)', '');
+        noSubOpt.disabled = true;
+        optSub.appendChild(noSubOpt);
+    }
+    assetSelect.appendChild(optSub);
+
+    // Category 3: General Electrical Line
+    const optEq = document.createElement('optgroup');
+    optEq.label = '🔌 Other Electrical Line';
+    optEq.appendChild(new Option('Other Electrical Line / Feeder', 'Other Electrical Line / Feeder'));
+    assetSelect.appendChild(optEq);
+}
+
 function openIncidentModal(id) {
     const modal = document.getElementById('incident-modal-' + id);
     if (!modal) return;
@@ -453,7 +631,30 @@ function closeIncidentModal(id) {
     document.body.style.overflow = '';
 }
 
+function setTriageAction(id, action) {
+    const hiddenInput = document.getElementById('triage_action_' + id);
+    const opBox = document.getElementById('operational_event_box_' + id);
+    const statusSelect = document.getElementById('incident_status_' + id);
+
+    if (hiddenInput) hiddenInput.value = action;
+
+    if (action === 'operational_event') {
+        if (opBox) opBox.style.display = 'block';
+        if (statusSelect) statusSelect.value = 'Resolved';
+    } else if (action === 'escalate_maintenance') {
+        if (opBox) opBox.style.display = 'none';
+        if (statusSelect) statusSelect.value = 'Ongoing';
+        const actionInput = document.getElementById('incident_action_' + id);
+        if (actionInput && !actionInput.value) {
+            actionInput.value = 'Dispatched to CIMM Maintenance for physical inspection and repair.';
+        }
+    } else {
+        if (opBox) opBox.style.display = 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    onReportFacilityChange();
     const rows = Array.from(document.querySelectorAll('.incident-list-row'));
     const reportModal = document.getElementById('reportIncidentModal');
     const openReportButton = document.getElementById('openReportIncident');
@@ -510,6 +711,48 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
 .incident-page {
     width: 100%;
+}
+
+.triage-quick-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 750;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+.triage-quick-btn.dispatch {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    color: #1d4ed8;
+}
+.triage-quick-btn.dispatch:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+.triage-quick-btn.event {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+}
+.triage-quick-btn.event:hover {
+    background: #16a34a;
+    color: #ffffff;
+    border-color: #16a34a;
+}
+body.dark-mode .triage-quick-btn.dispatch {
+    background: #1e293b;
+    border-color: #3b82f6;
+    color: #93c5fd;
+}
+body.dark-mode .triage-quick-btn.event {
+    background: #064e3b;
+    border-color: #10b981;
+    color: #6ee7b7;
 }
 
 .incident-shell {
@@ -1646,6 +1889,215 @@ body.dark-mode .report-cancel {
     .maintenance-btn {
         justify-content: center;
     }
+}
+
+/* PIPELINE STEPPER (CARD & MODAL) */
+.incident-pipeline-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 750;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    margin-top: 5px;
+}
+.incident-pipeline-stepper .pipe-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.incident-pipeline-stepper .pipe-step.current {
+    color: #2563eb;
+    font-weight: 850;
+}
+.incident-pipeline-stepper .pipe-step.done {
+    color: #059669;
+}
+.incident-pipeline-stepper .pipe-step.next {
+    color: #94a3b8;
+    opacity: 0.7;
+}
+.incident-pipeline-stepper .pipe-arrow {
+    font-size: 0.6rem;
+    color: #cbd5e1;
+}
+
+/* MODAL LIFECYCLE PIPELINE */
+.modal-lifecycle-pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    gap: 12px;
+}
+.modal-lifecycle-pipeline .pipe-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+.modal-lifecycle-pipeline .pipe-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    background: #e2e8f0;
+    color: #64748b;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.modal-lifecycle-pipeline .pipe-item.active .pipe-icon {
+    background: #eff6ff;
+    color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.modal-lifecycle-pipeline .pipe-item.done .pipe-icon {
+    background: #ecfdf5;
+    color: #059669;
+}
+.modal-lifecycle-pipeline .pipe-text {
+    display: flex;
+    flex-direction: column;
+}
+.modal-lifecycle-pipeline .pipe-text strong {
+    font-size: 0.84rem;
+    color: #0f172a;
+    font-weight: 800;
+}
+.modal-lifecycle-pipeline .pipe-text span {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+.modal-lifecycle-pipeline .pipe-connector {
+    flex: 0 0 30px;
+    height: 2px;
+    background: #e2e8f0;
+}
+.modal-lifecycle-pipeline .pipe-connector.done {
+    background: #059669;
+}
+
+/* INCIDENT ACTION FORM SECTION */
+.incident-action-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+}
+.incident-action-form .action-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+.incident-action-form .action-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.incident-action-form .action-field.full {
+    grid-column: 1 / -1;
+}
+.incident-action-form label {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.incident-action-form .action-select,
+.incident-action-form .action-input,
+.incident-action-form .action-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #0f172a;
+    background: #ffffff;
+    box-sizing: border-box;
+}
+.incident-action-form .action-select:focus,
+.incident-action-form .action-input:focus,
+.incident-action-form .action-textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.incident-action-form .action-form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+.incident-action-form .sync-hint {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #059669;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.incident-action-form .action-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.incident-action-form .action-submit-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* DARK MODE */
+body.dark-mode .incident-pipeline-stepper {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+body.dark-mode .incident-pipeline-stepper .pipe-step.current { color: #60a5fa; }
+body.dark-mode .incident-pipeline-stepper .pipe-step.done { color: #34d399; }
+body.dark-mode .modal-lifecycle-pipeline {
+    background: #1e293b;
+    border-color: #334155;
+}
+body.dark-mode .modal-lifecycle-pipeline .pipe-text strong { color: #f8fafc; }
+body.dark-mode .modal-lifecycle-pipeline .pipe-text span { color: #94a3b8; }
+body.dark-mode .incident-action-section {
+    background: #1e293b;
+    border-color: #334155;
+}
+body.dark-mode .incident-action-form label { color: #cbd5e1; }
+body.dark-mode .incident-action-form .action-select,
+body.dark-mode .incident-action-form .action-input,
+body.dark-mode .incident-action-form .action-textarea {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
 }
 </style>
 @endsection

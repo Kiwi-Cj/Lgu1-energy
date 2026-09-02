@@ -24,11 +24,11 @@ test('super admin can view the integrations documentation page', function () {
         ->assertSee('CPRF Facilities Reservation')
         ->assertSee('Main LGU Single Sign-On')
         ->assertDontSee('Submeter IoT Ingestion')
-        ->assertDontSee('/api/v1/cprf/facility-readings')
+        ->assertSee('/api/v1/cprf/facility-readings')
         ->assertSee('/api/v1/cprf/energy-reports')
         ->assertSee('UMAN Monthly Energy Records')
         ->assertSee('Connected')
-        ->assertSee('Energy-owned records');
+        ->assertSee('CPRF now sends utility readings');
 });
 
 test('non super admin cannot view the integrations documentation page', function () {

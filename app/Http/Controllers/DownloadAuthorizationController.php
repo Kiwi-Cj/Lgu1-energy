@@ -68,6 +68,19 @@ class DownloadAuthorizationController extends Controller
         $request->session()->forget($attemptKey);
         $request->session()->forget($lockKey);
 
+        if ($target === 'print') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'action' => 'print',
+                    'message' => 'Password confirmed. Opening print dialog...',
+                    'redirect_url' => 'print',
+                ]);
+            }
+
+            return back()->with('success', 'Password confirmed.');
+        }
+
         $token = Str::random(40);
         $request->session()->put('download_authorizations.' . $token, [
             'target' => $this->normalizeTarget($target),
@@ -104,6 +117,10 @@ class DownloadAuthorizationController extends Controller
         $target = trim($target);
         if ($target === '') {
             return null;
+        }
+
+        if (in_array($target, ['print', '#print', 'action:print'], true)) {
+            return 'print';
         }
 
         $appUrl = rtrim(url('/'), '/');

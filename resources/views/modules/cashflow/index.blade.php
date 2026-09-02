@@ -35,9 +35,10 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <div class="cashflow-page">
+    <div class="report-card-container">
 
-    <!-- TOP HEADER & CONTROLS -->
-    <div class="cf-header">
+        <!-- TOP HEADER & CONTROLS -->
+        <div class="cf-header">
         <div class="cf-title-wrap">
             <h2><i class="fa-solid fa-money-bill-trend-up" style="color:#059669;"></i> Utility Cash Flow &amp; Budget Tracking</h2>
             <p>Monitor electricity expenditure, budget burn rate, and fiscal cost savings separated by <strong>Local LGU</strong> and <strong>CPRF Integration</strong>.</p>
@@ -104,7 +105,7 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="cf-actions">
-                <a href="{{ route('modules.cashflow.export', ['facility_id' => $selectedFacilityId, 'year' => $fiscalYear]) }}" class="cf-btn-secondary" title="Download CSV Statement">
+                <a href="{{ route('modules.cashflow.export', ['facility_id' => $selectedFacilityId, 'year' => $fiscalYear]) }}" class="cf-btn-secondary" data-secure-download title="Download CSV Statement">
                     <i class="fa-solid fa-file-csv"></i> Export Statement
                 </a>
 
@@ -338,6 +339,7 @@ window.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
+    </div>
 </div>
 
 <!-- BUDGET ENCODING / EDIT MODAL -->
@@ -524,19 +526,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <style>
 .cashflow-page {
-    padding: 24px;
-    max-width: 1400px;
+    width: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.report-card-container {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(31, 38, 135, 0.06);
+    padding: 26px 28px;
+    margin-bottom: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+body.dark-mode .cashflow-page .report-card-container {
+    background: #111827;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 /* HEADER */
 .cf-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+body.dark-mode .cf-header {
+    border-bottom-color: #334155;
 }
 .cf-title-wrap h2 {
     font-size: 1.55rem;
@@ -588,6 +612,17 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #047857;
     border-color: #a7f3d0;
     box-shadow: 0 1px 3px rgba(16, 185, 129, 0.15);
+}
+body.dark-mode .cf-header {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+body.dark-mode .cf-title-wrap h2 {
+    color: #f8fafc;
+}
+body.dark-mode .cf-title-wrap p {
+    color: #94a3b8;
 }
 body.dark-mode .cf-scope-pill {
     background: #1e293b;
@@ -668,6 +703,23 @@ body.dark-mode .cf-scope-pill.active-cprf {
     transition: all .15s ease;
 }
 .cf-btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+body.dark-mode .cf-control-group label {
+    color: #94a3b8;
+}
+body.dark-mode .cf-select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
+}
+body.dark-mode .cf-btn-secondary {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+body.dark-mode .cf-btn-secondary:hover {
+    background: #1e293b;
+    border-color: #475569;
+}
 
 /* KPI CARDS */
 .cf-kpi-grid {

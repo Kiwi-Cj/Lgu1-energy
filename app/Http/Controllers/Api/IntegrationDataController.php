@@ -235,7 +235,7 @@ class IntegrationDataController extends Controller
         ]);
 
         $query = Maintenance::query()
-            ->with('facility')
+            ->with(['facility', 'energyIncident:id,affected_asset'])
             ->when($request->filled('facility_id'), fn (Builder $q) => $q->where('facility_id', $request->integer('facility_id')))
             ->when($request->filled('status'), fn (Builder $q) => $q->where('maintenance_status', $request->string('status')))
             ->when($request->filled('scheduled_from'), fn (Builder $q) => $q->whereDate('scheduled_date', '>=', $request->date('scheduled_from')))
@@ -247,6 +247,7 @@ class IntegrationDataController extends Controller
         return $this->paginated($query, $request, fn (Maintenance $maintenance) => [
             'id' => $maintenance->id,
             'energy_incident_id' => $maintenance->energy_incident_id,
+            'affected_asset' => $maintenance->energyIncident?->affected_asset ?: 'Main Utility Meter',
             'source' => 'active',
             'facility' => $this->facilityPayload($maintenance->facility),
             'issue_type' => $maintenance->issue_type,

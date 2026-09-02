@@ -98,3 +98,27 @@ test('adding a daily task also creates its linked facility recommendation', func
         ->toDateString())
         ->toBe('2026-08-08');
 });
+
+test('populating default checklist tasks creates standard opening and closing routine tasks and recommendations', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Amoranto Sports Complex']);
+
+    $this->actingAs($admin)
+        ->post(route('modules.energy-conservation.daily-checklist.populate-default'), [
+            'facility_id' => $facility->id,
+            'return_date' => '2026-09-02',
+        ])
+        ->assertRedirect(route('modules.energy-conservation.feature', [
+            'feature' => 'daily-checklist',
+            'facility_id' => $facility->id,
+            'date' => '2026-09-02',
+        ]));
+
+    $tasks = \App\Models\DailyEnergyChecklistTask::where('facility_id', $facility->id)->get();
+    expect($tasks->count())->toBe(10);
+    expect($tasks->where('period', 'opening')->count())->toBe(5);
+    expect($tasks->where('period', 'closing')->count())->toBe(5);
+
+    $recs = EnergySavingRecommendation::where('facility_id', $facility->id)->get();
+    expect($recs->count())->toBe(0);
+});

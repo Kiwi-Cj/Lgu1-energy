@@ -213,3 +213,43 @@ test('live AI Alerts suggestion uses the meter baseline even without three month
         ->toContain('below baseline')
         ->not->toContain('Not enough historical data');
 });
+
+test('AI alerts full overhaul includes executive banner, load tracking integration, and missing data shortcut', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facilityWithData = Facility::factory()->create(['name' => 'Overhaul Active Facility', 'baseline_kwh' => 1000]);
+    $facilityNoData = Facility::factory()->create(['name' => 'Overhaul Empty Facility', 'baseline_kwh' => null]);
+
+    EnergyRecord::withoutEvents(fn () => EnergyRecord::create([
+        'facility_id' => $facilityWithData->id,
+        'year' => 2026,
+        'month' => 8,
+        'actual_kwh' => 1500,
+        'rate_per_kwh' => 12.50,
+        'input_source' => 'manual',
+        'review_status' => 'approved',
+    ]));
+
+    $response = $this->actingAs($admin)
+        ->get(route('modules.ai-alerts.index', ['month' => '2026-08']))
+        ->assertOk();
+
+    // Verify AI Executive Summary Banner
+    $response->assertSee('Energy Intelligence Overview')
+        ->assertSee('Portfolio Assessment:')
+        ->assertSee('Urgent Facilities');
+
+    // Verify Direct Load Tracking link
+    $response->assertSee(route('modules.load-tracking.index', ['facility_id' => $facilityWithData->id]))
+        ->assertSee('Equipment Load Tracking');
+
+    // Verify Missing Data 1-Click Encode shortcut
+    $response->assertSee(route('facilities.monthly-records', ['facility' => $facilityNoData->id, 'year' => 2026, 'table_month' => 8]))
+        ->assertSee('Encode Aug 2026 Reading');
+
+    // Verify Clickable summary cards and Banner stats
+    $response->assertSee('data-ai-stat-filter="urgent"', escape: false)
+        ->assertSee('data-ai-stat-filter="usage"', escape: false)
+        ->assertSee('data-ai-stat-filter="cost"', escape: false)
+        ->assertSee('data-ai-stat-filter="no-data"', escape: false);
+});
+

@@ -28,6 +28,16 @@
 /* ===== BASE STYLES ===== */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
 
+input::-ms-reveal,
+input::-ms-clear,
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+
 body {
     min-height: 100vh;
     background: #f4f6fa;
@@ -2161,16 +2171,16 @@ body.dark-mode .sidebar-footer {
 <div id="secureDownloadModal" class="secure-download-modal" style="display:none;" aria-hidden="true">
     <div class="secure-download-dialog" role="dialog" aria-modal="true" aria-labelledby="secureDownloadTitle">
         <button type="button" class="secure-download-close" id="secureDownloadClose" aria-label="Close">&times;</button>
-        <div class="secure-download-icon"><i class="fa-solid fa-lock"></i></div>
-        <h2 id="secureDownloadTitle">Confirm Download</h2>
-        <p>Enter your account password before downloading this report.</p>
+        <div class="secure-download-icon" id="secureDownloadIcon"><i class="fa-solid fa-lock"></i></div>
+        <h2 id="secureDownloadTitle">Security Verification</h2>
+        <p id="secureDownloadDescription">Enter your account password before proceeding.</p>
         <form method="POST" action="{{ route('downloads.authorize') }}" id="secureDownloadForm">
             @csrf
             <input type="hidden" name="target" id="secureDownloadTarget">
-            <label for="secureDownloadPassword">Password</label>
-            <input type="password" name="download_password" id="secureDownloadPassword" autocomplete="current-password" required>
+            <label for="secureDownloadPassword">Account Password</label>
+            <input type="password" name="download_password" id="secureDownloadPassword" autocomplete="current-password" placeholder="Enter password to confirm" required>
             <div id="secureDownloadFeedback" class="secure-download-feedback" style="display:none;"></div>
-            <button type="submit" id="secureDownloadSubmit">Continue Download</button>
+            <button type="submit" id="secureDownloadSubmit">Authorize &amp; Continue</button>
         </form>
     </div>
 </div>
@@ -2762,7 +2772,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const secureDownloadForm = document.getElementById('secureDownloadForm');
     const secureDownloadFeedback = document.getElementById('secureDownloadFeedback');
     const secureDownloadSubmit = document.getElementById('secureDownloadSubmit');
+    const secureDownloadTitle = document.getElementById('secureDownloadTitle');
+    const secureDownloadDescription = document.getElementById('secureDownloadDescription');
+    const secureDownloadIcon = document.getElementById('secureDownloadIcon');
     let secureDownloadLockTimer = null;
+    let secureDownloadCurrentAction = 'download';
 
     const showGlobalToast = (message, type = 'success') => {
         let stack = document.querySelector('.global-toast-stack');
@@ -2814,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(secureDownloadLockTimer);
                 secureDownloadSubmit.disabled = false;
                 secureDownloadPassword.disabled = false;
-                secureDownloadSubmit.textContent = 'Continue Download';
+                secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
                 setSecureDownloadFeedback('You can try again now.', 'success');
                 return;
             }
@@ -2827,27 +2841,98 @@ document.addEventListener('DOMContentLoaded', function() {
         secureDownloadLockTimer = setInterval(tick, 1000);
     };
 
-    window.requestSecureDownload = (targetUrl) => {
+    window.requestSecureDownload = (targetUrl, options = {}) => {
         if (!secureDownloadModal || !secureDownloadTarget) {
-            window.location.href = targetUrl;
+            if (targetUrl === 'print') {
+                window.print();
+            } else {
+                window.location.href = targetUrl;
+            }
             return;
         }
 
+        secureDownloadCurrentAction = options.action || (targetUrl === 'print' ? 'print' : 'download');
         clearInterval(secureDownloadLockTimer);
         clearSecureDownloadFeedback();
         secureDownloadTarget.value = targetUrl;
+
+        const isPrint = secureDownloadCurrentAction === 'print' || targetUrl === 'print';
+        const urlStr = String(targetUrl || '').toLowerCase();
+        const isExcel = urlStr.includes('excel') || urlStr.includes('format=xlsx') || urlStr.includes('.xlsx');
+        const isPdf = urlStr.includes('pdf') || urlStr.includes('.pdf');
+        const isCsv = urlStr.includes('csv') || urlStr.includes('format=csv') || urlStr.includes('.csv');
+
+        if (secureDownloadTitle) {
+            if (options.title) {
+                secureDownloadTitle.textContent = options.title;
+            } else if (isPrint) {
+                secureDownloadTitle.textContent = 'Confirm Print Report';
+            } else if (isExcel) {
+                secureDownloadTitle.textContent = 'Confirm Excel Export';
+            } else if (isPdf) {
+                secureDownloadTitle.textContent = 'Confirm PDF Download';
+            } else if (isCsv) {
+                secureDownloadTitle.textContent = 'Confirm CSV Export';
+            } else {
+                secureDownloadTitle.textContent = 'Confirm Download';
+            }
+        }
+
+        if (secureDownloadDescription) {
+            if (options.description) {
+                secureDownloadDescription.textContent = options.description;
+            } else if (isPrint) {
+                secureDownloadDescription.textContent = 'Please enter your account password before printing this report.';
+            } else if (isExcel) {
+                secureDownloadDescription.textContent = 'Please enter your account password before exporting this Excel file.';
+            } else if (isPdf) {
+                secureDownloadDescription.textContent = 'Please enter your account password before downloading this PDF report.';
+            } else if (isCsv) {
+                secureDownloadDescription.textContent = 'Please enter your account password before exporting this CSV file.';
+            } else {
+                secureDownloadDescription.textContent = 'Please enter your account password before downloading this report.';
+            }
+        }
+
+        if (secureDownloadIcon) {
+            if (options.icon) {
+                secureDownloadIcon.innerHTML = options.icon;
+            } else if (isPrint) {
+                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-print"></i>';
+            } else if (isExcel) {
+                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-excel" style="color:#15803d;"></i>';
+            } else if (isPdf) {
+                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-pdf" style="color:#b91c1c;"></i>';
+            } else if (isCsv) {
+                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-csv" style="color:#059669;"></i>';
+            } else {
+                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-lock"></i>';
+            }
+        }
+
         if (secureDownloadPassword) {
             secureDownloadPassword.value = '';
             secureDownloadPassword.disabled = false;
         }
         if (secureDownloadSubmit) {
             secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = 'Continue Download';
+            secureDownloadSubmit.textContent = options.submitText || (isPrint ? 'Authorize & Print' : 'Authorize & Download');
         }
         secureDownloadModal.style.display = 'flex';
         secureDownloadModal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         setTimeout(() => secureDownloadPassword?.focus(), 50);
+    };
+
+    window.requestSecurePrint = (options = {}) => {
+        window.requestSecureDownload('print', {
+            action: 'print',
+            title: 'Confirm Print Report',
+            description: 'Please enter your account password before printing this report.',
+            submitText: 'Authorize & Print',
+            icon: '<i class="fa-solid fa-print"></i>',
+            ...options
+        });
     };
 
     const closeSecureDownloadModal = () => {
@@ -2859,7 +2944,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (secureDownloadSubmit) {
             secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = 'Continue Download';
+            secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
         }
         secureDownloadModal.style.display = 'none';
         secureDownloadModal.setAttribute('aria-hidden', 'true');
@@ -2891,7 +2976,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         clearSecureDownloadFeedback();
         secureDownloadSubmit.disabled = true;
-        secureDownloadSubmit.textContent = 'Checking...';
+        secureDownloadSubmit.textContent = 'Verifying...';
 
         try {
             const response = await fetch(secureDownloadForm.action, {
@@ -2906,7 +2991,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const payload = await response.json().catch(() => ({}));
 
             if (!response.ok || !payload.success) {
-                const message = payload.message || 'Invalid password. Download was not started.';
+                const message = payload.message || 'Invalid password. Action was not authorized.';
                 setSecureDownloadFeedback(message, 'error');
                 secureDownloadPassword.value = '';
                 secureDownloadPassword.focus();
@@ -2915,32 +3000,59 @@ document.addEventListener('DOMContentLoaded', function() {
                     applySecureDownloadLock(payload.retry_after);
                 } else {
                     secureDownloadSubmit.disabled = false;
-                    secureDownloadSubmit.textContent = 'Continue Download';
+                    secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
                 }
                 return;
             }
 
-            setSecureDownloadFeedback(payload.message || 'Password confirmed. Download starting...', 'success');
-            showGlobalToast(payload.message || 'Password confirmed. Download starting...', 'success');
-            secureDownloadSubmit.textContent = 'Starting...';
+            const isPrint = payload.action === 'print' || payload.redirect_url === 'print' || secureDownloadCurrentAction === 'print';
+            const successMsg = payload.message || (isPrint ? 'Password confirmed. Opening print dialog...' : 'Password confirmed. Download starting...');
+            setSecureDownloadFeedback(successMsg, 'success');
+            showGlobalToast(successMsg, 'success');
+            secureDownloadSubmit.textContent = isPrint ? 'Opening Print...' : 'Starting...';
 
             setTimeout(() => {
                 closeSecureDownloadModal();
-                window.location.href = payload.redirect_url;
-            }, 650);
+                if (isPrint) {
+                    setTimeout(() => window.print(), 250);
+                } else {
+                    window.location.href = payload.redirect_url;
+                }
+            }, 550);
         } catch (error) {
             setSecureDownloadFeedback('Unable to verify password right now. Please try again.', 'error');
             secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = 'Continue Download';
+            secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
         }
     });
 
     document.addEventListener('click', (event) => {
-        const link = event.target.closest('a[data-secure-download]');
-        if (!link) return;
+        // 1. Intercept Print buttons
+        const printBtn = event.target.closest('[data-secure-print], .btn-print-dashboard');
+        if (printBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.requestSecurePrint();
+            return;
+        }
 
-        event.preventDefault();
-        window.requestSecureDownload(link.href);
+        // 2. Intercept explicit secure download links
+        const link = event.target.closest('a[data-secure-download]');
+        if (link) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.requestSecureDownload(link.href);
+            return;
+        }
+
+        // 3. Auto-detect common Excel/PDF/CSV/export buttons
+        const autoDownloadLink = event.target.closest('a.btn-excel, a.btn-pdf, a.btn-csv, a.annual-download-btn, a.incident-pdf-btn');
+        if (autoDownloadLink && !autoDownloadLink.matches('[data-no-secure]') && autoDownloadLink.getAttribute('href') && autoDownloadLink.getAttribute('href') !== '#') {
+            event.preventDefault();
+            event.stopPropagation();
+            window.requestSecureDownload(autoDownloadLink.href);
+            return;
+        }
     });
 
     document.addEventListener('submit', (event) => {

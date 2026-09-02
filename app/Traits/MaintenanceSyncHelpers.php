@@ -17,11 +17,36 @@ trait MaintenanceSyncHelpers
     private function maintenanceIssueTypes(): array
     {
         return [
+            // Energy Monitoring Auto-flagged
             'Auto-flagged: High Consumption',
             'Auto-flagged: Very High Consumption',
             'Auto-flagged: Critical Consumption',
+
+            // Pure Energy Issues
+            'High Energy Consumption',
+            'Critical Usage Spike (>20% Baseline)',
+            'Increasing Consumption Trend',
+            'Off-Hours / Phantom Load Waste',
+            'Peak Demand Load Surge',
+            'Main Meter vs Submeter Discrepancy',
+            'Abnormal Consumption Drop / Meter Stoppage',
+            'Energy Audit & Verification Check',
+
+            // Supporting & compatibility values
+            'High Consumption / Peak Load Spike',
+            'Off-Hours / Phantom Load Leakage',
+            'Meter - Anomaly / Reading Discrepancy',
+            'General - Energy Efficiency & Preventive Check',
+            'High Consumption / Inefficient',
+            'Trend Increasing',
             'Electrical - Power Outage',
             'Electrical - Circuit Overload',
+            'Aircon - High Load / Inefficient Cooling',
+            'Aircon - Filter Cleaning & Maintenance',
+            'Lighting - Inefficient Fixture / Overuse',
+            'Electrical - Circuit Overload / Strain',
+            'Electrical - Power Outage / Fluctuation',
+            'Equipment - Continuous Run / Heavy Load',
             'Lighting - Bulb Replacement',
             'Lighting - Fixture Repair',
             'Aircon - Not Cooling',

@@ -23,6 +23,10 @@ class EnergyIncident extends Model
         'date_detected',
         'created_by',
         'resolved_at',
+        'immediate_action',
+        'resolution_summary',
+        'preventive_recommendation',
+        'probable_cause',
     ];
 
     protected $casts = [

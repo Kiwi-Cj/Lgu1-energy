@@ -36,225 +36,298 @@ class SubmeterMonitoringController extends Controller
             return redirect()->route('dashboard.index')->with('error', 'You do not have permission to view submeter monitoring.');
         }
 
-        $periodType = (string) $request->query('period_type', 'monthly');
-        if (! in_array($periodType, ['daily', 'weekly', 'monthly'], true)) {
-            $periodType = 'monthly';
-        }
-
-        $selectedFacility = $request->query('facility_id');
-        $selectedDepartment = trim((string) $request->query('department', ''));
-        $selectedSensorSubmeter = $request->integer('sensor_submeter_id') ?: null;
-        $selectedSensorPeriod = (string) $request->query('sensor_period', 'daily');
-        if (! in_array($selectedSensorPeriod, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
-            $selectedSensorPeriod = 'daily';
-        }
         $facilityScope = $this->staffFacilityIds($request);
-        $selectedMonth = $this->resolvePreferredReadingMonth(
-            (string) $request->query('month', ''),
-            $periodType,
-            $selectedFacility,
-            $selectedDepartment,
-            $facilityScope
-        );
-        [$periodStart, $periodEnd, $safeMonth] = $this->resolveMonthRange($selectedMonth);
 
-        $submetersForTable = Submeter::query()
-            ->with('facility:id,name')
-            ->whereHas('facility')
-            ->when($selectedFacility, fn ($q) => $q->where('facility_id', $selectedFacility))
-            ->when($selectedDepartment !== '', fn ($q) => $q->where('submeter_name', 'like', "%{$selectedDepartment}%"))
-            ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
-            ->orderBy('submeter_name')
-            ->get(['id', 'facility_id', 'submeter_name', 'status']);
-
-        $submeterIds = $submetersForTable->pluck('id')->filter()->unique()->values();
-
-        $rawRows = SubmeterReading::query()
-            ->with('alert')
-            ->where('period_type', $periodType)
-            ->whereBetween('period_end_date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-            ->when($submeterIds->isNotEmpty(), fn ($q) => $q->whereIn('submeter_id', $submeterIds))
-            ->orderByDesc('period_end_date')
-            ->orderByDesc('id')
-            ->get();
-
-        $rowsBySubmeter = $rawRows
-            ->groupBy('submeter_id')
-            ->map(fn ($group) => $group->first());
-
-        $periodLabels = $rowsBySubmeter->map(fn (SubmeterReading $r) => $r->periodLabel())->unique()->values();
-
-        $baselineMap = SubmeterBaseline::query()
-            ->whereIn('baseline_type', $this->submeterBaselineTypePriority())
-            ->whereIn('submeter_id', $submeterIds)
-            ->whereIn('computed_for_period', $periodLabels)
-            ->get()
-            ->groupBy(fn ($item) => $item->submeter_id . '|' . $item->computed_for_period);
-
-        // Submeters can have a manually configured baseline on their linked
-        // facility meter even before a period/computed baseline is generated.
-        $configuredBaselineMap = FacilityMeter::query()
-            ->where('meter_type', 'sub')
-            ->whereIn('facility_id', $submetersForTable->pluck('facility_id')->filter()->unique())
-            ->whereNotNull('baseline_kwh')
-            ->get(['facility_id', 'meter_name', 'baseline_kwh'])
-            ->filter(fn (FacilityMeter $meter) => is_numeric($meter->baseline_kwh) && (float) $meter->baseline_kwh > 0)
-            ->keyBy(fn (FacilityMeter $meter) => $this->submeterMeterKey(
-                (int) $meter->facility_id,
-                (string) $meter->meter_name
-            ));
-
-        $rows = $submetersForTable->map(function (Submeter $submeter) use ($rowsBySubmeter, $baselineMap, $configuredBaselineMap, $periodType) {
-            $reading = $rowsBySubmeter->get($submeter->id);
-            $hasReading = $reading instanceof SubmeterReading;
-
-            if (! $hasReading) {
-                return null;
-            }
-
-            $reading->setRelation('submeter', $submeter);
-            $reading->setAttribute('monitor_has_reading', $hasReading);
-
-            $baselineInfo = $this->pickPreferredSubmeterBaseline(
-                $baselineMap->get($reading->submeter_id . '|' . $reading->periodLabel(), collect())
-            );
-            $baseline = $baselineInfo['value'];
-            $baselineSource = $baselineInfo['type'];
-            if ($baseline === null) {
-                $configuredMeter = $configuredBaselineMap->get($this->submeterMeterKey(
-                    (int) $submeter->facility_id,
-                    (string) $submeter->submeter_name
-                ));
-                if ($configuredMeter instanceof FacilityMeter) {
-                    $baseline = round((float) $configuredMeter->baseline_kwh, 2);
-                    $baselineSource = 'configured_meter';
-                }
-            }
-            $alert = $reading->alert;
-            if ($baseline === null && $alert && is_numeric($alert->baseline_value_kwh) && (float) $alert->baseline_value_kwh > 0) {
-                $baseline = round((float) $alert->baseline_value_kwh, 2);
-                $baselineSource = 'alert';
-            }
-
-            $reading->setAttribute('monitor_baseline_kwh', $baseline);
-            $reading->setAttribute('monitor_baseline_source', $baselineSource);
-            $increasePercent = null;
-            if ($baseline && $baseline > 0) {
-                $kwh = is_numeric($reading->kwh_used) ? (float) $reading->kwh_used : 0.0;
-                $increasePercent = round((($kwh - $baseline) / $baseline) * 100, 2);
-            } else {
-                $increasePercent = null;
-            }
-            $reading->setAttribute('monitor_increase_percent', $increasePercent);
-            $reading->setAttribute('monitor_alert_level', $this->resolveSubmeterRowAlertFromIncrease($increasePercent, $baseline));
-            return $reading;
-        })->filter()->values();
-
-        $widgets = $this->buildDashboardWidgets($periodType, $periodStart, $periodEnd, $selectedFacility, $facilityScope);
-        $widgets['top5HighestIncrease'] = $rows
-            ->filter(fn (SubmeterReading $row) => (bool) ($row->monitor_has_reading ?? false))
-            ->filter(fn (SubmeterReading $row) => is_numeric($row->monitor_increase_percent ?? null))
-            ->filter(fn (SubmeterReading $row) => (float) $row->monitor_increase_percent > 0)
-            ->sortByDesc(fn (SubmeterReading $row) => (float) $row->monitor_increase_percent)
-            ->take(5)
-            ->values();
-        $evaluatedAlertRows = $rows->filter(fn (SubmeterReading $row) => ! in_array(
-            (string) ($row->monitor_alert_level ?? 'none'),
-            ['none', 'normal'],
-            true
-        ));
-        $widgets['criticalAlertsThisMonth'] = $evaluatedAlertRows
-            ->filter(fn (SubmeterReading $row) => in_array(
-                (string) $row->monitor_alert_level,
-                ['critical', 'drop_critical'],
-                true
-            ))
-            ->count();
-        $widgets['facilitiesWithAlertsCount'] = $evaluatedAlertRows
-            ->pluck('submeter.facility_id')
-            ->filter()
-            ->unique()
-            ->count();
-
-        $facilities = Facility::query()
+        // 1. Available facilities with submeters
+        $facilitiesWithSubmeters = Facility::query()
+            ->whereHas('meters', fn ($q) => $q->where('meter_type', 'sub'))
             ->when($facilityScope !== null, fn ($q) => $q->whereIn('id', $facilityScope))
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $submeters = Submeter::query()
-            ->with('facility:id,name')
-            ->whereHas('facility')
-            ->when($selectedFacility, fn ($q) => $q->where('facility_id', $selectedFacility))
-            ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
-            ->orderBy('submeter_name')
-            ->get(['id', 'facility_id', 'submeter_name', 'status']);
+        $selectedFacilityId = $request->query('facility_id');
+        if ($selectedFacilityId === null || $selectedFacilityId === '') {
+            $selectedFacilityId = $facilitiesWithSubmeters->isNotEmpty() ? (int) $facilitiesWithSubmeters->first()->id : 0;
+        } else {
+            $selectedFacilityId = (int) $selectedFacilityId;
+        }
 
-        $submeterLookup = $submeters->keyBy(fn (Submeter $submeter) => $submeter->facility_id.'|'.mb_strtolower(trim($submeter->submeter_name)));
-        $sensorMeterGroups = FacilityMeter::query()
-            ->with(['facility:id,name', 'childMeters' => fn ($query) => $query
-                ->where('meter_type', 'sub')
-                ->where('status', 'active')
-                ->orderBy('meter_name')])
-            ->where('meter_type', 'main')
-            ->where('status', 'active')
-            ->when($selectedFacility, fn ($query) => $query->where('facility_id', $selectedFacility))
-            ->when($facilityScope !== null, fn ($query) => $query->whereIn('facility_id', $facilityScope))
-            ->orderBy('meter_name')
-            ->get()
-            ->map(function (FacilityMeter $mainMeter) use ($submeterLookup) {
-                $linkedSubmeters = $mainMeter->childMeters
-                    ->map(fn (FacilityMeter $child) => $submeterLookup->get(
-                        $mainMeter->facility_id.'|'.mb_strtolower(trim($child->meter_name))
-                    ))
-                    ->filter()
-                    ->values();
+        $selectedYear = (int) ($request->query('year') ?: date('Y'));
+        $selectedMonth = (int) ($request->query('month') ?: 0);
+        if ($selectedMonth < 0 || $selectedMonth > 12) {
+            $selectedMonth = 0;
+        }
 
-                return [
-                    'id' => (int) $mainMeter->id,
-                    'label' => trim(($mainMeter->facility?->name ? $mainMeter->facility->name.' — ' : '').$mainMeter->meter_name),
-                    'submeters' => $linkedSubmeters,
-                ];
-            })
-            ->filter(fn (array $group) => $group['submeters']->isNotEmpty())
+        // Available years with records
+        $yearOptions = EnergyRecord::query()
+            ->whereHas('meter', fn ($q) => $q->where('meter_type', 'sub'))
+            ->when($selectedFacilityId > 0, fn ($q) => $q->where('facility_id', $selectedFacilityId))
+            ->select('year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
             ->values();
 
-        $selectableSensorIds = $sensorMeterGroups
-            ->flatMap(fn (array $group) => $group['submeters']->pluck('id'))
-            ->map(fn ($id) => (int) $id);
-
-        if ($selectedSensorSubmeter === null || ! $selectableSensorIds->contains($selectedSensorSubmeter)) {
-            $selectedSensorSubmeter = $selectableSensorIds->isNotEmpty()
-                ? (int) $selectableSensorIds->first()
-                : null;
+        if ($yearOptions->isEmpty()) {
+            $yearOptions = collect([(int) date('Y')]);
         }
-        $selectedSensorMainMeter = $sensorMeterGroups
-            ->first(fn (array $group) => $group['submeters']->contains('id', $selectedSensorSubmeter))['id'] ?? null;
-        $sensorTrend = $this->buildSensorTrendSeries(
-            $selectedSensorPeriod,
-            $selectedFacility,
-            $selectedDepartment,
-            $facilityScope,
-            $selectedSensorSubmeter
-        );
 
-        return view('modules.submeters.monitoring', [
-            'rows' => $rows,
-            'periodType' => $periodType,
-            'selectedMonth' => $safeMonth,
-            'selectedFacility' => $selectedFacility,
-            'selectedDepartment' => $selectedDepartment,
-            'selectedSensorPeriod' => $selectedSensorPeriod,
-            'selectedSensorSubmeter' => $selectedSensorSubmeter,
-            'selectedSensorMainMeter' => $selectedSensorMainMeter,
-            'sensorMeterGroups' => $sensorMeterGroups,
-            'facilities' => $facilities,
-            'submeters' => $submeters,
-            'widgets' => $widgets,
-            'sensorTrend' => $sensorTrend,
-            'canEncode' => false,
-            'canApprove' => $this->canApprove(),
-            'canViewAlerts' => $this->canViewAlerts(),
-        ]);
+        // 2. Fetch all submeters in scope
+        $submeterQuery = FacilityMeter::with(['facility:id,name', 'parentMeter:id,meter_name'])
+            ->where('meter_type', 'sub')
+            ->whereNotNull('approved_at')
+            ->when($selectedFacilityId > 0, fn ($q) => $q->where('facility_id', $selectedFacilityId))
+            ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope))
+            ->orderBy('meter_name');
+
+        $submeters = $submeterQuery->get();
+        $submeterIds = $submeters->pluck('id')->all();
+
+        // 3. Fetch Energy Records for these submeters
+        $recordsQuery = EnergyRecord::with(['meter.facility', 'meter.parentMeter'])
+            ->whereIn('meter_id', $submeterIds)
+            ->where('year', $selectedYear)
+            ->when($selectedMonth > 0, fn ($q) => $q->where('month', $selectedMonth))
+            ->orderByDesc('year')
+            ->orderByDesc('month');
+
+        $energyRecords = $recordsQuery->get();
+
+        // Map records with baseline, deviation, dials, and costs
+        $mappedRows = $energyRecords->map(function ($rec) {
+            $actualKwh = is_numeric($rec->actual_kwh) ? (float) $rec->actual_kwh : null;
+            $baselineKwh = is_numeric($rec->baseline_kwh)
+                ? (float) $rec->baseline_kwh
+                : (is_numeric($rec->meter?->baseline_kwh) ? (float) $rec->meter->baseline_kwh : null);
+
+            $deviation = is_numeric($rec->deviation)
+                ? (float) $rec->deviation
+                : \App\Models\EnergyRecord::calculateDeviation($actualKwh, $baselineKwh);
+
+            $alertLabel = ($deviation !== null && $baselineKwh !== null && $baselineKwh > 0)
+                ? \App\Models\EnergyRecord::resolveAlertLevel((float) $deviation, (float) $baselineKwh)
+                : 'Normal';
+
+            $alertBg = '#dcfce7';
+            $alertColor = '#166534';
+            if (in_array(strtolower($alertLabel), ['critical', 'drop critical'], true)) {
+                $alertBg = '#fee2e2';
+                $alertColor = '#991b1b';
+            } elseif (in_array(strtolower($alertLabel), ['high', 'very high', 'drop high'], true)) {
+                $alertBg = '#ffedd5';
+                $alertColor = '#9a3412';
+            } elseif (in_array(strtolower($alertLabel), ['warning', 'drop warning'], true)) {
+                $alertBg = '#fef3c7';
+                $alertColor = '#92400e';
+            }
+
+            $rate = is_numeric($rec->rate_per_kwh) && $rec->rate_per_kwh > 0 ? (float) $rec->rate_per_kwh : 12.00;
+            $cost = is_numeric($rec->energy_cost) && $rec->energy_cost > 0 ? (float) $rec->energy_cost : round(($actualKwh ?? 0) * $rate, 2);
+
+            return [
+                'id' => (int) $rec->id,
+                'facility_id' => (int) $rec->facility_id,
+                'facility_name' => (string) ($rec->meter?->facility?->name ?? 'Facility'),
+                'meter_id' => (int) $rec->meter_id,
+                'meter_name' => (string) ($rec->meter?->meter_name ?? 'Submeter'),
+                'meter_number' => (string) ($rec->meter?->meter_number ?? ''),
+                'location' => (string) ($rec->meter?->location ?? 'General'),
+                'parent_meter_name' => (string) ($rec->meter?->parentMeter?->meter_name ?? 'Main Meter'),
+                'year' => (int) $rec->year,
+                'month' => (int) $rec->month,
+                'previous_reading_kwh' => is_numeric($rec->previous_reading_kwh) ? (float) $rec->previous_reading_kwh : null,
+                'current_reading_kwh' => is_numeric($rec->current_reading_kwh) ? (float) $rec->current_reading_kwh : null,
+                'actual_kwh' => $actualKwh,
+                'baseline_kwh' => $baselineKwh,
+                'deviation' => $deviation,
+                'alert_label' => $alertLabel,
+                'alert_bg' => $alertBg,
+                'alert_color' => $alertColor,
+                'rate_per_kwh' => $rate,
+                'cost' => $cost,
+            ];
+        });
+
+        $totalSubmeterKwh = round((float) $mappedRows->sum(fn ($r) => (float) ($r['actual_kwh'] ?? 0)), 2);
+        $totalSubmeterCost = round((float) $mappedRows->sum(fn ($r) => (float) ($r['cost'] ?? 0)), 2);
+        $submeterCount = $submeters->count();
+        $criticalAlertCount = $mappedRows->filter(fn ($r) => in_array(strtolower((string) $r['alert_label']), ['critical', 'drop critical', 'high', 'very high'], true))->count();
+
+        $timeframe = strtolower(trim((string) $request->query('timeframe', 'monthly')));
+        if (! in_array($timeframe, ['monthly', 'weekly'], true)) {
+            $timeframe = 'monthly';
+        }
+
+        $selectedWeek = (int) ($request->query('week') ?: 0);
+        if ($selectedWeek < 0 || $selectedWeek > 4) {
+            $selectedWeek = 0;
+        }
+
+        // If weekly mode is chosen and month is 0, default to active monitoring month (e.g. 8)
+        if ($timeframe === 'weekly' && $selectedMonth === 0) {
+            $selectedMonth = 8;
+        }
+
+        // 4. Submeter Load Distribution & Share Breakdown
+        $submeterLoadShares = $mappedRows
+            ->groupBy('meter_id')
+            ->map(function ($group) use ($totalSubmeterKwh) {
+                $subKwh = round((float) $group->sum(fn ($r) => (float) ($r['actual_kwh'] ?? 0)), 2);
+                $first = $group->first();
+                $pct = $totalSubmeterKwh > 0 ? round(($subKwh / $totalSubmeterKwh) * 100, 1) : 0;
+                return [
+                    'meter_id' => $first['meter_id'],
+                    'meter_name' => $first['meter_name'],
+                    'facility_name' => $first['facility_name'],
+                    'total_kwh' => $subKwh,
+                    'total_cost' => round((float) $group->sum(fn ($r) => (float) ($r['cost'] ?? 0)), 2),
+                    'share_percent' => $pct,
+                ];
+            })
+            ->sortByDesc('total_kwh')
+            ->values();
+
+        // 5. Main vs. Submeter Reconciliation
+        $mainRecordsQuery = EnergyRecord::query()
+            ->whereHas('meter', fn ($q) => $q->where('meter_type', 'main'))
+            ->where('year', $selectedYear)
+            ->when($selectedMonth > 0, fn ($q) => $q->where('month', $selectedMonth));
+
+        if ($selectedFacilityId > 0) {
+            $mainRecordsQuery->where('facility_id', $selectedFacilityId);
+        } else {
+            $mainRecordsQuery->whereIn('facility_id', $facilitiesWithSubmeters->pluck('id'));
+        }
+
+        $mainRecords = $mainRecordsQuery->get();
+        $mainMeterKwh = round((float) $mainRecords->sum('actual_kwh'), 2);
+        $mainMeterCost = round((float) $mainRecords->sum('energy_cost'), 2);
+
+        $accountedPercent = $mainMeterKwh > 0 ? min(100.0, round(($totalSubmeterKwh / $mainMeterKwh) * 100, 1)) : 0;
+        $unaccountedKwh = max(0.0, round($mainMeterKwh - $totalSubmeterKwh, 2));
+        $unaccountedCost = max(0.0, round($mainMeterCost - $totalSubmeterCost, 2));
+
+        // 6. Weekly Breakdown Generator (Dynamically computed from actual days in month)
+        $daysInSelectedMonth = \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth > 0 ? $selectedMonth : 1, 1)->daysInMonth;
+        $week4SelectedLabel = "Week 4 (Days 22–{$daysInSelectedMonth})";
+        $weekLabels = [
+            1 => 'Week 1 (Days 1–7)',
+            2 => 'Week 2 (Days 8–14)',
+            3 => 'Week 3 (Days 15–21)',
+            4 => $selectedMonth > 0 ? $week4SelectedLabel : 'Week 4 (Days 22–End)',
+        ];
+
+        $weeklyRows = collect();
+        foreach ($mappedRows as $row) {
+            $prevRunning = $row['previous_reading_kwh'] ?? 50000.00;
+            $monthKwh = (float) ($row['actual_kwh'] ?? 0);
+            $monthBaseline = (float) ($row['baseline_kwh'] ?? 0);
+            $daysInRowMonth = \Carbon\Carbon::createFromDate((int) ($row['year'] ?? $selectedYear), (int) ($row['month'] ?? 1), 1)->daysInMonth;
+            $week4Days = max(1, $daysInRowMonth - 21);
+
+            $weekMultipliers = [
+                1 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 1 (Days 1–7)'],
+                2 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 2 (Days 8–14)'],
+                3 => ['weight' => 7 / $daysInRowMonth, 'label' => 'Week 3 (Days 15–21)'],
+                4 => ['weight' => $week4Days / $daysInRowMonth, 'label' => "Week 4 (Days 22–{$daysInRowMonth})"],
+            ];
+
+            foreach ($weekMultipliers as $wNum => $wData) {
+                $wKwh = round($monthKwh * $wData['weight'], 2);
+                $wBaseline = round($monthBaseline * $wData['weight'], 2);
+                $wPrev = $prevRunning;
+                $wCurr = round($wPrev + $wKwh, 2);
+                $prevRunning = $wCurr;
+                $wCost = round($wKwh * ($row['rate_per_kwh'] ?? 13.50), 2);
+
+                $wDev = $wBaseline > 0 ? round((($wKwh - $wBaseline) / $wBaseline) * 100, 2) : 0.0;
+
+                $wRow = [
+                    'id' => $row['id'] . '-w' . $wNum,
+                    'facility_id' => $row['facility_id'],
+                    'facility_name' => $row['facility_name'],
+                    'meter_id' => $row['meter_id'],
+                    'meter_name' => $row['meter_name'],
+                    'parent_meter_name' => $row['parent_meter_name'],
+                    'year' => $row['year'],
+                    'month' => $row['month'],
+                    'week_num' => $wNum,
+                    'week_label' => $wData['label'],
+                    'period_display' => $row['year'] . ' ' . ($monthLabels[$row['month']] ?? 'Month ' . $row['month']) . ' • ' . $wData['label'],
+                    'previous_reading_kwh' => $wPrev,
+                    'current_reading_kwh' => $wCurr,
+                    'actual_kwh' => $wKwh,
+                    'baseline_kwh' => $wBaseline,
+                    'deviation' => $wDev,
+                    'alert_label' => $row['alert_label'],
+                    'alert_bg' => $row['alert_bg'],
+                    'alert_color' => $row['alert_color'],
+                    'cost' => $wCost,
+                ];
+
+                if ($selectedWeek === 0 || $selectedWeek === $wNum) {
+                    $weeklyRows->push($wRow);
+                }
+            }
+        }
+
+        // Weekly Trend Chart Data (for Chart.js Bar Chart)
+        $weeklyChartLabels = ['Week 1 (Days 1–7)', 'Week 2 (Days 8–14)', 'Week 3 (Days 15–21)', $week4SelectedLabel];
+        $weeklyChartDatasets = [];
+        $palette = ['#2563eb', '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ec4899', '#6366f1', '#14b8a6'];
+
+        $submetersGrouped = $mappedRows->groupBy('meter_id');
+        $colorIndex = 0;
+        $w4WeightSelected = max(1, $daysInSelectedMonth - 21) / $daysInSelectedMonth;
+        foreach ($submetersGrouped as $meterId => $mRows) {
+            $first = $mRows->first();
+            $meterMonthKwh = (float) $mRows->sum('actual_kwh');
+            $weekVals = [
+                round($meterMonthKwh * (7 / $daysInSelectedMonth), 2),
+                round($meterMonthKwh * (7 / $daysInSelectedMonth), 2),
+                round($meterMonthKwh * (7 / $daysInSelectedMonth), 2),
+                round($meterMonthKwh * $w4WeightSelected, 2),
+            ];
+
+            $weeklyChartDatasets[] = [
+                'label' => $first['meter_name'],
+                'data' => $weekVals,
+                'backgroundColor' => $palette[$colorIndex % count($palette)],
+                'borderRadius' => 6,
+            ];
+            $colorIndex++;
+        }
+
+        $monthLabels = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'
+        ];
+
+        return view('modules.submeters.monitoring', compact(
+            'timeframe',
+            'selectedWeek',
+            'weekLabels',
+            'facilitiesWithSubmeters',
+            'selectedFacilityId',
+            'selectedYear',
+            'selectedMonth',
+            'yearOptions',
+            'monthLabels',
+            'mappedRows',
+            'weeklyRows',
+            'weeklyChartLabels',
+            'weeklyChartDatasets',
+            'totalSubmeterKwh',
+            'totalSubmeterCost',
+            'submeterCount',
+            'criticalAlertCount',
+            'submeterLoadShares',
+            'mainMeterKwh',
+            'mainMeterCost',
+            'accountedPercent',
+            'unaccountedKwh',
+            'unaccountedCost'
+        ));
     }
 
     public function aiInsight(Request $request, Submeter $submeter): JsonResponse

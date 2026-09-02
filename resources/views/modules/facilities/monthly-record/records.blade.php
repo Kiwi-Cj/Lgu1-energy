@@ -2357,6 +2357,11 @@
                     <a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="monthly-action-btn is-info">
                         <i class="fa fa-bolt"></i> Energy Profile
                     </a>
+                    @if(config('features.submeters_enabled', false))
+                    <a href="{{ route('facilities.monthly-records.submeters', $facility->id) }}" class="monthly-action-btn" style="background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(79,70,229,0.3);text-decoration:none;">
+                        <i class="fa-solid fa-diagram-project"></i> Sub-meter Records
+                    </a>
+                    @endif
                     @if($canManageLocalMonthlyRecords)
                     <button type="button" onclick="openAddModal()" class="monthly-action-btn is-primary">
                         <i class="fa fa-plus"></i> Add Monthly Record
@@ -2500,6 +2505,14 @@
                     {{ number_format($tableActualKwhTotal, 2) }}
                 </span>
                 <span class="monthly-chip is-success">Total Cost: PHP {{ number_format($tableCostTotal, 2) }}</span>
+                @if(config('features.submeters_enabled', false))
+                <a href="{{ route('facilities.monthly-records.submeters', $facility->id) }}"
+                   class="monthly-archive-btn"
+                   style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;"
+                   title="View sub-meter monthly records">
+                    <i class="fa-solid fa-diagram-project"></i> Sub-meters
+                </a>
+                @endif
                 <a href="{{ route('facilities.monthly-records.archive', $facility->id) }}"
                    class="monthly-archive-btn"
                    title="View archived records">
@@ -2956,11 +2969,23 @@
             </div>
 
             <div class="monthly-form-section-title"><i class="fa-solid fa-gauge-high"></i> Meter Dial Readings (Optional)</div>
+            @php
+                $defaultPreviousDial = null;
+                if (!empty($oldMeterId) && isset($latestMeterDials[(int)$oldMeterId])) {
+                    $defaultPreviousDial = $latestMeterDials[(int)$oldMeterId];
+                } elseif (isset($latestMeterDials[0])) {
+                    $defaultPreviousDial = $latestMeterDials[0];
+                }
+            @endphp
             <div class="monthly-pair-grid">
                 <div class="monthly-field">
                     <label for="add_previous_reading_kwh">Previous Meter Reading (kWh)</label>
-                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_previous_reading_kwh" name="previous_reading_kwh" value="{{ old('previous_reading_kwh') }}" placeholder="e.g. 15000.00" oninput="calculateConsumptionFromDials()">
-                    <span id="prev_dial_hint" class="monthly-upload-help" style="display:none; color:#2563eb; font-weight:600;"></span>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_previous_reading_kwh" name="previous_reading_kwh" value="{{ old('previous_reading_kwh', $defaultPreviousDial !== null ? number_format((float)$defaultPreviousDial, 2, '.', '') : '') }}" data-auto-filled="{{ $defaultPreviousDial !== null ? 'true' : 'false' }}" placeholder="e.g. 15000.00" oninput="this.dataset.autoFilled='false'; calculateConsumptionFromDials()">
+                    <span id="prev_dial_hint" class="monthly-upload-help" style="{{ $defaultPreviousDial !== null ? 'display:block;' : 'display:none;' }} color:#2563eb; font-weight:600;">
+                        @if($defaultPreviousDial !== null)
+                            <i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from previous record: <strong>{{ number_format((float)$defaultPreviousDial, 2) }} kWh</strong>
+                        @endif
+                    </span>
                 </div>
                 <div class="monthly-field">
                     <label for="add_current_reading_kwh">Current Meter Reading (kWh)</label>
@@ -3056,16 +3081,20 @@ function handleMeterSelectionChange() {
     const meterSelect = document.getElementById('add_meter_id');
     const prevInput = document.getElementById('add_previous_reading_kwh');
     const prevHint = document.getElementById('prev_dial_hint');
-    if (!meterSelect || !prevInput) return;
+    if (!prevInput) return;
     
-    const meterId = parseInt(meterSelect.value, 10);
-    if (meterId && meterLatestDials[meterId] !== undefined && meterLatestDials[meterId] !== null) {
-        if (!prevInput.value || prevInput.dataset.autoFilled === 'true') {
-            prevInput.value = parseFloat(meterLatestDials[meterId]).toFixed(2);
+    const meterId = meterSelect && meterSelect.value ? parseInt(meterSelect.value, 10) : 0;
+    const dialVal = (meterId && meterLatestDials[meterId] !== undefined)
+        ? meterLatestDials[meterId]
+        : (meterLatestDials[0] !== undefined ? meterLatestDials[0] : null);
+
+    if (dialVal !== null && dialVal !== undefined) {
+        if (!prevInput.value || prevInput.dataset.autoFilled === 'true' || prevInput.dataset.autoFilled === undefined) {
+            prevInput.value = parseFloat(dialVal).toFixed(2);
             prevInput.dataset.autoFilled = 'true';
             if (prevHint) {
                 prevHint.style.display = 'block';
-                prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from last month\'s closing dial';
+                prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from previous record: <strong>' + parseFloat(dialVal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh</strong>';
             }
             calculateConsumptionFromDials();
         }

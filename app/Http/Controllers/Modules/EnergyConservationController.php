@@ -174,6 +174,26 @@ class EnergyConservationController extends Controller
                 ->values();
         }
 
+        $latestRecordForFacility = null;
+        if ($selectedFacilityId > 0) {
+            $latestRecordForFacility = EnergyRecord::query()
+                ->where('facility_id', $selectedFacilityId)
+                ->where(function ($query) {
+                    $query
+                        ->whereHas('meter', fn ($m) => $m->where('meter_type', 'main'))
+                        ->orWhere(fn ($q) => $q->whereNull('meter_id')->where('input_source', 'cprf'));
+                })
+                ->orderByDesc('year')
+                ->orderByDesc('month')
+                ->first();
+        }
+        $latestRecordMonth = $latestRecordForFacility
+            ? sprintf('%04d-%02d', $latestRecordForFacility->year, $latestRecordForFacility->month)
+            : null;
+        $latestRecordMonthLabel = $latestRecordForFacility
+            ? Carbon::create($latestRecordForFacility->year, $latestRecordForFacility->month, 1)->format('F Y')
+            : null;
+
         if ($feature === 'daily-checklist') {
             if (! $selectedFacility) {
                 $selectedFacility = $overview['facilities']->first();
@@ -217,6 +237,8 @@ class EnergyConservationController extends Controller
             'canManageChecklistTasks' => $this->canManageChecklistTasks($request),
             'canCompleteChecklist' => RoleAccess::is($request->user(), 'staff'),
             'dailyTaskBoardOptions' => $this->dailyTaskBoardOptions(),
+            'latestRecordMonth' => $latestRecordMonth,
+            'latestRecordMonthLabel' => $latestRecordMonthLabel,
         ]);
     }
 
@@ -449,6 +471,62 @@ class EnergyConservationController extends Controller
         ])->with('success', 'Checklist task added to the Daily Task Board and Recommendations.');
     }
 
+    public function populateDefaultChecklistTasks(Request $request)
+    {
+        abort_unless($this->canManageChecklistTasks($request), 403);
+        $validated = $request->validate([
+            'facility_id' => ['required', 'integer', 'exists:facilities,id'],
+            'return_date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+        $allowedFacilityIds = $this->buildOverviewData($request)['facilities']->pluck('id')->map(fn ($id) => (int) $id);
+        abort_unless($allowedFacilityIds->contains((int) $validated['facility_id']), 403);
+
+        $taskDate = Carbon::parse($validated['return_date'] ?? now()->toDateString());
+        $standardTasks = [
+            // Opening Routine
+            ['period' => 'opening', 'label' => 'Record the opening main-meter reading.'],
+            ['period' => 'opening', 'label' => 'Use natural lighting before switching on indoor lights.'],
+            ['period' => 'opening', 'label' => 'Check that air-conditioning is set between 24 and 26 degrees Celsius.'],
+            ['period' => 'opening', 'label' => 'Confirm doors and windows are closed while air-conditioning is running.'],
+            ['period' => 'opening', 'label' => 'Inspect equipment for unusual noise, heat, smell, or vibration.'],
+            // Closing Routine
+            ['period' => 'closing', 'label' => 'Record the closing main-meter reading.'],
+            ['period' => 'closing', 'label' => 'Turn off air-conditioning and ventilation after operating hours.'],
+            ['period' => 'closing', 'label' => 'Shut down computers, printers, and office equipment not in use.'],
+            ['period' => 'closing', 'label' => 'Unplug chargers and non-essential pantry appliances.'],
+            ['period' => 'closing', 'label' => 'Verify unused lights are switched off.'],
+        ];
+
+        DB::transaction(function () use ($validated, $standardTasks, $request) {
+            foreach ($standardTasks as $item) {
+                $existing = DailyEnergyChecklistTask::where('facility_id', $validated['facility_id'])
+                    ->where('task_label', $item['label'])
+                    ->first();
+
+                if ($existing) {
+                    if (! $existing->is_active) {
+                        $existing->update(['is_active' => true, 'period' => $item['period']]);
+                    }
+                    continue;
+                }
+
+                DailyEnergyChecklistTask::create([
+                    'facility_id' => $validated['facility_id'],
+                    'task_key' => 'standard_'.str()->uuid(),
+                    'task_label' => $item['label'],
+                    'period' => $item['period'],
+                    'created_by' => $request->user()->id,
+                ]);
+            }
+        });
+
+        return redirect()->route('modules.energy-conservation.feature', [
+            'feature' => 'daily-checklist',
+            'facility_id' => $validated['facility_id'],
+            'date' => $validated['return_date'] ?? now()->toDateString(),
+        ])->with('success', 'Standard LGU Daily Checklist tasks loaded successfully.');
+    }
+
     public function destroyDailyChecklistTask(Request $request, DailyEnergyChecklistTask $task)
     {
         abort_unless($this->canManageChecklistTasks($request), 403);
@@ -465,6 +543,8 @@ class EnergyConservationController extends Controller
             ->orderByRaw("CASE WHEN period = 'opening' THEN 0 ELSE 1 END")
             ->orderBy('id')
             ->get()
+            ->unique(fn (DailyEnergyChecklistTask $task) => $task->period.'_'.trim(strtolower($task->task_label)))
+            ->values()
             ->map(fn (DailyEnergyChecklistTask $task) => [
                 'id' => $task->id, 'key' => $task->task_key, 'period' => $task->period,
                 'label' => $task->task_label, 'is_custom' => $task->facility_id !== null,
@@ -731,10 +811,42 @@ class EnergyConservationController extends Controller
         }
 
         $catalog = $this->featureCatalog();
+        $selectedMonth = (string) $request->query('month', now()->format('Y-m'));
+        $facilityScope = $this->facilityScope($request);
+
+        $recQuery = EnergySavingRecommendation::query()
+            ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope));
+        $totalRecommendations = $recQuery->count();
+        $approvedRecommendations = (clone $recQuery)->where('status', 'approved')->count();
+        $implementedRecommendations = (clone $recQuery)->whereIn('implementation_status', ['implemented', 'verified'])->count();
+
+        $today = now()->toDateString();
+        $tasksQuery = DailyEnergyChecklistTask::query()->where('is_active', true)
+            ->when($facilityScope !== null, fn ($q) => $q->where(fn ($sub) => $sub->whereNull('facility_id')->orWhereIn('facility_id', $facilityScope)));
+        $totalTasksCount = $tasksQuery->count();
+
+        $completedTodayQuery = DailyEnergyChecklist::query()
+            ->whereDate('checklist_date', $today)
+            ->where('is_completed', true)
+            ->when($facilityScope !== null, fn ($q) => $q->whereIn('facility_id', $facilityScope));
+        $completedTodayCount = $completedTodayQuery->count();
+
+        $goalsQuery = ConservationGoal::query()
+            ->where('status', 'active')
+            ->when($facilityScope !== null, fn ($q) => $q->where(fn ($sub) => $sub->whereNull('facility_id')->orWhereIn('facility_id', $facilityScope)));
+        $activeGoalsCount = $goalsQuery->count();
 
         return view('modules.energy-conservation.index', [
-            'selectedMonth' => (string) $request->query('month', now()->format('Y-m')),
+            'selectedMonth' => $selectedMonth,
             'featureCatalog' => $catalog,
+            'stats' => [
+                'total_recommendations' => $totalRecommendations,
+                'approved_recommendations' => $approvedRecommendations,
+                'implemented_recommendations' => $implementedRecommendations,
+                'checklist_total' => $totalTasksCount,
+                'checklist_completed_today' => $completedTodayCount,
+                'active_goals_count' => $activeGoalsCount,
+            ],
         ]);
     }
 

@@ -50,21 +50,48 @@ test('incident list filters real CPRF incidents and labels their source', functi
         ->toBe(['Integrated Civic Hall']);
 });
 
-test('incident status cannot be changed manually because CIMM owns the action workflow', function () {
+test('authorized admin can update incident status and dual sync with maintenance', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $incident = makeWorkflowIncident();
+    $maintenance = \App\Models\Maintenance::create([
+        'facility_id' => $incident->facility_id,
+        'energy_incident_id' => $incident->id,
+        'issue_type' => 'High Energy Consumption',
+        'trigger_month' => 'Jul 2026',
+        'trend' => 'Reported',
+        'maintenance_type' => 'Corrective',
+        'maintenance_status' => 'Pending',
+    ]);
 
     $this->actingAs($admin)
-        ->put(route('energy-incidents.update', $incident), ['status' => 'Ongoing'])
+        ->put(route('energy-incidents.update', $incident), [
+            'status' => 'Ongoing',
+            'immediate_action' => 'Inspecting sub-panel circuits',
+        ])
         ->assertRedirect(route('energy-incidents.index'))
-        ->assertSessionHas('error');
+        ->assertSessionHas('success');
 
-    expect($incident->fresh()->status)->toBe('Open')
-        ->and($incident->fresh()->resolved_at)->toBeNull();
+    expect($incident->fresh()->status)->toBe('Ongoing')
+        ->and($incident->fresh()->immediate_action)->toBe('Inspecting sub-panel circuits')
+        ->and($maintenance->fresh()->maintenance_status)->toBe('In Progress');
+
+    // Mark as Resolved
+    $this->actingAs($admin)
+        ->put(route('energy-incidents.update', $incident), [
+            'status' => 'Resolved',
+            'resolution_summary' => 'Replaced burnt capacitor on compressor unit',
+        ])
+        ->assertRedirect(route('energy-incidents.index'))
+        ->assertSessionHas('success');
+
+    expect($incident->fresh()->status)->toBe('Resolved')
+        ->and($incident->fresh()->resolved_at)->not->toBeNull()
+        ->and($maintenance->fresh()->maintenance_status)->toBe('Completed')
+        ->and($maintenance->fresh()->completed_date)->not->toBeNull();
 });
 
-test('staff also cannot change a CIMM-managed incident status', function () {
-    $staff = User::factory()->create(['role' => 'staff']);
+test('unauthorized user without incident management permissions cannot change incident status', function () {
+    $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
     $incident = makeWorkflowIncident();
 
     $this->actingAs($staff)
@@ -126,3 +153,52 @@ test('manual reporting rejects a duplicate active category for the same facility
 
     expect(EnergyIncident::query()->where('facility_id', $incident->facility_id)->count())->toBe(1);
 });
+
+test('authorized admin can triage and escalate incident to CIMM maintenance', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $incident = makeWorkflowIncident();
+
+    $this->actingAs($admin)
+        ->put(route('energy-incidents.update', $incident), [
+            'triage_action' => 'escalate_maintenance',
+            'affected_asset' => 'Main Distribution Panel',
+        ])
+        ->assertRedirect(route('energy-incidents.index'))
+        ->assertSessionHas('success');
+
+    expect($incident->fresh()->status)->toBe('Ongoing')
+        ->and($incident->fresh()->affected_asset)->toBe('Main Distribution Panel');
+
+    $this->assertDatabaseHas('maintenance', [
+        'facility_id' => $incident->facility_id,
+        'energy_incident_id' => $incident->id,
+        'maintenance_status' => 'Pending',
+    ]);
+});
+
+test('authorized admin can triage and dismiss incident as operational event without dispatching maintenance', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $incident = makeWorkflowIncident();
+    $maintenance = \App\Models\Maintenance::create([
+        'facility_id' => $incident->facility_id,
+        'energy_incident_id' => $incident->id,
+        'issue_type' => 'Auto-flagged: Critical Consumption',
+        'trigger_month' => 'Jul 2026',
+        'maintenance_type' => 'Corrective',
+        'maintenance_status' => 'Pending',
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('energy-incidents.update', $incident), [
+            'triage_action' => 'operational_event',
+            'operational_reason' => 'Community / Sports Tournament Event',
+        ])
+        ->assertRedirect(route('energy-incidents.index'))
+        ->assertSessionHas('success');
+
+    expect($incident->fresh()->status)->toBe('Resolved')
+        ->and($incident->fresh()->resolved_at)->not->toBeNull()
+        ->and($incident->fresh()->resolution_summary)->toContain('Community / Sports Tournament Event')
+        ->and($maintenance->fresh()->maintenance_status)->toBe('Completed');
+});
+

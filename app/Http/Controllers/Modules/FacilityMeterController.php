@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
+use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
 use App\Models\Submeter;
+use App\Models\SubmeterEquipment;
 use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 
@@ -164,6 +166,27 @@ class FacilityMeterController extends Controller
             ->where('meter_type', 'sub')
             ->count();
 
+        $historicalMonthlyReadings = EnergyRecord::query()
+            ->where('facility_id', $facility->id)
+            ->where('review_status', 'approved')
+            ->where('actual_kwh', '>', 0)
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->take(6)
+            ->get()
+            ->sortBy(fn($r) => sprintf('%04d-%02d', $r->year, $r->month))
+            ->values();
+
+        $subMeterIds = $subMeters->pluck('id')->filter()->all();
+        $submeterEquipments = !empty($subMeterIds)
+            ? SubmeterEquipment::query()
+                ->where('facility_id', $facility->id)
+                ->where('meter_scope', 'sub')
+                ->whereIn('submeter_id', $subMeterIds)
+                ->orderByDesc('rated_watts')
+                ->get()
+            : collect();
+
         return view('modules.facilities.meters.submeters-by-main', [
             'facility' => $facility,
             'mainMeter' => $mainMeter,
@@ -172,6 +195,8 @@ class FacilityMeterController extends Controller
             'activeLinkedSubCount' => $activeLinkedSubCount,
             'approvedLinkedSubCount' => $approvedLinkedSubCount,
             'archivedSubCount' => $archivedSubCount,
+            'historicalMonthlyReadings' => $historicalMonthlyReadings,
+            'facilityEquipments' => $submeterEquipments,
             'canManageMeters' => $this->canManage(),
             'canApproveMeters' => $this->canApprove(),
         ]);

@@ -361,6 +361,66 @@ window.addEventListener('DOMContentLoaded', function() {
         height: 200px;
         margin-bottom: 14px;
     }
+    .chart-view-toggle {
+        display: inline-flex;
+        background: #e2e8f0;
+        padding: 2px;
+        border-radius: 8px;
+        gap: 2px;
+    }
+    .chart-tab-btn {
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .chart-tab-btn:hover {
+        color: #1e293b;
+    }
+    .chart-tab-btn.active {
+        background: #ffffff;
+        color: #2563eb;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    .donut-center-info {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+        max-width: 140px;
+    }
+    .donut-center-sub {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .donut-center-val {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+        margin: 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .donut-center-pct {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #2563eb;
+    }
     .category-table {
         width: 100%;
         border-collapse: collapse;
@@ -387,6 +447,34 @@ window.addEventListener('DOMContentLoaded', function() {
         height: 8px;
         border-radius: 50%;
         margin-right: 6px;
+    }
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 19px;
+        height: 19px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.65rem;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+    .rank-badge.rank-top {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #fde68a;
+    }
+    .top-consumer-tag {
+        font-size: 0.62rem;
+        font-weight: 800;
+        color: #b45309;
+        background: #fef3c7;
+        padding: 1px 5px;
+        border-radius: 4px;
+        border: 1px solid #fde68a;
+        margin-left: 4px;
     }
 
     /* What-If Simulator Styling */
@@ -554,33 +642,47 @@ window.addEventListener('DOMContentLoaded', function() {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .table-responsive-wrap::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive-wrap::-webkit-scrollbar-track {
+        background: #f8fafc;
+    }
+    .table-responsive-wrap::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .table-responsive-wrap::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
     .custom-table {
         width: 100%;
-        min-width: 1040px;
+        min-width: 100%;
         border-collapse: separate;
         border-spacing: 0;
         background: #fff;
         text-align: left;
-        font-size: 0.84rem;
+        font-size: 0.82rem;
     }
     .custom-table thead {
         background: #f8fafc;
     }
     .custom-table thead th {
-        padding: 13px 16px;
+        padding: 10px 8px;
         color: #64748b;
         font-weight: 850;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         text-transform: uppercase;
-        letter-spacing: 0.055em;
+        letter-spacing: 0.03em;
         text-align: left;
         background: #f8fafc;
         border-bottom: 1px solid #dbe5f2;
         white-space: nowrap;
     }
     .custom-table tbody td {
-        padding: 14px 16px;
+        padding: 10px 8px;
         border-bottom: 1px solid #edf2f7;
         color: #334155;
         vertical-align: middle;
@@ -595,7 +697,7 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     .custom-table tfoot td {
         background: #f8fafc;
-        padding: 14px 16px;
+        padding: 11px 8px;
         font-weight: 850;
         color: #0f2450;
         border-top: 2px solid #e2e8f0;
@@ -605,12 +707,12 @@ window.addEventListener('DOMContentLoaded', function() {
     .meter-chip {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         background: #f0f9ff;
         border: 1px solid #bae6fd;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 7px;
+        font-size: 0.72rem;
         color: #0369a1;
         font-weight: 700;
         white-space: nowrap;
@@ -637,16 +739,16 @@ window.addEventListener('DOMContentLoaded', function() {
 
     /* Share Progress Bar */
     .share-pill-badge {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 800;
         background: #f1f5f9;
         color: #334155;
-        padding: 2px 7px;
+        padding: 2px 6px;
         border-radius: 999px;
     }
     .share-track {
-        width: 52px;
-        height: 5px;
+        width: 44px;
+        height: 4px;
         background: #e2e8f0;
         border-radius: 999px;
         overflow: hidden;
@@ -761,17 +863,17 @@ window.addEventListener('DOMContentLoaded', function() {
         display: flex;
         align-items: center;
         gap: 6px;
-        overflow-x: auto;
-        padding: 10px 20px;
+        flex-wrap: wrap;
+        padding: 10px 16px;
         background: #fff;
         border-bottom: 1px solid #f1f5f9;
     }
     .filter-pill {
-        padding: 5px 12px;
+        padding: 4px 11px;
         border-radius: 999px;
         background: #f1f5f9;
         color: #475569;
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-weight: 700;
         text-decoration: none;
         white-space: nowrap;
@@ -789,102 +891,279 @@ window.addEventListener('DOMContentLoaded', function() {
         box-shadow: 0 2px 8px rgba(37,99,235,0.2);
     }
 
-    /* Modal Styles */
+    /* Modal Styles - Adopted from Maintenance Modal Standard */
     .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(4px);
         display: none;
-        place-items: center;
-        z-index: 10000;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
         padding: 16px;
     }
     .modal-overlay.is-active {
-        display: grid;
+        display: flex;
     }
     .modal-card {
+        width: min(760px, calc(100vw - 24px));
         background: #fff;
-        border-radius: 18px;
-        width: 100%;
-        max-width: 580px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        border: 1px solid #e2e8f0;
+        border: 1px solid #dbe5f2;
+        border-radius: 22px;
+        box-shadow: 0 28px 80px rgba(15,23,42,.30);
+        max-height: min(88vh, 840px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .modal-card > form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
     }
     .modal-head {
-        padding: 16px 22px;
-        border-bottom: 1px solid #e2e8f0;
+        flex: 0 0 auto;
+        padding: 24px 68px 22px 32px;
+        background: linear-gradient(135deg,#f8fbff 0%,#eef2ff 100%);
+        border-bottom: 1px solid #dbe5f2;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        background: #f8fafc;
+        gap: 16px;
+        position: relative;
+    }
+    .modal-head-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg,#2563eb,#6366f1);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(37,99,235,.20);
+        font-size: 1.2rem;
+        margin-left: 2px;
+    }
+    .modal-head-heading {
+        min-width: 0;
     }
     .modal-head h3 {
         margin: 0;
-        font-size: 1.05rem;
-        font-weight: 800;
+        font-size: 1.25rem;
+        font-weight: 900;
         color: #0f172a;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        letter-spacing: -.02em;
+    }
+    .modal-head-subtitle {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.4;
     }
     .modal-close {
-        background: transparent;
-        border: none;
-        font-size: 1.4rem;
-        color: #94a3b8;
+        position: absolute;
+        z-index: 5;
+        top: 18px;
+        right: 18px;
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.9);
+        border: 1px solid #dbe5f2;
+        border-radius: 11px;
+        font-size: 1.1rem;
+        color: #64748b;
         cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
+        transition: all 0.15s ease;
     }
     .modal-close:hover {
-        color: #0f172a;
+        color: #e11d48;
+        background: #fff1f2;
+        border-color: #fecdd3;
     }
     .modal-body {
-        padding: 20px 22px;
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 22px 32px 20px;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
         display: flex;
         flex-direction: column;
         gap: 14px;
     }
-    .modal-foot {
-        padding: 14px 22px;
-        border-top: 1px solid #e2e8f0;
+    .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    .modal-body::-webkit-scrollbar-track {
         background: #f8fafc;
+        border-radius: 999px;
+    }
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .modal-section-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 5px 0 -2px;
+        color: #475569;
+        font-size: .73rem;
+        font-weight: 850;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+    .modal-section-title i {
+        color: #2563eb;
+    }
+    .modal-foot {
+        flex: 0 0 auto;
         display: flex;
         justify-content: flex-end;
+        align-items: center;
         gap: 10px;
+        padding: 16px 32px;
+        border-top: 1px solid #e2e8f0;
+        background: rgba(255,255,255,.98);
+        backdrop-filter: blur(8px);
+        margin: 0;
+    }
+    .action-btn-secondary {
+        border: none;
+        border-radius: 9px;
+        padding: 10px 16px;
+        font-weight: 700;
+        cursor: pointer;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+    }
+    .action-btn-secondary:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+    .action-btn-primary {
+        background: #2563eb;
+        color: #fff;
+        min-width: 170px;
+        border: none;
+        border-radius: 9px;
+        padding: 10px 18px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        box-shadow: 0 7px 16px rgba(37,99,235,.20);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.15s ease;
+    }
+    .action-btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 9px 20px rgba(37,99,235,.30);
+    }
+    .action-btn-danger {
+        padding: 10px 18px;
+        border-radius: 9px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: none;
+        background: #dc2626;
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+    }
+    .action-btn-danger:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+    }
+    .delete-modal-warning-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        color: #dc2626;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 12px auto;
     }
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
     }
     .form-group label {
-        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.78rem;
+        color: #64748b;
         font-weight: 800;
-        color: #334155;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.3px;
+    }
+    .form-required {
+        font-size: .58rem;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: none;
+        color: #dc2626;
+    }
+    .form-optional {
+        font-size: .58rem;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: none;
+        color: #94a3b8;
     }
     .form-row {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
     }
     .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border-radius: 9px;
         border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.84rem;
-        color: #0f172a;
+        font-size: 0.92rem;
+        background: #fff;
+        color: #1e293b;
         outline: none;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.24);
     }
     .calc-preview-strip {
         background: #eff6ff;
@@ -1006,7 +1285,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     </select>
                 </div>
                 @if($selectedFacility)
-                    <a href="{{ route('modules.load-tracking.export', $selectedFacility->id) }}" class="action-btn-secondary" title="Export Equipment Load Schedule as CSV">
+                    <a href="{{ route('modules.load-tracking.export', $selectedFacility->id) }}" class="action-btn-secondary" data-secure-download title="Export Equipment Load Schedule as CSV">
                         <i class="fa-solid fa-file-csv" style="color:#059669;"></i> Export CSV
                     </a>
                 @endif
@@ -1137,8 +1416,18 @@ window.addEventListener('DOMContentLoaded', function() {
                     <div class="insight-card-header">
                         <div>
                             <h3 class="insight-card-title"><i class="fa-solid fa-chart-pie" style="color:#2563eb;"></i> Load Distribution by Category</h3>
-                            <div class="insight-card-desc">Share of monthly kWh consumption by equipment type</div>
+                            <div class="insight-card-desc">Share of monthly kWh consumption & ranking by equipment type</div>
                         </div>
+                        @if(!empty($categoryBreakdown))
+                        <div class="chart-view-toggle">
+                            <button type="button" id="btnToggleDonut" class="chart-tab-btn active" onclick="switchCategoryChart('donut')">
+                                <i class="fa-solid fa-chart-pie"></i> Donut
+                            </button>
+                            <button type="button" id="btnToggleBar" class="chart-tab-btn" onclick="switchCategoryChart('bar')">
+                                <i class="fa-solid fa-chart-simple"></i> Ranking
+                            </button>
+                        </div>
+                        @endif
                     </div>
 
                     <div style="padding:18px;">
@@ -1148,14 +1437,19 @@ window.addEventListener('DOMContentLoaded', function() {
                                 <p style="margin:0;">No equipment registered yet. Click <strong>+ Add Equipment</strong> below.</p>
                             </div>
                         @else
-                            <div class="chart-box">
+                            <div class="chart-box" id="categoryChartBox">
                                 <canvas id="categoryDonutChart"></canvas>
+                                <div class="donut-center-info" id="donutCenterInfo">
+                                    <div class="donut-center-sub">Top Consumer</div>
+                                    <div class="donut-center-val">{{ $categoryBreakdown[0]['category'] ?? 'N/A' }}</div>
+                                    <div class="donut-center-pct">{{ $categoryBreakdown[0]['percentage'] ?? 0 }}% of load</div>
+                                </div>
                             </div>
 
                             <table class="category-table">
                                 <thead>
                                     <tr>
-                                        <th>Category</th>
+                                        <th>Rank & Category</th>
                                         <th style="text-align:right;">Connected</th>
                                         <th style="text-align:right;">Monthly</th>
                                         <th style="text-align:right;">Est. Cost</th>
@@ -1170,9 +1464,15 @@ window.addEventListener('DOMContentLoaded', function() {
                                         @endphp
                                         <tr>
                                             <td>
-                                                <span class="cat-dot" style="background: {{ $color }};"></span>
-                                                <strong>{{ $cat['category'] }}</strong>
-                                                <small style="color:#94a3b8;">({{ $cat['units'] }}u)</small>
+                                                <div style="display:inline-flex; align-items:center; gap:6px;">
+                                                    <span class="rank-badge {{ $idx === 0 ? 'rank-top' : '' }}">#{{ $idx + 1 }}</span>
+                                                    <span class="cat-dot" style="background: {{ $color }};"></span>
+                                                    <strong>{{ $cat['category'] }}</strong>
+                                                    <small style="color:#94a3b8;">({{ $cat['units'] }}u)</small>
+                                                    @if($idx === 0)
+                                                        <span class="top-consumer-tag"><i class="fa-solid fa-crown" style="font-size:0.58rem;"></i> Highest</span>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td style="text-align:right;">{{ number_format($cat['connected_kw'], 2) }} kW</td>
                                             <td style="text-align:right;">{{ number_format($cat['monthly_kwh'], 2) }} kWh</td>
@@ -1353,9 +1653,22 @@ window.addEventListener('DOMContentLoaded', function() {
                 <!-- Table (Unified, Seamless Table - Walang Hati) -->
                 <div class="table-responsive-wrap">
                     <table class="custom-table" id="ltMainTable">
+                        <colgroup>
+                            <col style="width: 32px;">
+                            <col style="width: 25%;">
+                            <col style="width: 13%;">
+                            <col style="width: 13%;">
+                            <col style="width: 11%;">
+                            <col style="width: 12%;">
+                            <col style="width: 12%;">
+                            <col style="width: 8%;">
+                            @if($canManage)
+                            <col style="width: 6%;">
+                            @endif
+                        </colgroup>
                         <thead>
                             <tr>
-                                <th style="width:42px; text-align:center;">#</th>
+                                <th style="text-align:center;">#</th>
                                 <th class="th-sortable" onclick="sortTable(1, 'string')" title="Click to sort by equipment name">
                                     <span>Equipment / Load Name</span> <i class="fa-solid fa-sort sort-icon"></i>
                                 </th>
@@ -1371,10 +1684,10 @@ window.addEventListener('DOMContentLoaded', function() {
                                     <span>Monthly Cost</span> <i class="fa-solid fa-sort sort-icon"></i>
                                 </th>
                                 <th class="th-sortable" style="text-align:center;" onclick="sortTable(7, 'number')" title="Click to sort by share percentage">
-                                    <span>Facility Share</span> <i class="fa-solid fa-sort sort-icon"></i>
+                                    <span>Share</span> <i class="fa-solid fa-sort sort-icon"></i>
                                 </th>
                                 @if($canManage)
-                                <th style="text-align:center; width:90px;">Actions</th>
+                                <th style="text-align:center;">Actions</th>
                                 @endif
                             </tr>
                         </thead>
@@ -1584,8 +1897,16 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="ltAddModal" class="modal-overlay">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
         <div class="modal-head">
-            <h3 id="addModalTitle"><i class="fa-solid fa-plus-circle" style="color:#10b981;"></i> Add Equipment Load</h3>
-            <button type="button" class="modal-close" onclick="closeAddModal()">&times;</button>
+            <div class="modal-head-icon">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="modal-head-heading">
+                <h3 id="addModalTitle">Add Equipment Load</h3>
+                <p class="modal-head-subtitle">Record equipment wattage, operating schedule, and meter assignment for this facility.</p>
+            </div>
+            <button type="button" class="modal-close" onclick="closeAddModal()" aria-label="Close add equipment modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <form method="POST" action="{{ route('modules.load-tracking.equipment.store') }}" id="ltAddForm">
             @csrf
@@ -1594,8 +1915,11 @@ window.addEventListener('DOMContentLoaded', function() {
             <div class="modal-body">
                 
                 <!-- Quick Preset Selector -->
-                <div class="form-group" style="background:#f0fdf4; border:1px dashed #86efac; padding:10px 12px; border-radius:10px;">
-                    <label style="color:#047857;"><i class="fa-solid fa-bolt"></i> Auto-Fill Common Preset:</label>
+                <div class="form-group" style="background:#f0fdf4; border:1px dashed #86efac; padding:12px 14px; border-radius:12px;">
+                    <label style="color:#047857;">
+                        <span><i class="fa-solid fa-bolt"></i> Auto-Fill Common Appliance Preset:</span>
+                        <span class="form-optional">Quick Template</span>
+                    </label>
                     <select id="ltPresetSelector" class="form-select" onchange="applyPreset(this.value, 'add')">
                         <option value="">-- Choose Appliance to Auto-fill --</option>
                         @foreach($presets as $pIdx => $preset)
@@ -1604,14 +1928,16 @@ window.addEventListener('DOMContentLoaded', function() {
                     </select>
                 </div>
 
+                <div class="modal-section-title"><i class="fa-solid fa-plug"></i> Equipment Identification</div>
+
                 <div class="form-group">
-                    <label>Equipment / Load Name <span style="color:#dc2626;">*</span></label>
+                    <label for="add_equipment_name">Equipment / Load Name <span class="form-required">Required</span></label>
                     <input type="text" name="equipment_name" id="add_equipment_name" class="form-input" placeholder="e.g. Inverter Split AC (Admin Office)" required>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Category</label>
+                        <label for="add_category">Category <span class="form-required">Required</span></label>
                         <select name="category" id="add_category" class="form-select">
                             @foreach($categories as $cat)
                                 <option value="{{ $cat }}">{{ $cat }}</option>
@@ -1620,14 +1946,16 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group">
-                        <label>Location / Room</label>
+                        <label for="add_location">Location / Room <span class="form-optional">Optional</span></label>
                         <input type="text" name="location" id="add_location" class="form-input" placeholder="e.g. 2nd Floor Admin Room">
                     </div>
                 </div>
 
+                <div class="modal-section-title"><i class="fa-solid fa-gauge-high"></i> Meter & Electrical Assignment</div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Assigned Meter Scope</label>
+                        <label for="add_meter_scope">Assigned Meter Scope <span class="form-required">Required</span></label>
                         <select name="meter_scope" id="add_meter_scope" class="form-select" onchange="toggleMeterInputs('add')">
                             <option value="facility">Facility General / Unmetered</option>
                             @if($mainMeters->count() > 0)
@@ -1640,7 +1968,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group" id="add_main_meter_wrap" style="display:none;">
-                        <label>Select Main Meter</label>
+                        <label for="add_facility_meter_id">Select Main Meter <span class="form-required">Required</span></label>
                         <select name="facility_meter_id" id="add_facility_meter_id" class="form-select">
                             @foreach($mainMeters as $mm)
                                 <option value="{{ $mm->id }}">{{ $mm->meter_name }}</option>
@@ -1649,7 +1977,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group" id="add_sub_meter_wrap" style="display:none;">
-                        <label>Select Submeter</label>
+                        <label for="add_submeter_id">Select Submeter <span class="form-required">Required</span></label>
                         <select name="submeter_id" id="add_submeter_id" class="form-select">
                             @foreach($subMeters as $sm)
                                 <option value="{{ $sm->id }}">{{ $sm->submeter_name }}</option>
@@ -1658,27 +1986,29 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <div class="modal-section-title"><i class="fa-solid fa-clock"></i> Duty Cycle & Rating</div>
+
                 <!-- Load Specification Inputs -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Quantity <span style="color:#dc2626;">*</span></label>
+                        <label for="add_quantity">Quantity <span class="form-required">Required</span></label>
                         <input type="number" name="quantity" id="add_quantity" class="form-input" value="1" min="1" max="9999" required oninput="recalcModalPreview('add')">
                     </div>
 
                     <div class="form-group">
-                        <label>Rated Power (Watts) <span style="color:#dc2626;">*</span></label>
+                        <label for="add_rated_watts">Rated Power (Watts) <span class="form-required">Required</span></label>
                         <input type="number" step="0.1" name="rated_watts" id="add_rated_watts" class="form-input" placeholder="e.g. 1200" min="0.1" required oninput="recalcModalPreview('add')">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Hours / Day <span style="color:#dc2626;">*</span></label>
+                        <label for="add_hours">Operating Hours / Day <span class="form-required">Required</span></label>
                         <input type="number" step="0.1" name="operating_hours_per_day" id="add_hours" class="form-input" value="8" min="0.1" max="24" required oninput="recalcModalPreview('add')">
                     </div>
 
                     <div class="form-group">
-                        <label>Days / Month <span style="color:#dc2626;">*</span></label>
+                        <label for="add_days">Operating Days / Month <span class="form-required">Required</span></label>
                         <input type="number" name="operating_days_per_month" id="add_days" class="form-input" value="22" min="1" max="31" required oninput="recalcModalPreview('add')">
                     </div>
                 </div>
@@ -1686,28 +2016,30 @@ window.addEventListener('DOMContentLoaded', function() {
                 <!-- Live Computation Preview -->
                 <div class="calc-preview-strip">
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#2563eb;" id="add_prev_daily">0.00 kWh</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Daily Energy</div>
+                        <div style="font-size:0.95rem; font-weight:850; color:#2563eb;" id="add_prev_daily">0.00 kWh</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Daily Energy</div>
                     </div>
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#2563eb;" id="add_prev_monthly">0.00 kWh</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Monthly Energy</div>
+                        <div style="font-size:0.95rem; font-weight:850; color:#2563eb;" id="add_prev_monthly">0.00 kWh</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Monthly Energy</div>
                     </div>
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#059669;" id="add_prev_cost">₱0.00</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Est. Monthly Cost</div>
+                        <div style="font-size:0.95rem; font-weight:900; color:#059669;" id="add_prev_cost">₱0.00</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Est. Monthly Cost</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Notes / Asset Tag (Optional)</label>
+                    <label for="add_notes">Notes / Asset Tag <span class="form-optional">Optional</span></label>
                     <textarea name="notes" id="add_notes" class="form-textarea" rows="2" placeholder="e.g. Asset #EQ-2026-004, Inverter compliant unit"></textarea>
                 </div>
 
             </div>
             <div class="modal-foot">
                 <button type="button" class="action-btn-secondary" onclick="closeAddModal()">Cancel</button>
-                <button type="submit" class="quick-add-btn"><i class="fa-solid fa-floppy-disk"></i> Save Equipment</button>
+                <button type="submit" class="action-btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Equipment
+                </button>
             </div>
         </form>
     </div>
@@ -1717,8 +2049,16 @@ window.addEventListener('DOMContentLoaded', function() {
 <div id="ltEditModal" class="modal-overlay">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
         <div class="modal-head">
-            <h3 id="editModalTitle"><i class="fa-solid fa-pen-to-square" style="color:#2563eb;"></i> Edit Equipment Load</h3>
-            <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+            <div class="modal-head-icon">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+            <div class="modal-head-heading">
+                <h3 id="editModalTitle">Edit Equipment Load</h3>
+                <p class="modal-head-subtitle">Modify load wattage, operation cycle, or assigned meter scope.</p>
+            </div>
+            <button type="button" class="modal-close" onclick="closeEditModal()" aria-label="Close edit equipment modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <form method="POST" action="" id="ltEditForm">
             @csrf
@@ -1726,14 +2066,16 @@ window.addEventListener('DOMContentLoaded', function() {
 
             <div class="modal-body">
                 
+                <div class="modal-section-title"><i class="fa-solid fa-plug"></i> Equipment Identification</div>
+
                 <div class="form-group">
-                    <label>Equipment / Load Name <span style="color:#dc2626;">*</span></label>
+                    <label for="edit_equipment_name">Equipment / Load Name <span class="form-required">Required</span></label>
                     <input type="text" name="equipment_name" id="edit_equipment_name" class="form-input" required>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Category</label>
+                        <label for="edit_category">Category <span class="form-required">Required</span></label>
                         <select name="category" id="edit_category" class="form-select">
                             @foreach($categories as $cat)
                                 <option value="{{ $cat }}">{{ $cat }}</option>
@@ -1742,14 +2084,16 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group">
-                        <label>Location / Room</label>
+                        <label for="edit_location">Location / Room <span class="form-optional">Optional</span></label>
                         <input type="text" name="location" id="edit_location" class="form-input">
                     </div>
                 </div>
 
+                <div class="modal-section-title"><i class="fa-solid fa-gauge-high"></i> Meter & Electrical Assignment</div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Assigned Meter Scope</label>
+                        <label for="edit_meter_scope">Assigned Meter Scope <span class="form-required">Required</span></label>
                         <select name="meter_scope" id="edit_meter_scope" class="form-select" onchange="toggleMeterInputs('edit')">
                             <option value="facility">Facility General / Unmetered</option>
                             @if($mainMeters->count() > 0)
@@ -1762,7 +2106,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group" id="edit_main_meter_wrap" style="display:none;">
-                        <label>Select Main Meter</label>
+                        <label for="edit_facility_meter_id">Select Main Meter <span class="form-required">Required</span></label>
                         <select name="facility_meter_id" id="edit_facility_meter_id" class="form-select">
                             @foreach($mainMeters as $mm)
                                 <option value="{{ $mm->id }}">{{ $mm->meter_name }}</option>
@@ -1771,7 +2115,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <div class="form-group" id="edit_sub_meter_wrap" style="display:none;">
-                        <label>Select Submeter</label>
+                        <label for="edit_submeter_id">Select Submeter <span class="form-required">Required</span></label>
                         <select name="submeter_id" id="edit_submeter_id" class="form-select">
                             @foreach($subMeters as $sm)
                                 <option value="{{ $sm->id }}">{{ $sm->submeter_name }}</option>
@@ -1780,27 +2124,29 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <div class="modal-section-title"><i class="fa-solid fa-clock"></i> Duty Cycle & Rating</div>
+
                 <!-- Load Specification Inputs -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Quantity <span style="color:#dc2626;">*</span></label>
+                        <label for="edit_quantity">Quantity <span class="form-required">Required</span></label>
                         <input type="number" name="quantity" id="edit_quantity" class="form-input" min="1" max="9999" required oninput="recalcModalPreview('edit')">
                     </div>
 
                     <div class="form-group">
-                        <label>Rated Power (Watts) <span style="color:#dc2626;">*</span></label>
+                        <label for="edit_rated_watts">Rated Power (Watts) <span class="form-required">Required</span></label>
                         <input type="number" step="0.1" name="rated_watts" id="edit_rated_watts" class="form-input" min="0.1" required oninput="recalcModalPreview('edit')">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Hours / Day <span style="color:#dc2626;">*</span></label>
+                        <label for="edit_hours">Operating Hours / Day <span class="form-required">Required</span></label>
                         <input type="number" step="0.1" name="operating_hours_per_day" id="edit_hours" class="form-input" min="0.1" max="24" required oninput="recalcModalPreview('edit')">
                     </div>
 
                     <div class="form-group">
-                        <label>Days / Month <span style="color:#dc2626;">*</span></label>
+                        <label for="edit_days">Operating Days / Month <span class="form-required">Required</span></label>
                         <input type="number" name="operating_days_per_month" id="edit_days" class="form-input" min="1" max="31" required oninput="recalcModalPreview('edit')">
                     </div>
                 </div>
@@ -1808,39 +2154,69 @@ window.addEventListener('DOMContentLoaded', function() {
                 <!-- Live Computation Preview -->
                 <div class="calc-preview-strip">
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#2563eb;" id="edit_prev_daily">0.00 kWh</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Daily Energy</div>
+                        <div style="font-size:0.95rem; font-weight:850; color:#2563eb;" id="edit_prev_daily">0.00 kWh</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Daily Energy</div>
                     </div>
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#2563eb;" id="edit_prev_monthly">0.00 kWh</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Monthly Energy</div>
+                        <div style="font-size:0.95rem; font-weight:850; color:#2563eb;" id="edit_prev_monthly">0.00 kWh</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Monthly Energy</div>
                     </div>
                     <div>
-                        <div style="font-size:0.95rem; font-weight:800; color:#059669;" id="edit_prev_cost">₱0.00</div>
-                        <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase;">Est. Monthly Cost</div>
+                        <div style="font-size:0.95rem; font-weight:900; color:#059669;" id="edit_prev_cost">₱0.00</div>
+                        <div style="font-size:0.68rem; color:#64748b; font-weight:800; text-transform:uppercase; margin-top:2px;">Est. Monthly Cost</div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Notes / Asset Tag</label>
+                    <label for="edit_notes">Notes / Asset Tag <span class="form-optional">Optional</span></label>
                     <textarea name="notes" id="edit_notes" class="form-textarea" rows="2"></textarea>
                 </div>
 
             </div>
             <div class="modal-foot">
                 <button type="button" class="action-btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="action-btn-secondary" style="background:#2563eb;color:#fff;border-color:#2563eb;"><i class="fa-solid fa-check"></i> Update Equipment</button>
+                <button type="submit" class="action-btn-primary">
+                    <i class="fa-solid fa-check"></i> Update Equipment
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- DELETE CONFIRMATION FORM -->
-<form id="ltDeleteForm" method="POST" action="" style="display:none;">
-    @csrf
-    @method('DELETE')
-</form>
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="ltDeleteModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 440px; text-align:center; padding: 24px;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="delete-modal-warning-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="deleteModalTitle" style="margin: 0 0 8px 0; font-size: 1.15rem; font-weight: 850; color: #0f172a;">
+            Confirm Removal
+        </h3>
+        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; margin: 0 0 16px 0;">
+            Are you sure you want to remove <strong id="deleteEquipmentName" style="color:#0f172a;"></strong> from this facility's load schedule?
+        </p>
+        <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 8px 12px; margin-bottom: 20px; font-size: 0.74rem; color: #991b1b; text-align: left; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info" style="color:#dc2626;"></i>
+            <span>This action will recalculate total facility connected load and baseline variance.</span>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 10px;">
+            <button type="button" class="action-btn-secondary" onclick="closeDeleteModal()" style="min-width: 100px; justify-content: center;">
+                Cancel
+            </button>
+            <form id="ltDeleteForm" method="POST" action="" style="display:inline; margin:0;">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="action-btn-danger" style="min-width: 120px; justify-content: center;">
+                    <i class="fa-solid fa-trash-can"></i> Yes, Remove
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 @endif
+
+<!-- Include Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Scripts for Dynamic Charts, Modals, Presets, and Interactive Simulator -->
 <script>
@@ -1873,30 +2249,42 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initial Donut Chart Setup
-    document.addEventListener('DOMContentLoaded', function () {
-        const catLabels = @json(array_column($categoryBreakdown, 'category'));
-        const catData = @json(array_column($categoryBreakdown, 'monthly_kwh'));
+    // Category Load Distribution Chart Setup & Switching (Donut vs Ranking Bar)
+    let categoryChartInstance = null;
+    const catLabels = @json(array_column($categoryBreakdown, 'category'));
+    const catData = @json(array_column($categoryBreakdown, 'monthly_kwh'));
+    const catColors = [
+        '#2563eb',
+        '#10b981',
+        '#f59e0b',
+        '#8b5cf6',
+        '#ec4899',
+        '#06b6d4',
+        '#64748b'
+    ];
 
-        const donutCanvas = document.getElementById('categoryDonutChart');
-        if (donutCanvas && catData.length > 0) {
-            new Chart(donutCanvas, {
+    function initCategoryChart(type = 'donut') {
+        const canvas = document.getElementById('categoryDonutChart');
+        if (!canvas || !window.Chart || catData.length === 0) return;
+
+        if (categoryChartInstance) {
+            categoryChartInstance.destroy();
+            categoryChartInstance = null;
+        }
+
+        const centerInfo = document.getElementById('donutCenterInfo');
+        if (type === 'donut') {
+            if (centerInfo) centerInfo.style.display = 'block';
+            categoryChartInstance = new Chart(canvas, {
                 type: 'doughnut',
                 data: {
                     labels: catLabels,
                     datasets: [{
                         data: catData,
-                        backgroundColor: [
-                            '#2563eb',
-                            '#10b981',
-                            '#f59e0b',
-                            '#8b5cf6',
-                            '#ec4899',
-                            '#06b6d4',
-                            '#64748b'
-                        ],
+                        backgroundColor: catColors.slice(0, catData.length),
                         borderWidth: 2,
-                        borderColor: '#ffffff'
+                        borderColor: '#ffffff',
+                        hoverOffset: 6
                     }]
                 },
                 options: {
@@ -1911,7 +2299,8 @@ window.addEventListener('DOMContentLoaded', function() {
                                 label: function (context) {
                                     const val = context.parsed || 0;
                                     const cost = (val * ratePerKwh).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                    return ` ${context.label}: ${val.toLocaleString()} kWh (₱${cost})`;
+                                    const pct = totalMonthlyKwh > 0 ? ((val / totalMonthlyKwh) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${val.toLocaleString()} kWh (${pct}%) • ₱${cost}`;
                                 }
                             }
                         }
@@ -1919,7 +2308,77 @@ window.addEventListener('DOMContentLoaded', function() {
                     cutout: '68%'
                 }
             });
+        } else {
+            // Horizontal Bar Ranking View ("Sino mas mataas consume")
+            if (centerInfo) centerInfo.style.display = 'none';
+            categoryChartInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        label: 'Monthly kWh',
+                        data: catData,
+                        backgroundColor: catColors.slice(0, catData.length),
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const val = context.parsed.x || 0;
+                                    const cost = (val * ratePerKwh).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    const pct = totalMonthlyKwh > 0 ? ((val / totalMonthlyKwh) * 100).toFixed(1) : 0;
+                                    return ` ${val.toLocaleString()} kWh (${pct}%) • ₱${cost}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                font: { size: 10 },
+                                callback: function(v) { return v >= 1000 ? (v / 1000) + 'k' : v; }
+                            }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 10, weight: '600' },
+                                color: '#1e293b'
+                            }
+                        }
+                    }
+                }
+            });
         }
+    }
+
+    function switchCategoryChart(mode) {
+        const btnDonut = document.getElementById('btnToggleDonut');
+        const btnBar = document.getElementById('btnToggleBar');
+        if (mode === 'donut') {
+            if (btnDonut) btnDonut.classList.add('active');
+            if (btnBar) btnBar.classList.remove('active');
+            initCategoryChart('donut');
+        } else {
+            if (btnBar) btnBar.classList.add('active');
+            if (btnDonut) btnDonut.classList.remove('active');
+            initCategoryChart('bar');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initCategoryChart('donut');
 
         // Initialize Simulator
         updateSimulation(1.0);
@@ -2044,14 +2503,35 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById(prefix + 'prev_cost').textContent = '₱' + monthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Delete Confirmation
+    // Delete Confirmation Modal Control
     function confirmDeleteEquipment(id, name) {
-        if (confirm(`Are you sure you want to remove "${name}" from this facility's load schedule?`)) {
-            const form = document.getElementById('ltDeleteForm');
-            form.action = "{{ url('modules/load-tracking/equipment') }}/" + id;
-            form.submit();
-        }
+        const modal = document.getElementById('ltDeleteModal');
+        const form = document.getElementById('ltDeleteForm');
+        const nameEl = document.getElementById('deleteEquipmentName');
+        if (!modal || !form) return;
+
+        form.action = "{{ url('modules/load-tracking/equipment') }}/" + id;
+        if (nameEl) nameEl.textContent = name;
+        modal.classList.add('is-active');
     }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('ltDeleteModal');
+        if (modal) modal.classList.remove('is-active');
+    }
+
+    // Close modals on overlay backdrop click or Escape key
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            e.target.classList.remove('is-active');
+        }
+    });
+
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.is-active').forEach(m => m.classList.remove('is-active'));
+        }
+    });
 
     // Live Client-side Quick Search Filter with Clear Button
     function quickFilterTable(query) {
