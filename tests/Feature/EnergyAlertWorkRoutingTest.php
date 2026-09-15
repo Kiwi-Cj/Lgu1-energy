@@ -22,7 +22,7 @@ test('high usage creates a conservation-owned alert without incident or maintena
         ->and(Maintenance::query()->where('facility_id', $facility->id)->exists())->toBeFalse();
 });
 
-test('critical usage is routed to one linked incident and maintenance workflow', function () {
+test('critical usage is routed to open incident without auto-flagging direct maintenance', function () {
     $facility = Facility::factory()->create(['baseline_kwh' => 1000]);
 
     EnergyRecord::create([
@@ -35,11 +35,12 @@ test('critical usage is routed to one linked incident and maintenance workflow',
     ]);
 
     $incident = EnergyIncident::query()->where('facility_id', $facility->id)->sole();
-    $maintenance = Maintenance::query()->where('facility_id', $facility->id)->sole();
+    $maintenance = Maintenance::query()->where('facility_id', $facility->id)->first();
 
     expect((int) $incident->month)->toBe(7)
         ->and((int) $incident->year)->toBe(2026)
-        ->and((int) $maintenance->energy_incident_id)->toBe((int) $incident->id);
+        ->and($incident->status)->toBe('Open')
+        ->and($maintenance)->toBeNull();
 });
 
 test('very high usage creates an incident but is not auto-flagged for maintenance', function () {
@@ -67,6 +68,16 @@ test('an unassigned auto maintenance flag closes when its reading no longer qual
         'actual_kwh' => 1400,
         'baseline_kwh' => 1000,
         'input_source' => 'manual',
+    ]);
+
+    $incident = EnergyIncident::query()->where('facility_id', $facility->id)->sole();
+    $maintenance = Maintenance::create([
+        'facility_id' => $facility->id,
+        'energy_incident_id' => $incident->id,
+        'issue_type' => 'Auto-flagged: Critical Consumption',
+        'trigger_month' => 'Aug 2026',
+        'maintenance_type' => 'Corrective',
+        'maintenance_status' => 'Pending',
     ]);
 
     expect(Maintenance::where('facility_id', $facility->id)->exists())->toBeTrue();

@@ -243,6 +243,165 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
     return redirect()->back();
 })->middleware(['auth', 'verified'])->name('energy-records.store');
 
+// Store new weekly meter reading
+Route::post('/modules/facilities/{facility}/weekly-readings', function ($facilityId, Request $request) {
+    $facility = Facility::findOrFail($facilityId);
+    $validated = $request->validate([
+        'meter_id' => 'required|integer',
+        'year' => 'required|integer|min:2000|max:2100',
+        'month' => 'required|integer|min:1|max:12',
+        'week_number' => 'required|integer|min:1|max:4',
+        'reading_date' => 'nullable|date',
+        'previous_reading_kwh' => 'nullable|numeric|min:0',
+        'current_reading_kwh' => 'nullable|numeric|min:0',
+        'actual_kwh' => 'required|numeric|min:0',
+        'rate_per_kwh' => 'nullable|numeric|min:0',
+        'notes' => 'nullable|string|max:500',
+    ]);
+
+    $selectedMeter = FacilityMeter::where('facility_id', $facilityId)
+        ->whereKey($validated['meter_id'])
+        ->first();
+
+    if (! $selectedMeter) {
+        return redirect()->back()->withInput()->withErrors(['meter_id' => 'Selected meter does not belong to this facility.']);
+    }
+    if (! $selectedMeter->approved_at) {
+        return redirect()->back()->withInput()->withErrors(['meter_id' => 'Selected meter is not approved.']);
+    }
+
+    $prevReading = isset($validated['previous_reading_kwh']) && is_numeric($validated['previous_reading_kwh'])
+        ? (float) $validated['previous_reading_kwh']
+        : null;
+    $currReading = isset($validated['current_reading_kwh']) && is_numeric($validated['current_reading_kwh'])
+        ? (float) $validated['current_reading_kwh']
+        : null;
+
+    if ($prevReading !== null && $currReading !== null && $currReading >= $prevReading) {
+        $actualKwh = round($currReading - $prevReading, 2);
+    } else {
+        $actualKwh = (float) $validated['actual_kwh'];
+    }
+
+    $ratePerKwh = isset($validated['rate_per_kwh']) && is_numeric($validated['rate_per_kwh']) && (float) $validated['rate_per_kwh'] > 0
+        ? (float) $validated['rate_per_kwh']
+        : 12.00;
+
+    $cost = round($actualKwh * $ratePerKwh, 2);
+
+    // Check duplicate week
+    $existing = \App\Models\FacilityMeterWeeklyReading::where('facility_id', $facilityId)
+        ->where('meter_id', $selectedMeter->id)
+        ->where('year', (int) $validated['year'])
+        ->where('month', (int) $validated['month'])
+        ->where('week_number', (int) $validated['week_number'])
+        ->first();
+
+    if ($existing) {
+        return redirect()->back()->withInput()->withErrors([
+            'duplicate_week' => "A weekly reading for Week {$validated['week_number']} of this month already exists.",
+        ]);
+    }
+
+    $reading = \App\Models\FacilityMeterWeeklyReading::create([
+        'facility_id' => $facilityId,
+        'meter_id' => $selectedMeter->id,
+        'year' => (int) $validated['year'],
+        'month' => (int) $validated['month'],
+        'week_number' => (int) $validated['week_number'],
+        'reading_date' => $validated['reading_date'] ?? null,
+        'previous_reading_kwh' => $prevReading,
+        'current_reading_kwh' => $currReading,
+        'actual_kwh' => $actualKwh,
+        'rate_per_kwh' => $ratePerKwh,
+        'cost' => $cost,
+        'notes' => $validated['notes'] ?? null,
+        'encoded_by' => auth()->id(),
+    ]);
+
+    // Dispatch weekly spike notification if reading triggers an alert level
+    $monthlyBaseline = (float) ($selectedMeter->baseline_kwh ?? $facility->baseline_kwh ?? 0);
+    if ($monthlyBaseline > 0 && \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+        $daysInMonth = \Carbon\Carbon::createFromDate((int) $validated['year'], (int) $validated['month'], 1)->daysInMonth;
+        $weekDays = ((int) $validated['week_number']) < 4 ? 7 : max(1, $daysInMonth - 21);
+        $weeklyBaseline = round($monthlyBaseline * ($weekDays / $daysInMonth), 2);
+        $deviation = $weeklyBaseline > 0 ? round((($actualKwh - $weeklyBaseline) / $weeklyBaseline) * 100, 2) : null;
+        $alertLevel = $deviation !== null ? \App\Models\EnergyRecord::resolveAlertLevel($deviation, $weeklyBaseline) : 'Normal';
+
+        if (! in_array($alertLevel, ['Normal', 'No Data'], true)) {
+            $monthName = \Carbon\Carbon::create(2000, (int) $validated['month'], 1)->format('F');
+            $alertTitle = "⚡ Weekly Energy Alert: {$facility->name}";
+            $alertMessage = "Week {$validated['week_number']} ({$monthName} {$validated['year']}) for {$selectedMeter->meter_name} recorded " . number_format($actualKwh, 2) . " kWh ({$alertLevel}: " . ($deviation > 0 ? '+' : '') . number_format($deviation, 2) . "% vs baseline).";
+            $notifType = in_array($alertLevel, ['High', 'Critical']) ? 'critical' : 'warning';
+            $targetUrl = route('facilities.monthly-records', [
+                'facility' => $facilityId,
+                'year' => (int) $validated['year'],
+                'timeframe' => 'weekly',
+                'table_month' => (int) $validated['month'],
+            ]);
+
+            \App\Models\User::query()
+                ->with('facilities:id')
+                ->get()
+                ->filter(function (\App\Models\User $u) use ($facilityId) {
+                    $role = \App\Support\RoleAccess::normalize($u);
+                    if (in_array($role, ['super_admin', 'admin', 'energy_officer'], true)) {
+                        return true;
+                    }
+                    if ($role === 'staff' && $facilityId) {
+                        return $u->facilities->contains('id', (int) $facilityId);
+                    }
+                    return false;
+                })
+                ->each(function (\App\Models\User $recipient) use ($alertTitle, $alertMessage, $notifType, $targetUrl) {
+                    $exists = $recipient->notifications()
+                        ->where('type', $notifType)
+                        ->where('message', $alertMessage)
+                        ->exists();
+
+                    if (! $exists) {
+                        $recipient->notifications()->create([
+                            'title' => $alertTitle,
+                            'message' => $alertMessage,
+                            'type' => $notifType,
+                            'target_url' => $targetUrl,
+                        ]);
+                    }
+                });
+        }
+    }
+
+    // Sync monthly aggregate
+    $syncService = app(\App\Services\WeeklyReadingSyncService::class);
+    $syncResult = $syncService->syncMonthlyAggregate($facilityId, $selectedMeter->id, (int) $validated['year'], (int) $validated['month']);
+
+    $message = $syncResult['is_complete']
+        ? "Week {$validated['week_number']} saved! All 4 weeks are now complete and synchronized to the Monthly Record (" . number_format($syncResult['total_kwh'], 2) . " kWh)."
+        : "Week {$validated['week_number']} saved (" . number_format($actualKwh, 2) . " kWh). Progress: {$syncResult['weeks_count']}/4 weeks logged.";
+
+    return redirect()->back()->with('success', $message);
+})->middleware(['auth', 'verified'])->name('facility-meter-weekly-readings.store');
+
+// Delete weekly meter reading
+Route::delete('/modules/facilities/{facility}/weekly-readings/{reading}', function ($facilityId, $readingId) {
+    $reading = \App\Models\FacilityMeterWeeklyReading::where('facility_id', $facilityId)
+        ->whereKey($readingId)
+        ->firstOrFail();
+
+    $meterId = $reading->meter_id;
+    $year = $reading->year;
+    $month = $reading->month;
+    $weekNumber = $reading->week_number;
+
+    $reading->delete();
+
+    // Re-sync monthly aggregate
+    $syncService = app(\App\Services\WeeklyReadingSyncService::class);
+    $syncService->syncMonthlyAggregate($facilityId, $meterId, $year, $month);
+
+    return redirect()->back()->with('success', "Weekly reading for Week {$weekNumber} has been deleted.");
+})->middleware(['auth', 'verified'])->name('facility-meter-weekly-readings.destroy');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Engineer Approval Toggle (AJAX)
     Route::post('/modules/facilities/{id}/toggle-engineer-approval', [FacilityController::class, 'toggleEngineerApproval'])->name('modules.facilities.toggle-engineer-approval');
@@ -250,3 +409,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Facility modal detail for AJAX
     Route::get('/modules/facilities/{facility}/modal-detail', [FacilityController::class, 'modalDetail'])->name('modules.facilities.modal-detail');
 });
+

@@ -1782,6 +1782,7 @@
                 <nav class="nav-links" aria-label="Main navigation">
                     <a href="#features">Features</a>
                     <a href="#how-it-works">How it works</a>
+                    <a href="{{ route('user-guide.index') }}">User Guide</a>
                     <a href="{{ route('about.index') }}">About</a>
                     <a href="#contact">Contact</a>
                 </nav>
@@ -2053,6 +2054,7 @@
             <div class="footer-column">
                 <h3>Information</h3>
                 <nav>
+                    <a href="{{ route('user-guide.index') }}">User Guide &amp; Manual</a>
                     <a href="{{ route('about.index') }}">About</a>
                     <a href="{{ route('faqs.index') }}">FAQs</a>
                     <a href="{{ route('privacy.index') }}">Privacy notice</a>

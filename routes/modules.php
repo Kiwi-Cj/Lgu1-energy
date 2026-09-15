@@ -542,6 +542,43 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $oldMeterId = (string) old('meter_id', $primaryBillingMeterId > 0 ? $primaryBillingMeterId : '');
 
         $latestMeterDials = [];
+        $meterDialTimeline = [];
+
+        // 1. Gather all weekly readings for this facility
+        $allWeeklyReadings = \App\Models\FacilityMeterWeeklyReading::query()
+            ->where('facility_id', $facilityId)
+            ->where(function ($query) {
+                $query->whereNotNull('current_reading_kwh')
+                    ->orWhereNotNull('previous_reading_kwh')
+                    ->orWhere('actual_kwh', '>', 0);
+            })
+            ->orderBy('year')
+            ->orderBy('month')
+            ->orderBy('week_number')
+            ->get(['meter_id', 'year', 'month', 'week_number', 'previous_reading_kwh', 'current_reading_kwh', 'actual_kwh']);
+
+        foreach ($allWeeklyReadings as $w) {
+            $mid = (int) ($w->meter_id ?? 0);
+            $currDial = $w->current_reading_kwh !== null && is_numeric($w->current_reading_kwh)
+                ? (float) $w->current_reading_kwh
+                : ($w->previous_reading_kwh !== null && is_numeric($w->previous_reading_kwh) ? (float) $w->previous_reading_kwh + (float) ($w->actual_kwh ?? 0) : null);
+            $prevDial = $w->previous_reading_kwh !== null && is_numeric($w->previous_reading_kwh) ? (float) $w->previous_reading_kwh : null;
+            $monthName = \Carbon\Carbon::create(2000, (int) $w->month, 1)->format('M');
+
+            $meterDialTimeline[] = [
+                'meter_id' => $mid,
+                'year' => (int) $w->year,
+                'month' => (int) $w->month,
+                'week_number' => (int) $w->week_number,
+                'order_key' => ((int) $w->year) * 10000 + ((int) $w->month) * 100 + ((int) $w->week_number),
+                'period_label' => "Week {$w->week_number}, {$monthName} {$w->year}",
+                'current_reading_kwh' => $currDial,
+                'previous_reading_kwh' => $prevDial,
+                'actual_kwh' => (float) ($w->actual_kwh ?? 0),
+            ];
+        }
+
+        // 2. Gather monthly energy records for this facility
         $facilityRecords = \App\Models\EnergyRecord::query()
             ->where('facility_id', $facilityId)
             ->where(function ($query) {
@@ -549,23 +586,203 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     ->orWhereNotNull('previous_reading_kwh')
                     ->orWhere('actual_kwh', '>', 0);
             })
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->orderByDesc('id')
-            ->get(['meter_id', 'current_reading_kwh', 'previous_reading_kwh', 'actual_kwh']);
+            ->orderBy('year')
+            ->orderBy('month')
+            ->orderBy('id')
+            ->get(['meter_id', 'year', 'month', 'current_reading_kwh', 'previous_reading_kwh', 'actual_kwh', 'input_source']);
 
         foreach ($facilityRecords as $record) {
             $mid = (int) ($record->meter_id ?? 0);
-            if (! isset($latestMeterDials[$mid])) {
-                if ($record->current_reading_kwh !== null && is_numeric($record->current_reading_kwh)) {
-                    $latestMeterDials[$mid] = (float) $record->current_reading_kwh;
-                } elseif ($record->previous_reading_kwh !== null && is_numeric($record->previous_reading_kwh)) {
-                    $latestMeterDials[$mid] = (float) $record->previous_reading_kwh + (float) ($record->actual_kwh ?? 0);
-                }
+            $currDial = $record->current_reading_kwh !== null && is_numeric($record->current_reading_kwh)
+                ? (float) $record->current_reading_kwh
+                : ($record->previous_reading_kwh !== null && is_numeric($record->previous_reading_kwh) ? (float) $record->previous_reading_kwh + (float) ($record->actual_kwh ?? 0) : null);
+            $prevDial = $record->previous_reading_kwh !== null && is_numeric($record->previous_reading_kwh) ? (float) $record->previous_reading_kwh : null;
+            $monthName = \Carbon\Carbon::create(2000, (int) $record->month, 1)->format('M');
+
+            $meterDialTimeline[] = [
+                'meter_id' => $mid,
+                'year' => (int) $record->year,
+                'month' => (int) $record->month,
+                'week_number' => 4, // month end
+                'order_key' => ((int) $record->year) * 10000 + ((int) $record->month) * 100 + 4,
+                'period_label' => "{$monthName} {$record->year}",
+                'current_reading_kwh' => $currDial,
+                'previous_reading_kwh' => $prevDial,
+                'actual_kwh' => (float) ($record->actual_kwh ?? 0),
+            ];
+        }
+
+        // 3. Sort timeline descending by order_key to find latest dial per meter
+        usort($meterDialTimeline, fn ($a, $b) => $b['order_key'] <=> $a['order_key']);
+
+        foreach ($meterDialTimeline as $item) {
+            $mid = $item['meter_id'];
+            if (! isset($latestMeterDials[$mid]) && $item['current_reading_kwh'] !== null) {
+                $latestMeterDials[$mid] = $item['current_reading_kwh'];
             }
         }
         if (! isset($latestMeterDials[0]) && ! empty($latestMeterDials)) {
             $latestMeterDials[0] = reset($latestMeterDials);
+        }
+
+        $timeframe = strtolower(trim((string) $request->query('timeframe', 'monthly')));
+        if (! in_array($timeframe, ['monthly', 'weekly'], true)) {
+            $timeframe = 'monthly';
+        }
+        $selectedWeek = (int) $request->query('week', 0);
+        if ($selectedWeek < 0 || $selectedWeek > 4) {
+            $selectedWeek = 0;
+        }
+
+        $daysInMonthForSummary = \Carbon\Carbon::createFromDate($selectedYear, $summaryMonth, 1)->daysInMonth;
+        $week4DaysForSummary = max(1, $daysInMonthForSummary - 21);
+        $weekDefinitions = [
+            1 => ['weight' => 7 / $daysInMonthForSummary, 'label' => 'Week 1 (Days 1–7)', 'short' => 'Week 1', 'days' => '1–7'],
+            2 => ['weight' => 7 / $daysInMonthForSummary, 'label' => 'Week 2 (Days 8–14)', 'short' => 'Week 2', 'days' => '8–14'],
+            3 => ['weight' => 7 / $daysInMonthForSummary, 'label' => 'Week 3 (Days 15–21)', 'short' => 'Week 3', 'days' => '15–21'],
+            4 => ['weight' => $week4DaysForSummary / $daysInMonthForSummary, 'label' => "Week 4 (Days 22–{$daysInMonthForSummary})", 'short' => 'Week 4', 'days' => "22–{$daysInMonthForSummary}"],
+        ];
+
+        $weeklyMainMeterRows = collect();
+        if ($timeframe === 'weekly') {
+            $manualReadings = \App\Models\FacilityMeterWeeklyReading::with(['meter', 'encodedBy'])
+                ->where('facility_id', $facilityId)
+                ->where('year', $selectedYear)
+                ->get()
+                ->groupBy(fn ($r) => ((int)$r->meter_id) . '-' . ((int)$r->month));
+
+            // Gather all month/meter combinations from monthly records and manual weekly readings
+            $monthMeterKeys = collect();
+            foreach ($recordsForYear as $record) {
+                $monthMeterKeys->put(((int)$record->meter_id) . '-' . ((int)$record->month), [
+                    'meter_id' => (int) $record->meter_id,
+                    'month' => (int) $record->month,
+                    'year' => (int) $record->year,
+                    'monthly_record' => $record,
+                ]);
+            }
+            foreach ($manualReadings as $key => $readingsGroup) {
+                if (! $monthMeterKeys->has($key)) {
+                    $first = $readingsGroup->first();
+                    $monthMeterKeys->put($key, [
+                        'meter_id' => (int) $first->meter_id,
+                        'month' => (int) $first->month,
+                        'year' => (int) $first->year,
+                        'monthly_record' => null,
+                    ]);
+                }
+            }
+
+            // Sort by month desc, meter_id asc
+            $sortedKeys = $monthMeterKeys->sortByDesc(fn ($item) => sprintf('%04d-%02d-%05d', $item['year'], $item['month'], $item['meter_id']));
+
+            foreach ($sortedKeys as $item) {
+                $recMonth = (int) $item['month'];
+                $recYear = (int) $item['year'];
+                $meterId = (int) $item['meter_id'];
+                $record = $item['monthly_record'];
+                $key = "{$meterId}-{$recMonth}";
+                $manualGroup = $manualReadings->get($key, collect());
+
+                $meter = $record?->meter ?? \App\Models\FacilityMeter::find($meterId);
+                $meterName = $meter?->meter_name ?? ($record?->input_source === 'cprf' ? 'Facility-Level (CPRF)' : 'Main Meter');
+
+                $daysInMonth = \Carbon\Carbon::createFromDate($recYear, $recMonth, 1)->daysInMonth;
+                $week4Days = max(1, $daysInMonth - 21);
+
+                $recWeekDefs = [
+                    1 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 1 (Days 1–7)', 'short' => 'Week 1', 'days' => '1–7'],
+                    2 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 2 (Days 8–14)', 'short' => 'Week 2', 'days' => '8–14'],
+                    3 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 3 (Days 15–21)', 'short' => 'Week 3', 'days' => '15–21'],
+                    4 => ['weight' => $week4Days / $daysInMonth, 'label' => "Week 4 (Days 22–{$daysInMonth})", 'short' => 'Week 4', 'days' => "22–{$daysInMonth}"],
+                ];
+
+                $weeksToProcess = ($selectedWeek > 0 && isset($recWeekDefs[$selectedWeek]))
+                    ? [$selectedWeek => $recWeekDefs[$selectedWeek]]
+                    : $recWeekDefs;
+
+                $actualMonthKwh = $record && is_numeric($record->actual_kwh) ? (float) $record->actual_kwh : null;
+                $baselineMonthKwh = ($meter && is_numeric($meter->baseline_kwh))
+                    ? (float) $meter->baseline_kwh
+                    : ($record && is_numeric($record->baseline_kwh) ? (float) $record->baseline_kwh : null);
+
+                if ($baselineMonthKwh === null) {
+                    $profile = $facility ? $facility->energyProfiles()->latest()->first() : null;
+                    if ($profile && is_numeric($profile->baseline_kwh)) {
+                        $baselineMonthKwh = (float) $profile->baseline_kwh;
+                    } elseif ($facility && is_numeric($facility->baseline_kwh)) {
+                        $baselineMonthKwh = (float) $facility->baseline_kwh;
+                    }
+                }
+                $rate = $record ? \App\Support\EnergyCost::ratePerKwh($record) : 12.00;
+                $monthCost = $record ? \App\Support\EnergyCost::cost($record, $rate) : 0;
+
+                foreach ($weeksToProcess as $wNum => $wInfo) {
+                    $weight = (float) $wInfo['weight'];
+                    $baselineWeekKwh = $baselineMonthKwh !== null ? round($baselineMonthKwh * $weight, 2) : null;
+
+                    $manualWeek = $manualGroup->firstWhere('week_number', $wNum);
+
+                    if ($manualWeek) {
+                        $actualWeekKwh = (float) $manualWeek->actual_kwh;
+                        $weekRate = (float) $manualWeek->rate_per_kwh;
+                        $weekCost = (float) $manualWeek->cost;
+                        $isManual = true;
+                        $manualReadingId = $manualWeek->id;
+                        $manualDate = $manualWeek->reading_date ? $manualWeek->reading_date->format('M d, Y') : null;
+                        $manualNotes = $manualWeek->notes;
+                        $prevReading = $manualWeek->previous_reading_kwh;
+                        $currReading = $manualWeek->current_reading_kwh;
+                    } else {
+                        // When no actual weekly reading has been logged for this specific week,
+                        // do not synthesize or fake-divide the monthly bill into weekly numbers.
+                        $actualWeekKwh = null;
+                        $weekRate = $rate;
+                        $weekCost = 0;
+                        $isManual = false;
+                        $manualReadingId = null;
+                        $manualDate = null;
+                        $manualNotes = null;
+                        $prevReading = null;
+                        $currReading = null;
+                    }
+
+                    $deviation = null;
+                    if ($actualWeekKwh !== null && $baselineWeekKwh !== null && $baselineWeekKwh > 0) {
+                        $deviation = round((($actualWeekKwh - $baselineWeekKwh) / $baselineWeekKwh) * 100, 2);
+                    }
+
+                    $alertLevel = 'No Data';
+                    if ($deviation !== null && $baselineWeekKwh !== null && $baselineWeekKwh > 0) {
+                        $alertLevel = \App\Models\EnergyRecord::resolveAlertLevel($deviation, $baselineWeekKwh);
+                    }
+
+                    $weeklyMainMeterRows->push([
+                        'week_number' => $wNum,
+                        'week_label' => $wInfo['label'],
+                        'week_short' => $wInfo['short'],
+                        'month' => $recMonth,
+                        'month_name' => $monthLabels[$recMonth] ?? ('Month ' . $recMonth),
+                        'year' => $recYear,
+                        'meter_id' => $meterId,
+                        'meter_name' => $meterName,
+                        'actual_kwh' => $actualWeekKwh,
+                        'baseline_kwh' => $baselineWeekKwh,
+                        'deviation' => $deviation,
+                        'alert_level' => $alertLevel,
+                        'rate' => $weekRate,
+                        'cost' => $weekCost,
+                        'is_manual' => $isManual,
+                        'manual_reading_id' => $manualReadingId,
+                        'manual_date' => $manualDate,
+                        'manual_notes' => $manualNotes,
+                        'previous_reading_kwh' => $prevReading,
+                        'current_reading_kwh' => $currReading,
+                        'manual_weeks_count' => $manualGroup->count(),
+                        'parent_record' => $record,
+                    ]);
+                }
+            }
         }
 
         $archivedCount = \App\Models\EnergyRecord::onlyTrashed()->where('facility_id', $facilityId)->count();
@@ -611,7 +828,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'archivedCount',
             'umanConfigured',
             'umanSync',
-            'latestMeterDials'
+            'latestMeterDials',
+            'meterDialTimeline',
+            'timeframe',
+            'selectedWeek',
+            'weekDefinitions',
+            'weeklyMainMeterRows'
         ));
     })->name('facilities.monthly-records');
 

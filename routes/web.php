@@ -54,11 +54,14 @@ Route::view('/contact', 'landing.contact')->name('landing.contact');
 Route::post('/contact', [ContactMessageController::class, 'store'])->name('landing.contact.store');
 
 // ============================================================
-// ABOUT, FAQS, PRIVACY NOTICE (Public Pages)
+// ABOUT, FAQS, PRIVACY NOTICE, USER GUIDE (Public / Info Pages)
 // ============================================================
 Route::view('/about', 'pages.about')->name('about.index');
 Route::view('/faqs', 'pages.faqs')->name('faqs.index');
 Route::view('/privacy', 'pages.privacy')->name('privacy.index');
+Route::view('/user-guide', 'pages.user-guide')->name('user-guide.index');
+Route::view('/guide', 'pages.user-guide');
+Route::view('/modules/user-guide', 'pages.user-guide')->name('modules.user-guide.index');
 
 // Maintenance history contains operational details and must not be public.
 Route::middleware(['auth', 'verified'])->group(function () {

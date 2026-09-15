@@ -145,12 +145,27 @@
         color: #0f172a;
     }
 
+    .energy-monitor-page .select-input {
+        height: 46px;
+        border-radius: 11px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        min-width: 150px;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+        color: #0f172a;
+        cursor: pointer;
+    }
+
     .energy-monitor-page .search-input:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
     }
 
-    .energy-monitor-page .period-input:focus {
+    .energy-monitor-page .period-input:focus,
+    .energy-monitor-page .select-input:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
     }
@@ -1152,7 +1167,8 @@
     }
 
     body.dark-mode .energy-monitor-page .search-input,
-    body.dark-mode .energy-monitor-page .period-input {
+    body.dark-mode .energy-monitor-page .period-input,
+    body.dark-mode .energy-monitor-page .select-input {
         background: #0b1220 !important;
         color: #e2e8f0 !important;
         border-color: #334155 !important;
@@ -1557,9 +1573,29 @@
         </div>
         
         <form class="search-form" method="GET" action="" aria-label="Filter energy monitoring data">
+            @if(request()->filled('source'))
+                <input type="hidden" name="source" value="{{ request('source') }}">
+            @endif
             <div class="filter-control period-field">
                 <label class="filter-label" for="monitorPeriod">Billing month</label>
                 <input id="monitorPeriod" class="period-input" type="month" name="month" value="{{ $selectedMonthInput }}">
+            </div>
+            <div class="filter-control">
+                <label class="filter-label" for="monitorTimeframe">Timeframe</label>
+                <select id="monitorTimeframe" name="timeframe" class="select-input" onchange="toggleWeekSelector()">
+                    <option value="monthly" {{ ($timeframe ?? 'monthly') === 'monthly' ? 'selected' : '' }}>Monthly</option>
+                    <option value="weekly" {{ ($timeframe ?? 'monthly') === 'weekly' ? 'selected' : '' }}>Weekly (Week 1–4)</option>
+                </select>
+            </div>
+            <div class="filter-control" id="weekSelectorGroup" style="{{ ($timeframe ?? 'monthly') === 'weekly' ? '' : 'display:none;' }}">
+                <label class="filter-label" for="monitorWeek">Week period</label>
+                <select id="monitorWeek" name="week" class="select-input">
+                    <option value="0" {{ ($selectedWeek ?? 0) === 0 ? 'selected' : '' }}>All Weeks (Weekly Avg)</option>
+                    <option value="1" {{ ($selectedWeek ?? 0) === 1 ? 'selected' : '' }}>Week 1 (Days 1–7)</option>
+                    <option value="2" {{ ($selectedWeek ?? 0) === 2 ? 'selected' : '' }}>Week 2 (Days 8–14)</option>
+                    <option value="3" {{ ($selectedWeek ?? 0) === 3 ? 'selected' : '' }}>Week 3 (Days 15–21)</option>
+                    <option value="4" {{ ($selectedWeek ?? 0) === 4 ? 'selected' : '' }}>Week 4 (Days 22–End)</option>
+                </select>
             </div>
             <div class="filter-control search-field">
                 <label class="filter-label" for="monitorSearch">Facility</label>
@@ -1567,8 +1603,8 @@
                 <input id="monitorSearch" class="search-input" type="search" name="search" value="{{ request('search') }}" placeholder="Search facility...">
             </div>
             <button class="search-btn" type="submit">Apply</button>
-            @if(request()->filled('search') || request()->filled('month'))
-                <a class="clear-link" href="{{ url()->current() }}"><i class="fa-solid fa-rotate-left"></i>&nbsp; Reset</a>
+            @if(request()->filled('search') || request()->filled('month') || request()->filled('timeframe') || request()->filled('week'))
+                <a class="clear-link" href="{{ route('modules.energy-monitoring.index', request()->filled('source') ? ['source' => request('source')] : []) }}"><i class="fa-solid fa-rotate-left"></i>&nbsp; Reset</a>
             @endif
         </form>
     </div>
@@ -1579,7 +1615,7 @@
                 <span class="metric-icon"><i class="fa-solid fa-bolt"></i></span>
             </div>
             <div class="metric-value">{{ number_format($totalConsumptionKwh ?? 0, 2) }} kWh</div>
-            <div class="metric-meta">Across {{ $totalFacilities ?? 0 }} monitored facilities</div>
+            <div class="metric-meta">{{ $displayPeriodLabel ?? $selectedPeriodLabel }} &bull; Across {{ $totalFacilities ?? 0 }} facilities</div>
         </div>
         <div class="metric-card metric-alert">
             <div class="metric-card-head">
@@ -1595,7 +1631,7 @@
                 <span class="metric-icon"><i class="fa-solid fa-peso-sign"></i></span>
             </div>
             <div class="metric-value">₱{{ number_format($totalEnergyCost ?? 0, 2) }}</div>
-            <div class="metric-meta">For the selected billing period</div>
+            <div class="metric-meta">For {{ $displayPeriodLabel ?? $selectedPeriodLabel }}</div>
         </div>
     </div>
     @php
@@ -1706,6 +1742,8 @@
                         'year' => $selectedDashboardYear,
                         'summary_mode' => 'month',
                         'summary_month' => $selectedDashboardMonth,
+                        'timeframe' => $timeframe ?? 'monthly',
+                        'week' => $selectedWeek ?? 0,
                     ]);
                     $encodeReadingUrl = route('facilities.monthly-records', [
                         'facility' => $facility->id,
@@ -1735,7 +1773,7 @@
                     data-facility-url="{{ $facilityDetailsUrl }}"
                     data-original-order="{{ $loop->index }}"
                     data-name="{{ strtolower($facilityNameDisplay !== '' ? $facilityNameDisplay : $facilityNameRaw) }}"
-                    data-consumption="{{ $record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : -1 }}"
+                    data-consumption="{{ $facility->current_actual_kwh !== null ? (float) $facility->current_actual_kwh : -1 }}"
                     data-condition-rank="{{ $conditionRank }}"
                     tabindex="0"
                     role="link"
@@ -1761,20 +1799,25 @@
                             <button
                                 type="button"
                                 class="main-meter-trigger"
-                                onclick='openMeterBreakdownModal(@json($facilityNameDisplay !== "" ? $facilityNameDisplay : $facilityNameRaw), @json($mainMeterLabel), @json($mainMeterStatus), @json($record && is_numeric($record->actual_kwh ?? null) ? (float) $record->actual_kwh : null), @json($mainMeterBreakdown))'
+                                onclick='openMeterBreakdownModal(@json($facilityNameDisplay !== "" ? $facilityNameDisplay : $facilityNameRaw), @json($mainMeterLabel), @json($mainMeterStatus), @json($facility->current_actual_kwh !== null ? (float) $facility->current_actual_kwh : null), @json($mainMeterBreakdown))'
                             >
                                 <span class="cell-meter-hint">View meters</span>
                             </button>
                         @endif
                     </td>
                     <td class="cell-baseline">
-                        {{ $record && is_numeric($record->actual_kwh ?? null) ? number_format((float) $record->actual_kwh, 2) : '-' }}
-                        @if($mainMeterCount > 1 && $record && is_numeric($record->actual_kwh ?? null))
+                        {{ $facility->current_actual_kwh !== null ? number_format((float) $facility->current_actual_kwh, 2) : '-' }}
+                        @if(($timeframe ?? 'monthly') === 'weekly')
+                            <span class="cell-reading-note"><i class="fa-solid fa-calendar-week"></i> {{ ($selectedWeek ?? 0) > 0 ? 'Week ' . $selectedWeek : 'Weekly Avg' }}</span>
+                        @elseif($mainMeterCount > 1 && $facility->current_actual_kwh !== null)
                             <span class="cell-reading-note">Combined</span>
                         @endif
                     </td>
                     <td class="cell-baseline">
-                        {{ $baselineKwh !== null ? number_format($baselineKwh, 2) : '-' }}
+                        {{ $facility->current_baseline_kwh !== null ? number_format((float) $facility->current_baseline_kwh, 2) : '-' }}
+                        @if(($timeframe ?? 'monthly') === 'weekly' && $facility->current_baseline_kwh !== null)
+                            <span class="cell-reading-note">Weekly Base</span>
+                        @endif
                     </td>
                     <td class="trend-value {{ is_numeric($baselineVarianceKwh) && (float) $baselineVarianceKwh > 0 ? 'trend-positive' : 'trend-normal' }}">
                         @if(is_numeric($baselineVarianceKwh) && is_numeric($baselineVariancePercent))
@@ -1821,6 +1864,11 @@
                                 <span class="monitor-primary-action integration-waiting" title="The monthly record will appear after CPRF sends it through the integration.">
                                     <i class="fa-solid fa-arrows-rotate"></i> Waiting for CPRF
                                 </span>
+                                @if($canEncodeMainReadings)
+                                    <a href="{{ $encodeReadingUrl }}" class="monitor-quick-link" style="margin-top: 4px; justify-content: center;" title="Staff manual encode fallback for CPRF facility">
+                                        <i class="fa-solid fa-plus"></i> Manual Encode
+                                    </a>
+                                @endif
                             @elseif(!$hasApprovedMainMeter)
                                 <a href="{{ $energyProfileUrl }}" class="monitor-primary-action setup">
                                     <i class="fa-solid fa-gauge-high"></i> Configure Main Meter
@@ -2089,6 +2137,14 @@ async function openRecommendationModal(facilityId, facilityName, alertLevel, fal
         }
     }
 }
+function toggleWeekSelector() {
+    const timeframeSelect = document.getElementById('monitorTimeframe');
+    const weekSelectorGroup = document.getElementById('weekSelectorGroup');
+    if (timeframeSelect && weekSelectorGroup) {
+        weekSelectorGroup.style.display = timeframeSelect.value === 'weekly' ? '' : 'none';
+    }
+}
+
 function closeRecommendationModal() {
     document.getElementById('recommendationModal').style.display = 'none';
 }

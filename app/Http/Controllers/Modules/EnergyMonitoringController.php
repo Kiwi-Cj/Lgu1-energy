@@ -106,6 +106,39 @@ class EnergyMonitoringController extends Controller
             ->whereIn('facility_id', $facilityIds)
             ->sum('actual_kwh');
 
+        $timeframe = strtolower(trim((string) request('timeframe', 'monthly')));
+        if (! in_array($timeframe, ['monthly', 'weekly'], true)) {
+            $timeframe = 'monthly';
+        }
+        $selectedWeek = (int) request('week', 0);
+        if ($selectedWeek < 0 || $selectedWeek > 4) {
+            $selectedWeek = 0;
+        }
+
+        $daysInMonth = Carbon::createFromDate($currentYear, $currentMonth, 1)->daysInMonth;
+        $week4Days = max(1, $daysInMonth - 21);
+        $weekDefinitions = [
+            1 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 1 (Days 1–7)', 'short' => 'Week 1', 'days' => '1–7'],
+            2 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 2 (Days 8–14)', 'short' => 'Week 2', 'days' => '8–14'],
+            3 => ['weight' => 7 / $daysInMonth, 'label' => 'Week 3 (Days 15–21)', 'short' => 'Week 3', 'days' => '15–21'],
+            4 => ['weight' => $week4Days / $daysInMonth, 'label' => "Week 4 (Days 22–{$daysInMonth})", 'short' => 'Week 4', 'days' => "22–{$daysInMonth}"],
+        ];
+
+        $activeWeekWeight = 1.0;
+        $displayPeriodLabel = $selectedPeriodLabel;
+        if ($timeframe === 'weekly') {
+            if ($selectedWeek > 0 && isset($weekDefinitions[$selectedWeek])) {
+                $activeWeekWeight = (float) $weekDefinitions[$selectedWeek]['weight'];
+                $displayPeriodLabel = $selectedPeriodLabel . ' • ' . $weekDefinitions[$selectedWeek]['label'];
+            } else {
+                $activeWeekWeight = (float) (7 / $daysInMonth);
+                $displayPeriodLabel = $selectedPeriodLabel . ' • Weekly Average (All Weeks)';
+            }
+
+            $totalEnergyCost = round((float) $totalEnergyCost * $activeWeekWeight, 2);
+            $totalConsumptionKwh = round((float) $totalConsumptionKwh * $activeWeekWeight, 2);
+        }
+
         $recordsByFacility = $this->loadRecentRecordsByFacility($facilityIds, $currentYear, $currentMonth);
         $mainMetersByFacility = $this->loadMainMetersByFacility($facilityIds);
         $mainMeterSnapshotsByFacility = $this->loadCurrentMonthMainMeterSnapshots($facilityIds, $currentYear, $currentMonth);
@@ -154,6 +187,30 @@ class EnergyMonitoringController extends Controller
                 ? (float) $currentMonthRecord->actual_kwh
                 : null;
             $currentBaselineKwh = $this->resolveSpikeBaseline($facility, $currentMonthRecord);
+
+            if ($timeframe === 'weekly') {
+                $currentActualKwh = $currentActualKwh !== null
+                    ? round($currentActualKwh * $activeWeekWeight, 2)
+                    : null;
+                $currentBaselineKwh = $currentBaselineKwh !== null
+                    ? round($currentBaselineKwh * $activeWeekWeight, 2)
+                    : null;
+
+                $mainMeters = $mainMeters->map(function ($meter) use ($activeWeekWeight) {
+                    $meterCopy = clone $meter;
+                    if (is_numeric($meterCopy->current_month_kwh)) {
+                        $meterCopy->current_month_kwh = round((float) $meterCopy->current_month_kwh * $activeWeekWeight, 2);
+                    }
+                    if (is_numeric($meterCopy->current_month_baseline_kwh)) {
+                        $meterCopy->current_month_baseline_kwh = round((float) $meterCopy->current_month_baseline_kwh * $activeWeekWeight, 2);
+                    }
+                    return $meterCopy;
+                });
+                $facility->main_meters = $mainMeters;
+            }
+
+            $facility->current_actual_kwh = $currentActualKwh;
+            $facility->current_baseline_kwh = $currentBaselineKwh;
             $facility->baseline_variance_kwh = $currentActualKwh !== null && $currentBaselineKwh !== null
                 ? round($currentActualKwh - $currentBaselineKwh, 2)
                 : null;
@@ -172,10 +229,10 @@ class EnergyMonitoringController extends Controller
                 'facility_name' => (string) ($facility->name ?? ''),
                 'facility_type' => (string) ($facility->type ?? ''),
                 'alert_level' => $alertLevel,
-            'trend_percent' => $trendPercent,
+                'trend_percent' => $trendPercent,
                 'trend_spike_detected' => $trendSpikeDetected,
-                'actual_kwh' => $currentMonthRecord?->actual_kwh,
-                'baseline_kwh' => $currentMonthRecord?->baseline_kwh,
+                'actual_kwh' => $currentActualKwh,
+                'baseline_kwh' => $currentBaselineKwh,
                 'last_maintenance' => $lastMaintenance?->completed_date,
                 'next_maintenance' => $nextMaintenance?->scheduled_date,
                 'meter_breakdown' => $mainMeters->map(fn ($meter) => [
@@ -207,6 +264,10 @@ class EnergyMonitoringController extends Controller
             'totalConsumptionKwh',
             'selectedMonthInput',
             'selectedPeriodLabel',
+            'displayPeriodLabel',
+            'timeframe',
+            'selectedWeek',
+            'weekDefinitions',
             'sourceFilter',
             'allFacilitiesCount',
             'cprfFacilitiesCount',

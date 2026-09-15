@@ -30,6 +30,7 @@ final class EnergyAlertRouting
 
     public static function requiresMaintenance(?string $usageLevel): bool
     {
-        return strtolower(trim((string) $usageLevel)) === 'critical';
+        // Auto-flagged spikes enter Incident Records first. Dispatching to maintenance is done via incident triage.
+        return false;
     }
 }

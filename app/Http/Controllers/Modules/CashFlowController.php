@@ -99,26 +99,37 @@ class CashFlowController extends Controller
         $validated = $request->validate([
             'facility_id' => ['required', 'exists:facilities,id'],
             'fiscal_year' => ['required', 'integer', 'min:2020', 'max:2035'],
-            'annual_budget_amount' => ['required', 'numeric', 'min:0'],
+            'annual_budget_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        FacilityUtilityBudget::updateOrCreate(
-            [
-                'facility_id' => (int) $validated['facility_id'],
-                'fiscal_year' => (int) $validated['fiscal_year'],
-            ],
-            [
-                'annual_budget_amount' => round((float) $validated['annual_budget_amount'], 2),
-                'notes' => $validated['notes'] ?? null,
-                'created_by' => $user->id,
-            ]
-        );
+        $amount = (float) ($validated['annual_budget_amount'] ?? 0);
+
+        if ($amount > 0) {
+            FacilityUtilityBudget::updateOrCreate(
+                [
+                    'facility_id' => (int) $validated['facility_id'],
+                    'fiscal_year' => (int) $validated['fiscal_year'],
+                ],
+                [
+                    'annual_budget_amount' => round($amount, 2),
+                    'notes' => $validated['notes'] ?? null,
+                    'created_by' => $user->id,
+                ]
+            );
+            $msg = 'Annual utility budget successfully saved.';
+        } else {
+            // Remove budget if set to 0 or cleared
+            FacilityUtilityBudget::where('facility_id', (int) $validated['facility_id'])
+                ->where('fiscal_year', (int) $validated['fiscal_year'])
+                ->delete();
+            $msg = 'Utility budget cleared. Facility is now in pure Cash Flow mode.';
+        }
 
         return redirect()->route('modules.cashflow.index', [
             'facility_id' => $validated['facility_id'],
             'year' => $validated['fiscal_year'],
-        ])->with('success', 'Annual utility budget successfully saved.');
+        ])->with('success', $msg);
     }
 
     public function export(Request $request)
@@ -181,43 +192,85 @@ class CashFlowController extends Controller
             // UTF-8 BOM for Excel
             fputs($file, "\xEF\xBB\xBF");
 
+            $hasEnactedBudget = $data['hasEnactedBudget'];
+
             // Meta summary
-            fputcsv($file, ['LGU UTILITY CASH FLOW & BUDGET STATEMENT']);
-            fputcsv($file, ['Scope Title:', $scopeTitle]);
-            fputcsv($file, ['Scope Type:', strtoupper($scopeType)]);
-            fputcsv($file, ['Fiscal Year:', $fiscalYear]);
-            fputcsv($file, ['Total Annual Budget (PHP):', number_format($data['annualBudget'], 2)]);
-            fputcsv($file, ['YTD Actual Outflow (PHP):', number_format($data['ytdActualOutflow'], 2)]);
-            fputcsv($file, ['Remaining Balance (PHP):', number_format($data['remainingBudget'], 2)]);
-            fputcsv($file, ['Budget Burn Rate (%):', $data['burnRatePct'] . '%']);
-            fputcsv($file, ['Total Cost Savings (PHP):', number_format($data['costSavingsYtd'], 2)]);
-            fputcsv($file, []);
+            if ($hasEnactedBudget) {
+                fputcsv($file, ['LGU UTILITY CASH FLOW & BUDGET STATEMENT']);
+                fputcsv($file, ['Scope Title:', $scopeTitle]);
+                fputcsv($file, ['Scope Type:', strtoupper($scopeType)]);
+                fputcsv($file, ['Fiscal Year:', $fiscalYear]);
+                fputcsv($file, ['Total Annual Budget (PHP):', number_format($data['annualBudget'], 2)]);
+                fputcsv($file, ['YTD Actual Outflow (PHP):', number_format($data['ytdActualOutflow'], 2)]);
+                fputcsv($file, ['Remaining Balance (PHP):', number_format($data['remainingBudget'] ?? 0, 2)]);
+                fputcsv($file, ['Budget Burn Rate (%):', ($data['burnRatePct'] ?? 0) . '%']);
+                fputcsv($file, ['Total Cost Savings (PHP):', number_format($data['costSavingsYtd'], 2)]);
+                fputcsv($file, []);
 
-            // Table headers
-            fputcsv($file, [
-                'Month',
-                'Fiscal Year',
-                'Allocated Budget (PHP)',
-                'Actual Bill Outflow (PHP)',
-                'Consumption (kWh)',
-                'Effective Rate (PHP/kWh)',
-                'Variance (PHP)',
-                'Retained Savings (PHP)',
-                'Status',
-            ]);
-
-            foreach ($data['monthlyBreakdown'] as $row) {
+                // Table headers with Budget
                 fputcsv($file, [
-                    $row['month_name'],
-                    $fiscalYear,
-                    round($row['allocated_budget'], 2),
-                    round($row['actual_cost'], 2),
-                    round($row['actual_kwh'], 2),
-                    round($row['avg_rate'], 2),
-                    round($row['variance'], 2),
-                    round($row['savings'], 2),
-                    $row['status'],
+                    'Month',
+                    'Fiscal Year',
+                    'Allocated Budget (PHP)',
+                    'Actual Bill Outflow (PHP)',
+                    'Consumption (kWh)',
+                    'Effective Rate (PHP/kWh)',
+                    'Variance (PHP)',
+                    'Retained Savings (PHP)',
+                    'Status',
                 ]);
+
+                foreach ($data['monthlyBreakdown'] as $row) {
+                    fputcsv($file, [
+                        $row['month_name'],
+                        $fiscalYear,
+                        round($row['allocated_budget'], 2),
+                        round($row['actual_cost'], 2),
+                        round($row['actual_kwh'], 2),
+                        round($row['avg_rate'], 2),
+                        round($row['variance'] ?? 0, 2),
+                        round($row['savings'], 2),
+                        $row['status'],
+                    ]);
+                }
+            } else {
+                fputcsv($file, ['LGU UTILITY CASH FLOW STATEMENT']);
+                fputcsv($file, ['Scope Title:', $scopeTitle]);
+                fputcsv($file, ['Scope Type:', strtoupper($scopeType)]);
+                fputcsv($file, ['Fiscal Year:', $fiscalYear]);
+                fputcsv($file, ['Mode:', 'Actual Cash Outflow Tracking (No Enacted Budget)']);
+                fputcsv($file, ['YTD Actual Outflow (PHP):', number_format($data['ytdActualOutflow'], 2)]);
+                fputcsv($file, ['Billed Months Count:', $data['approvedBillsCount']]);
+                fputcsv($file, ['Average Monthly Outflow (PHP):', number_format($data['avgMonthlyOutflow'], 2)]);
+                fputcsv($file, ['Projected Year-End Outflow (PHP):', number_format($data['projectedYearEndOutflow'], 2)]);
+                fputcsv($file, ['Weighted Average Unit Rate (PHP/kWh):', number_format($data['avgRatePerKwh'], 2)]);
+                fputcsv($file, ['Total Cost Savings (PHP):', number_format($data['costSavingsYtd'], 2)]);
+                fputcsv($file, []);
+
+                // Table headers for Pure Cash Flow
+                fputcsv($file, [
+                    'Month',
+                    'Fiscal Year',
+                    'Actual Bill Outflow (PHP)',
+                    'Consumption (kWh)',
+                    'Effective Rate (PHP/kWh)',
+                    'MoM Change (PHP)',
+                    'Retained Savings (PHP)',
+                    'Status',
+                ]);
+
+                foreach ($data['monthlyBreakdown'] as $row) {
+                    fputcsv($file, [
+                        $row['month_name'],
+                        $fiscalYear,
+                        round($row['actual_cost'], 2),
+                        round($row['actual_kwh'], 2),
+                        round($row['avg_rate'], 2),
+                        $row['mom_change_amount'] !== null ? round($row['mom_change_amount'], 2) : 'N/A',
+                        round($row['savings'], 2),
+                        $row['status'],
+                    ]);
+                }
             }
 
             fclose($file);
@@ -230,7 +283,7 @@ class CashFlowController extends Controller
     {
         $facilityIds = $scopedFacilities->pluck('id');
 
-        // 1. Fetch Budgets
+        // 1. Fetch Enacted Budgets
         $budgets = FacilityUtilityBudget::query()
             ->whereIn('facility_id', $facilityIds)
             ->where('fiscal_year', $fiscalYear)
@@ -257,57 +310,34 @@ class CashFlowController extends Controller
             ->first();
         $fallbackRate = $latestRecord ? (float) $latestRecord->rate_per_kwh : 12.00;
 
-        $activeCustomBudget = false;
+        $hasEnactedBudget = false;
+        $annualBudget = 0.0;
+        $budgetNotes = null;
 
         if ($scopeType === 'single' && $selectedFacility) {
             $budgetRecord = $budgets->firstWhere('facility_id', $selectedFacility->id);
             if ($budgetRecord && (float) $budgetRecord->annual_budget_amount > 0) {
                 $annualBudget = (float) $budgetRecord->annual_budget_amount;
-                $activeCustomBudget = true;
+                $hasEnactedBudget = true;
                 $budgetNotes = $budgetRecord->notes ?: 'Custom enacted budget for ' . $selectedFacility->name . '.';
-            } else {
-                $baselineKwh = (float) ($selectedFacility->baseline_kwh ?? 0);
-                if ($baselineKwh <= 0 && $selectedFacility->energyProfile) {
-                    $baselineKwh = (float) ($selectedFacility->energyProfile->baseline_kwh ?? 0);
-                }
-                if ($baselineKwh <= 0) {
-                    $avgKwh = $records->avg('actual_kwh') ?: 1000;
-                    $baselineKwh = (float) $avgKwh;
-                }
-                $annualBudget = round($baselineKwh * $fallbackRate * 12, 2);
-                $budgetNotes = 'Auto-estimated based on baseline target (₱' . number_format($fallbackRate, 2) . '/kWh).';
             }
-        } elseif ($scopeType === 'local') {
-            $annualBudget = 0.0;
-            $budgetNotes = 'Aggregated utility appropriation for ' . count($scopedFacilities) . ' Local LGU facilities.';
+        } else {
+            // Aggregated scope (local or cprf)
+            $enactedCount = 0;
             foreach ($scopedFacilities as $fac) {
                 $bRec = $budgets->firstWhere('facility_id', $fac->id);
                 if ($bRec && (float) $bRec->annual_budget_amount > 0) {
                     $annualBudget += (float) $bRec->annual_budget_amount;
-                    $activeCustomBudget = true;
-                } else {
-                    $bKwh = (float) ($fac->baseline_kwh ?? 0);
-                    if ($bKwh <= 0) $bKwh = 1000;
-                    $annualBudget += round($bKwh * $fallbackRate * 12, 2);
+                    $enactedCount++;
                 }
             }
-        } else { // cprf
-            $annualBudget = 0.0;
-            $budgetNotes = 'Aggregated utility appropriation for ' . count($scopedFacilities) . ' CPRF-integrated facilities.';
-            foreach ($scopedFacilities as $fac) {
-                $bRec = $budgets->firstWhere('facility_id', $fac->id);
-                if ($bRec && (float) $bRec->annual_budget_amount > 0) {
-                    $annualBudget += (float) $bRec->annual_budget_amount;
-                    $activeCustomBudget = true;
-                } else {
-                    $bKwh = (float) ($fac->baseline_kwh ?? 0);
-                    if ($bKwh <= 0) $bKwh = 1000;
-                    $annualBudget += round($bKwh * $fallbackRate * 12, 2);
-                }
+            if ($enactedCount > 0) {
+                $hasEnactedBudget = true;
+                $budgetNotes = 'Aggregated enacted utility budget for ' . $enactedCount . ' facility/facilities.';
             }
         }
 
-        $monthlyAllocatedBudget = round($annualBudget / 12, 2);
+        $monthlyAllocatedBudget = $hasEnactedBudget ? round($annualBudget / 12, 2) : 0.0;
         $recordsByMonth = $records->groupBy('month');
 
         $monthlyBreakdown = [];
@@ -320,6 +350,8 @@ class CashFlowController extends Controller
         $chartBudgetData = [];
         $chartOutflowData = [];
         $chartSavingsData = [];
+
+        $prevActualCost = null;
 
         for ($m = 1; $m <= 12; $m++) {
             $monthRecords = $recordsByMonth->get($m, collect());
@@ -350,26 +382,50 @@ class CashFlowController extends Controller
                 }
             }
 
-            $variance = round($monthlyAllocatedBudget - $actualCost, 2);
+            // Month-over-Month change
+            $momChangeAmount = null;
+            $momChangePct = null;
+            if ($hasRecord) {
+                if ($prevActualCost !== null && $prevActualCost > 0) {
+                    $momChangeAmount = round($actualCost - $prevActualCost, 2);
+                    $momChangePct = round((($actualCost - $prevActualCost) / $prevActualCost) * 100, 1);
+                }
+                $prevActualCost = $actualCost;
+            }
 
-            $status = 'Upcoming';
-            $statusBadgeClass = 'status-upcoming';
+            if ($hasEnactedBudget) {
+                $variance = round($monthlyAllocatedBudget - $actualCost, 2);
+                if ($hasRecord) {
+                    if ($actualCost <= $monthlyAllocatedBudget) {
+                        $status = 'Within Budget';
+                        $statusBadgeClass = 'status-within';
+                    } elseif ($actualCost <= $monthlyAllocatedBudget * 1.1) {
+                        $status = 'Near Limit';
+                        $statusBadgeClass = 'status-warning';
+                    } else {
+                        $status = 'Over Budget';
+                        $statusBadgeClass = 'status-danger';
+                    }
+                } else {
+                    $status = 'Upcoming';
+                    $statusBadgeClass = 'status-upcoming';
+                }
+            } else {
+                $variance = null;
+                if ($hasRecord) {
+                    $status = 'Paid & Approved';
+                    $statusBadgeClass = 'status-paid';
+                } else {
+                    $status = 'Upcoming';
+                    $statusBadgeClass = 'status-upcoming';
+                }
+            }
+
             if ($hasRecord) {
                 $approvedBillsCount++;
                 $ytdActualOutflow += $actualCost;
                 $ytdActualKwh += $actualKwh;
                 $costSavingsYtd += $monthSavings;
-
-                if ($actualCost <= $monthlyAllocatedBudget) {
-                    $status = 'Within Budget';
-                    $statusBadgeClass = 'status-within';
-                } elseif ($actualCost <= $monthlyAllocatedBudget * 1.1) {
-                    $status = 'Near Limit';
-                    $statusBadgeClass = 'status-warning';
-                } else {
-                    $status = 'Over Budget';
-                    $statusBadgeClass = 'status-danger';
-                }
             }
 
             $monthlyBreakdown[] = [
@@ -381,31 +437,46 @@ class CashFlowController extends Controller
                 'actual_kwh' => $actualKwh,
                 'avg_rate' => $rate,
                 'variance' => $variance,
+                'mom_change_amount' => $momChangeAmount,
+                'mom_change_pct' => $momChangePct,
                 'savings' => $monthSavings,
                 'status' => $status,
                 'status_badge' => $statusBadgeClass,
                 'first_record_id' => $monthRecords->first()?->id,
             ];
 
-            $chartBudgetData[] = $monthlyAllocatedBudget;
+            if ($hasEnactedBudget) {
+                $chartBudgetData[] = $monthlyAllocatedBudget;
+            } else {
+                $chartBudgetData[] = null;
+            }
             $chartOutflowData[] = $hasRecord ? round($actualCost, 2) : null;
             $chartSavingsData[] = round($monthSavings, 2);
         }
 
-        $remainingBudget = round($annualBudget - $ytdActualOutflow, 2);
-        $burnRatePct = $annualBudget > 0 ? round(($ytdActualOutflow / $annualBudget) * 100, 1) : 0;
-        
         $avgMonthlyOutflow = $approvedBillsCount > 0 ? round($ytdActualOutflow / $approvedBillsCount, 2) : 0.0;
+        $avgRatePerKwh = $ytdActualKwh > 0 ? round($ytdActualOutflow / $ytdActualKwh, 2) : $fallbackRate;
         $projectedYearEndOutflow = round($avgMonthlyOutflow * 12, 2);
-        $projectedDeficitOrSurplus = round($annualBudget - $projectedYearEndOutflow, 2);
+
+        if ($hasEnactedBudget) {
+            $remainingBudget = round($annualBudget - $ytdActualOutflow, 2);
+            $burnRatePct = $annualBudget > 0 ? round(($ytdActualOutflow / $annualBudget) * 100, 1) : 0;
+            $projectedDeficitOrSurplus = round($annualBudget - $projectedYearEndOutflow, 2);
+        } else {
+            $remainingBudget = null;
+            $burnRatePct = null;
+            $projectedDeficitOrSurplus = null;
+        }
 
         return [
+            'hasEnactedBudget' => $hasEnactedBudget,
             'annualBudget' => $annualBudget,
-            'isCustomBudget' => $activeCustomBudget,
+            'isCustomBudget' => $hasEnactedBudget,
             'budgetNotes' => $budgetNotes,
             'ytdActualOutflow' => $ytdActualOutflow,
             'ytdActualKwh' => $ytdActualKwh,
             'approvedBillsCount' => $approvedBillsCount,
+            'avgRatePerKwh' => $avgRatePerKwh,
             'remainingBudget' => $remainingBudget,
             'burnRatePct' => $burnRatePct,
             'costSavingsYtd' => $costSavingsYtd,

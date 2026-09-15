@@ -626,17 +626,17 @@ class EnergyRecordObserver
 
         if ($statusKey === 'open') {
             return match ($severityKey) {
-                'critical' => 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.',
-                'very-high' => 'Very high energy deviation detected and forwarded to CIMM for maintenance action.',
-                default => 'High energy deviation detected and forwarded to CIMM for maintenance assessment.',
+                'critical' => 'Critical energy spike detected. Logged in Incident Records for review and dispatch triage.',
+                'very-high' => 'Very high energy deviation detected. Logged in Incident Records for review and triage.',
+                default => 'High energy deviation detected. Logged in Incident Records for review.',
             };
         }
 
         return $severityKey === 'critical'
-            ? 'Critical energy spike detected and forwarded to CIMM for urgent maintenance action.'
+            ? 'Critical energy spike detected. Logged in Incident Records for review and dispatch triage.'
             : ($severityKey === 'very-high'
-                ? 'Very high energy deviation detected and forwarded to CIMM for maintenance action.'
-                : 'High energy deviation detected and forwarded to CIMM for maintenance assessment.');
+                ? 'Very high energy deviation detected. Logged in Incident Records for review and triage.'
+                : 'High energy deviation detected. Logged in Incident Records for review.');
     }
 
     private function isSubMeterRecord(EnergyRecord $record): bool

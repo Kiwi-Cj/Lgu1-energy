@@ -6,8 +6,8 @@ test('critical and very high usage are owned by the incident workflow', function
     expect(EnergyAlertRouting::owner($level))->toBe(EnergyAlertRouting::INCIDENT);
 })->with(['Critical', 'Very High']);
 
-test('only critical usage is automatically routed to maintenance', function () {
-    expect(EnergyAlertRouting::requiresMaintenance('Critical'))->toBeTrue()
+test('auto-flagging routes to incident first without direct maintenance creation', function () {
+    expect(EnergyAlertRouting::requiresMaintenance('Critical'))->toBeFalse()
         ->and(EnergyAlertRouting::requiresMaintenance('Very High'))->toBeFalse()
         ->and(EnergyAlertRouting::requiresMaintenance('High'))->toBeFalse();
 });

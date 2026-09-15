@@ -1,5 +1,5 @@
 @php
-    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index', 'landing.contact');
+    $isInformationPageLayout = request()->routeIs('about.index', 'faqs.index', 'privacy.index', 'landing.contact', 'user-guide.index', 'modules.user-guide.index');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -2249,6 +2249,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
         @if($isInformationPageLayout)
             <nav class="information-header-nav" aria-label="Information pages">
                 <a href="{{ url('/') }}"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="{{ route('user-guide.index') }}" class="{{ request()->routeIs('user-guide.index') || request()->routeIs('modules.user-guide.index') ? 'is-active' : '' }}" {{ request()->routeIs('user-guide.index') || request()->routeIs('modules.user-guide.index') ? 'aria-current=page' : '' }}>User Guide</a>
                 <a href="{{ route('about.index') }}" class="{{ request()->routeIs('about.index') ? 'is-active' : '' }}" {{ request()->routeIs('about.index') ? 'aria-current=page' : '' }}>About</a>
                 <a href="{{ route('faqs.index') }}" class="{{ request()->routeIs('faqs.index') ? 'is-active' : '' }}" {{ request()->routeIs('faqs.index') ? 'aria-current=page' : '' }}>FAQs</a>
                 <a href="{{ route('privacy.index') }}" class="{{ request()->routeIs('privacy.index') ? 'is-active' : '' }}" {{ request()->routeIs('privacy.index') ? 'aria-current=page' : '' }}>Privacy</a>
@@ -2434,6 +2435,9 @@ if (document.documentElement.classList.contains('dark-mode')) {
     <a href="{{ route('profile.show') }}" class="user-dropdown-link">
         <i class="fa fa-user"></i> My Profile
     </a>
+    <a href="{{ route('user-guide.index') }}" class="user-dropdown-link">
+        <i class="fa fa-book-open"></i> User Guide &amp; Manual
+    </a>
     <a href="{{ route('about.index') }}" class="user-dropdown-link">
         <i class="fa fa-info-circle"></i> About {{ $systemShortName }}
     </a>
@@ -2535,7 +2539,7 @@ if (document.documentElement.classList.contains('dark-mode')) {
                         <li><a href="{{ route('modules.load-tracking.index') }}" class="nav-link{{ request()->routeIs('modules.load-tracking.*') ? ' active' : '' }}"><i class="fa-solid fa-plug-circle-check"></i> Load Tracking</a></li>
                         @endif
                         @if($canViewCashflow)
-                        <li><a href="{{ route('modules.cashflow.index') }}" class="nav-link{{ request()->routeIs('modules.cashflow.*') ? ' active' : '' }}"><i class="fa-solid fa-money-bill-trend-up"></i> Cash Flow &amp; Budget</a></li>
+                        <li><a href="{{ route('modules.cashflow.index') }}" class="nav-link{{ request()->routeIs('modules.cashflow.*') ? ' active' : '' }}"><i class="fa-solid fa-money-bill-trend-up"></i> Cash Flow &amp; Outflow</a></li>
                         @endif
                         @if($canViewConservation)
                         <li><a href="{{ route('modules.energy-conservation.index') }}" class="nav-link{{ request()->routeIs('modules.energy-conservation.*') ? ' active' : '' }}"><i class="fa-solid fa-leaf"></i> Conservation Program</a></li>
@@ -2582,6 +2586,10 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
+
+            <li class="nav-section-label">Support &amp; Help</li>
+            <li><a href="{{ route('user-guide.index') }}" class="nav-link{{ request()->routeIs('user-guide.*') || request()->routeIs('modules.user-guide.*') ? ' active' : '' }}"><i class="fa-solid fa-book-open-reader"></i> User Guide</a></li>
+            <li><a href="{{ route('faqs.index') }}" class="nav-link{{ request()->routeIs('faqs.*') ? ' active' : '' }}"><i class="fa-solid fa-circle-question"></i> System FAQs</a></li>
         </ul>
     </div>
 

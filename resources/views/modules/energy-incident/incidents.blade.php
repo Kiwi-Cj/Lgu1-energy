@@ -41,6 +41,34 @@
 @endphp
 
 @section('content')
+@if(session('success'))
+<div id="successAlert" class="alert-toast success">
+    <i class="fa fa-check-circle"></i>
+    <span>{{ session('success') }}</span>
+</div>
+@endif
+@if(session('error'))
+<div id="errorAlert" class="alert-toast error">
+    <i class="fa fa-times-circle"></i>
+    <span>{{ session('error') }}</span>
+</div>
+@endif
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    ['successAlert', 'errorAlert'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+                setTimeout(() => el.remove(), 400);
+            }, 4500);
+        }
+    });
+});
+</script>
+
 <div class="incident-page">
     <div class="incident-shell">
         <div class="incident-header">
@@ -709,6 +737,24 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <style>
+.alert-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    transition: all 0.3s ease;
+}
+.alert-toast.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.alert-toast.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
 .incident-page {
     width: 100%;
 }

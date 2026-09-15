@@ -1502,7 +1502,9 @@
         color: #e11d48;
     }
 
-    #addMonthlyRecordForm {
+    .record-form form,
+    #addMonthlyRecordForm,
+    #addWeeklyRecordForm {
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
@@ -1524,22 +1526,48 @@
 
     .monthly-form-section-title i { color: #2563eb; }
 
-    #addMonthlyRecordForm .monthly-field label {
+    .record-form .monthly-field label,
+    #addMonthlyRecordForm .monthly-field label,
+    #addWeeklyRecordForm .monthly-field label {
         color: #334155;
         font-size: .78rem;
         font-weight: 800;
+        margin-bottom: 4px;
+        display: block;
     }
 
+    .record-form .monthly-field input,
+    .record-form .monthly-field select,
+    .record-form .monthly-field textarea,
     #addMonthlyRecordForm .monthly-field input,
-    #addMonthlyRecordForm .monthly-field select {
+    #addMonthlyRecordForm .monthly-field select,
+    #addWeeklyRecordForm .monthly-field input,
+    #addWeeklyRecordForm .monthly-field select,
+    #addWeeklyRecordForm .monthly-field textarea {
         min-height: 45px;
         padding: 10px 12px;
         border-radius: 11px;
         background: #fff;
+        border: 1px solid #cbd5e1;
+        font-family: inherit;
+        font-size: .92rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
+    .record-form .monthly-field textarea,
+    #addWeeklyRecordForm .monthly-field textarea {
+        min-height: 65px;
+    }
+
+    .record-form .monthly-field input:focus,
+    .record-form .monthly-field select:focus,
+    .record-form .monthly-field textarea:focus,
     #addMonthlyRecordForm .monthly-field input:focus,
-    #addMonthlyRecordForm .monthly-field select:focus {
+    #addMonthlyRecordForm .monthly-field select:focus,
+    #addWeeklyRecordForm .monthly-field input:focus,
+    #addWeeklyRecordForm .monthly-field select:focus,
+    #addWeeklyRecordForm .monthly-field textarea:focus {
         outline: none;
         border-color: #6366f1;
         box-shadow: 0 0 0 3px rgba(99,102,241,.12);
@@ -1555,21 +1583,30 @@
         color: #1e40af;
         font-size: .78rem;
         font-weight: 700;
+        margin-top: 5px;
     }
 
-    .monthly-computed-field { position: relative; }
+    .monthly-computed-field { 
+        position: relative; 
+    }
     .monthly-computed-field > i {
         position: absolute;
-        left: 13px;
+        left: 14px;
         bottom: 14px;
         color: #059669;
+        font-size: 0.95rem;
+        z-index: 2;
+        pointer-events: none;
     }
-    #addMonthlyRecordForm #add_energy_cost {
-        padding-left: 34px;
-        background: #ecfdf5;
-        border-color: #a7f3d0;
-        color: #065f46;
-        font-weight: 850;
+    .record-form .monthly-field.monthly-computed-field input,
+    #addMonthlyRecordForm .monthly-field.monthly-computed-field input,
+    #addWeeklyRecordForm .monthly-field.monthly-computed-field input,
+    .monthly-computed-field input {
+        padding-left: 38px !important;
+        background: #ecfdf5 !important;
+        border-color: #a7f3d0 !important;
+        color: #065f46 !important;
+        font-weight: 850 !important;
     }
 
     #addMonthlyRecordForm input[type="file"] {
@@ -1976,7 +2013,11 @@
     body.dark-mode .record-form .monthly-modal-close { background:#111827; border-color:#334155; color:#cbd5e1; }
     body.dark-mode .monthly-form-section-title { color:#cbd5e1; }
     body.dark-mode .monthly-meter-suggestion { background:#172554; color:#bfdbfe; }
-    body.dark-mode #addMonthlyRecordForm #add_energy_cost { background:#052e2b; border-color:#047857; color:#a7f3d0; }
+    body.dark-mode .record-form .monthly-field label { color:#cbd5e1; }
+    body.dark-mode .record-form .monthly-field input,
+    body.dark-mode .record-form .monthly-field select,
+    body.dark-mode .record-form .monthly-field textarea { background:#1e293b; border-color:#334155; color:#f1f5f9; }
+    body.dark-mode .monthly-computed-field input { background:#052e2b !important; border-color:#047857 !important; color:#a7f3d0 !important; }
     body.dark-mode .record-form .monthly-modal-actions { background:rgba(15,23,42,.97); border-color:#334155; }
 
     body.dark-mode .monthly-modal-subtitle {
@@ -2107,6 +2148,824 @@
         body.dark-mode .monthly-table tbody tr { background:#111827; border-color:#334155; }
     }
     @media (max-width:600px) { .report-card-container.monthly-report-card-container { padding:13px; border-radius:18px; } .monthly-performance-grid,.monthly-overview-insights,.monthly-record-breakdown-grid { grid-template-columns:1fr; } .monthly-header-identity { align-items:flex-start; } .monthly-header-icon { width:42px; height:42px; flex-basis:42px; } .monthly-record-breakdown-head { flex-direction:column; gap:8px; } .monthly-record-breakdown-actions { justify-content:stretch; } .monthly-record-breakdown-actions a { flex:1 1 auto; justify-content:center; } }
+
+    /* Weekly Breakdown Redesigned Cards */
+    .weekly-breakdown-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .weekly-explainer-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 14px;
+        color: #1e3a8a;
+    }
+    .weekly-explainer-icon {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 1.1rem;
+    }
+    .weekly-explainer-body h4 {
+        margin: 0 0 4px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #1e40af;
+    }
+    .weekly-explainer-body p {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        color: #334155;
+    }
+
+    .weekly-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .weekly-toolbar-info {
+        font-size: 0.85rem;
+        font-weight: 750;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .weekly-toolbar-info strong {
+        color: #1e40af;
+    }
+    .weekly-toolbar-hint {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .weekly-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .weekly-tool-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.8rem;
+        font-weight: 750;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .weekly-tool-btn:hover {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #93c5fd;
+        transform: translateY(-1px);
+    }
+
+    .weekly-month-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .weekly-month-card:hover {
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .weekly-month-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, #f8fbff 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s ease;
+    }
+    .weekly-month-header:hover {
+        background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%);
+    }
+    .weekly-month-card.is-collapsed .weekly-month-header {
+        border-bottom: none;
+    }
+    .weekly-month-card.is-collapsed .weekly-cards-grid {
+        display: none;
+    }
+
+    .weekly-month-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .weekly-month-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        color: #ffffff;
+        border-radius: 9px;
+        font-weight: 850;
+        font-size: 0.92rem;
+        letter-spacing: -0.01em;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+    .weekly-month-meter {
+        font-size: 0.88rem;
+        font-weight: 750;
+        color: #334155;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+    }
+
+    .weekly-month-stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .weekly-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 750;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    .weekly-stat-chip.kwh {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+    .weekly-stat-chip.cost {
+        background: #f0fdf4;
+        color: #15803d;
+        border-color: #bbf7d0;
+    }
+    .weekly-stat-chip.status-approved {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #86efac;
+    }
+    .weekly-stat-chip.status-pending {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #fed7aa;
+    }
+    .weekly-stat-chip.link {
+        background: #ffffff;
+        color: #2563eb;
+        border-color: #bfdbfe;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .weekly-stat-chip.link:hover {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .weekly-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        background: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .weekly-toggle-btn:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+    .weekly-month-card.is-collapsed .weekly-toggle-btn {
+        background: #f1f5f9;
+        color: #475569;
+        border-color: #cbd5e1;
+    }
+    .weekly-month-card.is-collapsed .weekly-toggle-btn:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    /* 4-Week Grid */
+    .weekly-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 14px;
+        padding: 16px 18px;
+        background: #ffffff;
+    }
+
+    .week-tile {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 14px;
+        border-radius: 13px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        transition: all 0.15s ease;
+    }
+    .week-tile:hover {
+        border-color: #93c5fd;
+        background: #ffffff;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.09);
+        transform: translateY(-2px);
+    }
+
+    .week-tile-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .week-tag {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .week-tag-number {
+        font-size: 0.96rem;
+        font-weight: 900;
+        color: #1d4ed8;
+    }
+    .week-tag-days {
+        font-size: 0.76rem;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .week-alert-pill {
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        white-space: nowrap;
+        border: 1px solid transparent;
+    }
+    .week-alert-pill.alert-normal { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .week-alert-pill.alert-warning { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .week-alert-pill.alert-high { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+    .week-alert-pill.alert-very-high { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .week-alert-pill.alert-critical { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .week-alert-pill.alert-drop-warning { background: #cffafe; color: #0e7490; border-color: #a5f3fc; }
+    .week-alert-pill.alert-drop-high { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+    .week-alert-pill.alert-drop-critical { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+    .week-alert-pill.alert-no-data { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+    .week-tile-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+        background: #ffffff;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #eef2f7;
+    }
+    .week-metric-box {
+        display: flex;
+        flex-direction: column;
+    }
+    .week-metric-box .box-label {
+        font-size: 0.67rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .week-metric-box .box-val {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1.25;
+        margin-top: 2px;
+    }
+    .week-metric-box .box-val small {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #64748b;
+    }
+    .week-metric-box .box-sub {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+
+    .week-tile-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid #edf2f7;
+    }
+    .week-variance-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    .week-variance-pill.normal {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .week-variance-pill.higher {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .week-variance-pill.lower {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .week-action-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px;
+        border-radius: 7px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        text-decoration: none;
+        font-size: 0.75rem;
+        font-weight: 800;
+        transition: all 0.15s ease;
+    }
+    .week-action-link:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    .week-source-tag {
+        font-size: 0.68rem;
+        font-weight: 750;
+        color: #64748b;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 3px;
+        width: fit-content;
+    }
+    .week-source-tag.manual {
+        color: #047857;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 2px 6px;
+        border-radius: 5px;
+    }
+    .week-source-tag.pending {
+        color: #9a3412;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        padding: 2px 6px;
+        border-radius: 5px;
+    }
+    .week-delete-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 8px;
+        border-radius: 7px;
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #b91c1c;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: all 0.15s ease;
+    }
+    .week-delete-btn:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
+    .week-log-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 7px;
+        background: #2563eb;
+        border: 1px solid #2563eb;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .week-log-btn:hover {
+        background: #1d4ed8;
+    }
+
+    /* Dark mode support */
+    body.dark-mode .weekly-breakdown-wrap {
+        background: #0b1220;
+    }
+    body.dark-mode .weekly-toolbar {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark-mode .weekly-toolbar-info {
+        color: #cbd5e1;
+    }
+    body.dark-mode .weekly-toolbar-info strong {
+        color: #93c5fd;
+    }
+    body.dark-mode .weekly-toolbar-hint {
+        color: #94a3b8;
+    }
+    body.dark-mode .weekly-tool-btn {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .weekly-tool-btn:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+    body.dark-mode .weekly-explainer-card {
+        background: linear-gradient(135deg, #10213f 0%, #1e1b4b 100%);
+        border-color: #1e3a8a;
+        color: #cbd5e1;
+    }
+    body.dark-mode .weekly-explainer-body h4 {
+        color: #93c5fd;
+    }
+    body.dark-mode .weekly-explainer-body p {
+        color: #94a3b8;
+    }
+    body.dark-mode .weekly-month-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark-mode .weekly-month-header {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .weekly-month-header:hover {
+        background: #1e293b;
+    }
+    body.dark-mode .weekly-toggle-btn {
+        background: #1e1b4b;
+        color: #c7d2fe;
+        border-color: #3730a3;
+    }
+    body.dark-mode .weekly-toggle-btn:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+    body.dark-mode .weekly-month-card.is-collapsed .weekly-toggle-btn {
+        background: #1e293b;
+        color: #94a3b8;
+        border-color: #334155;
+    }
+    body.dark-mode .weekly-month-card.is-collapsed .weekly-toggle-btn:hover {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+    body.dark-mode .weekly-month-meter {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .weekly-stat-chip {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.dark-mode .weekly-stat-chip.kwh {
+        background: #172554;
+        border-color: #1e40af;
+        color: #93c5fd;
+    }
+    body.dark-mode .weekly-stat-chip.cost {
+        background: #052e16;
+        border-color: #166534;
+        color: #86efac;
+    }
+    body.dark-mode .weekly-stat-chip.status-approved {
+        background: #064e3b;
+        border-color: #059669;
+        color: #a7f3d0;
+    }
+    body.dark-mode .weekly-stat-chip.status-pending {
+        background: #431407;
+        border-color: #9a3412;
+        color: #fed7aa;
+    }
+    body.dark-mode .weekly-stat-chip.link {
+        background: #1e293b;
+        border-color: #334155;
+        color: #93c5fd;
+    }
+    body.dark-mode .weekly-cards-grid {
+        background: #0f172a;
+    }
+    body.dark-mode .week-tile {
+        background: #111827;
+        border-color: #334155;
+    }
+    body.dark-mode .week-tile:hover {
+        background: #1e293b;
+        border-color: #3b82f6;
+    }
+    body.dark-mode .week-tile-head {
+        border-color: #334155;
+    }
+    body.dark-mode .week-tag-number {
+        color: #93c5fd;
+    }
+    body.dark-mode .week-tag-days {
+        color: #94a3b8;
+    }
+    body.dark-mode .week-tile-metrics {
+        background: #0b1220;
+        border-color: #334155;
+    }
+    body.dark-mode .week-metric-box .box-label {
+        color: #94a3b8;
+    }
+    body.dark-mode .week-metric-box .box-val {
+        color: #f8fafc;
+    }
+    body.dark-mode .week-metric-box .box-val small,
+    body.dark-mode .week-metric-box .box-sub {
+        color: #94a3b8;
+    }
+    body.dark-mode .week-tile-footer {
+        border-color: #1e293b;
+    }
+    body.dark-mode .week-action-link {
+        background: #1e293b;
+        border-color: #334155;
+        color: #93c5fd;
+    }
+    body.dark-mode .week-action-link:hover {
+        background: #2563eb;
+        color: #ffffff;
+    }
+    body.dark-mode .week-source-tag {
+        color: #94a3b8;
+    }
+    body.dark-mode .week-source-tag.manual {
+        background: #064e3b;
+        color: #a7f3d0;
+        border-color: #059669;
+    }
+    body.dark-mode .week-source-tag.pending {
+        background: #431407;
+        color: #fed7aa;
+        border-color: #9a3412;
+    }
+    body.dark-mode .week-delete-btn {
+        background: #450a0a;
+        color: #fca5a5;
+        border-color: #991b1b;
+    }
+    body.dark-mode .week-delete-btn:hover {
+        background: #ef4444;
+        color: #ffffff;
+    }
+
+    /* Record Type Selector Modal Styles */
+    .record-type-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 18px 0 8px;
+    }
+
+    @media (max-width: 640px) {
+        .record-type-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .record-type-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 20px;
+        background: #ffffff;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .record-type-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .record-type-card.is-monthly:hover {
+        border-color: #2563eb;
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.15);
+    }
+
+    .record-type-card.is-weekly:hover {
+        border-color: #4f46e5;
+        box-shadow: 0 14px 28px rgba(79, 70, 229, 0.15);
+    }
+
+    .record-type-badge-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        margin-bottom: 14px;
+        transition: transform 0.2s ease;
+    }
+
+    .record-type-card:hover .record-type-badge-icon {
+        transform: scale(1.1);
+    }
+
+    .record-type-card.is-monthly .record-type-badge-icon {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .record-type-card.is-weekly .record-type-badge-icon {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+    .record-type-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .record-type-card.is-monthly .record-type-title {
+        color: #1e3a8a;
+    }
+
+    .record-type-card.is-weekly .record-type-title {
+        color: #312e81;
+    }
+
+    .record-type-desc {
+        font-size: 0.84rem;
+        color: #64748b;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+
+    .record-type-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px dashed #e2e8f0;
+    }
+
+    .record-type-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .record-type-btn {
+        margin-top: 14px;
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 800;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .record-type-card.is-monthly .record-type-btn {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .record-type-card.is-monthly:hover .record-type-btn {
+        background: #1d4ed8;
+    }
+
+    .record-type-card.is-weekly .record-type-btn {
+        background: #4f46e5;
+        color: #ffffff;
+    }
+
+    .record-type-card.is-weekly:hover .record-type-btn {
+        background: #4338ca;
+    }
+
+    /* Dark mode */
+    body.dark-mode .record-type-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark-mode .record-type-card.is-monthly:hover {
+        border-color: #60a5fa;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+    }
+    body.dark-mode .record-type-card.is-weekly:hover {
+        border-color: #818cf8;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+    }
+    body.dark-mode .record-type-card.is-monthly .record-type-title {
+        color: #93c5fd;
+    }
+    body.dark-mode .record-type-card.is-weekly .record-type-title {
+        color: #a5b4fc;
+    }
+    body.dark-mode .record-type-desc {
+        color: #94a3b8;
+    }
+    body.dark-mode .record-type-tags {
+        border-top-color: #334155;
+    }
+    body.dark-mode .record-type-tag {
+        background: #0f172a;
+        color: #94a3b8;
+    }
 </style>
 
 @php
@@ -2126,15 +2985,8 @@
     $primaryBillingMeter = $primaryBillingMeter ?? null;
     $oldMeterId = (string) ($oldMeterId ?? old('meter_id', ''));
 
-    $latestMeterDials = $meterOptions->mapWithKeys(function ($m) use ($facility) {
-        $lastRec = \App\Models\EnergyRecord::where('facility_id', $facility->id)
-            ->where('meter_id', $m->id)
-            ->whereNotNull('current_reading_kwh')
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->first();
-        return [(int) $m->id => $lastRec ? (float) $lastRec->current_reading_kwh : null];
-    });
+    $latestMeterDials = collect($latestMeterDials ?? []);
+    $meterDialTimeline = collect($meterDialTimeline ?? []);
 
     $years = collect($years ?? [date('Y')])->map(fn ($year) => (int) $year)->values();
     if ($years->isEmpty()) {
@@ -2309,6 +3161,26 @@
             $mainMeterNoticeText = 'Check the Main Meter list in Energy Profile and approve an eligible meter first.';
         }
     }
+
+    $filteredWeeklyRows = collect($weeklyMainMeterRows ?? [])
+        ->filter(function ($wRow) use ($tableFilterMonth, $tableFilterMeterId, $tableMainMeterSelectionRequired) {
+            if ($tableMainMeterSelectionRequired) {
+                return false;
+            }
+            if ($tableFilterMonth > 0 && (int) ($wRow['month'] ?? 0) !== $tableFilterMonth) {
+                return false;
+            }
+            if ($tableFilterMeterId > 0 && (int) ($wRow['meter_id'] ?? 0) !== $tableFilterMeterId) {
+                $isCprfFacilityLevel = ($wRow['meter_id'] ?? null) === null;
+                if (! $isCprfFacilityLevel) {
+                    return false;
+                }
+            }
+            return true;
+        })
+        ->values();
+
+    $weeklyGroupedByMonth = $filteredWeeklyRows->groupBy(fn ($w) => ((int)($w['year'] ?? 0)) . '-' . str_pad((string)($w['month'] ?? 0), 2, '0', STR_PAD_LEFT));
 @endphp
 
 @php
@@ -2337,6 +3209,11 @@
             {{ $errors->first('duplicate') }}
         </div>
     @endif
+    @if($errors->has('duplicate_week'))
+        <div class="monthly-alert warn">
+            {{ $errors->first('duplicate_week') }}
+        </div>
+    @endif
 
     <div class="monthly-card">
         <div class="monthly-card-body">
@@ -2363,8 +3240,8 @@
                     </a>
                     @endif
                     @if($canManageLocalMonthlyRecords)
-                    <button type="button" onclick="openAddModal()" class="monthly-action-btn is-primary">
-                        <i class="fa fa-plus"></i> Add Monthly Record
+                    <button type="button" onclick="openRecordTypeModal()" class="monthly-action-btn is-primary" id="openAddRecordTypeBtn">
+                        <i class="fa-solid fa-plus"></i> Add Record
                     </button>
                     @endif
                 </div>
@@ -2521,6 +3398,20 @@
             </div>
         </div>
 
+        <div style="padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-right: 4px;"><i class="fa-solid fa-clock-rotate-left"></i> View Mode:</span>
+            <a href="{{ route('facilities.monthly-records', array_merge(request()->except(['timeframe', 'week']), ['facility' => $facility->id, 'timeframe' => 'monthly'])) }}"
+               class="monthly-action-btn {{ ($timeframe ?? 'monthly') !== 'weekly' ? 'is-info' : '' }}"
+               style="min-height: 36px; padding: 0 14px; font-size: 0.82rem; border-radius: 9px;">
+                <i class="fa-solid fa-calendar-days"></i> Monthly Records
+            </a>
+            <a href="{{ route('facilities.monthly-records', array_merge(request()->except(['timeframe', 'week']), ['facility' => $facility->id, 'timeframe' => 'weekly'])) }}"
+               class="monthly-action-btn {{ ($timeframe ?? 'monthly') === 'weekly' ? 'is-info' : '' }}"
+               style="min-height: 36px; padding: 0 14px; font-size: 0.82rem; border-radius: 9px;">
+                <i class="fa-solid fa-bolt"></i> Weekly Breakdown (Main Meter)
+            </a>
+        </div>
+
         <div class="monthly-record-table-filter">
             <div class="monthly-filter-heading">
                 <strong><i class="fa-solid fa-filter"></i> Filter records</strong>
@@ -2532,6 +3423,7 @@
                 <input type="hidden" name="summary_mode" value="{{ $summaryMode }}">
                 <input type="hidden" name="summary_month" value="{{ $summaryMonth }}">
                 <input type="hidden" name="main_sub_scope" value="{{ $mainSubScope }}">
+                <input type="hidden" name="timeframe" value="{{ $timeframe ?? 'monthly' }}">
 
                 <div class="monthly-field">
                     <label for="table_month_filter">Month</label>
@@ -2542,6 +3434,19 @@
                         @endforeach
                     </select>
                 </div>
+
+                @if(($timeframe ?? 'monthly') === 'weekly')
+                <div class="monthly-field">
+                    <label for="table_week_filter">Week</label>
+                    <select id="table_week_filter" name="week">
+                        <option value="0" @selected(($selectedWeek ?? 0) === 0)>All Weeks (1–4)</option>
+                        <option value="1" @selected(($selectedWeek ?? 0) === 1)>Week 1 (Days 1–7)</option>
+                        <option value="2" @selected(($selectedWeek ?? 0) === 2)>Week 2 (Days 8–14)</option>
+                        <option value="3" @selected(($selectedWeek ?? 0) === 3)>Week 3 (Days 15–21)</option>
+                        <option value="4" @selected(($selectedWeek ?? 0) === 4)>Week 4 (Days 22–End)</option>
+                    </select>
+                </div>
+                @endif
 
                 <div class="monthly-field">
                     <label for="table_meter_filter">Main Meter</label>
@@ -2564,20 +3469,207 @@
             </form>
         </div>
 
-        <div class="monthly-table-wrap">
-            <table class="monthly-table">
-                <thead>
-                    <tr>
-                        <th>Period / Main Meter</th>
-                        <th>Consumption</th>
-                        <th>Performance</th>
-                        <th>Billing</th>
-                        <th>Review Status</th>
-                        <th>Documents / Insight</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+        @if(($timeframe ?? 'monthly') === 'weekly')
+            <div class="weekly-breakdown-wrap">
+                <div class="weekly-explainer-card">
+                    <div class="weekly-explainer-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                    <div class="weekly-explainer-body">
+                        <h4>Weekly Main Meter Readings</h4>
+                        <p>Track weekly electricity consumption per meter: <strong>Week 1</strong> (Days 1–7), <strong>Week 2</strong> (Days 8–14), <strong>Week 3</strong> (Days 15–21), and <strong>Week 4</strong> (Days 22–End of month). Weekly readings can be logged individually and automatically synchronize to a complete Monthly Record once 4/4 weeks are logged.</p>
+                    </div>
+                </div>
+
+                @if($weeklyGroupedByMonth->isNotEmpty())
+                    <div class="weekly-toolbar">
+                        <div class="weekly-toolbar-info">
+                            <i class="fa-solid fa-layer-group" style="color: #2563eb;"></i>
+                            <span>Grouped by <strong>{{ $weeklyGroupedByMonth->count() }} Month(s)</strong></span>
+                            <span class="weekly-toolbar-hint">(Latest month expanded; previous months collapsed)</span>
+                        </div>
+                        <div class="weekly-toolbar-actions">
+                            <button type="button" class="weekly-tool-btn" onclick="toggleAllWeeklyMonths(true)">
+                                <i class="fa-solid fa-angles-down"></i> Expand All
+                            </button>
+                            <button type="button" class="weekly-tool-btn" onclick="toggleAllWeeklyMonths(false)">
+                                <i class="fa-solid fa-angles-up"></i> Collapse All
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                @forelse($weeklyGroupedByMonth as $monthKey => $monthWeeks)
+                    @php
+                        $firstWeek = $monthWeeks->first();
+                        $parentRec = $firstWeek['parent_record'] ?? null;
+                        $manualCount = $monthWeeks->where('is_manual', true)->count();
+                        $isWeeklyAggregate = $parentRec && $parentRec->input_source === 'weekly_aggregate';
+                        $has4Weeks = $manualCount === 4 || $isWeeklyAggregate;
+
+                        $monthTotalKwh = $parentRec ? (float)($parentRec->actual_kwh ?? 0) : $monthWeeks->where('is_manual', true)->sum('actual_kwh');
+                        $monthTotalCost = $parentRec ? (float)\App\Support\EnergyCost::cost($parentRec) : $monthWeeks->where('is_manual', true)->sum('cost');
+                        $monthStatus = (string)($parentRec?->review_status ?: 'for_review');
+                        $isCollapsed = !$loop->first && ($tableFilterMonth === 0);
+                    @endphp
+                    <div class="weekly-month-card {{ $isCollapsed ? 'is-collapsed' : '' }}" id="weekly-month-{{ $monthKey }}">
+                        <div class="weekly-month-header" onclick="toggleWeeklyMonth(this, event)">
+                            <div class="weekly-month-heading">
+                                <span class="weekly-month-badge">
+                                    <i class="fa-solid fa-calendar-days"></i> {{ $firstWeek['month_name'] }} {{ $firstWeek['year'] }}
+                                </span>
+                                <span class="weekly-month-meter">
+                                    <i class="fa-solid fa-gauge-high" style="color:#2563eb;"></i> {{ $firstWeek['meter_name'] }}
+                                </span>
+                            </div>
+                            <div class="weekly-month-stats">
+                                @if($has4Weeks)
+                                    <span class="weekly-stat-chip status-approved" title="All 4 weeks logged and synchronized to Monthly Record"><i class="fa-solid fa-circle-check"></i> 4/4 Weeks Complete</span>
+                                @elseif($manualCount > 0)
+                                    <span class="weekly-stat-chip" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa;" title="In Progress: {{ $manualCount }} of 4 weeks logged"><i class="fa-solid fa-hourglass-half"></i> In Progress ({{ $manualCount }}/4 Weeks)</span>
+                                @endif
+
+                                @if($parentRec)
+                                    <span class="weekly-stat-chip kwh">
+                                        Full Month: <strong>{{ number_format($monthTotalKwh, 2) }} kWh</strong>
+                                    </span>
+                                    <span class="weekly-stat-chip cost">
+                                        Total Cost: <strong>PHP {{ number_format($monthTotalCost, 2) }}</strong>
+                                    </span>
+                                    @if($monthStatus === 'approved')
+                                        <span class="weekly-stat-chip status-approved"><i class="fa-solid fa-circle-check"></i> Approved Month</span>
+                                    @elseif($monthStatus === 'returned')
+                                        <span class="weekly-stat-chip" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;"><i class="fa-solid fa-rotate-left"></i> Returned</span>
+                                    @else
+                                        <span class="weekly-stat-chip status-pending"><i class="fa-solid fa-clock"></i> For Review</span>
+                                    @endif
+                                    <a href="{{ route('facilities.monthly-records', ['facility' => $facility->id, 'year' => $firstWeek['year'], 'summary_mode' => 'month', 'summary_month' => $firstWeek['month']]) }}"
+                                       class="weekly-stat-chip link" title="View full monthly record" onclick="event.stopPropagation()">
+                                        <i class="fa-solid fa-file-invoice"></i> Month Record
+                                    </a>
+                                @else
+                                    <span class="weekly-stat-chip kwh" style="background:#fef3c7;color:#92400e;border-color:#fcd34d;">
+                                        Logged So Far: <strong>{{ number_format($monthTotalKwh, 2) }} kWh</strong>
+                                    </span>
+                                    <span class="weekly-stat-chip cost" style="background:#fef3c7;color:#92400e;border-color:#fcd34d;">
+                                        Subtotal Cost: <strong>PHP {{ number_format($monthTotalCost, 2) }}</strong>
+                                    </span>
+                                @endif
+
+                                <button type="button" class="weekly-toggle-btn" aria-label="Toggle weeks" onclick="event.stopPropagation(); toggleWeeklyMonth(this.closest('.weekly-month-card').querySelector('.weekly-month-header'), event)">
+                                    <span class="weekly-toggle-text">{{ $isCollapsed ? 'Show 4 Weeks' : 'Collapse' }}</span>
+                                    <i class="fa-solid {{ $isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up' }} weekly-toggle-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="weekly-cards-grid">
+                            @foreach($monthWeeks as $w)
+                                @php
+                                    $wAlert = $w['alert_level'] ?? 'Normal';
+                                    $wAlertSlug = \Illuminate\Support\Str::slug($wAlert);
+                                    $wDev = $w['deviation'];
+                                @endphp
+                                <div class="week-tile">
+                                    <div class="week-tile-head">
+                                        <div class="week-tag">
+                                            <span class="week-tag-number">{{ $w['week_short'] }}</span>
+                                            <span class="week-tag-days">{{ $w['week_label'] }}</span>
+                                            @if($w['is_manual'])
+                                                <span class="week-source-tag manual"><i class="fa-solid fa-pen-to-square"></i> Manual Reading</span>
+                                                @if($w['manual_date'])
+                                                    <span style="font-size:0.68rem;color:#64748b;font-weight:600;">{{ $w['manual_date'] }}</span>
+                                                @endif
+                                            @elseif($w['actual_kwh'] === null)
+                                                <span class="week-source-tag pending"><i class="fa-solid fa-clock"></i> Not Logged Yet</span>
+                                            @else
+                                                <span class="week-source-tag"><i class="fa-solid fa-calculator"></i> Proportioned from Bill</span>
+                                            @endif
+                                        </div>
+                                        <span class="week-alert-pill alert-{{ $wAlertSlug }}">{{ $wAlert }}</span>
+                                    </div>
+
+                                    @if($w['actual_kwh'] !== null)
+                                    <div class="week-tile-metrics">
+                                        <div class="week-metric-box">
+                                            <span class="box-label">Consumption</span>
+                                            <span class="box-val">{{ number_format((float)$w['actual_kwh'], 2) }} <small>kWh</small></span>
+                                            <span class="box-sub">Base: {{ $w['baseline_kwh'] !== null ? number_format((float)$w['baseline_kwh'], 2) : '-' }} kWh</span>
+                                        </div>
+                                        <div class="week-metric-box">
+                                            <span class="box-label">Estimated Cost</span>
+                                            <span class="box-val" style="color:#15803d;">PHP {{ number_format((float)$w['cost'], 2) }}</span>
+                                            <span class="box-sub">PHP {{ number_format((float)$w['rate'], 2) }}/kWh</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="week-tile-footer">
+                                        <div class="week-variance-pill {{ ($wDev ?? 0) > 0 ? 'higher' : (($wDev ?? 0) < 0 ? 'lower' : 'normal') }}">
+                                            @if($wDev !== null)
+                                                <i class="fa-solid {{ $wDev > 0 ? 'fa-arrow-trend-up' : ($wDev < 0 ? 'fa-arrow-trend-down' : 'fa-check') }}"></i>
+                                                <span>{{ $wDev > 0 ? '+' : '' }}{{ number_format($wDev, 2) }}% vs base</span>
+                                            @else
+                                                <span>-</span>
+                                            @endif
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:6px;">
+                                            <a href="{{ route('modules.energy-monitoring.index', ['month' => sprintf('%04d-%02d', $w['year'], $w['month']), 'timeframe' => 'weekly', 'week' => $w['week_number']]) }}"
+                                                class="week-action-link" title="Open in Energy Monitoring Dashboard">
+                                                <i class="fa-solid fa-chart-line"></i> Monitor
+                                            </a>
+                                            @if($w['is_manual'] && $canManageLocalMonthlyRecords)
+                                            <form method="POST" action="{{ route('facility-meter-weekly-readings.destroy', ['facility' => $facility->id, 'reading' => $w['manual_reading_id']]) }}" onsubmit="return confirm('Delete this weekly reading for {{ $w['week_short'] }}?');" style="display:inline;margin:0;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="week-delete-btn" title="Delete weekly reading">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @else
+                                    <div class="week-tile-metrics" style="background:#f8fafc;border-style:dashed;">
+                                        <div class="week-metric-box" style="grid-column: span 2; text-align: center; padding: 4px 0;">
+                                            <span class="box-label">Status</span>
+                                            <span class="box-val" style="font-size:0.92rem;color:#94a3b8;font-weight:700;">No reading logged yet</span>
+                                            <span class="box-sub">Base: {{ $w['baseline_kwh'] !== null ? number_format((float)$w['baseline_kwh'], 2) : '-' }} kWh</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="week-tile-footer">
+                                        <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">Week {{ $w['week_number'] }} pending</span>
+                                        @if($canManageLocalMonthlyRecords)
+                                        <button type="button" class="week-log-btn" onclick="openAddWeeklyModal({{ (int)$w['meter_id'] }}, {{ (int)$w['year'] }}, {{ (int)$w['month'] }}, {{ (int)$w['week_number'] }})">
+                                            <i class="fa-solid fa-plus"></i> Log Week
+                                        </button>
+                                        @endif
+                                    </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @empty
+                    <div style="padding: 36px; text-align: center; background: #ffffff; border-radius: 14px; border: 1px dashed #cbd5e1; color: #64748b; font-weight: 700;">
+                        <i class="fa-solid fa-calendar-xmark" style="font-size: 2rem; color: #94a3b8; margin-bottom: 10px; display: block;"></i>
+                        No weekly records found for the selected year or filters.
+                    </div>
+                @endforelse
+            </div>
+        @else
+            <div class="monthly-table-wrap">
+                <table class="monthly-table">
+                    <thead>
+                        <tr>
+                            <th>Period / Main Meter</th>
+                            <th>Consumption</th>
+                            <th>Performance</th>
+                            <th>Billing</th>
+                            <th>Review Status</th>
+                            <th>Documents / Insight</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     @forelse($tableRecords as $record)
                         @php
                             $rate = \App\Support\EnergyCost::ratePerKwh($record);
@@ -2915,6 +4007,7 @@
                             </td>
                         </tr>
                     @endforelse
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -2922,6 +4015,75 @@
 </div>
 
 @if($canManageLocalMonthlyRecords)
+<div id="recordTypeModal" class="monthly-modal-overlay">
+    <div class="monthly-modal-card" style="max-width: 660px;" role="dialog" aria-modal="true" aria-labelledby="recordTypeModalTitle">
+        <button type="button" onclick="closeRecordTypeModal()" class="monthly-modal-close" aria-label="Close record type selector"><i class="fa-solid fa-xmark"></i></button>
+        <header class="monthly-record-modal-header" style="margin-bottom: 6px;">
+            <div class="monthly-record-modal-icon" style="background:#eff6ff;color:#2563eb;"><i class="fa-solid fa-layer-group"></i></div>
+            <div>
+                <h2 id="recordTypeModalTitle" class="monthly-modal-title">Choose Record Type</h2>
+                <div class="monthly-modal-subtitle">
+                    Select how you would like to log energy usage for this facility.
+                </div>
+            </div>
+        </header>
+
+        <div class="record-type-grid">
+            <!-- Option 1: Monthly Electricity Bill -->
+            <div class="record-type-card is-monthly" onclick="selectRecordType('monthly')">
+                <div>
+                    <div class="record-type-badge-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <div class="record-type-title">
+                        <span>Monthly Record</span>
+                        <i class="fa-solid fa-arrow-right" style="font-size:0.85rem;opacity:0.7;"></i>
+                    </div>
+                    <div class="record-type-desc">
+                        Encode official monthly kilowatt-hours and billing statement from your utility provider (e.g. Meralco).
+                    </div>
+                </div>
+                <div>
+                    <div class="record-type-tags">
+                        <span class="record-type-tag"><i class="fa-solid fa-receipt"></i> Official Bill</span>
+                        <span class="record-type-tag"><i class="fa-solid fa-paperclip"></i> Image Upload</span>
+                        <span class="record-type-tag"><i class="fa-solid fa-check-double"></i> Full Month</span>
+                    </div>
+                    <button type="button" class="record-type-btn">
+                        <i class="fa-solid fa-plus"></i> Encode Monthly Bill
+                    </button>
+                </div>
+            </div>
+
+            <!-- Option 2: Weekly Meter Reading -->
+            <div class="record-type-card is-weekly" onclick="selectRecordType('weekly')">
+                <div>
+                    <div class="record-type-badge-icon"><i class="fa-solid fa-calendar-week"></i></div>
+                    <div class="record-type-title">
+                        <span>Weekly Reading</span>
+                        <i class="fa-solid fa-arrow-right" style="font-size:0.85rem;opacity:0.7;"></i>
+                    </div>
+                    <div class="record-type-desc">
+                        Log weekly dial or meter readings (Week 1–4). Automatically creates the official monthly total once all 4 weeks are complete.
+                    </div>
+                </div>
+                <div>
+                    <div class="record-type-tags">
+                        <span class="record-type-tag"><i class="fa-solid fa-gauge"></i> Week 1–4</span>
+                        <span class="record-type-tag"><i class="fa-solid fa-calculator"></i> Auto-Sums at 4/4</span>
+                        <span class="record-type-tag"><i class="fa-solid fa-clock-rotate-left"></i> Dial Tracking</span>
+                    </div>
+                    <button type="button" class="record-type-btn">
+                        <i class="fa-solid fa-plus"></i> Encode Weekly Reading
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="monthly-modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+            <button type="button" onclick="closeRecordTypeModal()" class="monthly-modal-btn neutral">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div id="addModal" class="monthly-modal-overlay">
     <div class="monthly-modal-card record-form" role="dialog" aria-modal="true" aria-labelledby="addMonthlyRecordTitle" aria-describedby="addMonthlyRecordSubtitle">
         <button type="button" onclick="closeAddModal()" class="monthly-modal-close" aria-label="Close add monthly record form"><i class="fa-solid fa-xmark"></i></button>
@@ -2941,12 +4103,12 @@
             <div class="monthly-form-section-title"><i class="fa-solid fa-receipt"></i> Billing Information</div>
             <div class="monthly-field">
                 <label for="add_date">Billing Date <span style="color:#e11d48;">*</span></label>
-                <input type="date" id="add_date" name="date" value="{{ old('date', $recordDateDefault) }}" required>
+                <input type="date" id="add_date" name="date" value="{{ old('date', $recordDateDefault) }}" required onchange="updateMonthlyPreviousReading(); syncAddSaveButtonState();">
             </div>
 
             <div class="monthly-field">
                 <label for="add_meter_id">Main Meter <span style="color:#e11d48;">*</span></label>
-                <select id="add_meter_id" name="meter_id" required onchange="handleMeterSelectionChange(); syncAddSaveButtonState();">
+                <select id="add_meter_id" name="meter_id" required onchange="updateMonthlyPreviousReading(); syncAddSaveButtonState();">
                     <option value="">Select Main Meter</option>
                     @forelse($meterOptions as $meterOption)
                         <option value="{{ $meterOption->id }}" @selected($oldMeterId === (string) $meterOption->id)>
@@ -2981,7 +4143,7 @@
                 <div class="monthly-field">
                     <label for="add_previous_reading_kwh">Previous Meter Reading (kWh)</label>
                     <input type="number" min="0" step="0.01" inputmode="decimal" id="add_previous_reading_kwh" name="previous_reading_kwh" value="{{ old('previous_reading_kwh', $defaultPreviousDial !== null ? number_format((float)$defaultPreviousDial, 2, '.', '') : '') }}" data-auto-filled="{{ $defaultPreviousDial !== null ? 'true' : 'false' }}" placeholder="e.g. 15000.00" oninput="this.dataset.autoFilled='false'; calculateConsumptionFromDials()">
-                    <span id="prev_dial_hint" class="monthly-upload-help" style="{{ $defaultPreviousDial !== null ? 'display:block;' : 'display:none;' }} color:#2563eb; font-weight:600;">
+                    <span id="prev_dial_hint" class="monthly-upload-help" style="{{ $defaultPreviousDial !== null ? 'display:block;' : 'display:none;' }} color:#2563eb; font-weight:600; margin-top:4px;">
                         @if($defaultPreviousDial !== null)
                             <i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from previous record: <strong>{{ number_format((float)$defaultPreviousDial, 2) }} kWh</strong>
                         @endif
@@ -3028,6 +4190,128 @@
         </form>
     </div>
 </div>
+
+<div id="addWeeklyModal" class="monthly-modal-overlay">
+    <div class="monthly-modal-card record-form" role="dialog" aria-modal="true" aria-labelledby="addWeeklyRecordTitle" aria-describedby="addWeeklyRecordSubtitle">
+        <button type="button" onclick="closeAddWeeklyModal()" class="monthly-modal-close" aria-label="Close add weekly reading form"><i class="fa-solid fa-xmark"></i></button>
+        <header class="monthly-record-modal-header">
+            <div class="monthly-record-modal-icon" style="background:#eff6ff;color:#2563eb;"><i class="fa-solid fa-calendar-week"></i></div>
+            <div>
+                <h2 id="addWeeklyRecordTitle" class="monthly-modal-title">Add Weekly Meter Reading</h2>
+                <div id="addWeeklyRecordSubtitle" class="monthly-modal-subtitle">
+                    Log weekly consumption for Main Meter. When <strong>4/4 weeks</strong> are logged, the full monthly record is automatically synchronized.
+                </div>
+            </div>
+        </header>
+
+        <form id="addWeeklyRecordForm" method="POST" action="{{ route('facility-meter-weekly-readings.store', ['facility' => $facility->id]) }}" style="display:flex;flex-direction:column;gap:12px;">
+            @csrf
+
+            <div class="monthly-form-section-title"><i class="fa-solid fa-gauge"></i> Meter &amp; Time Period</div>
+            <div class="monthly-field">
+                <label for="add_weekly_meter_id">Main Meter <span style="color:#e11d48;">*</span></label>
+                <select id="add_weekly_meter_id" name="meter_id" required onchange="updateWeeklyPreviousReading(); syncAddWeeklySaveButtonState();">
+                    <option value="">Select Main Meter</option>
+                    @forelse($meterOptions as $meterOption)
+                        <option value="{{ $meterOption->id }}" @selected($oldMeterId === (string) $meterOption->id)>
+                            {{ strtoupper((string) $meterOption->meter_type) }} - {{ $meterOption->meter_name }}
+                            @if($meterOption->meter_number) ({{ $meterOption->meter_number }}) @endif
+                        </option>
+                    @empty
+                        <option value="" disabled>No main meter available</option>
+                    @endforelse
+                </select>
+                @if($primaryBillingMeter)
+                    <div class="monthly-meter-suggestion">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>Suggested: {{ $primaryBillingMeter->meter_name }}{{ $primaryBillingMeter->meter_number ? ' (' . $primaryBillingMeter->meter_number . ')' : '' }}</span>
+                    </div>
+                @endif
+            </div>
+
+            <div class="monthly-pair-grid">
+                <div class="monthly-field">
+                    <label for="add_weekly_year">Year <span style="color:#e11d48;">*</span></label>
+                    <input type="number" id="add_weekly_year" name="year" value="{{ old('year', $selectedYear) }}" min="2000" max="2100" required oninput="updateWeeklyPreviousReading(); syncAddWeeklySaveButtonState();">
+                </div>
+                <div class="monthly-field">
+                    <label for="add_weekly_month">Month <span style="color:#e11d48;">*</span></label>
+                    <select id="add_weekly_month" name="month" required onchange="updateWeeklyPreviousReading(); syncAddWeeklySaveButtonState();">
+                        @for($m = 1; $m <= 12; $m++)
+                            <option value="{{ $m }}" @selected(old('month', (int)date('n')) == $m)>
+                                {{ \Carbon\Carbon::create(2000, $m, 1)->format('F') }}
+                            </option>
+                        @endfor
+                    </select>
+                </div>
+            </div>
+
+            <div class="monthly-pair-grid">
+                <div class="monthly-field">
+                    <label for="add_weekly_week_number">Week of Month <span style="color:#e11d48;">*</span></label>
+                    <select id="add_weekly_week_number" name="week_number" required onchange="updateWeeklyPreviousReading(); syncAddWeeklySaveButtonState();">
+                        <option value="1">Week 1 (Days 1–7)</option>
+                        <option value="2">Week 2 (Days 8–14)</option>
+                        <option value="3">Week 3 (Days 15–21)</option>
+                        <option value="4">Week 4 (Days 22–End of Month)</option>
+                    </select>
+                </div>
+                <div class="monthly-field">
+                    <label for="add_weekly_reading_date">Reading Date (Optional)</label>
+                    <input type="date" id="add_weekly_reading_date" name="reading_date" value="{{ old('reading_date', date('Y-m-d')) }}">
+                </div>
+            </div>
+
+            <div class="monthly-form-section-title"><i class="fa-solid fa-gauge-high"></i> Meter Dial Readings (Optional)</div>
+            <div class="monthly-pair-grid">
+                <div class="monthly-field">
+                    <label for="add_weekly_previous_reading_kwh">Previous Meter Dial (kWh)</label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_weekly_previous_reading_kwh" name="previous_reading_kwh" value="{{ old('previous_reading_kwh') }}" placeholder="e.g. 15000.00" oninput="this.dataset.autoFilled='false'; calculateWeeklyConsumptionFromDials()">
+                    <span id="weekly_prev_dial_hint" class="monthly-upload-help" style="display:none; color:#2563eb; font-weight:600; margin-top:4px;"></span>
+                </div>
+                <div class="monthly-field">
+                    <label for="add_weekly_current_reading_kwh">Current Meter Dial (kWh)</label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_weekly_current_reading_kwh" name="current_reading_kwh" value="{{ old('current_reading_kwh') }}" placeholder="e.g. 15320.00" oninput="calculateWeeklyConsumptionFromDials()">
+                </div>
+            </div>
+
+            <div class="monthly-form-section-title"><i class="fa-solid fa-bolt"></i> Weekly Consumption &amp; Rate</div>
+            <div class="monthly-pair-grid">
+                <div class="monthly-field">
+                    <label for="add_weekly_actual_kwh">Weekly Consumption (kWh) <span style="color:#e11d48;">*</span></label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_weekly_actual_kwh" name="actual_kwh" value="{{ old('actual_kwh') }}" placeholder="e.g. 320.00" required oninput="computeWeeklyCost(); syncAddWeeklySaveButtonState();">
+                    <span id="weekly_dial_calc_hint" class="monthly-upload-help" style="display:none; color:#16a34a; font-weight:700; margin-top:4px;">
+                        <i class="fa-solid fa-circle-check"></i> Auto-computed from dials
+                    </span>
+                </div>
+                <div class="monthly-field">
+                    <label for="add_weekly_rate_per_kwh">Rate (PHP/kWh) <span style="color:#e11d48;">*</span></label>
+                    <input type="number" min="0" step="0.01" inputmode="decimal" id="add_weekly_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required oninput="computeWeeklyCost(); syncAddWeeklySaveButtonState();">
+                </div>
+            </div>
+
+            <div class="monthly-field monthly-computed-field">
+                <label for="add_weekly_cost">Estimated Weekly Cost (PHP)</label>
+                <i class="fa-solid fa-peso-sign" aria-hidden="true"></i>
+                <input type="number" step="0.01" id="add_weekly_cost" readonly aria-live="polite" placeholder="Calculated from consumption × rate">
+            </div>
+
+            <div class="monthly-form-section-title"><i class="fa-solid fa-pen-to-square"></i> Notes / Observations (Optional)</div>
+            <div class="monthly-field">
+                <textarea id="add_weekly_notes" name="notes" rows="2" maxlength="500" placeholder="e.g. High aircon usage during event week, generator testing, or regular operational hours" style="width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:8px 12px;font:inherit;box-sizing:border-box;">{{ old('notes') }}</textarea>
+            </div>
+
+            <div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;color:#166534;font-size:0.83rem;line-height:1.4;">
+                <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i><strong>Auto-Sum Rule:</strong> When all <strong>4 weeks</strong> are logged for a month, their sum automatically becomes the official Monthly Record. If fewer than 4 weeks are logged, the month stays in progress.
+            </div>
+
+            <div class="monthly-modal-actions">
+                <button type="button" onclick="closeAddWeeklyModal()" class="monthly-modal-btn neutral">Cancel</button>
+                <button id="addWeeklyRecordSaveBtn" type="submit" class="monthly-modal-btn primary" @disabled($meterOptions->isEmpty())><i class="fa-solid fa-floppy-disk"></i> Save Weekly Reading</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endif
 
 <div id="deleteMonthlyRecordModal" class="monthly-modal-overlay">
@@ -3053,10 +4337,33 @@
 let deleteMonthlyRecordId = null;
 
 function syncMonthlyModalScrollLock() {
-    const hasOpenModal = ['addModal', 'deleteMonthlyRecordModal'].some(function (id) {
+    const hasOpenModal = ['recordTypeModal', 'addModal', 'addWeeklyModal', 'deleteMonthlyRecordModal'].some(function (id) {
         return document.getElementById(id)?.style.display === 'flex';
     });
     document.body.classList.toggle('monthly-modal-open', hasOpenModal);
+}
+
+function openRecordTypeModal() {
+    const modal = document.getElementById('recordTypeModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    syncMonthlyModalScrollLock();
+}
+
+function closeRecordTypeModal() {
+    const modal = document.getElementById('recordTypeModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    syncMonthlyModalScrollLock();
+}
+
+function selectRecordType(type) {
+    closeRecordTypeModal();
+    if (type === 'monthly') {
+        openAddModal();
+    } else if (type === 'weekly') {
+        openAddWeeklyModal();
+    }
 }
 
 function openAddModal() {
@@ -3066,7 +4373,7 @@ function openAddModal() {
     modal.style.display = 'flex';
     syncMonthlyModalScrollLock();
     if (form) form.scrollTop = 0;
-    handleMeterSelectionChange();
+    updateMonthlyPreviousReading();
     computeEnergyCost();
     syncAddSaveButtonState();
     window.requestAnimationFrame(function () {
@@ -3075,26 +4382,101 @@ function openAddModal() {
     });
 }
 
+const meterDialTimeline = @json($meterDialTimeline ?? []);
 const meterLatestDials = @json($latestMeterDials ?? []);
 
-function handleMeterSelectionChange() {
-    const meterSelect = document.getElementById('add_meter_id');
-    const prevInput = document.getElementById('add_previous_reading_kwh');
-    const prevHint = document.getElementById('prev_dial_hint');
-    if (!prevInput) return;
-    
-    const meterId = meterSelect && meterSelect.value ? parseInt(meterSelect.value, 10) : 0;
-    const dialVal = (meterId && meterLatestDials[meterId] !== undefined)
+function getPreviousMeterReading(meterId, year, month, week) {
+    meterId = parseInt(meterId, 10) || 0;
+    year = parseInt(year, 10) || (new Date()).getFullYear();
+    month = parseInt(month, 10) || ((new Date()).getMonth() + 1);
+    week = (week !== undefined && week !== null) ? parseInt(week, 10) : 1;
+
+    const targetKey = year * 10000 + month * 100 + week;
+
+    // Filter checkpoints for this meter (or fallback to 0/all) with valid current dial
+    let checkpoints = (meterDialTimeline || []).filter(function(cp) {
+        return (cp.meter_id === meterId || (meterId === 0 && cp.meter_id === 0)) 
+            && cp.current_reading_kwh !== null && cp.current_reading_kwh !== undefined && !isNaN(cp.current_reading_kwh);
+    });
+
+    if (checkpoints.length === 0 && meterId > 0) {
+        checkpoints = (meterDialTimeline || []).filter(function(cp) {
+            return cp.current_reading_kwh !== null && cp.current_reading_kwh !== undefined && !isNaN(cp.current_reading_kwh);
+        });
+    }
+
+    // Sort ascending by order_key
+    checkpoints.sort(function(a, b) { return a.order_key - b.order_key; });
+
+    // Look for latest checkpoint before target period
+    let priorCheckpoint = null;
+    for (let i = checkpoints.length - 1; i >= 0; i--) {
+        if (checkpoints[i].order_key < targetKey) {
+            priorCheckpoint = checkpoints[i];
+            break;
+        }
+    }
+
+    if (priorCheckpoint) {
+        return {
+            dial: priorCheckpoint.current_reading_kwh,
+            source: priorCheckpoint.period_label || 'prior reading',
+            isStarting: false
+        };
+    }
+
+    // If no checkpoint before targetKey, check if there's any overall latest dial
+    const latestDial = (meterId && meterLatestDials[meterId] !== undefined)
         ? meterLatestDials[meterId]
         : (meterLatestDials[0] !== undefined ? meterLatestDials[0] : null);
 
-    if (dialVal !== null && dialVal !== undefined) {
+    if (latestDial !== null && latestDial !== undefined && !isNaN(latestDial)) {
+        return {
+            dial: latestDial,
+            source: 'latest recorded reading',
+            isStarting: false
+        };
+    }
+
+    // Default to 0.00 starting dial for fresh meter
+    return {
+        dial: 0.0,
+        source: 'starting dial (0.00 kWh)',
+        isStarting: true
+    };
+}
+
+function updateMonthlyPreviousReading() {
+    const meterSelect = document.getElementById('add_meter_id');
+    const dateInput = document.getElementById('add_date');
+    const prevInput = document.getElementById('add_previous_reading_kwh');
+    const prevHint = document.getElementById('prev_dial_hint');
+    if (!prevInput) return;
+
+    const meterId = meterSelect && meterSelect.value ? parseInt(meterSelect.value, 10) : 0;
+    let year = (new Date()).getFullYear();
+    let month = (new Date()).getMonth() + 1;
+    if (dateInput && dateInput.value) {
+        const parts = dateInput.value.split('-');
+        if (parts.length >= 2) {
+            year = parseInt(parts[0], 10) || year;
+            month = parseInt(parts[1], 10) || month;
+        }
+    }
+
+    const res = getPreviousMeterReading(meterId, year, month, 0);
+
+    if (res && res.dial !== null && res.dial !== undefined) {
         if (!prevInput.value || prevInput.dataset.autoFilled === 'true' || prevInput.dataset.autoFilled === undefined) {
-            prevInput.value = parseFloat(dialVal).toFixed(2);
+            prevInput.value = parseFloat(res.dial).toFixed(2);
             prevInput.dataset.autoFilled = 'true';
             if (prevHint) {
                 prevHint.style.display = 'block';
-                prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from previous record: <strong>' + parseFloat(dialVal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh</strong>';
+                if (res.isStarting) {
+                    prevHint.innerHTML = '<i class="fa-solid fa-gauge"></i> Starting dial for meter: <strong>0.00 kWh</strong>';
+                } else {
+                    prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from ' + res.source + ': <strong>' + parseFloat(res.dial).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh</strong>';
+                }
             }
             calculateConsumptionFromDials();
         }
@@ -3105,6 +4487,10 @@ function handleMeterSelectionChange() {
             if (prevHint) prevHint.style.display = 'none';
         }
     }
+}
+
+function handleMeterSelectionChange() {
+    updateMonthlyPreviousReading();
 }
 
 function calculateConsumptionFromDials() {
@@ -3187,6 +4573,173 @@ function syncAddSaveButtonState() {
     saveBtn.disabled = !(hasMainMeterOption && hasSelectedMainMeter && hasDate && hasValidKwh && hasValidRate);
 }
 
+/* Weekly Reading Modal Handlers */
+function openAddWeeklyModal(meterId, year, month, week) {
+    const modal = document.getElementById('addWeeklyModal');
+    const form = document.getElementById('addWeeklyRecordForm');
+    if (!modal) return;
+
+    const meterSelect = document.getElementById('add_weekly_meter_id');
+    if (meterId && meterSelect) {
+        meterSelect.value = String(meterId);
+    } else if (meterSelect && !meterSelect.value && meterSelect.options.length > 1) {
+        for (let i = 0; i < meterSelect.options.length; i++) {
+            if (meterSelect.options[i].value !== '') {
+                meterSelect.value = meterSelect.options[i].value;
+                break;
+            }
+        }
+    }
+    if (year) {
+        const yearInput = document.getElementById('add_weekly_year');
+        if (yearInput) yearInput.value = String(year);
+    }
+    if (month) {
+        const monthSelect = document.getElementById('add_weekly_month');
+        if (monthSelect) monthSelect.value = String(month);
+    }
+    if (week) {
+        const weekSelect = document.getElementById('add_weekly_week_number');
+        if (weekSelect) weekSelect.value = String(week);
+    }
+
+    modal.style.display = 'flex';
+    syncMonthlyModalScrollLock();
+    if (form) form.scrollTop = 0;
+    updateWeeklyPreviousReading();
+    computeWeeklyCost();
+    syncAddWeeklySaveButtonState();
+
+    window.requestAnimationFrame(function () {
+        const firstIncomplete = form?.querySelector(':required:invalid');
+        (firstIncomplete || document.getElementById('add_weekly_actual_kwh'))?.focus();
+    });
+}
+
+function closeAddWeeklyModal() {
+    const modal = document.getElementById('addWeeklyModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    syncMonthlyModalScrollLock();
+}
+
+function updateWeeklyPreviousReading() {
+    const meterSelect = document.getElementById('add_weekly_meter_id');
+    const yearInput = document.getElementById('add_weekly_year');
+    const monthSelect = document.getElementById('add_weekly_month');
+    const weekSelect = document.getElementById('add_weekly_week_number');
+    const prevInput = document.getElementById('add_weekly_previous_reading_kwh');
+    const prevHint = document.getElementById('weekly_prev_dial_hint');
+
+    if (!prevInput) return;
+
+    const meterId = meterSelect && meterSelect.value ? parseInt(meterSelect.value, 10) : 0;
+    const year = yearInput && yearInput.value ? parseInt(yearInput.value, 10) : (new Date()).getFullYear();
+    const month = monthSelect && monthSelect.value ? parseInt(monthSelect.value, 10) : ((new Date()).getMonth() + 1);
+    const week = weekSelect && weekSelect.value ? parseInt(weekSelect.value, 10) : 1;
+
+    const res = getPreviousMeterReading(meterId, year, month, week);
+
+    if (res && res.dial !== null && res.dial !== undefined) {
+        if (!prevInput.value || prevInput.dataset.autoFilled === 'true' || prevInput.dataset.autoFilled === undefined) {
+            prevInput.value = parseFloat(res.dial).toFixed(2);
+            prevInput.dataset.autoFilled = 'true';
+            if (prevHint) {
+                prevHint.style.display = 'block';
+                if (res.isStarting) {
+                    prevHint.innerHTML = '<i class="fa-solid fa-gauge"></i> Starting dial: <strong>0.00 kWh</strong>';
+                } else {
+                    prevHint.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Auto-filled from ' + res.source + ': <strong>' + parseFloat(res.dial).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh</strong>';
+                }
+            }
+            calculateWeeklyConsumptionFromDials();
+        }
+    } else {
+        if (prevInput.dataset.autoFilled === 'true') {
+            prevInput.value = '';
+            prevInput.dataset.autoFilled = 'false';
+            if (prevHint) prevHint.style.display = 'none';
+        }
+    }
+    syncAddWeeklySaveButtonState();
+}
+
+function handleWeeklyMeterSelectionChange() {
+    updateWeeklyPreviousReading();
+}
+
+function calculateWeeklyConsumptionFromDials() {
+    const prevInput = document.getElementById('add_weekly_previous_reading_kwh');
+    const currInput = document.getElementById('add_weekly_current_reading_kwh');
+    const kwhInput = document.getElementById('add_weekly_actual_kwh');
+    const hint = document.getElementById('weekly_dial_calc_hint');
+    if (!prevInput || !currInput || !kwhInput) return;
+
+    const prevStr = String(prevInput.value || '').trim();
+    const currStr = String(currInput.value || '').trim();
+
+    if (prevStr !== '' && currStr !== '') {
+        const prev = parseFloat(prevStr);
+        const curr = parseFloat(currStr);
+        if (!isNaN(prev) && !isNaN(curr)) {
+            if (curr >= prev) {
+                const diff = curr - prev;
+                kwhInput.value = diff.toFixed(2);
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + curr.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' &minus; ' + prev.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' = <strong>' + diff.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' kWh</strong>';
+                }
+                computeWeeklyCost();
+                syncAddWeeklySaveButtonState();
+            } else {
+                if (hint) {
+                    hint.style.display = 'block';
+                    hint.innerHTML = '<span style="color:#e11d48;"><i class="fa-solid fa-triangle-exclamation"></i> Current reading must be &ge; previous reading.</span>';
+                }
+            }
+        }
+    } else {
+        if (hint) hint.style.display = 'none';
+    }
+}
+
+function computeWeeklyCost() {
+    const kwhInput = document.getElementById('add_weekly_actual_kwh');
+    const rateInput = document.getElementById('add_weekly_rate_per_kwh');
+    const costInput = document.getElementById('add_weekly_cost');
+    if (!kwhInput || !rateInput || !costInput) return;
+
+    const hasKwh = String(kwhInput.value || '').trim() !== '';
+    const hasRate = String(rateInput.value || '').trim() !== '';
+    const kwh = parseFloat(kwhInput.value) || 0;
+    const rate = parseFloat(rateInput.value) || 0;
+    const cost = kwh * rate;
+    costInput.value = hasKwh && hasRate ? cost.toFixed(2) : '';
+}
+
+function syncAddWeeklySaveButtonState() {
+    const saveBtn = document.getElementById('addWeeklyRecordSaveBtn');
+    const meterSelect = document.getElementById('add_weekly_meter_id');
+    const yearInput = document.getElementById('add_weekly_year');
+    const monthSelect = document.getElementById('add_weekly_month');
+    const weekSelect = document.getElementById('add_weekly_week_number');
+    const kwhInput = document.getElementById('add_weekly_actual_kwh');
+    const rateInput = document.getElementById('add_weekly_rate_per_kwh');
+    if (!saveBtn || !meterSelect || !yearInput || !monthSelect || !weekSelect || !kwhInput || !rateInput) return;
+
+    const hasMeter = String(meterSelect.value || '').trim() !== '';
+    const hasYear = String(yearInput.value || '').trim() !== '';
+    const hasMonth = String(monthSelect.value || '').trim() !== '';
+    const hasWeek = String(weekSelect.value || '').trim() !== '';
+
+    const kwhValue = Number(kwhInput.value);
+    const rateValue = Number(rateInput.value);
+    const hasValidKwh = String(kwhInput.value || '').trim() !== '' && Number.isFinite(kwhValue) && kwhValue >= 0;
+    const hasValidRate = String(rateInput.value || '').trim() !== '' && Number.isFinite(rateValue) && rateValue >= 0;
+
+    saveBtn.disabled = !(hasMeter && hasYear && hasMonth && hasWeek && hasValidKwh && hasValidRate);
+}
+
 function openDeleteMonthlyRecordModal(recordId, monthName, year) {
     deleteMonthlyRecordId = recordId;
     const text = document.getElementById('deleteMonthlyRecordText');
@@ -3225,17 +4778,52 @@ document.getElementById('confirmDeleteMonthlyRecordBtn')?.addEventListener('clic
     }
 });
 
-document.getElementById('add_actual_kwh')?.addEventListener('input', computeEnergyCost);
-document.getElementById('add_rate_per_kwh')?.addEventListener('input', computeEnergyCost);
-computeEnergyCost();
-syncAddSaveButtonState();
+function toggleWeeklyMonth(headerEl, event) {
+    if (event && event.target && event.target.closest('a')) {
+        return;
+    }
+    const card = headerEl ? headerEl.closest('.weekly-month-card') : null;
+    if (!card) return;
+    const isNowCollapsed = card.classList.toggle('is-collapsed');
+    const toggleText = card.querySelector('.weekly-toggle-text');
+    if (toggleText) {
+        toggleText.textContent = isNowCollapsed ? 'Show 4 Weeks' : 'Collapse';
+    }
+    const toggleIcon = card.querySelector('.weekly-toggle-icon');
+    if (toggleIcon) {
+        toggleIcon.classList.remove('fa-chevron-up', 'fa-chevron-down');
+        toggleIcon.classList.add(isNowCollapsed ? 'fa-chevron-down' : 'fa-chevron-up');
+    }
+}
+
+function toggleAllWeeklyMonths(expand) {
+    document.querySelectorAll('.weekly-month-card').forEach(function (card) {
+        if (expand) {
+            card.classList.remove('is-collapsed');
+        } else {
+            card.classList.add('is-collapsed');
+        }
+        const toggleText = card.querySelector('.weekly-toggle-text');
+        if (toggleText) {
+            toggleText.textContent = expand ? 'Collapse' : 'Show 4 Weeks';
+        }
+        const toggleIcon = card.querySelector('.weekly-toggle-icon');
+        if (toggleIcon) {
+            toggleIcon.classList.remove('fa-chevron-up', 'fa-chevron-down');
+            toggleIcon.classList.add(expand ? 'fa-chevron-up' : 'fa-chevron-down');
+        }
+    });
+}
 
 window.addEventListener('DOMContentLoaded', function () {
+    const recordTypeModal = document.getElementById('recordTypeModal');
     const addModal = document.getElementById('addModal');
+    const addWeeklyModal = document.getElementById('addWeeklyModal');
     const deleteModal = document.getElementById('deleteMonthlyRecordModal');
     const summaryModeSelect = document.getElementById('summary_mode');
     const summaryMonthSelect = document.getElementById('summary_month');
     const addMonthlyRecordForm = document.getElementById('addMonthlyRecordForm');
+    const addWeeklyRecordForm = document.getElementById('addWeeklyRecordForm');
     const overviewToggle = document.getElementById('monthlyOverviewToggle');
     const overviewContent = document.getElementById('monthlyOverviewContent');
 
@@ -3261,10 +4849,26 @@ window.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    if (recordTypeModal) {
+        recordTypeModal.addEventListener('click', function (event) {
+            if (event.target === recordTypeModal) {
+                closeRecordTypeModal();
+            }
+        });
+    }
+
     if (addModal) {
         addModal.addEventListener('click', function (event) {
             if (event.target === addModal) {
                 closeAddModal();
+            }
+        });
+    }
+
+    if (addWeeklyModal) {
+        addWeeklyModal.addEventListener('click', function (event) {
+            if (event.target === addWeeklyModal) {
+                closeAddWeeklyModal();
             }
         });
     }
@@ -3279,7 +4883,9 @@ window.addEventListener('DOMContentLoaded', function () {
 
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
+            closeRecordTypeModal();
             closeAddModal();
+            closeAddWeeklyModal();
             closeDeleteMonthlyRecordModal();
         }
     });
@@ -3297,6 +4903,23 @@ window.addEventListener('DOMContentLoaded', function () {
             if (saveBtn) {
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Record...';
+            }
+        });
+    }
+
+    if (addWeeklyRecordForm) {
+        addWeeklyRecordForm.addEventListener('input', syncAddWeeklySaveButtonState);
+        addWeeklyRecordForm.addEventListener('change', syncAddWeeklySaveButtonState);
+        addWeeklyRecordForm.addEventListener('submit', function (event) {
+            syncAddWeeklySaveButtonState();
+            const saveBtn = document.getElementById('addWeeklyRecordSaveBtn');
+            if (saveBtn && saveBtn.disabled) {
+                event.preventDefault();
+                return;
+            }
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Weekly Reading...';
             }
         });
     }
@@ -3356,11 +4979,18 @@ window.addEventListener('DOMContentLoaded', function () {
     summaryModeSelect?.addEventListener('change', syncSummaryMonthState);
     syncSummaryMonthState();
     syncAddSaveButtonState();
+    syncAddWeeklySaveButtonState();
 });
 
 @if($canManageLocalMonthlyRecords && ($errors->has('duplicate') || request()->boolean('open_add')))
 window.addEventListener('DOMContentLoaded', function () {
     openAddModal();
+});
+@endif
+
+@if($canManageLocalMonthlyRecords && ($errors->has('duplicate_week') || request()->boolean('open_weekly_add')))
+window.addEventListener('DOMContentLoaded', function () {
+    openAddWeeklyModal();
 });
 @endif
 </script>
