@@ -328,8 +328,26 @@ body.dark-mode .facility-show-page .energy-warning {
     background: #2563eb;
 }
 
-.facility-action-btn.archive {
-    background: #e11d48;
+.facility-action-btn.deactivate {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+}
+.facility-action-btn.deactivate:hover {
+    background: #ffe4e6;
+    color: #9f1239;
+    border-color: #fda4af;
+}
+
+.facility-action-btn.reactivate {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+.facility-action-btn.reactivate:hover {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #6ee7b7;
 }
 
 .facility-section-card {
@@ -363,37 +381,74 @@ body.dark-mode .facility-show-page .energy-warning {
 .energy-profile-empty-state strong { display:block; margin-top:8px; color:#334155; }
 .energy-profile-empty-state span { display:block; margin-top:4px; color:#64748b; font-size:.8rem; }
 
-body.dark-mode .facility-show-page .facility-back-btn,
-body.dark-mode .facility-show-page .facility-info-card,
-body.dark-mode .facility-show-page .facility-pill.primary {
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-back-btn,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-info-card,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.primary {
     background: #111827 !important;
     border-color: #334155 !important;
     color: #e2e8f0 !important;
 }
 
-body.dark-mode .facility-show-page .facility-title,
-body.dark-mode .facility-show-page .facility-info-value {
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.status-active {
+    background: #052e16 !important;
+    color: #4ade80 !important;
+    border-color: #166534 !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.status-maintenance {
+    background: #451a03 !important;
+    color: #fb923c !important;
+    border-color: #9a3412 !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.status-inactive {
+    background: #4c0519 !important;
+    color: #fb7185 !important;
+    border-color: #9f1239 !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.main {
+    background: #172554 !important;
+    color: #93c5fd !important;
+    border-color: #1e40af !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.sub {
+    background: #2e1065 !important;
+    color: #c4b5fd !important;
+    border-color: #7c3aed !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-pill.approved {
+    background: #042f2e !important;
+    color: #5eead4 !important;
+    border-color: #0d9488 !important;
+}
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-cprf-badge {
+    background: #2e1065 !important;
+    color: #c4b5fd !important;
+    border: 1px solid #7c3aed !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25) !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-title,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-info-value {
     color: #e2e8f0 !important;
 }
 
-body.dark-mode .facility-show-page .facility-header,
-body.dark-mode .facility-show-page .facility-section-card,
-body.dark-mode .facility-show-page .facility-action-row,
-body.dark-mode .facility-show-page .energy-profile-item,
-body.dark-mode .facility-show-page .meter-readiness,
-body.dark-mode .facility-show-page .energy-profile-empty-state {
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-header,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-section-card,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-action-row,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-item,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .meter-readiness,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-empty-state {
     background: #111827 !important;
     border-color: #334155 !important;
 }
-body.dark-mode .facility-show-page .facility-section-heading h3,
-body.dark-mode .facility-show-page .energy-profile-value,
-body.dark-mode .facility-show-page .energy-profile-empty-state strong { color:#e2e8f0 !important; }
-body.dark-mode .facility-show-page .facility-section-heading p,
-body.dark-mode .facility-show-page .energy-profile-label,
-body.dark-mode .facility-show-page .energy-performance-caption,
-body.dark-mode .facility-show-page .meter-readiness-head,
-body.dark-mode .facility-show-page .energy-profile-empty-state span { color:#94a3b8 !important; }
-body.dark-mode .facility-show-page .meter-readiness-track { background:#334155; }
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-section-heading h3,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-value,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-empty-state strong { color:#e2e8f0 !important; }
+:is(html.dark-mode, body.dark-mode) .facility-show-page .facility-section-heading p,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-label,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-performance-caption,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .meter-readiness-head,
+:is(html.dark-mode, body.dark-mode) .facility-show-page .energy-profile-empty-state span { color:#94a3b8 !important; }
+:is(html.dark-mode, body.dark-mode) .facility-show-page .meter-readiness-track { background:#334155; }
 
 @media (max-width: 720px) {
     .facility-show-page-container {
@@ -469,9 +524,32 @@ body.dark-mode .facility-show-page .meter-readiness-track { background:#334155; 
 <div class="facility-show-shell">
 
 <!-- BACK BUTTON -->
+@if(strtolower(trim((string)$facility->status)) === 'inactive')
+<a href="{{ route('modules.facilities.inactive') }}" class="facility-back-btn" style="background:#fff1f2;color:#be123c;border-color:#fecdd3;">
+<i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back to Inactive Facilities
+</a>
+@else
 <a href="{{ route('modules.facilities.index') }}" class="facility-back-btn">
 <i class="fa-solid fa-arrow-left" style="margin-right:6px;"></i> Back
 </a>
+@endif
+
+@if(strtolower(trim((string)$facility->status)) === 'inactive')
+<div style="margin: 16px 0 20px; padding: 14px 20px; border-radius: 14px; background: #fff1f2; border: 1px solid #fecdd3; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 12px; color: #9f1239; font-weight: 700; font-size: 0.92rem;">
+        <i class="fa-solid fa-ban" style="font-size: 1.3rem; color: #e11d48;"></i>
+        <span>This facility is currently <strong>Inactive</strong> and located in the <a href="{{ route('modules.facilities.inactive') }}" style="color: #be123c; text-decoration: underline; font-weight: 800;">Inactive Facilities</a> section.</span>
+    </div>
+    @if(!$facility->isCprfManaged() && \App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
+    <form method="POST" action="{{ route('facilities.reactivate', $facility->id) }}" onsubmit="return confirm('Reactivate {{ $facility->name }} back to active operations?');" style="margin: 0;">
+        @csrf
+        <button type="submit" style="display: inline-flex; align-items: center; gap: 6px; background: #059669; color: #fff; border: none; border-radius: 9px; padding: 8px 16px; font-weight: 800; font-size: 0.82rem; cursor: pointer; box-shadow: 0 4px 10px rgba(5,150,105,0.2);">
+            <i class="fa-solid fa-rotate-left"></i> Reactivate Facility
+        </button>
+    </form>
+    @endif
+</div>
+@endif
 
 
 @php
@@ -514,7 +592,7 @@ $displayElectricMeterNumber = $facility->isCprfManaged()
 	{{ $facility->type }} &bull; {{ $facility->department }}
 </div>
 @if($facility->isCprfManaged())
-<span title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
+<span class="facility-cprf-badge" title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
 	  style="display:inline-flex; align-items:center; gap:6px; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; border-radius:999px; padding:4px 12px; font-size:0.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; margin-top:6px;">
 	<i class="fa-solid fa-link"></i> Public Facility — managed by CPRF
 </span>
@@ -682,7 +760,6 @@ $facilityInfoCards[] = ['<i class="fa-solid fa-chart-simple"></i>','Facility Siz
 <!-- ACTIONS -->
 <div class="facility-action-row">
 	<span class="facility-actions-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:6px;color:#2563eb;"></i> Quick Actions</span>
-	<!-- Edit Facility button removed -->
 	<a href="{{ route('facilities.monthly-records', ['facility' => $facility->id, 'record_scope' => 'main']) }}" class="facility-action-link records">
 		<i class="fa-solid fa-chart-line"></i> Monthly Records
 	</a>
@@ -694,8 +771,18 @@ $facilityInfoCards[] = ['<i class="fa-solid fa-chart-simple"></i>','Facility Siz
 	<a href="{{ route('modules.facilities.energy-profile.index', $facility->id) }}" class="facility-action-link profile">
 		<i class="fa-solid fa-bolt"></i> Energy Profile
 	</a>
-	@if(!$facility->isCprfManaged() && !in_array((auth()->user()?->role_key ?? str_replace(' ', '_', strtolower((string) (auth()->user()?->role ?? '')))), ['staff', 'energy_officer'], true))
-	<button type="button" onclick="openDeleteFacilityModal({{ $facility->id }}, '{{ route('facilities.destroy', $facility->id) }}')" class="facility-action-btn archive"><i class="fa-solid fa-box-archive"></i> Move to Archive</button>
+	@if(!$facility->isCprfManaged() && \App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
+		@if(strtolower(trim((string)$facility->status)) === 'inactive')
+		<form method="POST" action="{{ route('facilities.reactivate', $facility->id) }}" onsubmit="return confirm('Reactivate {{ $facility->name }} back to active status?');" style="display:inline;margin:0;">
+			@csrf
+			<button type="submit" class="facility-action-btn reactivate" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;"><i class="fa-solid fa-rotate-left"></i> Reactivate Facility</button>
+		</form>
+		@else
+		<form method="POST" action="{{ route('facilities.deactivate', $facility->id) }}" onsubmit="return confirm('Move {{ $facility->name }} to Inactive Facilities?');" style="display:inline;margin:0;">
+			@csrf
+			<button type="submit" class="facility-action-btn deactivate" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;"><i class="fa-solid fa-power-off"></i> Move to Inactive</button>
+		</form>
+		@endif
 	@endif
 </div>
 

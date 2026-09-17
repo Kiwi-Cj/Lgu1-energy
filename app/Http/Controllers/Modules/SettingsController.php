@@ -119,6 +119,10 @@ class SettingsController extends Controller
             'mail_host' => 'nullable|string|max:255',
             'mail_port' => 'required|integer|min:1|max:65535',
             'enable_email_notifications' => 'required|in:0,1',
+            'enable_reading_reminders' => 'required|in:0,1',
+            'reading_reminder_frequency' => 'required|in:weekly,monthly,both',
+            'reading_reminder_day' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday,end_of_period',
+            'reading_reminder_time' => 'required|regex:/^\d{2}:\d{2}$/',
             'enable_audit_logs' => 'required|in:0,1',
             'retention_period' => 'required|integer|min:1|max:120',
             'export_format' => 'required|in:pdf,xlsx,csv,excel',
@@ -206,7 +210,10 @@ class SettingsController extends Controller
                 'auto_log_incident',
             ],
             'facility' => ['facility_image_size', 'allowed_image_types', 'default_facility_status'],
-            'email' => ['mail_host', 'mail_port', 'enable_email_notifications'],
+            'email' => [
+                'mail_host', 'mail_port', 'enable_email_notifications',
+                'enable_reading_reminders', 'reading_reminder_frequency', 'reading_reminder_day', 'reading_reminder_time',
+            ],
             'reports' => ['enable_audit_logs', 'retention_period', 'export_format'],
         ];
 

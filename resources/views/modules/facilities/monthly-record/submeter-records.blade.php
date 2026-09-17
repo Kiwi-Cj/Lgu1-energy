@@ -346,6 +346,18 @@
         font-size: 0.74rem;
     }
 
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip {
+        background: #052e16 !important;
+        border-color: #166534 !important;
+        color: #86efac !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip i {
+        color: #4ade80 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip .dial-arrow {
+        color: #86efac !important;
+    }
+
     .monthly-modal-overlay {
         display: none;
         align-items: center;
@@ -790,7 +802,7 @@
                            placeholder="0.00" style="border-radius:10px;padding:8px 12px;font-size:1rem;font-weight:900;color:#0f172a;background:#fff;font-family:monospace;">
                 </div>
                 <div class="monthly-field">
-                    <label style="color:#475569;font-weight:800;">Rate (PHP / kWh)</label>
+                    <label style="color:#475569;font-weight:800;">Rate (PHP / kWh) <small style="font-size:0.73rem;color:#64748b;font-weight:600;">(QC Commercial Rate)</small></label>
                     <input type="number" step="0.01" min="0" name="rate_per_kwh" id="modalSubmeterRate" value="12.00" oninput="calculateSubmeterCost()"
                            style="border-radius:10px;padding:8px 12px;background:#fff;font-weight:700;">
                 </div>

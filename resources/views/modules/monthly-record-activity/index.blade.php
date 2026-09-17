@@ -132,22 +132,52 @@
     body.dark-mode .monthly-activity-page { color:#cbd5e1; }
     body.dark-mode .monthly-report-card { background:linear-gradient(155deg,#0f172a 0%,#111827 100%); border-color:#334155; box-shadow:0 18px 38px rgba(2,6,23,.38); }
     body.dark-mode .activity-header h1 { color:#f8fafc; }
-    body.dark-mode .activity-card, body.dark-mode .activity-table th, body.dark-mode .activity-table td, body.dark-mode .overview-card, body.dark-mode .review-dialog { background:#18181b; border-color:#334155; }
+    body.dark-mode .activity-header p { color:#94a3b8; }
+    body.dark-mode .activity-card, body.dark-mode .overview-card, body.dark-mode .review-dialog { background:#111827; border-color:#334155; }
+    body.dark-mode .overview-label { color:#94a3b8; }
     body.dark-mode .overview-value { color:#f8fafc; }
+    body.dark-mode .overview-detail { color:#94a3b8; }
+    body.dark-mode .overview-card.review-summary .overview-icon { background:#451a03 !important; color:#fdba74 !important; border:1px solid #9a3412; }
+    body.dark-mode .overview-card.missing-summary .overview-icon { background:#4c0519 !important; color:#fda4af !important; border:1px solid #be123c; }
+    body.dark-mode .overview-card.integration-summary .overview-icon { background:#1e3a8a !important; color:#93c5fd !important; border:1px solid #3b82f6; }
+    body.dark-mode .missing-list summary { color:#60a5fa !important; }
+    body.dark-mode .missing-list-items { border-color:#334155 !important; color:#cbd5e1 !important; }
     body.dark-mode .review-dialog h3 { color:#f8fafc; }
     body.dark-mode .review-dialog { color:#e2e8f0; }
     body.dark-mode .review-dialog textarea { background:#0f172a; color:#e2e8f0; border-color:#475569; }
     body.dark-mode .activity-card-heading, body.dark-mode .activity-filters { background:#111827; border-color:#334155; }
     body.dark-mode .activity-card-heading strong { color:#f8fafc; }
     body.dark-mode .activity-result-count { background:#1e3a5f; color:#bfdbfe; }
+    body.dark-mode .activity-filter-label { color:#94a3b8; }
     body.dark-mode .activity-filters input, body.dark-mode .activity-filters select { background:#0f172a; color:#e2e8f0; border-color:#475569; }
-    body.dark-mode .activity-table td, body.dark-mode .activity-table th, body.dark-mode .activity-pagination { border-color:#334155; }
-    body.dark-mode .activity-table tbody tr:hover td { background:#1d2a3d; }
-    body.dark-mode .encoder-name { color:#f1f5f9; }
+    body.dark-mode .filter-btn.reset { background:#1e293b; color:#cbd5e1; border:1px solid #334155; }
+    body.dark-mode .filter-btn.reset:hover { background:#334155; color:#f8fafc; }
+    body.dark-mode .activity-table th { background:linear-gradient(180deg,#1e293b 0%,#111827 100%) !important; color:#cbd5e1 !important; border-color:#334155 !important; }
+    body.dark-mode .activity-table td { background:#0f172a !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+    body.dark-mode .activity-table td strong { color:#f8fafc; }
+    body.dark-mode .activity-table tbody tr:hover td { background:#1e293b !important; }
+    body.dark-mode .activity-pagination { border-color:#334155; }
+    body.dark-mode .encoder-avatar { background:#1e293b; color:#93c5fd; border:1px solid #334155; }
+    body.dark-mode .encoder-name { color:#f8fafc; }
+    body.dark-mode .muted { color:#94a3b8 !important; }
+    body.dark-mode .activity-badge.latest { background:#052e16 !important; color:#86efac !important; border:1px solid #166534; }
+    body.dark-mode .activity-badge.manual { background:#1e3a8a !important; color:#bfdbfe !important; border:1px solid #3b82f6; }
+    body.dark-mode .activity-badge.cprf { background:#3b0764 !important; color:#e9d5ff !important; border:1px solid #7e22ce; }
+    body.dark-mode .activity-badge.dataset { background:#064e3b !important; color:#a7f3d0 !important; border:1px solid #059669; }
+    body.dark-mode .activity-badge.for-review { background:#451a03 !important; color:#fdba74 !important; border:1px solid #9a3412; }
+    body.dark-mode .activity-badge.approved { background:#052e16 !important; color:#86efac !important; border:1px solid #166534; }
+    body.dark-mode .activity-badge.returned { background:#4c0519 !important; color:#fda4af !important; border:1px solid #be123c; }
+    body.dark-mode .record-link { background:#1e293b; color:#93c5fd; border-color:#3b82f6; }
+    body.dark-mode .record-link:hover { background:#2563eb; color:#fff; border-color:#3b82f6; }
+    body.dark-mode .review-btn.approve { background:#052e16; color:#86efac; border-color:#166534; }
+    body.dark-mode .review-btn.approve:hover { background:#166534; color:#fff; }
+    body.dark-mode .review-btn.return { background:#4c0519; color:#fda4af; border-color:#be123c; }
+    body.dark-mode .review-btn.return:hover { background:#881337; color:#fff; }
     body.dark-mode .activity-pager-summary, body.dark-mode .activity-pager-summary strong { color:#cbd5e1; }
-    body.dark-mode .activity-page-link { color:#cbd5e1; background:#18181b; border-color:#475569; }
+    body.dark-mode .activity-page-link { color:#cbd5e1; background:#111827; border-color:#475569; }
     body.dark-mode .activity-page-link:hover { color:#c7d2fe; background:#312e81; border-color:#6366f1; }
     body.dark-mode .activity-page-disabled { color:#64748b; background:#111827; border-color:#334155; }
+    body.dark-mode .activity-empty { color:#94a3b8; }
     @media(max-width:900px) {
         .activity-overview { grid-template-columns:1fr; }
         .activity-filters { grid-template-columns:1fr 1fr; }

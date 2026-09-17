@@ -521,46 +521,52 @@
     .archive-alert.success { background: #dcfce7; color: #166534; }
     .archive-alert.error { background: #fee2e2; color: #b91c1c; }
 
-    body.dark-mode .archive-page { color:#e2e8f0; }
-    body.dark-mode .archive-card { background:#0f172a !important; border-color:#334155 !important; box-shadow:0 18px 46px rgba(2,6,23,.42); }
-    body.dark-mode .archive-title { color:#f8fafc !important; }
-    body.dark-mode .archive-subtitle { color:#94a3b8 !important; }
-    body.dark-mode .archive-back { background:#2563eb !important; color:#fff !important; }
-    body.dark-mode .archive-shell { background:#0f172a !important; border-color:#334155 !important; }
-    body.dark-mode .archive-list-head { background:#111827 !important; border-color:#334155 !important; }
-    body.dark-mode .archive-count { color:#f8fafc !important; }
-    body.dark-mode .archive-note { color:#94a3b8 !important; }
-    body.dark-mode .archive-policy { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
-    body.dark-mode .archive-empty { color:#94a3b8 !important; }
-    body.dark-mode .archive-empty strong { color:#f8fafc !important; }
-    body.dark-mode .archive-empty-icon { background:#172554 !important; color:#60a5fa !important; }
-    body.dark-mode .archive-table th { background:#111827 !important; border-color:#334155 !important; color:#93c5fd !important; }
-    body.dark-mode .archive-table td { background:#0f172a !important; border-color:#263449 !important; color:#e2e8f0 !important; }
-    body.dark-mode .archive-table tbody tr:hover td { background:#111827 !important; }
-    body.dark-mode .archive-facility-name,
-    body.dark-mode .archive-date { color:#f8fafc !important; }
-    body.dark-mode .archive-meta,
-    body.dark-mode .archive-by,
-    body.dark-mode .archive-reason-text { color:#cbd5e1 !important; }
-    body.dark-mode .archive-facility-icon { background:#172554 !important; color:#60a5fa !important; }
-    body.dark-mode .archive-pill { background:#172554 !important; color:#bfdbfe !important; }
-    body.dark-mode .archive-pill.neutral { background:#1e293b !important; color:#cbd5e1 !important; }
-    body.dark-mode .archive-reason { background:#111827 !important; border-color:#334155 !important; }
-    body.dark-mode .archive-link-btn { background:#172554 !important; border-color:#1e40af !important; color:#bfdbfe !important; }
-    body.dark-mode .archive-retention-pill { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
-    body.dark-mode .archive-pagination { background:#111827 !important; }
-    body.dark-mode .archive-page-link { background:#1e293b !important; color:#cbd5e1 !important; }
-    body.dark-mode .archive-modal,
-    body.dark-mode .archive-confirm-overlay { background:rgba(2,6,23,.76) !important; }
-    body.dark-mode .archive-modal-panel,
-    body.dark-mode .archive-confirm-panel { background:#0f172a !important; border:1px solid #334155; }
-    body.dark-mode .archive-modal-label { color:#93c5fd !important; }
-    body.dark-mode .archive-modal-title,
-    body.dark-mode .archive-confirm-title { color:#f8fafc !important; }
-    body.dark-mode .archive-modal-text { background:#111827 !important; border-color:#334155 !important; color:#e2e8f0 !important; }
-    body.dark-mode .archive-confirm-head { border-color:#334155 !important; }
-    body.dark-mode .archive-confirm-message { color:#cbd5e1 !important; }
-    body.dark-mode .archive-confirm-btn.cancel { background:#1e293b !important; color:#e2e8f0 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-page { color:#e2e8f0; }
+    :is(html.dark-mode, body.dark-mode) .archive-card { background:#0f172a !important; border-color:#334155 !important; box-shadow:0 18px 46px rgba(2,6,23,.42); }
+    :is(html.dark-mode, body.dark-mode) .archive-title { color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-subtitle { color:#94a3b8 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-back { background:#2563eb !important; color:#fff !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-shell { background:#0f172a !important; border-color:#334155 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-toolbar { background:#0b1220 !important; border-color:#334155 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-field label { color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-input,
+    :is(html.dark-mode, body.dark-mode) .archive-select { background:#111827 !important; border-color:#334155 !important; color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-btn.soft,
+    :is(html.dark-mode, body.dark-mode) .archive-icon-btn.soft { background:#1e293b !important; color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-list-head { background:#111827 !important; border-color:#334155 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-count { color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-note { color:#94a3b8 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-policy { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-empty { color:#94a3b8 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-empty strong { color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-empty-icon { background:#172554 !important; color:#60a5fa !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-table th { background:#111827 !important; border-color:#334155 !important; color:#93c5fd !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-table td { background:#0f172a !important; border-color:#263449 !important; color:#e2e8f0 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-table tbody tr:hover td { background:#111827 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-facility-name,
+    :is(html.dark-mode, body.dark-mode) .archive-date { color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-meta,
+    :is(html.dark-mode, body.dark-mode) .archive-by,
+    :is(html.dark-mode, body.dark-mode) .archive-reason-text { color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-facility-icon { background:#172554 !important; color:#60a5fa !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-pill { background:#172554 !important; color:#bfdbfe !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-pill.neutral { background:#1e293b !important; color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-reason { background:#111827 !important; border-color:#334155 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-link-btn { background:#172554 !important; border-color:#1e40af !important; color:#bfdbfe !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-retention-pill { background:#431407 !important; border-color:#9a3412 !important; color:#fed7aa !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-pagination { background:#111827 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-page-link { background:#1e293b !important; color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-modal,
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-overlay { background:rgba(2,6,23,.76) !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-modal-panel,
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-panel { background:#0f172a !important; border:1px solid #334155; }
+    :is(html.dark-mode, body.dark-mode) .archive-modal-label { color:#93c5fd !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-modal-title,
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-title { color:#f8fafc !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-modal-text { background:#111827 !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-head { border-color:#334155 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-message { color:#cbd5e1 !important; }
+    :is(html.dark-mode, body.dark-mode) .archive-confirm-btn.cancel { background:#1e293b !important; color:#e2e8f0 !important; }
 
     @media (max-width: 1180px) {
         .archive-toolbar {

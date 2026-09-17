@@ -208,13 +208,13 @@
     }
 </style>
 
+@if($submetersEnabled)
 <div class="ems-switcher">
     <a href="{{ route('modules.energy-monitoring.index') }}" class="ems-tab{{ $energyTab === 'facility' ? ' active' : '' }}">
         <i class="fa-solid fa-gauge-high"></i> Main Meter
     </a>
-    @if($submetersEnabled)
-        <a href="{{ route('modules.submeters.monitoring') }}" class="ems-tab{{ $energyTab === 'sub' ? ' active' : '' }}">
-            <i class="fa-solid fa-network-wired"></i> Submeter
-        </a>
-    @endif
+    <a href="{{ route('modules.submeters.monitoring') }}" class="ems-tab{{ $energyTab === 'sub' ? ' active' : '' }}">
+        <i class="fa-solid fa-network-wired"></i> Submeter
+    </a>
 </div>
+@endif

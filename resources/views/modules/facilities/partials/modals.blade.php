@@ -39,8 +39,7 @@
 
 body.dark-mode #addFacilityModal .modal-content,
 body.dark-mode #editFacilityModal .modal-content,
-body.dark-mode #resetBaselineModal .modal-content,
-body.dark-mode #deleteFacilityModal .modal-content {
+body.dark-mode #resetBaselineModal .modal-content {
     background: #111827 !important;
     color: #e2e8f0 !important;
     border: 1px solid #334155;
@@ -69,8 +68,7 @@ body.dark-mode #resetBaselineModal textarea {
 
 body.dark-mode #addFacilityModal .energy-modal-btn.cancel,
 body.dark-mode #editFacilityModal .energy-modal-btn.cancel,
-body.dark-mode #resetBaselineModal .reset-modal-btn.cancel,
-body.dark-mode #deleteFacilityModal .delete-modal-btn.cancel {
+body.dark-mode #resetBaselineModal .reset-modal-btn.cancel {
     background: #1f2937 !important;
     color: #e2e8f0 !important;
 }
@@ -546,88 +544,3 @@ document.addEventListener('DOMContentLoaded', function () {
         </form>
     </div>
 </div>
-
-<!-- Delete Facility Modal (centered, fixed, non-interactive background) -->
-<style>
-#deleteFacilityModal {
-    display: none;
-    position: fixed;
-    z-index: 99999;
-    left: 0; top: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.18);
-    justify-content: center;
-    align-items: center;
-    pointer-events: auto;
-}
-#deleteFacilityModal .modal-content {
-    max-width: 350px;
-    background: #fff7f7;
-    border-radius: 18px;
-    box-shadow: 0 8px 32px rgba(225,29,72,0.13);
-    padding: 32px 28px;
-    position: relative;
-    margin: 0;
-}
-#deleteFacilityModal .modal-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #e11d48;
-    cursor: pointer;
-}
-#deleteFacilityModal.open {
-    display: flex !important;
-}
-</style>
-<div id="deleteFacilityModal" class="modal-overlay" style="display:none;align-items:center;justify-content:center;z-index:9999;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);">
-        <div class="modal-content">
-                <button class="modal-close" type="button" onclick="document.getElementById('deleteFacilityModal').style.display='none'">&times;</button>
-                <h2 style="margin-bottom:10px;font-size:1.3rem;font-weight:700;color:#e11d48;">Delete Facility</h2>
-                <div style="font-size:1.02rem;color:#b91c1c;margin-bottom:18px;">Delete this facility? It will be moved to Archive. Related records are preserved and can be restored later.</div>
-                <form id="deleteFacilityForm" method="POST" style="display:flex;flex-direction:column;gap:16px;">
-                        @csrf
-                        @method('DELETE')
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <label for="archive_reason" style="font-weight:700;color:#334155;">Reason for Delete <span style="color:#e11d48;">*</span></label>
-                            <textarea
-                                id="archive_reason"
-                                name="archive_reason"
-                                rows="3"
-                                maxlength="500"
-                                required
-                                placeholder="State why this facility is being deleted to archive (e.g. duplicate, decommissioned, transferred, closed)."
-                                style="width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;"
-                            >{{ old('archive_reason') }}</textarea>
-                            <div style="font-size:0.86rem;color:#64748b;">Required. This will appear in the Facility Archive record.</div>
-                        </div>
-                        <button type="button" class="delete-modal-btn cancel" onclick="document.getElementById('deleteFacilityModal').style.display='none'" style="padding:10px 0;border:none;border-radius:8px;font-weight:600;">Cancel</button>
-                        <button type="submit" class="delete-modal-btn delete" style="padding:12px 0;border:none;border-radius:8px;font-weight:700;font-size:1.08rem;">Delete</button>
-                </form>
-        </div>
-</div>
-<script>
-// Call this function and pass the facility ID before showing the modal
-/**
- * Show delete modal and set form action dynamically.
- * @param {number|string} facilityId
- * @param {string} [route] Optional. If provided, will use this as the form action. Otherwise, defaults to /modules/facilities/{id}
- */
-function openDeleteFacilityModal(facilityId, route) {
-    var form = document.getElementById('deleteFacilityForm');
-    var reasonInput = document.getElementById('archive_reason');
-    if (form) {
-        if (route) {
-            form.action = route;
-        } else {
-            form.action = '/modules/facilities/' + facilityId;
-        }
-    }
-    if (reasonInput) {
-        reasonInput.value = '';
-    }
-    document.getElementById('deleteFacilityModal').style.display = 'flex';
-}
-</script>

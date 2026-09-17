@@ -1597,6 +1597,45 @@
     body.dark-mode .panel.tips-panel > .panel-head { border-color: #334155; }
     body.dark-mode .feature-shell.checklist-page,
     body.dark-mode .feature-shell.goal-page,
+    /* Dark Mode */
+    body.dark-mode .feature-shell { background: #0f172a !important; border-color: #334155 !important; }
+    body.dark-mode .feature-shell.checklist-page, body.dark-mode .feature-shell.goal-page { background: #0f172a !important; }
+    body.dark-mode .feature-kicker { color: #818cf8; }
+    body.dark-mode .feature-status.enabled { background: rgba(16,185,129,.2) !important; color: #6ee7b7 !important; border: 1px solid rgba(16,185,129,.4) !important; }
+    body.dark-mode .feature-status.coming-soon { background: rgba(245,158,11,.2) !important; color: #fde047 !important; border: 1px solid rgba(245,158,11,.4) !important; }
+    body.dark-mode .panel { background: #18181b; border-color: #334155; }
+    body.dark-mode .panel-head { border-color: #334155; }
+    body.dark-mode .stat-card { background: #18181b; border-color: #334155; }
+    body.dark-mode .stat-card-icon.green { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .stat-card-icon.blue { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .stat-card-icon.amber { background: rgba(245,158,11,.2); color: #fbbf24; }
+    body.dark-mode .summary-period { background: #172554; border-color: #1e40af; color: #cbd5e1; }
+    body.dark-mode .summary-period i, body.dark-mode .summary-period strong { color: #93c5fd; }
+    body.dark-mode .empty-data-alert { background: #422006 !important; border-color: #854d0e !important; color: #fef08a !important; }
+    body.dark-mode .empty-data-alert-icon { color: #fbbf24 !important; }
+    body.dark-mode .empty-data-alert-content h4 { color: #fef08a !important; }
+    body.dark-mode .empty-data-alert-content p { color: #fde047 !important; }
+    body.dark-mode .empty-action-btn { background: #18181b !important; border-color: #b45309 !important; color: #fde047 !important; }
+    body.dark-mode .empty-action-btn.primary { background: #d97706 !important; color: #fff !important; }
+    body.dark-mode .btn-secondary { background: #1e293b !important; border-color: #475569 !important; color: #cbd5e1 !important; }
+    body.dark-mode .btn-secondary:hover { background: #334155 !important; color: #f8fafc !important; }
+    body.dark-mode .back-link { color: #60a5fa; }
+    body.dark-mode .preset-chips-wrap { background: #18181b; border-color: #334155; }
+    body.dark-mode .preset-chips-label { color: #94a3b8; }
+    body.dark-mode .preset-chip { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+    body.dark-mode .preset-chip:hover { background: #334155; color: #f8fafc; }
+    body.dark-mode .checklist-overview-icon.blue { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .checklist-overview-icon.amber { background: rgba(245,158,11,.2); color: #fbbf24; }
+    body.dark-mode .checklist-overview-icon.indigo { background: rgba(99,102,241,.2); color: #a5b4fc; }
+    body.dark-mode .checklist-section { background: #18181b; border-color: #334155; }
+    body.dark-mode .checklist-section-header { background: #111827; border-color: #334155; }
+    body.dark-mode .checklist-section-header.opening { background: linear-gradient(135deg, #271a06 0%, #3e2609 100%); border-color: #713f12; }
+    body.dark-mode .checklist-section-header.closing { background: linear-gradient(135deg, #171831 0%, #1e1b4b 100%); border-color: #3730a3; }
+    body.dark-mode .checklist-section-title { color: #f8fafc; }
+    body.dark-mode .checklist-section-desc { color: #94a3b8; }
+    body.dark-mode .checklist-section-icon.opening { background: #422006; color: #fde047; }
+    body.dark-mode .checklist-section-icon.closing { background: #312e81; color: #a5b4fc; }
+    body.dark-mode .checklist-count-badge { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
     body.dark-mode .checklist-task-form { background: #0f172a; border-color: #334155; }
     body.dark-mode .checklist-filter,
     body.dark-mode .checklist-overview-card,
@@ -1613,7 +1652,12 @@
     body.dark-mode .checklist-empty-copy { color: #94a3b8; }
     body.dark-mode .checklist-task-modal,
     body.dark-mode .checklist-modal-close,
-    body.dark-mode .checklist-routine-preview { background: #111827; border-color: #334155; color: #e2e8f0; }
+    body.dark-mode .checklist-routine-preview { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+    body.dark-mode .checklist-task-modal .checklist-modal-head { background: #0f172a; border-color: #334155; }
+    body.dark-mode .checklist-task-modal .checklist-modal-actions { background: #0f172a; border-color: #334155; }
+    body.dark-mode .checklist-task-modal .checklist-toolbar select { background: #111827; color: #f8fafc; border-color: #334155; }
+    body.dark-mode .checklist-task-modal .checklist-toolbar select option { background: #111827; color: #f8fafc; }
+    body.dark-mode .checklist-task-modal .checklist-toolbar select optgroup { background: #0f172a; color: #93c5fd; }
     body.dark-mode .goal-card,
     body.dark-mode .goal-metric,
     body.dark-mode .goal-create-form { background: #111827; border-color: #334155; }
@@ -1632,11 +1676,19 @@
     body.dark-mode .goal-action-plan { background: #0f172a; color: #cbd5e1; }
     body.dark-mode .goal-modal,
     body.dark-mode .goal-modal-head,
-    body.dark-mode .goal-modal-footer { background: #0f172a; color: #f8fafc; }
+    body.dark-mode .goal-modal-footer { background: #0f172a !important; color: #f8fafc; border-color: #334155 !important; }
     body.dark-mode .goal-modal-head,
     body.dark-mode .goal-modal-footer,
     body.dark-mode .goal-modal-close { border-color: #334155; }
     body.dark-mode .goal-modal-close { background: #111827; color: #cbd5e1; }
+    body.dark-mode .goal-modal input, body.dark-mode .goal-modal select, body.dark-mode .goal-modal textarea { background: #111827 !important; border-color: #334155 !important; color: #f8fafc !important; }
+    body.dark-mode .goal-modal input::placeholder, body.dark-mode .goal-modal textarea::placeholder { color: #64748b !important; }
+    body.dark-mode .goal-status { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .goal-status.upcoming { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .goal-status.at-risk { background: rgba(245,158,11,.2); color: #fbbf24; }
+    body.dark-mode .goal-status.failed { background: rgba(239,68,68,.2); color: #fca5a5; }
+    body.dark-mode .goal-status.expired { background: rgba(245,158,11,.2); color: #fde047; }
+    body.dark-mode .goal-status.no-data { background: #334155; color: #cbd5e1; }
     body.dark-mode .tip-filter-card { background: #111827; border-color: #334155; }
     body.dark-mode .record-context {
         border-color: #1e40af;
@@ -1753,10 +1805,27 @@
     body.dark-mode .field label {
         color: #cbd5e1;
     }
+    body.dark-mode .field input,
+    body.dark-mode .field select,
+    body.dark-mode .field textarea {
+        background: #111827;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    body.dark-mode .field input::placeholder,
+    body.dark-mode .field textarea::placeholder {
+        color: #64748b;
+    }
     body.dark-mode .simple-table th {
         background: #111827;
         color: #cbd5e1;
     }
+    body.dark-mode .rec-cat-badge { background: #1f2937 !important; color: #cbd5e1 !important; border-color: #374151 !important; }
+    body.dark-mode .rec-cat-badge.cat-ac { background: #082f49 !important; color: #7dd3fc !important; border-color: #0369a1 !important; }
+    body.dark-mode .rec-cat-badge.cat-lighting { background: #422006 !important; color: #fde047 !important; border-color: #854d0e !important; }
+    body.dark-mode .rec-cat-badge.cat-equipment { background: #1e293b !important; color: #cbd5e1 !important; border-color: #475569 !important; }
+    body.dark-mode .rec-cat-badge.cat-maintenance { background: #4c0519 !important; color: #fda4af !important; border-color: #be123c !important; }
+    body.dark-mode .rec-cat-badge.cat-general { background: #052e16 !important; color: #86efac !important; border-color: #15803d !important; }
     @media (max-width: 960px) {
         .feature-grid {
             grid-template-columns: 1fr;

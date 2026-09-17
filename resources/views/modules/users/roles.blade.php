@@ -210,6 +210,7 @@
     .role-perm-list { display: flex; flex-wrap: wrap; gap: 8px; }
     body.dark-mode .roles-page { background:linear-gradient(155deg,#0f172a,#111827); border-color:#334155; box-shadow:0 18px 38px rgba(2,6,23,.38); }
     body.dark-mode .roles-hero { background:linear-gradient(135deg,#14213a,#111827); border-color:#334155; box-shadow:none; }
+    body.dark-mode .roles-eyebrow { color: #60a5fa; }
     body.dark-mode .roles-title,
     body.dark-mode .roles-panel h2,
     body.dark-mode .roles-stat-value,
@@ -230,23 +231,104 @@
     body.dark-mode .roles-field > input,
     body.dark-mode .roles-field > textarea { background:#0b1220; border-color:#475569; color:#e2e8f0; }
     body.dark-mode .permission-search,
-    body.dark-mode .permission-tool-btn,
     body.dark-mode .role-list-search,
     body.dark-mode .badge-color-control input[type="color"],
     body.dark-mode .badge-color-control input[type="text"] { background:#0b1220; border-color:#475569; color:#e2e8f0; }
+    body.dark-mode .permission-tool-btn {
+        background:#0b1220;
+        border-color:#475569;
+        color:#cbd5e1;
+    }
+    body.dark-mode .permission-tool-btn:hover {
+        border-color:#3b82f6;
+        background:#1e3a8a;
+        color:#bfdbfe;
+    }
     body.dark-mode .permission-selection-meta { color:#94a3b8; }
-    body.dark-mode .permission-selection-count { color:#93c5fd; }
+    body.dark-mode .permission-selection-count {
+        background: #1e3a8a !important;
+        color: #bfdbfe !important;
+        border: 1px solid #3b82f6 !important;
+    }
     body.dark-mode .perm-item { background:#111827; border-color:#334155; }
     body.dark-mode .perm-item.is-selected { border-color:#3b82f6; background:#172b4d; box-shadow:inset 3px 0 0 #60a5fa; }
+    body.dark-mode .roles-actions .btn-secondary {
+        background: #172033;
+        color: #bfdbfe;
+        border-color: #334155;
+    }
+    body.dark-mode .roles-actions .btn-secondary:hover {
+        background: #1e293b;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
     body.dark-mode .roles-note { background:#111827; border-color:#334155; }
     body.dark-mode .roles-table th { background:#172033; color:#cbd5e1; border-color:#334155; }
     body.dark-mode .roles-table td { background:#0f172a; color:#e2e8f0; border-color:#263449; }
     body.dark-mode .roles-table tbody tr:hover td { background:#1b293d; }
     body.dark-mode .role-description-text { color:#e2e8f0; }
     body.dark-mode .role-user-breakdown { color:#94a3b8; }
+    body.dark-mode .role-pill {
+        background: #1e293b !important;
+        color: #cbd5e1 !important;
+        border: 1px solid #334155 !important;
+    }
+    body.dark-mode .role-pill.system {
+        background: #172554 !important;
+        color: #bfdbfe !important;
+        border: 1px solid #1e40af !important;
+    }
+    body.dark-mode .role-pill.custom {
+        background: #2e1065 !important;
+        color: #d8b4fe !important;
+        border: 1px solid #7e22ce !important;
+    }
+    body.dark-mode .role-perm {
+        background: #052e16 !important;
+        color: #86efac !important;
+        border: 1px solid #166534 !important;
+    }
+    body.dark-mode .role-perm-more {
+        background: #1e3a8a !important;
+        color: #bfdbfe !important;
+        border: 1px solid #3b82f6 !important;
+    }
+    body.dark-mode .role-perm-more:hover {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+    body.dark-mode .role-btn {
+        background: #172033;
+        border-color: #334155;
+        color: #93c5fd;
+    }
+    body.dark-mode .role-btn:hover {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+        color: #bfdbfe;
+    }
+    body.dark-mode .role-btn.delete {
+        background: #4c0519;
+        border-color: #be123c;
+        color: #fda4af;
+    }
+    body.dark-mode .role-btn.delete:hover {
+        background: #881337;
+        border-color: #e11d48;
+        color: #ffffff;
+    }
+    body.dark-mode .role-btn.disabled {
+        opacity: 0.35;
+        background: #111827;
+        border-color: #334155;
+        color: #64748b;
+    }
     body.dark-mode .roles-table th:last-child,
     body.dark-mode .roles-table td:last-child { box-shadow:-8px 0 16px rgba(2,6,23,.22); }
+    body.dark-mode .role-perm-modal { background: rgba(0, 0, 0, 0.7); }
+    body.dark-mode .role-perm-modal-card { background: #0f172a; border-color: #334155; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
     body.dark-mode .role-perm-close { background:#111827; border-color:#475569; color:#cbd5e1; }
+    body.dark-mode .role-perm-close:hover { background:#1e293b; color:#ffffff; }
     @media (max-width: 1024px) {
         .roles-page { padding: 16px; border-radius: 18px; }
         .roles-grid { grid-template-columns: 1fr; }

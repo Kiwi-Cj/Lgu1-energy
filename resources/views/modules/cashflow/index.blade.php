@@ -378,34 +378,34 @@ window.addEventListener('DOMContentLoaded', function() {
                         @foreach($monthlyBreakdown as $row)
                             <tr class="{{ $row['has_record'] ? 'row-active' : 'row-upcoming' }}">
                                 <td>
-                                    <strong>{{ $row['month_name'] }} {{ $fiscalYear }}</strong>
+                                    <strong class="cf-month-title">{{ $row['month_name'] }} {{ $fiscalYear }}</strong>
                                 </td>
 
                                 @if($hasEnactedBudget)
-                                    <td style="text-align:right; font-weight:700; color:#475569;">
+                                    <td class="cf-budget-val" style="text-align:right; font-weight:700;">
                                         ₱{{ number_format($row['allocated_budget'], 2) }}
                                     </td>
                                 @endif
 
-                                <td style="text-align:right; font-weight:800; color:{{ $row['has_record'] ? '#0f172a' : '#94a3b8' }};">
+                                <td class="cf-outflow-val {{ $row['has_record'] ? 'has-record' : 'no-record' }}" style="text-align:right; font-weight:800;">
                                     @if($row['has_record'])
                                         ₱{{ number_format($row['actual_cost'], 2) }}
                                     @else
-                                        <span style="color:#94a3b8; font-weight:500;">&mdash;</span>
+                                        <span class="cf-dim-dash">&mdash;</span>
                                     @endif
                                 </td>
-                                <td style="text-align:right;">
+                                <td class="cf-kwh-val" style="text-align:right;">
                                     @if($row['has_record'])
-                                        {{ number_format($row['actual_kwh'], 1) }} <small style="color:#64748b;">kWh</small>
+                                        {{ number_format($row['actual_kwh'], 1) }} <small>kWh</small>
                                     @else
-                                        <span style="color:#94a3b8;">&mdash;</span>
+                                        <span class="cf-dim-dash">&mdash;</span>
                                     @endif
                                 </td>
                                 <td style="text-align:center;">
                                     @if($row['has_record'])
                                         <span class="cf-rate-chip">₱{{ number_format($row['avg_rate'], 2) }}/kWh</span>
                                     @else
-                                        <span style="color:#94a3b8;">&mdash;</span>
+                                        <span class="cf-dim-dash">&mdash;</span>
                                     @endif
                                 </td>
 
@@ -416,7 +416,7 @@ window.addEventListener('DOMContentLoaded', function() {
                                                 {{ $row['variance'] >= 0 ? '+' : '' }}₱{{ number_format($row['variance'], 2) }}
                                             </span>
                                         @else
-                                            <span style="color:#94a3b8;">&mdash;</span>
+                                            <span class="cf-dim-dash">&mdash;</span>
                                         @endif
                                     </td>
                                 @else
@@ -434,18 +434,18 @@ window.addEventListener('DOMContentLoaded', function() {
                                                 <span class="cf-mom-badge mom-flat">0.0%</span>
                                             @endif
                                         @else
-                                            <span style="color:#94a3b8;">&mdash;</span>
+                                            <span class="cf-dim-dash">&mdash;</span>
                                         @endif
                                     </td>
                                 @endif
 
-                                <td style="text-align:right; font-weight:750; color:#047857;">
+                                <td class="cf-savings-val" style="text-align:right; font-weight:750;">
                                     @if($row['has_record'] && $row['savings'] > 0)
                                         ₱{{ number_format($row['savings'], 2) }}
                                     @elseif($row['has_record'])
                                         ₱0.00
                                     @else
-                                        <span style="color:#94a3b8;">&mdash;</span>
+                                        <span class="cf-dim-dash">&mdash;</span>
                                     @endif
                                 </td>
                                 <td style="text-align:center;">
@@ -486,7 +486,7 @@ window.addEventListener('DOMContentLoaded', function() {
                             @else
                                 <td style="text-align:center;">&mdash;</td>
                             @endif
-                            <td style="text-align:right; color:#047857;">₱{{ number_format($costSavingsYtd, 2) }}</td>
+                            <td class="cf-savings-val" style="text-align:right;">₱{{ number_format($costSavingsYtd, 2) }}</td>
                             <td colspan="2" style="text-align:center;">
                                 <strong>{{ $approvedBillsCount }} / 12 Months Billed</strong>
                             </td>
@@ -603,11 +603,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const outflowData = {!! json_encode($chartOutflowData) !!};
     const savingsData = {!! json_encode($chartSavingsData) !!};
 
+    const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+    const gridColor = isDarkMode ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.6)';
+    const textColor = isDarkMode ? '#94a3b8' : '#64748b';
+    const legendColor = isDarkMode ? '#cbd5e1' : '#334155';
+
     const datasets = [
         {
             label: 'Actual Bill Outflow (PHP)',
             data: outflowData,
-            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            backgroundColor: 'rgba(239, 68, 68, 0.85)',
             borderColor: '#dc2626',
             borderWidth: 1.5,
             borderRadius: 6,
@@ -616,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {
             label: 'Cost Savings (PHP)',
             data: savingsData,
-            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            backgroundColor: 'rgba(16, 185, 129, 0.85)',
             borderColor: '#059669',
             borderWidth: 1.5,
             borderRadius: 6,
@@ -629,17 +634,17 @@ document.addEventListener('DOMContentLoaded', function () {
             label: 'Monthly Budget Limit (PHP)',
             data: budgetData,
             type: 'line',
-            borderColor: '#2563eb',
+            borderColor: '#3b82f6',
             borderWidth: 2.5,
             borderDash: [5, 5],
-            pointBackgroundColor: '#2563eb',
+            pointBackgroundColor: '#3b82f6',
             pointRadius: 3.5,
             fill: false,
             order: 1
         });
     }
 
-    new Chart(ctx, {
+    const trendChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -657,6 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     position: 'top',
                     labels: {
                         boxWidth: 12,
+                        color: legendColor,
                         font: { size: 12, weight: '600' }
                     }
                 },
@@ -677,22 +683,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        color: textColor,
                         callback: function(value) {
                             return '₱' + (value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value);
                         },
                         font: { size: 11 }
                     },
                     grid: {
-                        color: 'rgba(226, 232, 240, 0.6)'
+                        color: gridColor
                     }
                 },
                 x: {
                     grid: { display: false },
+                    ticks: { color: textColor },
                     font: { size: 11, weight: '600' }
                 }
             }
         }
     });
+
+    const updateChartTheme = () => {
+        if (!trendChart) return;
+        const isDark = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+        const gColor = isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.6)';
+        const tColor = isDark ? '#94a3b8' : '#64748b';
+        const lColor = isDark ? '#cbd5e1' : '#334155';
+
+        if (trendChart.options.plugins && trendChart.options.plugins.legend) {
+            trendChart.options.plugins.legend.labels.color = lColor;
+        }
+        if (trendChart.options.scales && trendChart.options.scales.y) {
+            trendChart.options.scales.y.ticks.color = tColor;
+            trendChart.options.scales.y.grid.color = gColor;
+        }
+        if (trendChart.options.scales && trendChart.options.scales.x) {
+            trendChart.options.scales.x.ticks.color = tColor;
+        }
+        trendChart.update();
+    };
+
+    const themeObserver = new MutationObserver(updateChartTheme);
+    if (document.body) themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    if (document.documentElement) themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
 
@@ -1372,26 +1404,96 @@ body.dark-mode .cf-btn-secondary:hover {
 }
 
 /* DARK MODE */
-body.dark-mode .cf-title-wrap h2 { color: #f8fafc; }
-body.dark-mode .cf-card { background: #1e293b; border-color: #334155; }
-body.dark-mode .cf-card-header h3 { color: #f8fafc; }
-body.dark-mode .cf-kpi-card { background: #1e293b; }
-body.dark-mode .cf-kpi-value { color: #f8fafc; }
-body.dark-mode .cf-table th { background: #0f172a; color: #94a3b8; border-color: #334155; }
-body.dark-mode .cf-table td { border-color: #334155; color: #e2e8f0; }
-body.dark-mode .cf-table-total-row td { background: #0f172a; border-color: #334155; }
-body.dark-mode .cf-select { background: #1e293b; color: #f8fafc; border-color: #475569; }
-body.dark-mode .cf-modal-card { background: #1e293b; }
-body.dark-mode .cf-modal-header { border-color: #334155; }
-body.dark-mode .cf-modal-header h3 { color: #f8fafc; }
-body.dark-mode .cf-modal-info { background: #0f172a; border-color: #334155; }
-body.dark-mode .cf-modal-hint-box { background: #1e3a8a; border-color: #3b82f6; color: #bfdbfe; }
-body.dark-mode .cf-info-row strong { color: #f8fafc; }
-body.dark-mode .cf-modal-input { background: #0f172a; border-color: #475569; color: #f8fafc; }
-body.dark-mode .cf-modal-textarea { background: #0f172a; border-color: #475569; color: #f8fafc; }
-body.dark-mode .cf-modal-footer { background: #0f172a; border-color: #334155; }
-body.dark-mode .cf-projection-banner.info { background: #1e3a8a; border-color: #3b82f6; color: #bfdbfe; }
-body.dark-mode .cf-rate-chip { background: #334155; color: #e2e8f0; }
-body.dark-mode .cf-badge-neutral { background: #334155; color: #cbd5e1; border-color: #475569; }
+body.dark-mode .cf-title-wrap h2, html.dark-mode .cf-title-wrap h2 { color: #f8fafc; }
+body.dark-mode .cf-card, html.dark-mode .cf-card { background: #1e293b; border-color: #334155; }
+body.dark-mode .cf-card-header h3, html.dark-mode .cf-card-header h3 { color: #f8fafc; }
+body.dark-mode .cf-card-header p, html.dark-mode .cf-card-header p { color: #94a3b8; }
+body.dark-mode .cf-legend, html.dark-mode .cf-legend { color: #cbd5e1; }
+body.dark-mode .dot.upcoming, html.dark-mode .dot.upcoming { background: #475569; }
+
+/* KPI Cards & Badges in Dark Mode */
+body.dark-mode .cf-kpi-card, html.dark-mode .cf-kpi-card { background: #1e293b; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+body.dark-mode .cf-kpi-title, html.dark-mode .cf-kpi-title { color: #94a3b8; }
+body.dark-mode .cf-kpi-value, html.dark-mode .cf-kpi-value { color: #f8fafc; }
+body.dark-mode .cf-kpi-meta, html.dark-mode .cf-kpi-meta { color: #94a3b8; border-top-color: #334155; }
+body.dark-mode .cf-kpi-meta span strong, html.dark-mode .cf-kpi-meta span strong { color: #f8fafc; }
+
+body.dark-mode .text-rose, html.dark-mode .text-rose { color: #fb7185 !important; }
+body.dark-mode .text-indigo, html.dark-mode .text-indigo { color: #818cf8 !important; }
+body.dark-mode .text-emerald, html.dark-mode .text-emerald { color: #34d399 !important; }
+body.dark-mode .text-cyan, html.dark-mode .text-cyan { color: #22d3ee !important; }
+body.dark-mode .text-amber, html.dark-mode .text-amber { color: #fbbf24 !important; }
+body.dark-mode .text-danger, html.dark-mode .text-danger { color: #f87171 !important; }
+
+body.dark-mode .bg-indigo, html.dark-mode .bg-indigo { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+body.dark-mode .bg-rose, html.dark-mode .bg-rose { background: rgba(244, 63, 94, 0.2); color: #fda4af; }
+body.dark-mode .bg-emerald, html.dark-mode .bg-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+body.dark-mode .bg-cyan, html.dark-mode .bg-cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; }
+body.dark-mode .bg-amber, html.dark-mode .bg-amber { background: rgba(245, 158, 11, 0.2); color: #fde047; }
+
+body.dark-mode .badge-custom, html.dark-mode .badge-custom,
+body.dark-mode .badge-success, html.dark-mode .badge-success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4); }
+body.dark-mode .badge-estimated, html.dark-mode .badge-estimated { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4); }
+body.dark-mode .badge-neutral, html.dark-mode .badge-neutral { background: #334155; color: #cbd5e1; border-color: #475569; }
+
+/* Progress bar */
+body.dark-mode .cf-progress-bar-bg, html.dark-mode .cf-progress-bar-bg { background: #334155; }
+body.dark-mode .cf-progress-info, html.dark-mode .cf-progress-info { color: #94a3b8; }
+body.dark-mode .cf-progress-info strong, html.dark-mode .cf-progress-info strong { color: #f8fafc; }
+
+/* Projection Banners */
+body.dark-mode .cf-projection-banner.info, html.dark-mode .cf-projection-banner.info { background: #172554; border-color: #1e40af; color: #bfdbfe; }
+body.dark-mode .cf-projection-banner.surplus, html.dark-mode .cf-projection-banner.surplus { background: #052e16; border-color: #15803d; color: #86efac; }
+body.dark-mode .cf-projection-banner.deficit, html.dark-mode .cf-projection-banner.deficit { background: #450a0a; border-color: #991b1b; color: #fca5a5; }
+
+/* Table and Ledger in Dark Mode */
+body.dark-mode .cf-table th, html.dark-mode .cf-table th { background: #0f172a; color: #94a3b8; border-color: #334155; }
+body.dark-mode .cf-table td, html.dark-mode .cf-table td { border-color: #334155; color: #cbd5e1; }
+body.dark-mode .cf-table tr:hover td, html.dark-mode .cf-table tr:hover td { background: #0f172a !important; }
+body.dark-mode .cf-table-total-row td, html.dark-mode .cf-table-total-row td { background: #0b1329 !important; border-color: #334155 !important; color: #f8fafc !important; }
+body.dark-mode .cf-table-total-row strong, html.dark-mode .cf-table-total-row strong { color: #f8fafc; }
+
+body.dark-mode .cf-month-title, html.dark-mode .cf-month-title { color: #f8fafc !important; }
+body.dark-mode .cf-budget-val, html.dark-mode .cf-budget-val { color: #e2e8f0 !important; }
+body.dark-mode .cf-outflow-val.has-record, html.dark-mode .cf-outflow-val.has-record { color: #f8fafc !important; }
+body.dark-mode .cf-outflow-val.no-record, html.dark-mode .cf-outflow-val.no-record,
+body.dark-mode .cf-dim-dash, html.dark-mode .cf-dim-dash { color: #64748b !important; }
+body.dark-mode .cf-kwh-val, html.dark-mode .cf-kwh-val { color: #e2e8f0 !important; }
+body.dark-mode .cf-kwh-val small, html.dark-mode .cf-kwh-val small { color: #94a3b8 !important; }
+body.dark-mode .cf-savings-val, html.dark-mode .cf-savings-val { color: #34d399 !important; }
+body.dark-mode .cf-rate-chip, html.dark-mode .cf-rate-chip { background: #334155 !important; color: #f1f5f9 !important; border: 1px solid #475569; }
+
+/* Badges & Pills */
+body.dark-mode .cf-mom-badge.mom-up, html.dark-mode .cf-mom-badge.mom-up { background: rgba(239, 68, 68, 0.2) !important; color: #fca5a5 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; }
+body.dark-mode .cf-mom-badge.mom-down, html.dark-mode .cf-mom-badge.mom-down { background: rgba(16, 185, 129, 0.2) !important; color: #6ee7b7 !important; border: 1px solid rgba(16, 185, 129, 0.35) !important; }
+body.dark-mode .cf-mom-badge.mom-flat, html.dark-mode .cf-mom-badge.mom-flat { background: #334155 !important; color: #94a3b8 !important; border: 1px solid #475569 !important; }
+
+body.dark-mode .status-paid, html.dark-mode .status-paid,
+body.dark-mode .status-within, html.dark-mode .status-within { background: rgba(16, 185, 129, 0.2) !important; color: #6ee7b7 !important; border: 1px solid rgba(16, 185, 129, 0.35) !important; }
+body.dark-mode .status-warning, html.dark-mode .status-warning { background: rgba(245, 158, 11, 0.2) !important; color: #fde047 !important; border: 1px solid rgba(245, 158, 11, 0.35) !important; }
+body.dark-mode .status-danger, html.dark-mode .status-danger { background: rgba(239, 68, 68, 0.2) !important; color: #fca5a5 !important; border: 1px solid rgba(239, 68, 68, 0.35) !important; }
+body.dark-mode .status-upcoming, html.dark-mode .status-upcoming { background: #334155 !important; color: #94a3b8 !important; border: 1px solid #475569 !important; }
+
+body.dark-mode .cf-action-link, html.dark-mode .cf-action-link { color: #60a5fa !important; }
+body.dark-mode .cf-action-link:hover, html.dark-mode .cf-action-link:hover { background: #1e3a8a !important; }
+
+/* Modal in Dark Mode */
+body.dark-mode .cf-modal-card, html.dark-mode .cf-modal-card { background: #1e293b; border: 1px solid #334155; }
+body.dark-mode .cf-modal-header, html.dark-mode .cf-modal-header { border-color: #334155; }
+body.dark-mode .cf-modal-header h3, html.dark-mode .cf-modal-header h3 { color: #f8fafc; }
+body.dark-mode .cf-modal-close, html.dark-mode .cf-modal-close { color: #94a3b8; }
+body.dark-mode .cf-modal-close:hover, html.dark-mode .cf-modal-close:hover { color: #f8fafc; }
+body.dark-mode .cf-modal-info, html.dark-mode .cf-modal-info { background: #0f172a; border-color: #334155; }
+body.dark-mode .cf-info-row span, html.dark-mode .cf-info-row span { color: #94a3b8; }
+body.dark-mode .cf-info-row strong, html.dark-mode .cf-info-row strong { color: #f8fafc; }
+body.dark-mode .cf-modal-hint-box, html.dark-mode .cf-modal-hint-box { background: #172554; border-color: #1e40af; color: #bfdbfe; }
+body.dark-mode .cf-form-group label, html.dark-mode .cf-form-group label { color: #cbd5e1; }
+body.dark-mode .cf-suggest-btn, html.dark-mode .cf-suggest-btn { background: #334155; border-color: #475569; color: #cbd5e1; }
+body.dark-mode .cf-suggest-btn:hover, html.dark-mode .cf-suggest-btn:hover { background: #475569; color: #f8fafc; }
+body.dark-mode .cf-currency-symbol, html.dark-mode .cf-currency-symbol { color: #94a3b8; }
+body.dark-mode .cf-modal-input, html.dark-mode .cf-modal-input { background: #0f172a; border-color: #475569; color: #f8fafc; }
+body.dark-mode .cf-modal-textarea, html.dark-mode .cf-modal-textarea { background: #0f172a; border-color: #475569; color: #f8fafc; }
+body.dark-mode .cf-form-hint, html.dark-mode .cf-form-hint { color: #94a3b8; }
+body.dark-mode .cf-modal-footer, html.dark-mode .cf-modal-footer { background: #0f172a; border-color: #334155; }
 </style>
 @endsection

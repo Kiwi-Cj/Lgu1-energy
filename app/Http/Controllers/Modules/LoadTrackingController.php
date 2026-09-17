@@ -257,6 +257,12 @@ class LoadTrackingController extends Controller
             $equipmentQuery->where('category', $categoryFilter);
         }
 
+        // Filter by status if specified
+        $statusFilter = trim((string) $request->get('status', 'all'));
+        if ($statusFilter !== '' && $statusFilter !== 'all') {
+            $equipmentQuery->where('status', $statusFilter);
+        }
+
         // Filter by search keyword
         $search = trim((string) $request->get('search', ''));
         if ($search !== '') {
@@ -268,6 +274,7 @@ class LoadTrackingController extends Controller
         }
 
         $equipments = $equipmentQuery->orderByDesc('id')->get();
+        $activeEquipments = $equipments->filter(fn ($eq) => strtolower(trim((string) ($eq->status ?? 'active'))) !== 'inactive');
 
         // Rate per kWh resolution
         $latestRecord = EnergyRecord::query()
@@ -287,13 +294,15 @@ class LoadTrackingController extends Controller
             ? (float) $selectedFacility->baseline_kwh
             : null;
 
-        // Calculate summary metrics
+        // Calculate summary metrics (based on active operational equipment)
         $totalItems = $equipments->count();
-        $totalUnits = (int) $equipments->sum('quantity');
-        $totalConnectedWatts = (float) $equipments->sum(fn ($eq) => $eq->total_watts);
+        $activeItems = $activeEquipments->count();
+        $inactiveItems = $totalItems - $activeItems;
+        $totalUnits = (int) $activeEquipments->sum('quantity');
+        $totalConnectedWatts = (float) $activeEquipments->sum(fn ($eq) => $eq->total_watts);
         $totalConnectedKw = round($totalConnectedWatts / 1000, 2);
-        $totalDailyKwh = (float) $equipments->sum(fn ($eq) => $eq->daily_kwh);
-        $totalMonthlyKwh = (float) $equipments->sum(fn ($eq) => $eq->monthly_kwh);
+        $totalDailyKwh = (float) $activeEquipments->sum(fn ($eq) => $eq->daily_kwh);
+        $totalMonthlyKwh = (float) $activeEquipments->sum(fn ($eq) => $eq->monthly_kwh);
         $totalMonthlyCost = round($totalMonthlyKwh * $ratePerKwh, 2);
 
         // Baseline comparison & percentage
@@ -314,6 +323,8 @@ class LoadTrackingController extends Controller
 
         $summary = [
             'total_items' => $totalItems,
+            'active_items' => $activeItems,
+            'inactive_items' => $inactiveItems,
             'total_units' => $totalUnits,
             'total_connected_watts' => $totalConnectedWatts,
             'total_connected_kw' => $totalConnectedKw,
@@ -325,16 +336,16 @@ class LoadTrackingController extends Controller
             'baseline_variance' => $baselineVariance,
             'baseline_variance_percent' => $baselineVariancePercent,
             'baseline_status' => $baselineStatus,
-            'cooling_watts' => (float) $equipments->where('category', 'HVAC / Cooling')->sum(fn ($eq) => $eq->total_watts),
-            'lighting_watts' => (float) $equipments->where('category', 'Lighting')->sum(fn ($eq) => $eq->total_watts),
-            'cooling_lighting_watts' => (float) $equipments->whereIn('category', ['HVAC / Cooling', 'Lighting'])->sum(fn ($eq) => $eq->total_watts),
-            'pumps_watts' => (float) $equipments->where('category', 'Pumps & Motors')->sum(fn ($eq) => $eq->total_watts),
-            'it_watts' => (float) $equipments->where('category', 'IT & Office Equipment')->sum(fn ($eq) => $eq->total_watts),
+            'cooling_watts' => (float) $activeEquipments->where('category', 'HVAC / Cooling')->sum(fn ($eq) => $eq->total_watts),
+            'lighting_watts' => (float) $activeEquipments->where('category', 'Lighting')->sum(fn ($eq) => $eq->total_watts),
+            'cooling_lighting_watts' => (float) $activeEquipments->whereIn('category', ['HVAC / Cooling', 'Lighting'])->sum(fn ($eq) => $eq->total_watts),
+            'pumps_watts' => (float) $activeEquipments->where('category', 'Pumps & Motors')->sum(fn ($eq) => $eq->total_watts),
+            'it_watts' => (float) $activeEquipments->where('category', 'IT & Office Equipment')->sum(fn ($eq) => $eq->total_watts),
         ];
 
-        // Group equipment by category for Donut chart
+        // Group active equipment by category for Donut chart
         $categoryBreakdown = [];
-        $categoriesGrouped = $equipments->groupBy(function ($eq) {
+        $categoriesGrouped = $activeEquipments->groupBy(function ($eq) {
             return $eq->category ?: 'Other';
         });
 
@@ -358,7 +369,7 @@ class LoadTrackingController extends Controller
         usort($categoryBreakdown, fn ($a, $b) => $b['monthly_kwh'] <=> $a['monthly_kwh']);
 
         // Top 5 consuming equipment for Bar chart
-        $topConsumers = $equipments->sortByDesc(fn ($eq) => $eq->monthly_kwh)->take(5)->map(function ($eq) use ($totalMonthlyKwh, $ratePerKwh) {
+        $topConsumers = $activeEquipments->sortByDesc(fn ($eq) => $eq->monthly_kwh)->take(5)->map(function ($eq) use ($totalMonthlyKwh, $ratePerKwh) {
             $monthlyKwh = round($eq->monthly_kwh, 2);
             $pct = $totalMonthlyKwh > 0 ? round(($monthlyKwh / $totalMonthlyKwh) * 100, 1) : 0;
             return [
@@ -394,6 +405,7 @@ class LoadTrackingController extends Controller
             'categories' => self::CATEGORIES,
             'presets' => self::APPLIANCE_PRESETS,
             'categoryFilter' => $categoryFilter,
+            'statusFilter' => $statusFilter,
             'search' => $search,
             'canManage' => $canManage,
         ]);
@@ -410,6 +422,7 @@ class LoadTrackingController extends Controller
             'facility_id' => 'required|exists:facilities,id',
             'equipment_name' => 'required|string|max:191',
             'category' => 'nullable|string|max:100',
+            'status' => 'nullable|in:active,inactive',
             'location' => 'nullable|string|max:191',
             'meter_scope' => 'nullable|in:facility,main,sub',
             'facility_meter_id' => 'nullable|exists:facility_meters,id',
@@ -420,6 +433,8 @@ class LoadTrackingController extends Controller
             'operating_days_per_month' => 'required|integer|min:1|max:31',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        $validated['status'] = $validated['status'] ?? 'active';
 
         $meterScope = $validated['meter_scope'] ?? 'facility';
         if ($meterScope === 'main' && ! empty($validated['facility_meter_id'])) {
@@ -460,6 +475,7 @@ class LoadTrackingController extends Controller
         $validated = $request->validate([
             'equipment_name' => 'required|string|max:191',
             'category' => 'nullable|string|max:100',
+            'status' => 'nullable|in:active,inactive',
             'location' => 'nullable|string|max:191',
             'meter_scope' => 'nullable|in:facility,main,sub',
             'facility_meter_id' => 'nullable|exists:facility_meters,id',
@@ -470,6 +486,8 @@ class LoadTrackingController extends Controller
             'operating_days_per_month' => 'required|integer|min:1|max:31',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        $validated['status'] = $validated['status'] ?? ($equipment->status ?? 'active');
 
         $meterScope = $validated['meter_scope'] ?? 'facility';
         if ($meterScope === 'main' && ! empty($validated['facility_meter_id'])) {
@@ -496,6 +514,34 @@ class LoadTrackingController extends Controller
         return redirect()
             ->route('modules.load-tracking.index', ['facility_id' => $equipment->facility_id])
             ->with('success', "Equipment '{$equipment->equipment_name}' updated successfully!");
+    }
+
+    public function toggleStatus(Request $request, int $id)
+    {
+        $user = auth()->user();
+        if (! RoleAccess::can($user, 'manage_load_tracking')) {
+            abort(403, 'Unauthorized to change equipment status.');
+        }
+
+        $equipment = SubmeterEquipment::findOrFail($id);
+        $currentStatus = strtolower((string) ($equipment->status ?? 'active'));
+        $newStatus = $currentStatus === 'inactive' ? 'active' : 'inactive';
+        $equipment->status = $newStatus;
+        $equipment->save();
+
+        $actionText = $newStatus === 'active' ? 'reactivated' : 'deactivated';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'status' => $newStatus,
+                'message' => "Equipment '{$equipment->equipment_name}' {$actionText} successfully.",
+            ]);
+        }
+
+        return redirect()
+            ->route('modules.load-tracking.index', ['facility_id' => $equipment->facility_id])
+            ->with('success', "Equipment '{$equipment->equipment_name}' {$actionText} successfully!");
     }
 
     public function destroy(Request $request, int $id)
@@ -567,6 +613,7 @@ class LoadTrackingController extends Controller
                 'Category',
                 'Location / Area',
                 'Assigned Meter',
+                'Status',
                 'Quantity',
                 'Rated Watts (W)',
                 'Total Watts (W)',
@@ -601,6 +648,7 @@ class LoadTrackingController extends Controller
                     $eq->category ?: 'Other',
                     $eq->location ?: 'N/A',
                     $eq->meter_name,
+                    ucfirst($eq->status ?? 'active'),
                     $eq->quantity,
                     number_format($eq->rated_watts, 2),
                     number_format($eq->total_watts, 2),

@@ -60,6 +60,7 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
 
                     if ($meter) {
                         $meterPayload = $this->fillMissing((array) $meter, $meterDefaults);
+                        $meterPayload['baseline_kwh'] = $baselineKwh;
                         $meterPayload['approved_at'] = $meter->approved_at ?: now();
                         if ($actorId && empty($meter->approved_by_user_id)) {
                             $meterPayload['approved_by_user_id'] = $actorId;
@@ -99,6 +100,7 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
 
                     if ($profile) {
                         $profilePayload = $this->fillMissing((array) $profile, $profileDefaults);
+                        $profilePayload['baseline_kwh'] = $baselineKwh;
                         $profilePayload['primary_meter_id'] = $profile->primary_meter_id ?: $meterId;
                         $profilePayload['updated_at'] = now();
                         unset($profilePayload['id'], $profilePayload['created_at']);
@@ -108,10 +110,16 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
                         DB::table('energy_profiles')->insert($profileDefaults);
                     }
 
+                    $floorArea = $this->floorAreaFor($facility);
+                    $floorsCount = $this->floorsFor($facility);
+
                     $facilityUpdates = $this->filterColumns('facilities', [
-                        'baseline_kwh' => $facility->baseline_kwh ?: $baselineKwh,
+                        'baseline_kwh' => $baselineKwh,
                         'baseline_status' => 'active',
                         'baseline_start_date' => $facility->baseline_start_date ?: now()->startOfYear()->toDateString(),
+                        'floor_area_sqm' => $floorArea,
+                        'floor_area' => $floorArea,
+                        'floors' => $floorsCount,
                         'engineer_approved' => true,
                         'updated_at' => now(),
                     ]);
@@ -123,18 +131,20 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
 
     private function baselineFor(Facility $facility): float
     {
-        if (is_numeric($facility->baseline_kwh) && (float) $facility->baseline_kwh > 0) {
-            return (float) $facility->baseline_kwh;
-        }
-
         $name = Str::lower((string) $facility->name);
 
         return match (true) {
-            Str::contains($name, ['highschool', 'high school']) => 4500,
-            Str::contains($name, ['multipurpose bldg', 'multipurpose building']) => 2200,
-            Str::contains($name, ['covered court', 'court']) => 1800,
-            Str::contains($name, 'outpost') => 600,
-            default => 1200,
+            Str::contains($name, ['highschool', 'high school']) => 1200,
+            Str::contains($name, ['bistek ville']) => 1800,
+            Str::contains($name, ['bernardo']) => 1200,
+            Str::contains($name, ['multipurpose bldg', 'multipurpose building', 'mutipurpose hall', 'multipurpose hall', 'multipurpose']) => 1800,
+            Str::contains($name, ['covered court', 'cover court', 'court']) => 1500,
+            Str::contains($name, ['home owners', 'hoa', 'sanville home']) => 1200,
+            Str::contains($name, ['satellite office']) => 1000,
+            Str::contains($name, ['senior citizen']) => 900,
+            Str::contains($name, ['daycare', 'day care']) => 800,
+            Str::contains($name, 'outpost') => 500,
+            default => 1000,
         };
     }
 
@@ -142,7 +152,7 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
     {
         $name = Str::lower((string) $facility->name);
 
-        return Str::contains($name, ['highschool', 'high school', 'multipurpose'])
+        return Str::contains($name, ['highschool', 'high school', 'multipurpose', 'mutipurpose', 'bistek ville'])
             ? 'Generator'
             : 'None';
     }
@@ -188,5 +198,43 @@ class CprfPublicFacilitiesEnergyProfileSeeder extends Seeder
             fn ($key) => in_array($key, $columns, true),
             ARRAY_FILTER_USE_KEY
         );
+    }
+
+    private function floorAreaFor(Facility $facility): float
+    {
+        if (is_numeric($facility->floor_area_sqm) && (float) $facility->floor_area_sqm > 0) {
+            return (float) $facility->floor_area_sqm;
+        }
+        if (is_numeric($facility->floor_area) && (float) $facility->floor_area > 0) {
+            return (float) $facility->floor_area;
+        }
+
+        $name = Str::lower((string) $facility->name);
+
+        return match (true) {
+            Str::contains($name, ['highschool', 'high school']) => 1200,
+            Str::contains($name, ['covered court', 'cover court', 'court']) => 650,
+            Str::contains($name, ['bistek ville']) => 450,
+            Str::contains($name, ['multipurpose bldg', 'multipurpose building', 'mutipurpose hall', 'multipurpose hall', 'multipurpose']) => 350,
+            Str::contains($name, ['home owners', 'hoa', 'sanville home']) => 250,
+            Str::contains($name, ['satellite office']) => 180,
+            Str::contains($name, ['senior citizen']) => 150,
+            Str::contains($name, ['daycare', 'day care']) => 120,
+            Str::contains($name, 'outpost') => 45,
+            default => 200,
+        };
+    }
+
+    private function floorsFor(Facility $facility): int
+    {
+        if (is_numeric($facility->floors) && (int) $facility->floors > 0) {
+            return (int) $facility->floors;
+        }
+
+        $name = Str::lower((string) $facility->name);
+
+        return Str::contains($name, ['multipurpose', 'mutipurpose', 'highschool', 'bistek', 'home owners'])
+            ? 2
+            : 1;
     }
 }

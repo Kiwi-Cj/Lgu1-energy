@@ -4,6 +4,7 @@ use App\Http\Controllers\Modules\FacilityController;
 use App\Models\EnergyRecord;
 use App\Models\Facility;
 use App\Models\FacilityMeter;
+use App\Support\RoleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,14 @@ $resolvePublicUploadRoot = function (): string {
 
 // Move a monthly energy record to the archive (soft delete)
 Route::delete('/modules/facilities/{facility}/monthly-records/{record}', function (Request $request, $facilityId, $recordId) {
+    if (! RoleAccess::can(auth()->user(), 'manage_energy_profile') && ! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+        $message = 'You do not have permission to archive monthly energy records.';
+        if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+            return response()->json(['message' => $message], 403);
+        }
+        return redirect()->back()->with('error', $message);
+    }
+
     $validated = $request->validate([
         'archive_reason' => ['required', 'string', 'max:500'],
     ]);
@@ -54,6 +63,10 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}', functio
 
 // Restore an archived monthly energy record for a facility
 Route::post('/modules/facilities/{facility}/monthly-records/{record}/restore', function ($facilityId, $recordId) {
+    if (! RoleAccess::can(auth()->user(), 'manage_energy_profile') && ! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+        return redirect()->back()->with('error', 'You do not have permission to restore monthly energy records.');
+    }
+
     $record = EnergyRecord::onlyTrashed()
         ->where('facility_id', $facilityId)
         ->where('id', $recordId)
@@ -89,6 +102,10 @@ Route::post('/modules/facilities/{facility}/monthly-records/{record}/restore', f
 
 // Permanently delete an archived monthly energy record for a facility
 Route::delete('/modules/facilities/{facility}/monthly-records/{record}/force-delete', function ($facilityId, $recordId) {
+    if (! RoleAccess::is(auth()->user(), 'super_admin') && ! RoleAccess::is(auth()->user(), 'admin')) {
+        return redirect()->back()->with('error', 'You do not have permission to permanently delete monthly energy records.');
+    }
+
     $record = EnergyRecord::onlyTrashed()
         ->where('facility_id', $facilityId)
         ->where('id', $recordId)
@@ -102,6 +119,10 @@ Route::delete('/modules/facilities/{facility}/monthly-records/{record}/force-del
 
 // Store new monthly energy record for a facility (for modal form)
 Route::post('/modules/facilities/{facility}/monthly-records', function ($facilityId, Request $request) use ($resolvePublicUploadRoot) {
+    if (! RoleAccess::can(auth()->user(), 'encode_main_meter_readings')) {
+        return redirect()->back()->with('error', 'You do not have permission to record monthly energy records.');
+    }
+
     $facility = Facility::findOrFail($facilityId);
     $validated = $request->validate([
         'date' => 'required|date',
@@ -245,6 +266,10 @@ Route::post('/modules/facilities/{facility}/monthly-records', function ($facilit
 
 // Store new weekly meter reading
 Route::post('/modules/facilities/{facility}/weekly-readings', function ($facilityId, Request $request) {
+    if (! RoleAccess::can(auth()->user(), 'encode_main_meter_readings')) {
+        return redirect()->back()->with('error', 'You do not have permission to encode weekly readings.');
+    }
+
     $facility = Facility::findOrFail($facilityId);
     $validated = $request->validate([
         'meter_id' => 'required|integer',
@@ -384,6 +409,10 @@ Route::post('/modules/facilities/{facility}/weekly-readings', function ($facilit
 
 // Delete weekly meter reading
 Route::delete('/modules/facilities/{facility}/weekly-readings/{reading}', function ($facilityId, $readingId) {
+    if (! RoleAccess::can(auth()->user(), 'manage_energy_profile') && ! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+        return redirect()->back()->with('error', 'You do not have permission to delete weekly readings.');
+    }
+
     $reading = \App\Models\FacilityMeterWeeklyReading::where('facility_id', $facilityId)
         ->whereKey($readingId)
         ->firstOrFail();

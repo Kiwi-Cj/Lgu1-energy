@@ -79,12 +79,15 @@ window.addEventListener('DOMContentLoaded', function() {
     .stat-card.is-maintenance { --stat-accent:#ea8a00; --stat-soft:#fff8e8; }
     .stat-card.is-inactive { --stat-accent:#e11d48; --stat-soft:#fff1f2; }
 
-    button.stat-card {
+    button.stat-card,
+    a.stat-card {
         appearance: none;
         color: inherit;
         font: inherit;
         text-align: left;
         cursor: pointer;
+        text-decoration: none;
+        display: block;
     }
 
     .stat-card.is-selected {
@@ -302,7 +305,13 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     .facility-action-button:hover { transform:translateY(-1px); border-color:#93c5fd; color:#1d4ed8; background:#f8fbff; }
     .facility-action-button.energy i { color:#f59e0b; }
-    .facility-action-button.records i { color:#e11d48; }
+    .facility-action-button.records i { color:#3b82f6; }
+    .facility-action-button.deactivate i { color:#e11d48; }
+    .facility-action-button.deactivate:hover { border-color:#fecdd3; color:#be123c; background:#fff1f2; }
+    .facility-action-button.reactivate i { color:#16a34a; }
+    .facility-action-button.reactivate:hover { border-color:#bbf7d0; color:#15803d; background:#f0fdf4; }
+    body.dark-mode .facility-action-button.deactivate:hover { border-color:#881337; color:#fda4af; background:#2a0b12; }
+    body.dark-mode .facility-action-button.reactivate:hover { border-color:#14532d; color:#86efac; background:#052e16; }
     .facility-action-button.primary {
         grid-column:1 / -1; color:#fff; border-color:#2563eb; background:linear-gradient(135deg,#2563eb,#4f46e5);
         box-shadow:0 5px 12px rgba(37,99,235,.18);
@@ -445,117 +454,314 @@ window.addEventListener('DOMContentLoaded', function() {
         padding: 0 2px;
     }
 
-    body.dark-mode .facilities-page .report-card-container {
+    /* Dark Mode Theme Rules */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .report-card-container {
         background: #0f172a !important;
-        border: 1px solid #1f2937;
-        box-shadow: 0 10px 28px rgba(2, 6, 23, 0.55);
+        border: 1px solid #1f2937 !important;
+        box-shadow: 0 10px 28px rgba(2, 6, 23, 0.55) !important;
     }
 
-    body.dark-mode .facilities-page .stat-card,
-    body.dark-mode .facilities-page .facility-card,
-    body.dark-mode .facilities-page .image-wrapper {
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-page-title {
+        color: #f8fafc !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-page-description {
+        color: #94a3b8 !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card {
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-top: 4px solid var(--stat-accent, #3b82f6) !important;
+        color: #e2e8f0 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card:hover {
+        background: #111f38 !important;
+        border-color: #334155 !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card.is-selected {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card.is-total { --stat-soft: rgba(37, 99, 235, 0.2); --stat-accent: #60a5fa; }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card.is-active { --stat-soft: rgba(22, 163, 74, 0.2); --stat-accent: #4ade80; }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card.is-maintenance { --stat-soft: rgba(234, 138, 0, 0.2); --stat-accent: #fbbf24; }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .stat-card.is-inactive { --stat-soft: rgba(225, 29, 72, 0.2); --stat-accent: #fb7185; }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .card-icon-box {
+        background: var(--stat-soft) !important;
+        color: var(--stat-accent) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-stat-label {
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-stat-value {
+        color: #f1f5f9 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-stat-hint {
+        color: #64748b !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .inactive-facilities-link {
+        background: #2a0b12 !important;
+        color: #fda4af !important;
+        border-color: #881337 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .inactive-facilities-link:hover {
+        background: #3f121d !important;
+        border-color: #be123c !important;
+        color: #ffe4e6 !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-heading-icon {
+        background: linear-gradient(135deg, #1e3a8a, #1e293b) !important;
+        border-color: #3b82f6 !important;
+        color: #93c5fd !important;
+        box-shadow: 0 4px 14px rgba(30, 58, 138, 0.4) !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-toolbar {
+        background: #0b1220 !important;
+        border-color: #1e293b !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tabs {
+        background: #111827 !important;
+        border-color: #334155 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tab {
+        background: transparent !important;
+        border-color: transparent !important;
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tab:hover {
+        background: #1e293b !important;
+        color: #93c5fd !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tab.is-active {
+        background: #172554 !important;
+        border-color: #2563eb !important;
+        color: #bfdbfe !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tab-count {
+        background: #1e293b !important;
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-source-tab.is-active .facility-source-tab-count {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-sort-wrap {
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-sort-select {
         background: #111827 !important;
         border-color: #334155 !important;
         color: #e2e8f0 !important;
     }
 
-    body.dark-mode .facilities-page .facility-card:hover {
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
-        border-color: #60a5fa !important;
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-label {
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-input-wrap {
+        background: #111827 !important;
+        border-color: #334155 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-input {
+        color: #f8fafc !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-clear {
+        background: #334155 !important;
+        color: #e2e8f0 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-meta {
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-empty {
+        background: #0b1220 !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-search-reset {
+        background: #3b82f6 !important;
+        color: #fff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-match {
+        background: #fde047 !important;
+        color: #0f172a !important;
     }
 
-    body.dark-mode .facilities-page .card-actions {
-        border-top-color: #334155;
+    /* Facility Cards in Dark Mode */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card {
+        background: #111827 !important;
+        border: 1px solid #1e293b !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
+        color: #e2e8f0 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(59, 130, 246, 0.35) !important;
+        border-color: #3b82f6 !important;
     }
 
-    body.dark-mode .facilities-page .type-badge {
-        background: #1e293b;
-        color: #c4b5fd;
+    :is(html.dark-mode, body.dark-mode) .facilities-page .image-wrapper {
+        background: #0b1220 !important;
+        border-bottom-color: #1e293b !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-image-placeholder {
+        background: linear-gradient(145deg, #111827, #172033) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-image-placeholder-icon {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+        color: #64748b !important;
     }
 
-    body.dark-mode .facilities-page .action-icon.energy {
-        background: #3f2b1a;
-        color: #fbbf24;
+    /* Status Badges Overlay on Images */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge {
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.active {
+        background: rgba(5, 46, 22, 0.88) !important;
+        color: #4ade80 !important;
+        border-color: #166534 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.active i {
+        color: #22c55e !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.maintenance {
+        background: rgba(69, 26, 3, 0.88) !important;
+        color: #fb923c !important;
+        border-color: #9a3412 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.maintenance i {
+        color: #f97316 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.inactive {
+        background: rgba(76, 5, 25, 0.88) !important;
+        color: #fb7185 !important;
+        border-color: #9f1239 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-status-badge.inactive i {
+        color: #f43f5e !important;
     }
 
-    body.dark-mode .facilities-page .action-icon.records {
+    /* Type and CPRF Badges */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .type-badge {
+        background: #172554 !important;
+        color: #93c5fd !important;
+        border: 1px solid #1e40af !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-cprf-badge {
+        background: #2e1065 !important;
+        color: #c4b5fd !important;
+        border: 1px solid #7c3aed !important;
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-cprf-badge i {
+        color: #a78bfa !important;
+    }
+
+    /* Card Details */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card-title {
+        color: #f1f5f9 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card-location {
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card-location i {
+        color: #60a5fa !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card-meta-item {
+        background: #111827 !important;
+        border-color: #334155 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-card-meta-item strong {
+        color: #e2e8f0 !important;
+    }
+
+    /* Baseline Stats Row */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-baseline-row {
+        background: #0b1220 !important;
+        border: 1px solid #1e293b !important;
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-baseline-row i {
+        color: #38bdf8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-baseline-row strong {
+        color: #f8fafc !important;
+    }
+
+    /* Action Buttons in Card */
+    :is(html.dark-mode, body.dark-mode) .facilities-page .card-actions {
+        border-top-color: #1e293b !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button {
+        background: #0b1220 !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button:hover {
+        background: #1e293b !important;
+        border-color: #475569 !important;
+        color: #ffffff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button.energy i {
+        color: #fbbf24 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button.records i {
+        color: #60a5fa !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button.primary {
+        background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .facility-action-button.primary:hover {
+        background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45) !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .facilities-page .action-icon.energy {
+        background: #3f2b1a !important;
+        color: #fbbf24 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .facilities-page .action-icon.records {
         background: #3f1d2e !important;
         color: #fda4af !important;
     }
-
-    body.dark-mode .facilities-page .action-icon.inventory {
+    :is(html.dark-mode, body.dark-mode) .facilities-page .action-icon.inventory {
         background: #153827 !important;
         color: #86efac !important;
     }
 
-    body.dark-mode .facilities-page .facility-search-input-wrap {
-        background: #111827;
-        border-color: #334155;
-    }
-
-    body.dark-mode .facilities-page .facility-search-input {
-        color: #e2e8f0;
-    }
-
-    body.dark-mode .facilities-page .facility-search-clear {
-        background: #334155;
-        color: #e2e8f0;
-    }
-
-    body.dark-mode .facilities-page .facility-search-empty {
-        background: #0b1220;
-        border-color: #334155;
-        color: #cbd5e1;
-    }
-
-    body.dark-mode .facilities-page .facility-search-reset {
-        background: #3b82f6;
-        color: #fff;
-    }
-
-    body.dark-mode .facilities-page .facility-toolbar,
-    body.dark-mode .facilities-page .facility-card-meta-item {
-        background:#111827;
-        border-color:#334155;
-    }
-    body.dark-mode .facilities-page .facility-source-tabs,
-    body.dark-mode .facilities-page .facility-source-tab,
-    body.dark-mode .facilities-page .facility-sort-select { background:#0f172a; border-color:#334155; color:#e2e8f0; }
-    body.dark-mode .facilities-page .facility-source-tab-count { color:#cbd5e1; background:#334155; }
-    body.dark-mode .facilities-page .facility-source-tab.is-active { color:#bfdbfe; border-color:#1d4ed8; background:#172554; }
-    body.dark-mode .facilities-page .facility-source-tab.is-active .facility-source-tab-count { color:#fff; background:#2563eb; }
-    body.dark-mode .facilities-page .facility-card-meta-item strong { color:#e2e8f0; }
-    body.dark-mode .facilities-page .facility-image-placeholder { background:linear-gradient(145deg,#111827,#172033); }
-    body.dark-mode .facilities-page .facility-image-placeholder-icon,
-    body.dark-mode .facilities-page .facility-action-button { background:#0f172a; border-color:#334155; color:#cbd5e1; }
-
-    body.dark-mode .facilities-page .facility-match {
-        background: #fde047;
-        color: #0f172a;
-    }
-
-    body.dark-mode .facilities-page [style*="background:#fff"],
-    body.dark-mode .facilities-page [style*="background: #fff"],
-    body.dark-mode .facilities-page [style*="background:#ffffff"],
-    body.dark-mode .facilities-page [style*="background: #ffffff"],
-    body.dark-mode .facilities-page [style*="background:#f8fafc"],
-    body.dark-mode .facilities-page [style*="background: #f8fafc"],
-    body.dark-mode .facilities-page [style*="background:#f1f5f9"],
-    body.dark-mode .facilities-page [style*="background: #f1f5f9"] {
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background:#fff"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background: #fff"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background:#ffffff"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background: #ffffff"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background:#f8fafc"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background: #f8fafc"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background:#f1f5f9"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="background: #f1f5f9"] {
         background: #111827 !important;
         border-color: #334155 !important;
     }
 
-    body.dark-mode .facilities-page [style*="color:#222"],
-    body.dark-mode .facilities-page [style*="color: #222"],
-    body.dark-mode .facilities-page [style*="color:#1e293b"],
-    body.dark-mode .facilities-page [style*="color: #1e293b"],
-    body.dark-mode .facilities-page [style*="color:#334155"],
-    body.dark-mode .facilities-page [style*="color: #334155"],
-    body.dark-mode .facilities-page [style*="color:#64748b"],
-    body.dark-mode .facilities-page [style*="color: #64748b"],
-    body.dark-mode .facilities-page [style*="color:#94a3b8"],
-    body.dark-mode .facilities-page [style*="color: #94a3b8"] {
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color:#222"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color: #222"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color:#1e293b"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color: #1e293b"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color:#334155"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color: #334155"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color:#64748b"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color: #64748b"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color:#94a3b8"],
+    :is(html.dark-mode, body.dark-mode) .facilities-page [style*="color: #94a3b8"] {
         color: #e2e8f0 !important;
     }
 
@@ -593,15 +799,15 @@ window.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="dashboard-actions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
-                <a href="{{ route('modules.facilities.archive') }}"
-                   class="archive-link"
-                   aria-label="Archive"
-                   title="Archive"
-                   style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;color:#1e293b;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-weight:700;text-decoration:none;">
-                    <i class="fa fa-archive" aria-hidden="true"></i>
-                    <span class="archive-label">Archive</span>
-                    @if($archivedFacilitiesCount > 0)
-                        <span style="background:#e11d48;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.78rem;">{{ $archivedFacilitiesCount }}</span>
+                <a href="{{ route('modules.facilities.inactive') }}"
+                   class="inactive-facilities-link"
+                   aria-label="Inactive Facilities"
+                   title="View Inactive Facilities"
+                   style="display:inline-flex;align-items:center;gap:8px;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;border-radius:10px;padding:10px 14px;font-weight:750;text-decoration:none;transition:.2s ease;">
+                    <i class="fa-solid fa-building-circle-xmark" aria-hidden="true"></i>
+                    <span class="inactive-label">Inactive Facilities</span>
+                    @if(($inactiveFacilities ?? 0) > 0)
+                        <span style="background:#e11d48;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.78rem;font-weight:800;">{{ $inactiveFacilities }}</span>
                     @endif
                 </a>
                 @if(\App\Support\RoleAccess::can(auth()->user(), 'manage_facility_master'))
@@ -615,7 +821,7 @@ window.addEventListener('DOMContentLoaded', function() {
 		<div class="facility-stat-grid" aria-label="Filter facilities by status">
             <button type="button" class="stat-card is-total is-selected" data-status-filter="all" aria-pressed="true">
 				<div class="card-icon-box"><i class="fa fa-building"></i></div>
-				<div class="facility-stat-topline"><div class="facility-stat-label">Total</div><span class="facility-stat-hint">View all</span></div>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Operational</div><span class="facility-stat-hint">View all</span></div>
 				<div class="facility-stat-value">{{ $totalFacilities ?? 0 }}</div>
             </button>
             <button type="button" class="stat-card is-active" data-status-filter="active" aria-pressed="false">
@@ -628,11 +834,11 @@ window.addEventListener('DOMContentLoaded', function() {
 				<div class="facility-stat-topline"><div class="facility-stat-label">Maintenance</div><span class="facility-stat-hint">Filter</span></div>
 				<div class="facility-stat-value">{{ $maintenanceFacilities ?? 0 }}</div>
             </button>
-            <button type="button" class="stat-card is-inactive" data-status-filter="inactive" aria-pressed="false">
+            <a href="{{ route('modules.facilities.inactive') }}" class="stat-card is-inactive" title="View Inactive Facilities">
 				<div class="card-icon-box"><i class="fa fa-ban"></i></div>
-				<div class="facility-stat-topline"><div class="facility-stat-label">Inactive</div><span class="facility-stat-hint">Filter</span></div>
-				<div class="facility-stat-value">{{ $inactiveFacilities ?? 0 }}</div>
-            </button>
+				<div class="facility-stat-topline"><div class="facility-stat-label">Inactive</div><span class="facility-stat-hint" style="color:#e11d48;font-weight:800;">View →</span></div>
+				<div class="facility-stat-value" style="color:#e11d48;">{{ $inactiveFacilities ?? 0 }}</div>
+            </a>
         </div>
 
         @php
@@ -743,7 +949,7 @@ window.addEventListener('DOMContentLoaded', function() {
                         <div class="facility-card-badges">
                         <span class="type-badge" data-search-text>{{ $facility->type ?? 'General' }}</span>
                         @if(method_exists($facility, 'isCprfManaged') && $facility->isCprfManaged())
-                            <span title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
+                            <span class="facility-cprf-badge" title="Synced from the CPRF Facilities Reservation System — identity details are read-only here"
                                   style="display:inline-flex; align-items:center; gap:5px; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; border-radius:999px; padding:3px 10px; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.03em; margin-left:6px;">
                                 <i class="fas fa-link"></i> CPRF
                             </span>
@@ -773,11 +979,11 @@ window.addEventListener('DOMContentLoaded', function() {
                             </a>
                             @if(!$isStaffUser)
                             <a href="{{ url('/modules/facilities/' . $facility->id . '/energy-profile') }}" class="facility-action-button energy quick-action" title="Open Energy Profile" aria-label="Open Energy Profile">
-                                <i class="fas fa-bolt"></i><span>Energy Profile</span>
+                                <i class="fas fa-bolt"></i><span>Profile</span>
                             </a>
                             @endif
                             <a href="{{ route('facilities.monthly-records', $facility->id) }}" class="facility-action-button records quick-action" title="Open Monthly Records" aria-label="Open Monthly Records">
-                                <i class="fas fa-file-alt"></i><span>Energy Records</span>
+                                <i class="fas fa-file-alt"></i><span>Records</span>
                             </a>
                         </div>
                     </div>

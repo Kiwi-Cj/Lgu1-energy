@@ -465,6 +465,22 @@
         .submeter-kpi-grid { grid-template-columns: 1fr; }
         .report-card-container.submeter-card-container { padding: 14px; border-radius: 18px; }
     }
+
+    /* Dark Mode Styles */
+    body.dark-mode .submeter-card { background: #111827; border-color: #334155; }
+    body.dark-mode .submeter-card-container { background: #0f172a; border-color: #334155; }
+    body.dark-mode .submeter-table th { background: linear-gradient(180deg, #1e293b 0%, #111827 100%) !important; color: #cbd5e1 !important; border-color: #334155 !important; box-shadow: inset 0 -1px 0 #334155; }
+    body.dark-mode .submeter-table td { border-color: #334155; color: #e2e8f0; }
+    body.dark-mode .submeter-table tbody tr:hover { background: #1e293b; }
+    body.dark-mode .submeter-kpi-card { background: #111827; border-color: #334155; }
+    body.dark-mode .submeter-kpi-value { color: #f8fafc; }
+    body.dark-mode .submeter-kpi-label, body.dark-mode .submeter-kpi-note { color: #94a3b8; }
+    body.dark-mode .submeter-context-chip { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+    body.dark-mode .submeter-box-header { background: #111827; border-color: #334155; }
+    body.dark-mode .submeter-box-title { color: #f8fafc; }
+    body.dark-mode .submeter-reconcile-card { background: #0f172a; border-color: #334155; }
+    body.dark-mode .submeter-recon-item { background: #111827; border-color: #334155; }
+    body.dark-mode .submeter-recon-val { color: #f8fafc; }
 </style>
 
 <div class="submeter-shell">

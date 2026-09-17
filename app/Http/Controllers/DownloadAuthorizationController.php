@@ -60,7 +60,7 @@ class DownloadAuthorizationController extends Controller
             );
         }
 
-        $target = $this->safeTargetUrl($validated['target']);
+        $target = $this->safeTargetUrl($request, $validated['target']);
         if ($target === null) {
             return $this->failureResponse($request, 'Invalid download request.', 422);
         }
@@ -83,7 +83,7 @@ class DownloadAuthorizationController extends Controller
 
         $token = Str::random(40);
         $request->session()->put('download_authorizations.' . $token, [
-            'target' => $this->normalizeTarget($target),
+            'target' => $this->normalizeTarget($target, $request),
             'expires_at' => now()->addMinutes(2)->timestamp,
         ]);
 
@@ -112,7 +112,7 @@ class DownloadAuthorizationController extends Controller
         return back()->with('error', $message);
     }
 
-    private function safeTargetUrl(string $target): ?string
+    private function safeTargetUrl(Request $request, string $target): ?string
     {
         $target = trim($target);
         if ($target === '') {
@@ -123,16 +123,47 @@ class DownloadAuthorizationController extends Controller
             return 'print';
         }
 
-        $appUrl = rtrim(url('/'), '/');
-        if (str_starts_with($target, $appUrl . '/')) {
-            return $target;
+        $parsed = parse_url($target);
+        if ($parsed === false) {
+            return null;
         }
 
-        if (str_starts_with($target, '/') && ! str_starts_with($target, '//')) {
-            return url($target);
+        // Relative path starting with '/' but not '//'
+        if (! isset($parsed['host'])) {
+            if (str_starts_with($target, '//')) {
+                return null;
+            }
+
+            $relative = '/' . ltrim($target, '/');
+            $root = rtrim($request->root(), '/');
+            $basePath = (string) $request->getBasePath();
+            if ($basePath !== '' && ! str_starts_with($relative, $basePath)) {
+                $relative = $basePath . $relative;
+            }
+
+            return $root . $relative;
         }
 
-        return null;
+        $allowedHosts = array_filter([
+            $request->getHost(),
+            parse_url(config('app.url'), PHP_URL_HOST),
+            'localhost',
+            '127.0.0.1',
+        ]);
+
+        $targetHost = strtolower($parsed['host'] ?? '');
+        $isAllowed = in_array($targetHost, array_map('strtolower', $allowedHosts), true);
+
+        if (! $isAllowed) {
+            return null;
+        }
+
+        $scheme = $request->getScheme();
+        $httpHost = $request->getHttpHost();
+        $path = $parsed['path'] ?? '/';
+        $query = ! empty($parsed['query']) ? '?' . $parsed['query'] : '';
+
+        return "{$scheme}://{$httpHost}{$path}{$query}";
     }
 
     private function appendToken(string $target, string $token): string
@@ -142,10 +173,19 @@ class DownloadAuthorizationController extends Controller
         return $target . $separator . 'download_token=' . urlencode($token);
     }
 
-    private function normalizeTarget(string $target): string
+    private function normalizeTarget(string $target, ?Request $request = null): string
     {
         $parts = parse_url($target);
-        $path = $parts['path'] ?? '/';
+        $rawPath = $parts['path'] ?? '/';
+
+        if ($request) {
+            $basePath = (string) $request->getBasePath();
+            if ($basePath !== '' && str_starts_with($rawPath, $basePath)) {
+                $rawPath = substr($rawPath, strlen($basePath));
+            }
+        }
+
+        $path = '/' . ltrim($rawPath, '/');
         $query = [];
 
         if (! empty($parts['query'])) {

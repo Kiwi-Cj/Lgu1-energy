@@ -723,3 +723,7 @@ Artisan::command('demo:seed-fake-sensors {--submeters=6 : Number of active subme
 Schedule::command('energy:escalate-critical-alerts --minutes=30')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('energy:send-reading-reminders')
+    ->hourly()
+    ->withoutOverlapping();

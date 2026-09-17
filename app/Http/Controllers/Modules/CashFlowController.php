@@ -135,7 +135,7 @@ class CashFlowController extends Controller
     public function export(Request $request)
     {
         $user = $request->user();
-        if (! RoleAccess::can($user, 'view_cashflow')) {
+        if (! RoleAccess::can($user, 'export_reports')) {
             abort(403, 'Unauthorized export access.');
         }
 

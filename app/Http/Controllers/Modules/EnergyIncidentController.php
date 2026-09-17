@@ -69,6 +69,8 @@ class EnergyIncidentController extends Controller
 
     public function export(Request $request)
     {
+        abort_unless(RoleAccess::can($request->user(), 'export_reports'), 403);
+
         [$incidentQuery, $filters] = $this->buildActiveIncidentQuery($request);
 
         $incidents = $this->withSeverityLabels(
@@ -711,7 +713,7 @@ class EnergyIncidentController extends Controller
         return [
             'critical_usage_spike' => ['label' => 'Critical Consumption Spike (>20% Baseline)', 'severity' => 'critical', 'maintenance_issue' => 'Critical Usage Spike (>20% Baseline)'],
             'peak_demand_surge' => ['label' => 'Peak Demand Load Surge', 'severity' => 'critical', 'maintenance_issue' => 'Peak Demand Load Surge'],
-            'meter_defect_discrepancy' => ['label' => 'Main Meter vs Sub-meter Discrepancy', 'severity' => 'high', 'maintenance_issue' => 'Main Meter vs Submeter Discrepancy'],
+            'meter_defect_discrepancy' => ['label' => 'Meter Defect / Reading Discrepancy', 'severity' => 'high', 'maintenance_issue' => 'Meter Defect / Reading Discrepancy'],
             'phantom_load_waste' => ['label' => 'Off-Hours / Phantom Load Waste', 'severity' => 'high', 'maintenance_issue' => 'Off-Hours / Phantom Load Waste'],
             'circuit_overload' => ['label' => 'Circuit Overload / Phase Imbalance', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Circuit Overload'],
             'grounded_power_leak' => ['label' => 'Grounded Power Leak / Current Loss', 'severity' => 'critical', 'maintenance_issue' => 'Electrical - Grounded Line'],

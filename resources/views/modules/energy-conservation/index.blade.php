@@ -440,11 +440,41 @@
     body.dark-mode .conservation-title, body.dark-mode .section-label h2, body.dark-mode .workflow-copy strong, body.dark-mode .workspace-title, body.dark-mode .compliance-title, body.dark-mode .compliance-item strong, body.dark-mode .kpi-value { color: #f8fafc; }
     body.dark-mode .workflow-step, body.dark-mode .workspace-card, body.dark-mode .kpi-card, body.dark-mode .compliance-guide { background: #18181b; border-color: #334155; }
     body.dark-mode .compliance-item { background: #0f172a; border-color: #334155; }
-    body.dark-mode .conservation-subtitle, body.dark-mode .workflow-copy small, body.dark-mode .workspace-desc, body.dark-mode .compliance-item p, body.dark-mode .kpi-label { color: #cbd5e1; }
+    body.dark-mode .conservation-subtitle, body.dark-mode .workflow-copy small, body.dark-mode .workspace-desc, body.dark-mode .compliance-item p, body.dark-mode .kpi-label, body.dark-mode .section-label span { color: #cbd5e1; }
     body.dark-mode .conservation-entry-action { background: #18181b; border-color: #047857; color: #a7f3d0; }
     body.dark-mode .conservation-entry-action.primary { background: #047857; color: #fff; }
     body.dark-mode .workspace-footer { border-color: #334155; }
     body.dark-mode .workspace-live-stat { color: #94a3b8; }
+
+    /* Dark Mode Icons & Workflow Badges */
+    body.dark-mode .kpi-icon-wrap.green { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .kpi-icon-wrap.blue { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .kpi-icon-wrap.amber { background: rgba(245,158,11,.2); color: #fbbf24; }
+    body.dark-mode .kpi-icon-wrap.indigo { background: rgba(99,102,241,.2); color: #a5b4fc; }
+
+    body.dark-mode .workflow-number { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .workflow-step.plan .workflow-number { background: rgba(99,102,241,.2); color: #a5b4fc; }
+    body.dark-mode .workflow-step.execute .workflow-number { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .workflow-step.measure .workflow-number { background: rgba(245,158,11,.2); color: #fbbf24; }
+    body.dark-mode .workflow-step.report .workflow-number { background: rgba(168,85,247,.2); color: #d8b4fe; }
+
+    body.dark-mode .workflow-icon { color: rgba(16,185,129,.35); }
+    body.dark-mode .workflow-step.plan .workflow-icon { color: rgba(99,102,241,.35); }
+    body.dark-mode .workflow-step.execute .workflow-icon { color: rgba(59,130,246,.35); }
+    body.dark-mode .workflow-step.measure .workflow-icon { color: rgba(245,158,11,.35); }
+    body.dark-mode .workflow-step.report .workflow-icon { color: rgba(168,85,247,.35); }
+
+    body.dark-mode .workspace-icon { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .workspace-card:nth-child(2) .workspace-icon { background: rgba(59,130,246,.2); color: #93c5fd; }
+    body.dark-mode .workspace-card:nth-child(3) .workspace-icon { background: rgba(245,158,11,.2); color: #fbbf24; }
+
+    body.dark-mode .workspace-state { background: rgba(16,185,129,.18); border-color: rgba(16,185,129,.35); color: #6ee7b7; }
+    body.dark-mode .workspace-card:nth-child(2) .workspace-state { background: rgba(59,130,246,.18); border-color: rgba(59,130,246,.35); color: #93c5fd; }
+    body.dark-mode .workspace-card:nth-child(3) .workspace-state { background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.35); color: #fbbf24; }
+
+    body.dark-mode .flow-rule { color: #5eead4; }
+    body.dark-mode .flow-rule i { background: rgba(16,185,129,.2); color: #6ee7b7; }
+    body.dark-mode .compliance-badge { background: rgba(16,185,129,.2); color: #6ee7b7; }
 
     @media(max-width: 1050px) {
         .kpi-strip { grid-template-columns: repeat(2, 1fr); }

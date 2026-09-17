@@ -265,20 +265,29 @@ class FacilityController extends Controller
         if ($sourceTab === 'cprf' && ! $canManageCprf) {
             $sourceTab = 'all';
         }
+
         $allFacilitiesCount = $facilities->count();
-        $publicFacilitiesCount = $facilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
-        $localFacilitiesCount = $facilities->count() - $publicFacilitiesCount;
+        $activeFacilitiesCount = $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) === 'active')->count();
+        $maintenanceFacilitiesCount = $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) === 'maintenance')->count();
+        $inactiveFacilitiesCount = $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) === 'inactive')->count();
+
+        // Main facility grid only displays active and operational facilities.
+        // Inactive facilities are kept in their dedicated Inactive Facilities section.
+        $operationalFacilities = $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) !== 'inactive')->values();
+
+        $publicFacilitiesCount = $operationalFacilities->filter(fn ($f) => ($f->source ?? 'local') === 'cprf')->count();
+        $localFacilitiesCount = $operationalFacilities->count() - $publicFacilitiesCount;
         $cprfIntegrationActive = filled(config('services.cprf_integration.facilities_feed_url'))
             && filled(config('services.cprf_integration.token'))
             && Facility::query()->where('source', 'cprf')->exists();
         if ($sourceTab !== 'all') {
-            $facilities = $facilities
+            $operationalFacilities = $operationalFacilities
                 ->filter(fn ($f) => (($f->source ?? 'local') === 'cprf') === ($sourceTab === 'cprf'))
                 ->values();
         }
 
         // Compute dynamic facility size from total approved MAIN meter baseline.
-        $facilitiesWithAvg = $facilities->map(function($facility) {
+        $facilitiesWithAvg = $operationalFacilities->map(function($facility) {
             $baselineKwh = null;
             $facility->resolvedBaselineSource = 'manual';
             $facility->resolvedBaselineSourceLabel = 'No main meter baseline';
@@ -327,10 +336,10 @@ class FacilityController extends Controller
 
         return view('modules.facilities.index', [
             'facilities' => $facilitiesWithAvg,
-            'totalFacilities' => $facilities->count(),
-            'activeFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'active')->count(),
-            'inactiveFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'inactive')->count(),
-            'maintenanceFacilities' => $facilities->filter(fn ($facility) => strtolower(trim((string) $facility->status)) === 'maintenance')->count(),
+            'totalFacilities' => $facilitiesWithAvg->count(),
+            'activeFacilities' => $activeFacilitiesCount,
+            'inactiveFacilities' => $inactiveFacilitiesCount,
+            'maintenanceFacilities' => $maintenanceFacilitiesCount,
             'archivedFacilitiesCount' => Facility::onlyTrashed()->count(),
             'sourceTab' => $sourceTab,
             'allFacilitiesCount' => $allFacilitiesCount,
@@ -340,6 +349,137 @@ class FacilityController extends Controller
             'canManageCprf' => $canManageCprf,
             'canSyncCprf' => $canManageCprf,
         ]);
+    }
+
+    /* =========================
+        INACTIVE FACILITIES
+    ========================== */
+    public function inactive(Request $request)
+    {
+        $user = auth()->user();
+        $facilityRelations = [
+            'meters:id,facility_id,meter_name,meter_type,status,approved_at,baseline_kwh',
+            'submeters:id,facility_id,submeter_name',
+        ];
+
+        if ($this->isStaff()) {
+            $facilities = $user->facilities ?? collect();
+            if (method_exists($facilities, 'load')) {
+                $facilities->load($facilityRelations);
+            }
+        } else {
+            $facilities = Facility::with($facilityRelations)->get();
+        }
+
+        $allInactive = $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) === 'inactive')->values();
+
+        $inactiveWithAvg = $allInactive->map(function($facility) {
+            $baselineKwh = null;
+            $facility->resolvedBaselineSource = 'manual';
+            $facility->resolvedBaselineSourceLabel = 'No main meter baseline';
+
+            $mainBaselineSum = (float) $facility->meters
+                ->filter(function ($meter) {
+                    return strtolower((string) $meter->meter_type) === 'main'
+                        && ! is_null($meter->approved_at)
+                        && strtolower((string) $meter->status) === 'active';
+                })
+                ->sum(function ($meter) {
+                    return (is_numeric($meter->baseline_kwh) && (float) $meter->baseline_kwh > 0)
+                        ? (float) $meter->baseline_kwh
+                        : 0;
+                });
+
+            if ($mainBaselineSum > 0) {
+                $baselineKwh = $mainBaselineSum;
+                $facility->facilitySizeSource = 'main_meter_total';
+                $facility->resolvedBaselineSource = 'main_meter_total';
+                $facility->resolvedBaselineSourceLabel = 'Total Main Meter Baseline';
+            } else {
+                $facility->facilitySizeSource = 'manual';
+            }
+
+            $facility->resolvedBaselineKwh = $baselineKwh;
+            $facility->dynamicSize = ($baselineKwh !== null)
+                ? (Facility::resolveSizeLabelFromBaseline($baselineKwh) ?? ($facility->size ?? 'N/A'))
+                : ($facility->size ?? 'N/A');
+
+            $facility->searchMeterNames = $facility->meters
+                ->pluck('meter_name')
+                ->filter(fn ($name) => trim((string) $name) !== '')
+                ->implode(' ');
+
+            $facility->searchSubmeterNames = $facility->submeters
+                ->pluck('submeter_name')
+                ->filter(fn ($name) => trim((string) $name) !== '')
+                ->implode(' ');
+
+            return $facility;
+        });
+
+        return view('modules.facilities.inactive', [
+            'facilities' => $inactiveWithAvg,
+            'totalInactive' => $inactiveWithAvg->count(),
+            'activeFacilitiesCount' => $facilities->filter(fn ($f) => strtolower(trim((string) $f->status)) === 'active')->count(),
+            'totalFacilitiesCount' => $facilities->count(),
+            'canManageFacility' => RoleAccess::can($user, 'manage_facility_master'),
+        ]);
+    }
+
+    public function deactivate(Request $request, $id)
+    {
+        if (! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+            $msg = 'You do not have permission to change facility status.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $facility = Facility::findOrFail($id);
+
+        if ($facility->isCprfManaged()) {
+            $msg = 'This public facility is managed by the CPRF Facilities Reservation system and cannot be deactivated here.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $facility->status = 'inactive';
+        $facility->save();
+
+        $reason = trim((string) $request->input('reason', 'Deactivated and moved to Inactive Facilities.'));
+        $this->logFacilityAudit($facility, 'deactivated', $reason);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => "Facility \"{$facility->name}\" moved to Inactive Facilities."]);
+        }
+
+        return redirect()->route('modules.facilities.inactive')->with('success', "Facility \"{$facility->name}\" is now Inactive and moved to Inactive Facilities.");
+    }
+
+    public function reactivate(Request $request, $id)
+    {
+        if (! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+            $msg = 'You do not have permission to reactivate facilities.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        $facility = Facility::findOrFail($id);
+        $facility->status = 'active';
+        $facility->save();
+
+        $this->logFacilityAudit($facility, 'reactivated', 'Reactivated back to active status.');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => "Facility \"{$facility->name}\" reactivated successfully."]);
+        }
+
+        return redirect()->route('facilities.index')->with('success', "Facility \"{$facility->name}\" reactivated successfully and is now active.");
     }
 
     /* =========================
@@ -553,6 +693,8 @@ class FacilityController extends Controller
     ========================== */
     public function exportMonthlyReport(Request $request)
     {
+        abort_unless(RoleAccess::can($request->user(), 'export_reports'), 403);
+
         $month = $request->month ?? now()->month;
         $year = $request->year ?? now()->year;
 
@@ -586,16 +728,32 @@ class FacilityController extends Controller
     }
 
     /* =========================
-        DELETE FACILITY
+        DELETE / ARCHIVE FACILITY
     ========================== */
     public function destroy(Request $request, $id)
     {
+        if (! RoleAccess::can(auth()->user(), 'manage_facility_master')) {
+            $msg = 'You do not have permission to archive or delete facilities.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         $archiveReason = trim((string) $request->input('archive_reason', ''));
         if ($archiveReason === '') {
-            return redirect()->back()->with('error', 'Archive reason is required.');
+            $msg = 'Reason for archiving the facility is required.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
         }
         if (mb_strlen($archiveReason) > 500) {
-            return redirect()->back()->with('error', 'Archive reason must be 500 characters or fewer.');
+            $msg = 'Archive reason must be 500 characters or fewer.';
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
         }
 
         $facility = Facility::findOrFail($id);
@@ -605,20 +763,22 @@ class FacilityController extends Controller
         // undone (restored) by the next sync run.
         if ($facility->isCprfManaged()) {
             $message = 'This public facility is managed by the CPRF Facilities Reservation system and cannot be archived here — it deactivates automatically when removed on CPRF.';
-            if (request()->ajax()) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
             return redirect()->back()->with('error', $message);
         }
+
         $facility->deleted_by = auth()->id();
         $facility->archive_reason = $archiveReason;
         $facility->saveQuietly();
         $this->logFacilityAudit($facility, 'archived', $archiveReason);
         $facility->delete();
-        if (request()->ajax()) {
+
+        if ($request->expectsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Facility moved to archive successfully.']);
         }
-        return redirect()->route('facilities.index')->with('success', 'Facility moved to archive.');
+        return redirect()->route('facilities.index')->with('success', 'Facility moved to archive successfully.');
     }
 
     public function archive(Request $request)

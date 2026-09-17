@@ -98,82 +98,132 @@ class ArchivePruneService
                 ->pluck('id');
 
             if ($energyRecordIds->isNotEmpty()) {
-                EnergyIncidentHistory::whereIn('energy_record_id', $energyRecordIds)->delete();
-                EnergyIncident::whereIn('energy_record_id', $energyRecordIds)->delete();
-                Maintenance::whereIn('energy_record_id', $energyRecordIds)->update(['energy_record_id' => null]);
+                if (Schema::hasTable('energy_incident_histories')) {
+                    EnergyIncidentHistory::whereIn('energy_record_id', $energyRecordIds)->delete();
+                }
+                if (Schema::hasTable('energy_incidents')) {
+                    EnergyIncident::whereIn('energy_record_id', $energyRecordIds)->delete();
+                }
+                if (Schema::hasTable('maintenance')) {
+                    Maintenance::whereIn('energy_record_id', $energyRecordIds)->update(['energy_record_id' => null]);
+                }
             }
 
-            $mainMeterReadingIds = DB::table('main_meter_readings')
-                ->where('facility_id', $facilityId)
-                ->pluck('id');
-
-            if ($mainMeterReadingIds->isNotEmpty()) {
-                DB::table('main_meter_alerts')
-                    ->whereIn('main_meter_reading_id', $mainMeterReadingIds)
-                    ->delete();
-            }
-
-            DB::table('main_meter_alerts')->where('facility_id', $facilityId)->delete();
-            DB::table('main_meter_baselines')->where('facility_id', $facilityId)->delete();
-            DB::table('main_meter_readings')->where('facility_id', $facilityId)->delete();
-
-            $submeterIds = DB::table('submeters')
-                ->where('facility_id', $facilityId)
-                ->pluck('id');
-
-            if ($submeterIds->isNotEmpty()) {
-                $submeterReadingIds = DB::table('submeter_readings')
-                    ->whereIn('submeter_id', $submeterIds)
+            if (Schema::hasTable('main_meter_readings')) {
+                $mainMeterReadingIds = DB::table('main_meter_readings')
+                    ->where('facility_id', $facilityId)
                     ->pluck('id');
 
-                if ($submeterReadingIds->isNotEmpty()) {
-                    DB::table('submeter_alerts')
-                        ->whereIn('submeter_reading_id', $submeterReadingIds)
+                if ($mainMeterReadingIds->isNotEmpty() && Schema::hasTable('main_meter_alerts')) {
+                    DB::table('main_meter_alerts')
+                        ->whereIn('main_meter_reading_id', $mainMeterReadingIds)
                         ->delete();
                 }
-
-                DB::table('submeter_alerts')->whereIn('submeter_id', $submeterIds)->delete();
-                DB::table('submeter_baselines')->whereIn('submeter_id', $submeterIds)->delete();
-
-                if (Schema::hasTable('submeter_equipment_files')) {
-                    DB::table('submeter_equipment_files')->whereIn('submeter_id', $submeterIds)->delete();
-                }
-
-                if (Schema::hasTable('submeter_equipments')) {
-                    DB::table('submeter_equipments')->whereIn('submeter_id', $submeterIds)->delete();
-                }
-
-                DB::table('submeter_readings')->whereIn('submeter_id', $submeterIds)->delete();
             }
 
-            $facilityMeterIds = FacilityMeter::withTrashed()
-                ->where('facility_id', $facilityId)
-                ->pluck('id');
+            if (Schema::hasTable('main_meter_alerts')) {
+                DB::table('main_meter_alerts')->where('facility_id', $facilityId)->delete();
+            }
+            if (Schema::hasTable('main_meter_baselines')) {
+                DB::table('main_meter_baselines')->where('facility_id', $facilityId)->delete();
+            }
+            if (Schema::hasTable('main_meter_readings')) {
+                DB::table('main_meter_readings')->where('facility_id', $facilityId)->delete();
+            }
 
-            if ($facilityMeterIds->isNotEmpty()) {
-                if (Schema::hasTable('submeter_equipment_files')) {
-                    DB::table('submeter_equipment_files')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+            if (Schema::hasTable('submeters')) {
+                $submeterIds = DB::table('submeters')
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($submeterIds->isNotEmpty()) {
+                    if (Schema::hasTable('submeter_readings')) {
+                        $submeterReadingIds = DB::table('submeter_readings')
+                            ->whereIn('submeter_id', $submeterIds)
+                            ->pluck('id');
+
+                        if ($submeterReadingIds->isNotEmpty() && Schema::hasTable('submeter_alerts')) {
+                            DB::table('submeter_alerts')
+                                ->whereIn('submeter_reading_id', $submeterReadingIds)
+                                ->delete();
+                        }
+                    }
+
+                    if (Schema::hasTable('submeter_alerts')) {
+                        DB::table('submeter_alerts')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+                    if (Schema::hasTable('submeter_baselines')) {
+                        DB::table('submeter_baselines')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_equipment_files')) {
+                        DB::table('submeter_equipment_files')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_equipments')) {
+                        DB::table('submeter_equipments')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_readings')) {
+                        DB::table('submeter_readings')->whereIn('submeter_id', $submeterIds)->delete();
+                    }
                 }
+            } else {
+                $submeterIds = collect();
+            }
 
-                if (Schema::hasTable('submeter_equipments')) {
-                    DB::table('submeter_equipments')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+            if (Schema::hasTable('facility_meters')) {
+                $facilityMeterIds = FacilityMeter::withTrashed()
+                    ->where('facility_id', $facilityId)
+                    ->pluck('id');
+
+                if ($facilityMeterIds->isNotEmpty()) {
+                    if (Schema::hasTable('submeter_equipment_files')) {
+                        DB::table('submeter_equipment_files')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+                    }
+
+                    if (Schema::hasTable('submeter_equipments')) {
+                        DB::table('submeter_equipments')->whereIn('facility_meter_id', $facilityMeterIds)->delete();
+                    }
                 }
             }
 
-            EnergyRecord::withTrashed()
-                ->where('facility_id', $facilityId)
-                ->get()
-                ->each(function (EnergyRecord $record) {
-                    $record->forceDelete();
-                });
+            if (Schema::hasTable('energy_records')) {
+                EnergyRecord::withTrashed()
+                    ->where('facility_id', $facilityId)
+                    ->get()
+                    ->each(function (EnergyRecord $record) {
+                        $record->forceDelete();
+                    });
+            }
 
-            EnergyIncident::where('facility_id', $facilityId)->delete();
-            Maintenance::where('facility_id', $facilityId)->delete();
-            MaintenanceHistory::where('facility_id', $facilityId)->delete();
-            EnergyProfile::where('facility_id', $facilityId)->delete();
+            if (Schema::hasTable('energy_incidents')) {
+                EnergyIncident::where('facility_id', $facilityId)->delete();
+            }
+            if (Schema::hasTable('maintenance')) {
+                Maintenance::where('facility_id', $facilityId)->delete();
+            }
+            if (Schema::hasTable('maintenance_history')) {
+                MaintenanceHistory::where('facility_id', $facilityId)->delete();
+            }
+            if (Schema::hasTable('energy_profiles')) {
+                EnergyProfile::where('facility_id', $facilityId)->delete();
+            }
 
             if (Schema::hasTable('baseline_reset_logs')) {
                 DB::table('baseline_reset_logs')->where('facility_id', $facilityId)->delete();
+            }
+
+            if (Schema::hasTable('facility_meter_weekly_readings')) {
+                DB::table('facility_meter_weekly_readings')->where('facility_id', $facilityId)->delete();
+            }
+
+            if (Schema::hasTable('facility_utility_budgets')) {
+                DB::table('facility_utility_budgets')->where('facility_id', $facilityId)->delete();
+            }
+
+            if (Schema::hasTable('daily_checklist_items')) {
+                DB::table('daily_checklist_items')->where('facility_id', $facilityId)->delete();
             }
 
             Submeter::whereIn('id', $submeterIds)->delete();

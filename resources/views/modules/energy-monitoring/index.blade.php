@@ -1190,7 +1190,13 @@
         background: #111827 !important;
     }
 
-    body.dark-mode .energy-monitor-page .monitor-table th,
+    body.dark-mode .energy-monitor-page .monitor-table th {
+        background: linear-gradient(180deg, #1e293b 0%, #111827 100%) !important;
+        color: #cbd5e1 !important;
+        border-color: #334155 !important;
+        box-shadow: inset 0 -1px 0 #334155;
+    }
+
     body.dark-mode .energy-monitor-page .monitor-table td {
         border-color: #334155 !important;
     }

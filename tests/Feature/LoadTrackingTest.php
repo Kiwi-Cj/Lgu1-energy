@@ -201,3 +201,120 @@ test('seeder populates realistic equipment for Amoranto Sports Complex', functio
     expect(collect($equipmentNames)->some(fn ($n) => str_contains(strtolower($n), 'scoreboard')))->toBeTrue();
 });
 
+test('user can toggle equipment status between active and inactive', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Legislative Building']);
+    $equipment = SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Standby Emergency Generator Chiller',
+        'category' => 'HVAC / Cooling',
+        'quantity' => 1,
+        'rated_watts' => 5000,
+        'operating_hours_per_day' => 8,
+        'operating_days_per_month' => 22,
+        'status' => 'active',
+    ]);
+
+    // Deactivate
+    $this->actingAs($admin)
+        ->post(route('modules.load-tracking.equipment.toggle-status', $equipment->id))
+        ->assertRedirect();
+
+    $equipment->refresh();
+    expect($equipment->status)->toBe('inactive');
+
+    // Reactivate
+    $this->actingAs($admin)
+        ->post(route('modules.load-tracking.equipment.toggle-status', $equipment->id))
+        ->assertRedirect();
+
+    $equipment->refresh();
+    expect($equipment->status)->toBe('active');
+});
+
+test('inactive equipment is excluded from active connected load and energy computations', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Civic Center Building', 'baseline_kwh' => 20000]);
+
+    // 1 Active AC: 2000W, 1 qty, 10h/day, 20 days/mo => 2 kW, 400 kWh/mo
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Main Office AC',
+        'category' => 'HVAC / Cooling',
+        'quantity' => 1,
+        'rated_watts' => 2000,
+        'operating_hours_per_day' => 10,
+        'operating_days_per_month' => 20,
+        'status' => 'active',
+    ]);
+
+    // 1 Inactive / Decommissioned Chiller: 10000W, 1 qty => 10 kW, 2000 kWh/mo
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Decommissioned Old Chiller',
+        'category' => 'HVAC / Cooling',
+        'quantity' => 1,
+        'rated_watts' => 10000,
+        'operating_hours_per_day' => 10,
+        'operating_days_per_month' => 20,
+        'status' => 'inactive',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('modules.load-tracking.index', ['facility_id' => $facility->id]));
+
+    $response->assertOk();
+    $summary = $response->viewData('summary');
+
+    // Total items is 2 (inventory count), but active items is 1, inactive is 1
+    expect($summary['total_items'])->toEqual(2);
+    expect($summary['active_items'])->toEqual(1);
+    expect($summary['inactive_items'])->toEqual(1);
+
+    // Active connected load must be 2 kW (2000 W), NOT 12 kW (12000 W)
+    expect($summary['total_connected_watts'])->toEqual(2000.0);
+    expect($summary['total_connected_kw'])->toEqual(2.0);
+    // Active monthly kWh must be 400 kWh, NOT 2400 kWh
+    expect($summary['total_monthly_kwh'])->toEqual(400.0);
+});
+
+test('status filtering displays active or inactive equipment correctly', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $facility = Facility::factory()->create(['name' => 'Hall of Justice']);
+
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Active Courtroom AC',
+        'status' => 'active',
+        'quantity' => 1,
+        'rated_watts' => 1500,
+        'operating_hours_per_day' => 8,
+        'operating_days_per_month' => 22,
+    ]);
+
+    SubmeterEquipment::create([
+        'facility_id' => $facility->id,
+        'equipment_name' => 'Decommissioned Floor Heater',
+        'status' => 'inactive',
+        'quantity' => 1,
+        'rated_watts' => 2000,
+        'operating_hours_per_day' => 8,
+        'operating_days_per_month' => 22,
+    ]);
+
+    // Filter active
+    $resActive = $this->actingAs($admin)
+        ->get(route('modules.load-tracking.index', ['facility_id' => $facility->id, 'status' => 'active']));
+    $resActive->assertOk()
+        ->assertSee('Active Courtroom AC')
+        ->assertDontSee('Decommissioned Floor Heater');
+
+    // Filter inactive
+    $resInactive = $this->actingAs($admin)
+        ->get(route('modules.load-tracking.index', ['facility_id' => $facility->id, 'status' => 'inactive']));
+    $resInactive->assertOk()
+        ->assertSee('Decommissioned Floor Heater')
+        ->assertDontSee('Active Courtroom AC');
+});
+
+

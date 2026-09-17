@@ -698,102 +698,118 @@ body.dark-mode .history-page .detail-block span,
 body.dark-mode .history-page .detail-block p {
     color: #94a3b8;
 }
-body.dark-mode .history-page .metric-card {
+:is(html.dark-mode, body.dark-mode) .history-page .metric-card {
     border-color: #334155;
 }
-body.dark-mode .history-page .metric-card.total {
+:is(html.dark-mode, body.dark-mode) .history-page .metric-card.total {
     background: rgba(14, 116, 144, 0.24);
     color: #67e8f9;
     border-color: rgba(125, 211, 252, 0.3);
 }
-body.dark-mode .history-page .metric-card.critical {
-    background: rgba(190, 24, 93, 0.24);
+:is(html.dark-mode, body.dark-mode) .history-page .metric-card.critical {
+    background: #4c0519;
     color: #fda4af;
-    border-color: rgba(244, 114, 182, 0.3);
+    border-color: #be123c;
 }
-body.dark-mode .history-page .metric-card.very-high {
-    background: rgba(146, 64, 14, 0.26);
+:is(html.dark-mode, body.dark-mode) .history-page .metric-card.very-high {
+    background: #451a03;
     color: #fdba74;
-    border-color: rgba(251, 146, 60, 0.3);
+    border-color: #9a3412;
 }
-body.dark-mode .history-page .metric-card.month {
-    background: rgba(37, 99, 235, 0.22);
+:is(html.dark-mode, body.dark-mode) .history-page .metric-card.month {
+    background: #1e3a8a;
     color: #93c5fd;
-    border-color: rgba(147, 197, 253, 0.3);
+    border-color: #3b82f6;
 }
-body.dark-mode .history-page .history-filters input,
-body.dark-mode .history-page .history-filters select {
+:is(html.dark-mode, body.dark-mode) .history-page .history-filters input,
+:is(html.dark-mode, body.dark-mode) .history-page .history-filters select {
     background: #0b1220;
     border-color: #334155;
     color: #e2e8f0;
 }
-body.dark-mode .history-page .history-filters input::placeholder {
+:is(html.dark-mode, body.dark-mode) .history-page .history-filters input::placeholder {
     color: #64748b;
 }
-body.dark-mode .history-page .history-list-container {
+:is(html.dark-mode, body.dark-mode) .history-page .history-list-container {
     background: #111827;
     border-color: #334155;
 }
-body.dark-mode .history-page .history-row {
+:is(html.dark-mode, body.dark-mode) .history-page .history-row {
     border-bottom-color: #334155;
 }
-body.dark-mode .history-page .history-row:hover,
-body.dark-mode .history-page .history-row:focus {
+:is(html.dark-mode, body.dark-mode) .history-page .history-row:hover,
+:is(html.dark-mode, body.dark-mode) .history-page .history-row:focus {
     background: #1f2937;
 }
-body.dark-mode .history-page .chip.severity.critical {
-    background: rgba(127, 29, 29, 0.32);
-    color: #fca5a5;
-    border-color: rgba(248, 113, 113, 0.35);
+:is(html.dark-mode, body.dark-mode) .history-page .source-chip.cprf {
+    background: #042f2e !important;
+    border-color: #0d9488 !important;
+    color: #5eead4 !important;
 }
-body.dark-mode .history-page .chip.severity.very-high {
+:is(html.dark-mode, body.dark-mode) .history-page .source-chip.auto {
+    background: #1e3a8a !important;
+    border-color: #3b82f6 !important;
+    color: #bfdbfe !important;
+}
+:is(html.dark-mode, body.dark-mode) .history-page .source-chip.manual {
+    background: #3b0764 !important;
+    border-color: #9333ea !important;
+    color: #e9d5ff !important;
+}
+:is(html.dark-mode, body.dark-mode) .history-page .chip.severity.critical {
+    background: #4c0519 !important;
+    color: #fda4af !important;
+    border: 1px solid #be123c !important;
+}
+:is(html.dark-mode, body.dark-mode) .history-page .chip.severity.very-high {
     background: rgba(190, 24, 93, 0.28);
     color: #f9a8d4;
     border-color: rgba(244, 114, 182, 0.34);
 }
-body.dark-mode .history-page .chip.severity.high {
-    background: rgba(146, 64, 14, 0.3);
-    color: #fdba74;
-    border-color: rgba(251, 146, 60, 0.34);
+:is(html.dark-mode, body.dark-mode) .history-page .chip.severity.high {
+    background: #451a03 !important;
+    color: #fdba74 !important;
+    border: 1px solid #9a3412 !important;
 }
-body.dark-mode .history-page .chip.severity.warning {
+:is(html.dark-mode, body.dark-mode) .history-page .chip.severity.warning {
     background: rgba(146, 64, 14, 0.24);
     color: #fde68a;
     border-color: rgba(251, 191, 36, 0.35);
 }
-body.dark-mode .history-page .chip.severity.normal {
-    background: rgba(22, 101, 52, 0.24);
-    color: #86efac;
-    border-color: rgba(74, 222, 128, 0.3);
+:is(html.dark-mode, body.dark-mode) .history-page .chip.severity.normal {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
 }
-body.dark-mode .history-page .chip.status.resolved {
-    background: rgba(14, 116, 144, 0.24);
-    color: #67e8f9;
-    border-color: rgba(125, 211, 252, 0.3);
+:is(html.dark-mode, body.dark-mode) .history-page .chip.status.resolved {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
 }
-body.dark-mode .history-page .chip.status.closed {
+:is(html.dark-mode, body.dark-mode) .history-page .chip.status.closed {
     background: #1f2937;
     color: #cbd5e1;
     border-color: #475569;
 }
-body.dark-mode .history-page .history-modal {
-    background: rgba(2, 6, 23, 0.7);
+:is(html.dark-mode, body.dark-mode) .history-page .history-modal {
+    background: rgba(2, 6, 23, 0.76);
 }
-body.dark-mode .history-page .history-modal-content {
+:is(html.dark-mode, body.dark-mode) .history-page .history-modal-content {
     background: #111827;
     border: 1px solid #334155;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.6);
 }
-body.dark-mode .history-page .history-modal-close {
+:is(html.dark-mode, body.dark-mode) .history-page .history-modal-close {
     color: #94a3b8;
 }
-body.dark-mode .history-page .history-modal-close:hover {
+:is(html.dark-mode, body.dark-mode) .history-page .history-modal-close:hover {
     color: #fda4af;
 }
-body.dark-mode .history-page .detail-item {
+:is(html.dark-mode, body.dark-mode) .history-page .detail-item {
     background: #0f172a;
     border-color: #334155;
 }
-body.dark-mode .history-page .attachment-list a {
+:is(html.dark-mode, body.dark-mode) .history-page .attachment-list a {
     color: #7dd3fc;
 }
 

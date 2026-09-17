@@ -1418,6 +1418,13 @@
 	   body.dark-mode .user-edit-modal-pro .uv-modal-actions { border-color:#2a3850; }
 	   body.dark-mode .user-edit-modal-pro .uv-password-tools { background:#111827; border-color:#334155; }
 	   body.dark-mode .user-edit-modal-pro .uv-modal-actions { background:rgba(15,23,42,.97); }
+	   body.dark-mode .facility-checkbox-scroll { background:#111827 !important; border-color:#334155 !important; }
+	   body.dark-mode .facility-checkbox-item { background:#1e293b !important; color:#cbd5e1 !important; }
+	   body.dark-mode .facility-checkbox-item:hover { background:#334155 !important; color:#f8fafc !important; }
+	   body.dark-mode #facilitySearch { background:#111827 !important; border-color:#334155 !important; color:#f8fafc !important; }
+	   body.dark-mode .uv-password-generate-btn { background:#1e293b !important; border-color:#334155 !important; color:#93c5fd !important; }
+	   body.dark-mode .uv-password-generate-btn:hover { background:#2563eb !important; color:#fff !important; }
+	   body.dark-mode .uv-password-toggle-btn { background:#1e293b !important; border-color:#334155 !important; color:#93c5fd !important; }
 	   @media (max-width:600px) {
 		   .user-edit-modal-pro { width:calc(100vw - 20px) !important; max-height:calc(100vh - 20px); margin:10px auto !important; border-radius:17px !important; }
 		   .user-edit-modal-pro .uv-modal-header { padding:17px 55px 16px 16px !important; }

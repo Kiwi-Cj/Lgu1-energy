@@ -704,6 +704,8 @@
     body.dark-mode .calc-tab-btn { color: #94a3b8; }
     body.dark-mode .calc-tab-btn.active { background: #1e293b; color: #93c5fd; }
     body.dark-mode .calc-equip-card { background: #0f172a; border-color: #065f46; }
+    body.dark-mode .calc-equip-badge { background: #064e3b; border-color: #047857; color: #a7f3d0; }
+    body.dark-mode .calc-equip-meta { color: #94a3b8; }
     body.dark-mode .calc-equip-body { background: #064e3b; border-color: #047857; }
     body.dark-mode .calc-equip-stat-label { color: #a7f3d0; }
     body.dark-mode .calc-equip-stat-val { color: #f0fdf4; }
@@ -715,10 +717,14 @@
     body.dark-mode .baseline-calc-panel { background: #1e293b; border-color: #334155; }
     body.dark-mode .calc-panel-title { color: #f8fafc; }
     body.dark-mode .calc-month-card { background: #0f172a; border-color: #334155; }
+    body.dark-mode .calc-month-label { color: #cbd5e1; }
     body.dark-mode .calc-month-input { background: #1e293b; border-color: #475569; color: #f8fafc; }
     body.dark-mode .calc-summary-bar { background: #0f172a; border-color: #334155; }
+    body.dark-mode .calc-summary-stat span { color: #94a3b8; }
     body.dark-mode .calc-summary-stat strong { color: #f8fafc; }
     body.dark-mode .calc-quick-actions { background: #0f172a; border-color: #334155; }
+    body.dark-mode .calc-quick-label { color: #94a3b8; }
+    body.dark-mode .calc-feedback { background: #052e16; border-color: #15803d; color: #86efac; }
 </style>
 
 <script>

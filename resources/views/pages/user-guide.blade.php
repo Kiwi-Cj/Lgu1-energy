@@ -1879,6 +1879,279 @@
     }
 }
 
+/* ===== DARK MODE OVERRIDES ===== */
+:is(html.dark-mode, body.dark-mode) .guide-page {
+    --guide-primary: #3b82f6;
+    --guide-primary-dark: #60a5fa;
+    --guide-primary-light: #172554;
+    --guide-ink: #f8fafc;
+    --guide-body: #cbd5e1;
+    --guide-muted: #94a3b8;
+    --guide-border: #1e293b;
+    --guide-card-bg: #0f172a;
+    color: #cbd5e1;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-hero {
+    background: linear-gradient(135deg, #0b1329 0%, #0f172a 60%, #172554 100%) !important;
+    border: 1px solid #1e293b;
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.55);
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-visual-card {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border-color: #334155 !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5) !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .role-badge.badge-admin {
+    background: #4c0519 !important;
+    color: #fda4af !important;
+    border: 1px solid #9f1239 !important;
+}
+:is(html.dark-mode, body.dark-mode) .role-badge.badge-officer {
+    background: #1e1b4b !important;
+    color: #c7d2fe !important;
+    border: 1px solid #4338ca !important;
+}
+:is(html.dark-mode, body.dark-mode) .role-badge.badge-staff {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-search-panel {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-search-wrap input {
+    background: #111827 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-search-wrap input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .search-kbd {
+    background: #1e293b !important;
+    color: #94a3b8 !important;
+    border: 1px solid #334155;
+}
+
+:is(html.dark-mode, body.dark-mode) .sidebar-sticky-inner {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-sidebar__title {
+    color: #f8fafc !important;
+    border-bottom-color: #1e293b !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-nav-btn {
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-nav-btn:hover {
+    background: #111827 !important;
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-nav-btn.active {
+    background: #172554 !important;
+    color: #93c5fd !important;
+}
+:is(html.dark-mode, body.dark-mode) .btn-icon {
+    background: #111827 !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-nav-btn.active .btn-icon {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-sidebar__callout {
+    background: #111827 !important;
+    border-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-sidebar__callout strong {
+    color: #f8fafc !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .section-card {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+:is(html.dark-mode, body.dark-mode) .section-card__header {
+    border-bottom-color: #1e293b !important;
+}
+:is(html.dark-mode, body.dark-mode) .section-card__header h2 {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .section-card__header p {
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .topic-pill {
+    background: #172554 !important;
+    color: #93c5fd !important;
+    border: 1px solid #1e40af !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .workflow-card {
+    background: linear-gradient(135deg, #0f172a 0%, #111e38 100%) !important;
+    border: 1px solid #1e3a8a !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+:is(html.dark-mode, body.dark-mode) .workflow-badge {
+    background: #172554 !important;
+    color: #93c5fd !important;
+    border: 1px solid #1e40af !important;
+}
+:is(html.dark-mode, body.dark-mode) .workflow-header h2 {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .workflow-header p {
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .flow-step {
+    background: #0b1220 !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+:is(html.dark-mode, body.dark-mode) .flow-step:hover {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55) !important;
+}
+:is(html.dark-mode, body.dark-mode) .flow-step h4 {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .flow-step p {
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .flow-arrow {
+    color: #60a5fa !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-step-card {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-step-card:hover {
+    border-color: #334155 !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-badge {
+    background: linear-gradient(135deg, #1e3a8a, #0f172a) !important;
+    border: 1px solid #2563eb !important;
+    color: #bfdbfe !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-body h3 {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-body p,
+:is(html.dark-mode, body.dark-mode) .guide-bullets li,
+:is(html.dark-mode, body.dark-mode) .guide-numbers li {
+    color: #cbd5e1 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .step-callout.tip {
+    background: #172554 !important;
+    border-left-color: #3b82f6 !important;
+    color: #bfdbfe !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-callout.tip i {
+    color: #60a5fa !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-callout.important {
+    background: #451a03 !important;
+    border-left-color: #f59e0b !important;
+    color: #fde68a !important;
+}
+:is(html.dark-mode, body.dark-mode) .step-callout.important i {
+    color: #fbbf24 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .guide-table th {
+    background: #111827 !important;
+    border-color: #1e293b !important;
+    color: #93c5fd !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-table td {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+:is(html.dark-mode, body.dark-mode) .guide-table tbody tr:nth-child(even) td {
+    background: #111827 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .role-tag.super-admin {
+    background: #4c0519 !important;
+    color: #fda4af !important;
+    border-color: #9f1239 !important;
+}
+:is(html.dark-mode, body.dark-mode) .role-tag.admin {
+    background: #451a03 !important;
+    color: #fdba74 !important;
+    border-color: #9a3412 !important;
+}
+:is(html.dark-mode, body.dark-mode) .role-tag.officer {
+    background: #1e1b4b !important;
+    color: #c7d2fe !important;
+    border-color: #4338ca !important;
+}
+:is(html.dark-mode, body.dark-mode) .role-tag.staff {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border-color: #166534 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .status-indicator.normal {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
+}
+:is(html.dark-mode, body.dark-mode) .status-indicator.warning {
+    background: #451a03 !important;
+    color: #fde68a !important;
+    border: 1px solid #9a3412 !important;
+}
+:is(html.dark-mode, body.dark-mode) .status-indicator.high {
+    background: #431407 !important;
+    color: #fdba74 !important;
+    border: 1px solid #c2410c !important;
+}
+:is(html.dark-mode, body.dark-mode) .status-indicator.critical {
+    background: #4c0519 !important;
+    color: #fda4af !important;
+    border: 1px solid #9f1239 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .export-card {
+    background: #111827 !important;
+    border-color: #1e293b !important;
+}
+:is(html.dark-mode, body.dark-mode) .export-card.pdf {
+    background: #1c1117 !important;
+    border-color: #881337 !important;
+}
+:is(html.dark-mode, body.dark-mode) .export-card.excel {
+    background: #061d18 !important;
+    border-color: #065f46 !important;
+}
+:is(html.dark-mode, body.dark-mode) .export-card h4 {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .export-card p {
+    color: #94a3b8 !important;
+}
+
 /* Print Styles */
 @media print {
     body {

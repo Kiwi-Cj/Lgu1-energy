@@ -4,8 +4,9 @@
 @section('content')
 @php
     $filters = $filters ?? ['q' => '', 'status' => ''];
+    $submetersEnabled = (bool) config('features.submeters_enabled', false);
     $totalMain = $unapprovedMainMeters->count();
-    $totalSub = $unapprovedSubMeters->count();
+    $totalSub = $submetersEnabled ? $unapprovedSubMeters->count() : 0;
     $totalUnapproved = $totalMain + $totalSub;
 @endphp
 
@@ -581,12 +582,14 @@
                 <div class="approval-stat-value">{{ $totalMain }}</div>
                 <div class="approval-stat-note">Primary monitoring points</div>
             </div>
+            @if($submetersEnabled)
             <div class="approval-stat">
                 <span class="approval-stat-icon"><i class="fa fa-diagram-project"></i></span>
                 <div class="approval-stat-label">Sub Meters</div>
                 <div class="approval-stat-value">{{ $totalSub }}</div>
                 <div class="approval-stat-note">Linked monitoring points</div>
             </div>
+            @endif
         </div>
 
         @if($totalUnapproved === 0)
@@ -651,6 +654,7 @@
             @endif
         </section>
 
+        @if($submetersEnabled)
         <section class="approval-section">
             <div class="approval-section-head">
                 <h3 class="approval-section-title"><i class="fa fa-diagram-project"></i> Unapproved Sub Meters</h3>
@@ -710,6 +714,7 @@
                 </div>
             @endif
         </section>
+        @endif
     </div>
     </div>
 </div>

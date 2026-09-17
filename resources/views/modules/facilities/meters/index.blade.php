@@ -4,6 +4,7 @@
 @section('content')
 @php
     $filters = $filters ?? ['q' => '', 'meter_type' => '', 'status' => ''];
+    $submetersEnabled = (bool) config('features.submeters_enabled', false);
 @endphp
 <style>
     .meter-modal-overlay {
@@ -262,7 +263,7 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
             <h2 style="margin:0;color:#2563eb;font-weight:800;">Meters Management</h2>
-            <div style="color:#64748b;margin-top:4px;">Facility: <strong style="color:#1e293b;">{{ $facility->name }}</strong> (Main + Sub-meters)</div>
+            <div style="color:#64748b;margin-top:4px;">Facility: <strong style="color:#1e293b;">{{ $facility->name }}</strong>{{ $submetersEnabled ? ' (Main + Sub-meters)' : ' (Main Meter)' }}</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <a href="{{ route('modules.facilities.show', $facility->id) }}" style="text-decoration:none;background:#f1f5f9;color:#1e293b;padding:10px 14px;border-radius:10px;font-weight:700;">
@@ -291,10 +292,12 @@
             <div style="font-size:.8rem;color:#64748b;font-weight:700;">MAIN METERS</div>
             <div style="font-size:1.45rem;font-weight:800;color:#2563eb;">{{ $mainCount ?? 0 }}</div>
         </div>
+        @if($submetersEnabled)
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;">
             <div style="font-size:.8rem;color:#64748b;font-weight:700;">SUB-METERS</div>
             <div style="font-size:1.45rem;font-weight:800;color:#9333ea;">{{ $subCount ?? 0 }}</div>
         </div>
+        @endif
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;">
             <div style="font-size:.8rem;color:#64748b;font-weight:700;">ARCHIVED</div>
             <div style="font-size:1.45rem;font-weight:800;color:#e11d48;">{{ $archivedCount ?? 0 }}</div>
@@ -307,6 +310,7 @@
                 <label style="font-size:.84rem;font-weight:700;color:#475569;">Search</label>
                 <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Meter name/number/location/notes" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
             </div>
+            @if($submetersEnabled)
             <div style="display:flex;flex-direction:column;gap:5px;min-width:150px;">
                 <label style="font-size:.84rem;font-weight:700;color:#475569;">Type</label>
                 <select name="meter_type" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">
@@ -315,6 +319,7 @@
                     <option value="sub" @selected(($filters['meter_type'] ?? '') === 'sub')>Sub</option>
                 </select>
             </div>
+            @endif
             <div style="display:flex;flex-direction:column;gap:5px;min-width:150px;">
                 <label style="font-size:.84rem;font-weight:700;color:#475569;">Status</label>
                 <select name="status" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:10px;">

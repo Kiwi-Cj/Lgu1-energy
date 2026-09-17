@@ -595,6 +595,430 @@ body.dark-mode .main-content-inner [style*="box-shadow"] {
     box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45) !important;
 }
 
+/* ===== UNIVERSAL DARK MODE TABLES ===== */
+body.dark-mode table thead tr,
+html.dark-mode table thead tr {
+    background: #111827 !important;
+}
+
+body.dark-mode table th,
+html.dark-mode table th {
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155 !important;
+}
+
+body.dark-mode table td,
+html.dark-mode table td {
+    border-color: #334155 !important;
+}
+
+/* ===== UNIVERSAL DARK MODE HEADING ICONS & STATUS PILLS ===== */
+body.dark-mode .facility-heading-icon,
+html.dark-mode .facility-heading-icon {
+    background: linear-gradient(135deg, #1e3a8a, #1e293b) !important;
+    border-color: #3b82f6 !important;
+    color: #93c5fd !important;
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.4) !important;
+}
+
+body.dark-mode .status-pill.warning,
+html.dark-mode .status-pill.warning {
+    background: #451a03 !important;
+    border-color: #9a3412 !important;
+    color: #fdba74 !important;
+}
+
+body.dark-mode .status-pill.on-track,
+body.dark-mode .status-pill.completed,
+body.dark-mode .status-pill.is-active,
+html.dark-mode .status-pill.on-track,
+html.dark-mode .status-pill.completed,
+html.dark-mode .status-pill.is-active {
+    background: #052e16 !important;
+    border-color: #166534 !important;
+    color: #86efac !important;
+}
+
+body.dark-mode .status-pill.pending,
+html.dark-mode .status-pill.pending {
+    background: #422006 !important;
+    border-color: #854d0e !important;
+    color: #fde047 !important;
+}
+
+body.dark-mode .status-pill.neutral,
+body.dark-mode .status-pill.is-inactive,
+html.dark-mode .status-pill.neutral,
+html.dark-mode .status-pill.is-inactive {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .priority-pill.critical,
+html.dark-mode .priority-pill.critical {
+    background: #4c0519 !important;
+    border-color: #be123c !important;
+    color: #fda4af !important;
+}
+
+body.dark-mode .priority-pill.high,
+html.dark-mode .priority-pill.high {
+    background: #451a03 !important;
+    border-color: #9a3412 !important;
+    color: #fdba74 !important;
+}
+
+body.dark-mode .priority-pill.normal,
+html.dark-mode .priority-pill.normal {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #cbd5e1 !important;
+}
+
+/* ===== UNIVERSAL DARK MODE MODALS & DIALOGS ===== */
+body.dark-mode dialog::backdrop,
+html.dark-mode dialog::backdrop,
+body.dark-mode .modal-backdrop,
+body.dark-mode .modal-overlay,
+body.dark-mode .monthly-modal-overlay,
+body.dark-mode .energy-modal-overlay,
+body.dark-mode .cf-modal-overlay,
+body.dark-mode .role-perm-modal,
+html.dark-mode .modal-backdrop,
+html.dark-mode .modal-overlay,
+html.dark-mode .monthly-modal-overlay,
+html.dark-mode .energy-modal-overlay,
+html.dark-mode .cf-modal-overlay,
+html.dark-mode .role-perm-modal {
+    background: rgba(2, 6, 23, 0.75) !important;
+    backdrop-filter: blur(4px);
+}
+
+body.dark-mode dialog,
+body.dark-mode .modal,
+body.dark-mode .modal-dialog,
+body.dark-mode .modal-content,
+body.dark-mode .modal-card,
+body.dark-mode .modal-sheet,
+body.dark-mode .facility-form-modal,
+body.dark-mode .maintenance-modal,
+body.dark-mode .role-perm-modal-card,
+body.dark-mode .monthly-modal-card,
+body.dark-mode .cf-modal-card,
+body.dark-mode .annual-summary-modal,
+body.dark-mode .user-status-dialog,
+body.dark-mode .review-dialog,
+body.dark-mode .goal-modal,
+body.dark-mode .checklist-task-modal,
+body.dark-mode .recommendation-modal,
+body.dark-mode .user-edit-modal-pro,
+body.dark-mode .user-view-modal-pro,
+html.dark-mode dialog,
+html.dark-mode .modal,
+html.dark-mode .modal-dialog,
+html.dark-mode .modal-content,
+html.dark-mode .modal-card,
+html.dark-mode .modal-sheet,
+html.dark-mode .facility-form-modal,
+html.dark-mode .maintenance-modal,
+html.dark-mode .role-perm-modal-card,
+html.dark-mode .monthly-modal-card,
+html.dark-mode .cf-modal-card,
+html.dark-mode .annual-summary-modal,
+html.dark-mode .user-status-dialog,
+html.dark-mode .review-dialog,
+html.dark-mode .goal-modal,
+html.dark-mode .checklist-task-modal,
+html.dark-mode .recommendation-modal,
+html.dark-mode .user-edit-modal-pro,
+html.dark-mode .user-view-modal-pro {
+    background: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-head,
+body.dark-mode .facility-form-header,
+body.dark-mode .maintenance-modal-header,
+body.dark-mode .role-perm-modal-head,
+body.dark-mode .monthly-record-modal-header,
+body.dark-mode .cf-modal-header,
+body.dark-mode .user-status-dialog-header,
+body.dark-mode .uv-modal-header,
+body.dark-mode .goal-modal-head,
+body.dark-mode .checklist-modal-head,
+body.dark-mode .recommendation-modal-head,
+html.dark-mode .modal-header,
+html.dark-mode .modal-head,
+html.dark-mode .facility-form-header,
+html.dark-mode .maintenance-modal-header,
+html.dark-mode .role-perm-modal-head,
+html.dark-mode .monthly-record-modal-header,
+html.dark-mode .cf-modal-header,
+html.dark-mode .user-status-dialog-header,
+html.dark-mode .uv-modal-header,
+html.dark-mode .goal-modal-head,
+html.dark-mode .checklist-modal-head,
+html.dark-mode .recommendation-modal-head {
+    background: linear-gradient(135deg, #111827 0%, #1e293b 100%) !important;
+    border-bottom: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .modal-title,
+body.dark-mode .modal-head-title,
+body.dark-mode .maintenance-modal-title,
+body.dark-mode .role-perm-modal-title,
+body.dark-mode .monthly-modal-title,
+body.dark-mode .user-status-dialog-title,
+body.dark-mode .uv-modal-title,
+body.dark-mode .goal-card-title,
+body.dark-mode .checklist-task-heading-title,
+body.dark-mode .recommendation-modal-title,
+html.dark-mode .modal-title,
+html.dark-mode .modal-head-title,
+html.dark-mode .maintenance-modal-title,
+html.dark-mode .role-perm-modal-title,
+html.dark-mode .monthly-modal-title,
+html.dark-mode .user-status-dialog-title,
+html.dark-mode .uv-modal-title,
+html.dark-mode .goal-card-title,
+html.dark-mode .checklist-task-heading-title,
+html.dark-mode .recommendation-modal-title {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .modal-subtitle,
+body.dark-mode .modal-head-subtitle,
+body.dark-mode .maintenance-modal-subtitle,
+body.dark-mode .monthly-modal-subtitle,
+body.dark-mode .user-status-dialog-message,
+body.dark-mode .uv-modal-subtitle,
+body.dark-mode .goal-card-subtitle,
+body.dark-mode .checklist-task-heading-copy,
+html.dark-mode .modal-subtitle,
+html.dark-mode .modal-head-subtitle,
+html.dark-mode .maintenance-modal-subtitle,
+html.dark-mode .monthly-modal-subtitle,
+html.dark-mode .user-status-dialog-message,
+html.dark-mode .uv-modal-subtitle,
+html.dark-mode .goal-card-subtitle,
+html.dark-mode .checklist-task-heading-copy {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .modal-close,
+body.dark-mode .modal-close-pro,
+body.dark-mode .facility-form-close,
+body.dark-mode .maintenance-modal-close,
+body.dark-mode .monthly-modal-close,
+body.dark-mode .cf-modal-close,
+body.dark-mode .user-status-dialog-close,
+body.dark-mode .goal-modal-close,
+body.dark-mode .checklist-modal-close,
+body.dark-mode .recommendation-modal-close,
+body.dark-mode .close,
+html.dark-mode .modal-close,
+html.dark-mode .modal-close-pro,
+html.dark-mode .facility-form-close,
+html.dark-mode .maintenance-modal-close,
+html.dark-mode .monthly-modal-close,
+html.dark-mode .cf-modal-close,
+html.dark-mode .user-status-dialog-close,
+html.dark-mode .goal-modal-close,
+html.dark-mode .checklist-modal-close,
+html.dark-mode .recommendation-modal-close,
+html.dark-mode .close {
+    background: #1e293b !important;
+    border: 1px solid #475569 !important;
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .modal-close:hover,
+body.dark-mode .modal-close-pro:hover,
+body.dark-mode .facility-form-close:hover,
+body.dark-mode .maintenance-modal-close:hover,
+body.dark-mode .monthly-modal-close:hover,
+body.dark-mode .cf-modal-close:hover,
+body.dark-mode .user-status-dialog-close:hover,
+body.dark-mode .goal-modal-close:hover,
+body.dark-mode .checklist-modal-close:hover,
+body.dark-mode .recommendation-modal-close:hover,
+body.dark-mode .close:hover,
+html.dark-mode .modal-close:hover,
+html.dark-mode .modal-close-pro:hover,
+html.dark-mode .facility-form-close:hover,
+html.dark-mode .maintenance-modal-close:hover,
+html.dark-mode .monthly-modal-close:hover,
+html.dark-mode .cf-modal-close:hover,
+html.dark-mode .user-status-dialog-close:hover,
+html.dark-mode .goal-modal-close:hover,
+html.dark-mode .checklist-modal-close:hover,
+html.dark-mode .recommendation-modal-close:hover,
+html.dark-mode .close:hover {
+    background: #334155 !important;
+    color: #f8fafc !important;
+    border-color: #64748b !important;
+}
+
+body.dark-mode .modal-footer,
+body.dark-mode .modal-foot,
+body.dark-mode .facility-form-actions,
+body.dark-mode .maintenance-modal-actions,
+body.dark-mode .monthly-modal-actions,
+body.dark-mode .cf-modal-footer,
+body.dark-mode .user-status-dialog-actions,
+body.dark-mode .uv-modal-actions,
+body.dark-mode .goal-modal-footer,
+body.dark-mode .checklist-modal-actions,
+body.dark-mode .recommendation-modal-footer,
+html.dark-mode .modal-footer,
+html.dark-mode .modal-foot,
+html.dark-mode .facility-form-actions,
+html.dark-mode .maintenance-modal-actions,
+html.dark-mode .monthly-modal-actions,
+html.dark-mode .cf-modal-footer,
+html.dark-mode .user-status-dialog-actions,
+html.dark-mode .uv-modal-actions,
+html.dark-mode .goal-modal-footer,
+html.dark-mode .checklist-modal-actions,
+html.dark-mode .recommendation-modal-footer {
+    background: #111827 !important;
+    border-top: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode dialog input,
+body.dark-mode dialog select,
+body.dark-mode dialog textarea,
+body.dark-mode .modal input,
+body.dark-mode .modal select,
+body.dark-mode .modal textarea,
+body.dark-mode .modal-card input,
+body.dark-mode .modal-card select,
+body.dark-mode .modal-card textarea,
+body.dark-mode .modal-content input,
+body.dark-mode .modal-content select,
+body.dark-mode .modal-content textarea,
+body.dark-mode .modal-sheet input,
+body.dark-mode .modal-sheet select,
+body.dark-mode .modal-sheet textarea,
+html.dark-mode dialog input,
+html.dark-mode dialog select,
+html.dark-mode dialog textarea,
+html.dark-mode .modal input,
+html.dark-mode .modal select,
+html.dark-mode .modal textarea,
+html.dark-mode .modal-card input,
+html.dark-mode .modal-card select,
+html.dark-mode .modal-card textarea,
+html.dark-mode .modal-content input,
+html.dark-mode .modal-content select,
+html.dark-mode .modal-content textarea,
+html.dark-mode .modal-sheet input,
+html.dark-mode .modal-sheet select,
+html.dark-mode .modal-sheet textarea {
+    background: #111827 !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode dialog input::placeholder,
+body.dark-mode dialog textarea::placeholder,
+body.dark-mode .modal input::placeholder,
+body.dark-mode .modal textarea::placeholder,
+body.dark-mode .modal-card input::placeholder,
+body.dark-mode .modal-card textarea::placeholder,
+body.dark-mode .modal-content input::placeholder,
+body.dark-mode .modal-content textarea::placeholder,
+html.dark-mode dialog input::placeholder,
+html.dark-mode dialog textarea::placeholder,
+html.dark-mode .modal input::placeholder,
+html.dark-mode .modal textarea::placeholder,
+html.dark-mode .modal-card input::placeholder,
+html.dark-mode .modal-card textarea::placeholder,
+html.dark-mode .modal-content input::placeholder,
+html.dark-mode .modal-content textarea::placeholder {
+    color: #64748b !important;
+}
+
+body.dark-mode dialog label,
+body.dark-mode .modal label,
+body.dark-mode .modal-card label,
+body.dark-mode .modal-content label,
+body.dark-mode .modal-sheet label,
+html.dark-mode dialog label,
+html.dark-mode .modal label,
+html.dark-mode .modal-card label,
+html.dark-mode .modal-content label,
+html.dark-mode .modal-sheet label {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode dialog .btn-secondary,
+body.dark-mode dialog button.cancel,
+body.dark-mode dialog .user-action-btn:not(.danger):not(.success),
+body.dark-mode dialog .review-btn.dialog-cancel,
+body.dark-mode dialog .dialog-cancel,
+body.dark-mode .modal .btn-secondary,
+body.dark-mode .modal .btn-default,
+body.dark-mode .modal .cancel,
+body.dark-mode .modal-card .btn-secondary,
+body.dark-mode .modal-card .cancel,
+body.dark-mode .modal-card .monthly-modal-btn.neutral,
+body.dark-mode .modal-card .uv-btn-cancel,
+body.dark-mode .modal-card .action-btn-secondary,
+body.dark-mode .modal-content .btn-secondary,
+body.dark-mode .modal-content .cancel,
+body.dark-mode .modal-content .delete-modal-btn.cancel,
+body.dark-mode .modal-content .reset-modal-btn.cancel,
+body.dark-mode .modal-content .energy-modal-btn.cancel,
+html.dark-mode dialog .btn-secondary,
+html.dark-mode dialog button.cancel,
+html.dark-mode dialog .user-action-btn:not(.danger):not(.success),
+html.dark-mode dialog .review-btn.dialog-cancel,
+html.dark-mode dialog .dialog-cancel,
+html.dark-mode .modal .btn-secondary,
+html.dark-mode .modal .btn-default,
+html.dark-mode .modal .cancel,
+html.dark-mode .modal-card .btn-secondary,
+html.dark-mode .modal-card .cancel,
+html.dark-mode .modal-card .monthly-modal-btn.neutral,
+html.dark-mode .modal-card .uv-btn-cancel,
+html.dark-mode .modal-card .action-btn-secondary,
+html.dark-mode .modal-content .btn-secondary,
+html.dark-mode .modal-content .cancel,
+html.dark-mode .modal-content .delete-modal-btn.cancel,
+html.dark-mode .modal-content .reset-modal-btn.cancel,
+html.dark-mode .modal-content .energy-modal-btn.cancel {
+    background: #1e293b !important;
+    border: 1px solid #475569 !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode dialog .btn-secondary:hover,
+body.dark-mode dialog .review-btn.dialog-cancel:hover,
+body.dark-mode .modal .btn-secondary:hover,
+body.dark-mode .modal-card .btn-secondary:hover,
+body.dark-mode .modal-card .uv-btn-cancel:hover,
+body.dark-mode .modal-card .action-btn-secondary:hover,
+body.dark-mode .modal-content .btn-secondary:hover,
+html.dark-mode dialog .btn-secondary:hover,
+html.dark-mode dialog .review-btn.dialog-cancel:hover,
+html.dark-mode .modal .btn-secondary:hover,
+html.dark-mode .modal-card .btn-secondary:hover,
+html.dark-mode .modal-card .uv-btn-cancel:hover,
+html.dark-mode .modal-card .action-btn-secondary:hover,
+html.dark-mode .modal-content .btn-secondary:hover {
+    background: #334155 !important;
+    color: #f8fafc !important;
+    border-color: #64748b !important;
+}
+
 /* ===== RESPONSIVE BREAKPOINTS ===== */
 @media(max-width:991px){
     .sidebar-nav { transform: translateX(-100%); }
@@ -2174,7 +2598,7 @@ body.dark-mode .sidebar-footer {
         <div class="secure-download-icon" id="secureDownloadIcon"><i class="fa-solid fa-lock"></i></div>
         <h2 id="secureDownloadTitle">Security Verification</h2>
         <p id="secureDownloadDescription">Enter your account password before proceeding.</p>
-        <form method="POST" action="{{ route('downloads.authorize') }}" id="secureDownloadForm">
+        <form method="POST" action="{{ route('downloads.authorize', [], false) }}" id="secureDownloadForm">
             @csrf
             <input type="hidden" name="target" id="secureDownloadTarget">
             <label for="secureDownloadPassword">Account Password</label>
@@ -2586,10 +3010,6 @@ if (document.documentElement.classList.contains('dark-mode')) {
                 <li><a href="{{ $p('modules/settings/index') }}" class="nav-link{{ request()->is('modules/settings*') ? ' active' : '' }}"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 @endif
             @endif
-
-            <li class="nav-section-label">Support &amp; Help</li>
-            <li><a href="{{ route('user-guide.index') }}" class="nav-link{{ request()->routeIs('user-guide.*') || request()->routeIs('modules.user-guide.*') ? ' active' : '' }}"><i class="fa-solid fa-book-open-reader"></i> User Guide</a></li>
-            <li><a href="{{ route('faqs.index') }}" class="nav-link{{ request()->routeIs('faqs.*') ? ' active' : '' }}"><i class="fa-solid fa-circle-question"></i> System FAQs</a></li>
         </ul>
     </div>
 
@@ -2850,86 +3270,90 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.requestSecureDownload = (targetUrl, options = {}) => {
-        if (!secureDownloadModal || !secureDownloadTarget) {
-            if (targetUrl === 'print') {
-                window.print();
-            } else {
-                window.location.href = targetUrl;
-            }
+        const modal = document.getElementById('secureDownloadModal');
+        const targetInput = document.getElementById('secureDownloadTarget');
+        const passwordInput = document.getElementById('secureDownloadPassword');
+        const submitBtn = document.getElementById('secureDownloadSubmit');
+        const titleEl = document.getElementById('secureDownloadTitle');
+        const descEl = document.getElementById('secureDownloadDescription');
+        const iconEl = document.getElementById('secureDownloadIcon');
+
+        if (!modal || !targetInput) {
+            console.error('Secure download modal not found in DOM.');
             return;
         }
 
         secureDownloadCurrentAction = options.action || (targetUrl === 'print' ? 'print' : 'download');
         clearInterval(secureDownloadLockTimer);
         clearSecureDownloadFeedback();
-        secureDownloadTarget.value = targetUrl;
+        targetInput.value = targetUrl;
 
         const isPrint = secureDownloadCurrentAction === 'print' || targetUrl === 'print';
         const urlStr = String(targetUrl || '').toLowerCase();
-        const isExcel = urlStr.includes('excel') || urlStr.includes('format=xlsx') || urlStr.includes('.xlsx');
+        const isExcel = urlStr.includes('excel') || urlStr.includes('format=xlsx') || urlStr.includes('.xlsx') || urlStr.includes('export');
         const isPdf = urlStr.includes('pdf') || urlStr.includes('.pdf');
         const isCsv = urlStr.includes('csv') || urlStr.includes('format=csv') || urlStr.includes('.csv');
 
-        if (secureDownloadTitle) {
+        if (titleEl) {
             if (options.title) {
-                secureDownloadTitle.textContent = options.title;
+                titleEl.textContent = options.title;
             } else if (isPrint) {
-                secureDownloadTitle.textContent = 'Confirm Print Report';
+                titleEl.textContent = 'Confirm Print Report';
             } else if (isExcel) {
-                secureDownloadTitle.textContent = 'Confirm Excel Export';
+                titleEl.textContent = 'Confirm Excel Export';
             } else if (isPdf) {
-                secureDownloadTitle.textContent = 'Confirm PDF Download';
+                titleEl.textContent = 'Confirm PDF Download';
             } else if (isCsv) {
-                secureDownloadTitle.textContent = 'Confirm CSV Export';
+                titleEl.textContent = 'Confirm CSV Export';
             } else {
-                secureDownloadTitle.textContent = 'Confirm Download';
+                titleEl.textContent = 'Confirm Download';
             }
         }
 
-        if (secureDownloadDescription) {
+        if (descEl) {
             if (options.description) {
-                secureDownloadDescription.textContent = options.description;
+                descEl.textContent = options.description;
             } else if (isPrint) {
-                secureDownloadDescription.textContent = 'Please enter your account password before printing this report.';
+                descEl.textContent = 'Please enter your account password before printing this report.';
             } else if (isExcel) {
-                secureDownloadDescription.textContent = 'Please enter your account password before exporting this Excel file.';
+                descEl.textContent = 'Please enter your account password before exporting this Excel file.';
             } else if (isPdf) {
-                secureDownloadDescription.textContent = 'Please enter your account password before downloading this PDF report.';
+                descEl.textContent = 'Please enter your account password before downloading this PDF report.';
             } else if (isCsv) {
-                secureDownloadDescription.textContent = 'Please enter your account password before exporting this CSV file.';
+                descEl.textContent = 'Please enter your account password before exporting this CSV file.';
             } else {
-                secureDownloadDescription.textContent = 'Please enter your account password before downloading this report.';
+                descEl.textContent = 'Please enter your account password before downloading this report.';
             }
         }
 
-        if (secureDownloadIcon) {
+        if (iconEl) {
             if (options.icon) {
-                secureDownloadIcon.innerHTML = options.icon;
+                iconEl.innerHTML = options.icon;
             } else if (isPrint) {
-                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-print"></i>';
+                iconEl.innerHTML = '<i class="fa-solid fa-print"></i>';
             } else if (isExcel) {
-                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-excel" style="color:#15803d;"></i>';
+                iconEl.innerHTML = '<i class="fa-solid fa-file-excel" style="color:#15803d;"></i>';
             } else if (isPdf) {
-                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-pdf" style="color:#b91c1c;"></i>';
+                iconEl.innerHTML = '<i class="fa-solid fa-file-pdf" style="color:#b91c1c;"></i>';
             } else if (isCsv) {
-                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-file-csv" style="color:#059669;"></i>';
+                iconEl.innerHTML = '<i class="fa-solid fa-file-csv" style="color:#059669;"></i>';
             } else {
-                secureDownloadIcon.innerHTML = '<i class="fa-solid fa-lock"></i>';
+                iconEl.innerHTML = '<i class="fa-solid fa-lock"></i>';
             }
         }
 
-        if (secureDownloadPassword) {
-            secureDownloadPassword.value = '';
-            secureDownloadPassword.disabled = false;
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.disabled = false;
         }
-        if (secureDownloadSubmit) {
-            secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = options.submitText || (isPrint ? 'Authorize & Print' : 'Authorize & Download');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = options.submitText || (isPrint ? 'Authorize & Print' : 'Authorize & Download');
         }
-        secureDownloadModal.style.display = 'flex';
-        secureDownloadModal.setAttribute('aria-hidden', 'false');
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
-        setTimeout(() => secureDownloadPassword?.focus(), 50);
+        setTimeout(() => passwordInput?.focus(), 50);
     };
 
     window.requestSecurePrint = (options = {}) => {
@@ -2944,18 +3368,21 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const closeSecureDownloadModal = () => {
-        if (!secureDownloadModal) return;
+        const modal = document.getElementById('secureDownloadModal');
+        const passwordInput = document.getElementById('secureDownloadPassword');
+        const submitBtn = document.getElementById('secureDownloadSubmit');
+        if (!modal) return;
         clearInterval(secureDownloadLockTimer);
         clearSecureDownloadFeedback();
-        if (secureDownloadPassword) {
-            secureDownloadPassword.disabled = false;
+        if (passwordInput) {
+            passwordInput.disabled = false;
         }
-        if (secureDownloadSubmit) {
-            secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
         }
-        secureDownloadModal.style.display = 'none';
-        secureDownloadModal.setAttribute('aria-hidden', 'true');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
     };
 
@@ -2967,7 +3394,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && secureDownloadModal?.style.display === 'flex') {
+        if (event.key === 'Escape' && document.getElementById('secureDownloadModal')?.style.display === 'flex') {
             closeSecureDownloadModal();
         }
     });
@@ -2980,35 +3407,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     secureDownloadForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!secureDownloadSubmit || !secureDownloadPassword) return;
+        const form = document.getElementById('secureDownloadForm');
+        const submitBtn = document.getElementById('secureDownloadSubmit');
+        const passwordInput = document.getElementById('secureDownloadPassword');
+        if (!form || !submitBtn || !passwordInput) return;
 
         clearSecureDownloadFeedback();
-        secureDownloadSubmit.disabled = true;
-        secureDownloadSubmit.textContent = 'Verifying...';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verifying...';
 
         try {
-            const response = await fetch(secureDownloadForm.action, {
+            const response = await fetch(form.action, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                body: new FormData(secureDownloadForm)
+                body: new FormData(form)
             });
             const payload = await response.json().catch(() => ({}));
 
             if (!response.ok || !payload.success) {
                 const message = payload.message || 'Invalid password. Action was not authorized.';
                 setSecureDownloadFeedback(message, 'error');
-                secureDownloadPassword.value = '';
-                secureDownloadPassword.focus();
+                passwordInput.value = '';
+                passwordInput.focus();
 
                 if (payload.retry_after) {
                     applySecureDownloadLock(payload.retry_after);
                 } else {
-                    secureDownloadSubmit.disabled = false;
-                    secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
                 }
                 return;
             }
@@ -3017,7 +3447,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const successMsg = payload.message || (isPrint ? 'Password confirmed. Opening print dialog...' : 'Password confirmed. Download starting...');
             setSecureDownloadFeedback(successMsg, 'success');
             showGlobalToast(successMsg, 'success');
-            secureDownloadSubmit.textContent = isPrint ? 'Opening Print...' : 'Starting...';
+            submitBtn.textContent = isPrint ? 'Opening Print...' : 'Starting...';
 
             setTimeout(() => {
                 closeSecureDownloadModal();
@@ -3029,8 +3459,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 550);
         } catch (error) {
             setSecureDownloadFeedback('Unable to verify password right now. Please try again.', 'error');
-            secureDownloadSubmit.disabled = false;
-            secureDownloadSubmit.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
+            submitBtn.disabled = false;
+            submitBtn.textContent = secureDownloadCurrentAction === 'print' ? 'Authorize & Print' : 'Authorize & Download';
         }
     });
 
@@ -3045,23 +3475,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 2. Intercept explicit secure download links
-        const link = event.target.closest('a[data-secure-download]');
-        if (link) {
-            event.preventDefault();
-            event.stopPropagation();
-            window.requestSecureDownload(link.href);
-            return;
+        const link = event.target.closest('a[data-secure-download], [data-secure-download] a, a.download-btn');
+        if (link && !link.matches('[data-no-secure]')) {
+            const href = link.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript:')) {
+                event.preventDefault();
+                event.stopPropagation();
+                window.requestSecureDownload(link.href);
+                return;
+            }
         }
 
         // 3. Auto-detect common Excel/PDF/CSV/export buttons
         const autoDownloadLink = event.target.closest('a.btn-excel, a.btn-pdf, a.btn-csv, a.annual-download-btn, a.incident-pdf-btn');
-        if (autoDownloadLink && !autoDownloadLink.matches('[data-no-secure]') && autoDownloadLink.getAttribute('href') && autoDownloadLink.getAttribute('href') !== '#') {
-            event.preventDefault();
-            event.stopPropagation();
-            window.requestSecureDownload(autoDownloadLink.href);
-            return;
+        if (autoDownloadLink && !autoDownloadLink.matches('[data-no-secure]')) {
+            const href = autoDownloadLink.getAttribute('href');
+            if (href && href !== '#' && !href.startsWith('javascript:')) {
+                event.preventDefault();
+                event.stopPropagation();
+                window.requestSecureDownload(autoDownloadLink.href);
+                return;
+            }
         }
-    });
+    }, true);
 
     document.addEventListener('submit', (event) => {
         const form = event.target;

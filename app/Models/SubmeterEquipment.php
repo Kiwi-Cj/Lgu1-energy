@@ -20,6 +20,7 @@ class SubmeterEquipment extends Model
         'facility_meter_id',
         'equipment_name',
         'category',
+        'status',
         'location',
         'quantity',
         'rated_watts',

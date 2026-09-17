@@ -4,7 +4,12 @@ namespace App\Support;
 
 final class EnergyCost
 {
+    /**
+     * Official Quezon City / Meralco Commercial Electricity Rate benchmark (PHP/kWh).
+     */
     public const DEFAULT_RATE_PER_KWH = 12.0;
+    public const COMMERCIAL_RATE_PER_KWH = 12.0;
+    public const RATE_NAME = 'QC Meralco Commercial Rate';
 
     public static function ratePerKwh(mixed $record, float $defaultRate = self::DEFAULT_RATE_PER_KWH): float
     {

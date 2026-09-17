@@ -2130,6 +2130,144 @@
     body.dark-mode .monthly-performance-icon { color:var(--monthly-accent,#60a5fa); background:rgba(37,99,235,.12); }
     body.dark-mode .monthly-context-chip { color:#cbd5e1; }
     body.dark-mode .monthly-reset-btn { color:#cbd5e1; }
+
+    :is(html.dark-mode, body.dark-mode) .scope-pill.main {
+        background: #1e3a8a !important;
+        color: #bfdbfe !important;
+        border: 1px solid #3b82f6 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .scope-pill.facility {
+        background: #052e16 !important;
+        color: #86efac !important;
+        border: 1px solid #166534 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-cprf-tag {
+        background: #042f2e !important;
+        border-color: #0d9488 !important;
+        color: #5eead4 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-cprf-tag i {
+        color: #5eead4 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip {
+        background: #052e16 !important;
+        border-color: #166534 !important;
+        color: #86efac !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip i {
+        color: #4ade80 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-dial-chip .dial-arrow {
+        color: #86efac !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.change-pill.increased {
+        background: #4c0519 !important;
+        color: #fda4af !important;
+        border: 1px solid #be123c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.change-pill.decreased {
+        background: #1e1b4b !important;
+        color: #c7d2fe !important;
+        border: 1px solid #4338ca !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.change-pill.no-change {
+        background: #1e3a8a !important;
+        color: #bfdbfe !important;
+        border: 1px solid #3b82f6 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.critical,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.very-high,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.drop-critical,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.drop-high,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.spike {
+        background: #4c0519 !important;
+        color: #fda4af !important;
+        border: 1px solid #be123c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.warning,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.high,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.drop-warning,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.drop-medium {
+        background: #451a03 !important;
+        color: #fdba74 !important;
+        border: 1px solid #9a3412 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.normal,
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.good {
+        background: #052e16 !important;
+        color: #86efac !important;
+        border: 1px solid #166534 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-status-pill.alert-pill.no-baseline {
+        background: #1e293b !important;
+        color: #cbd5e1 !important;
+        border: 1px solid #475569 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.approved {
+        background: #052e16 !important;
+        color: #86efac !important;
+        border: 1px solid #166534 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.for_review,
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.pending,
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.for-review {
+        background: #451a03 !important;
+        color: #fdba74 !important;
+        border: 1px solid #9a3412 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.returned,
+    :is(html.dark-mode, body.dark-mode) .monthly-review-pill.rejected {
+        background: #4c0519 !important;
+        color: #fda4af !important;
+        border: 1px solid #be123c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-recommendation-btn {
+        border-color: #3b82f6 !important;
+        background: #1e3a8a !important;
+        color: #bfdbfe !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-recommendation-btn:hover {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-breakdown-toggle {
+        border-color: #334b70 !important;
+        background: #1e293b !important;
+        color: #bfdbfe !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-breakdown-toggle:hover {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-bill-link {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        color: #bfdbfe !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-bill-link.missing {
+        color: #94a3b8 !important;
+        background: #1e293b !important;
+        border-color: #334155 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-bill-link:hover:not(.missing) {
+        background: #2563eb !important;
+        color: #ffffff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-delete-btn {
+        background: #172033;
+        border-color: #475569;
+        color: #fda4af;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-delete-btn:hover {
+        background: #4c0519;
+        border-color: #be123c;
+        color: #fecdd3;
+    }
+    :is(html.dark-mode, body.dark-mode) .monthly-pending-mark {
+        color: #f59e0b;
+        background: #451a03;
+        border: 1px solid #9a3412;
+    }
     @media (max-width:900px) { .monthly-performance-grid,.monthly-overview-insights { grid-template-columns:repeat(2,minmax(0,1fr)); } .monthly-record-table-filter { align-items:stretch; flex-direction:column; gap:8px; } .monthly-filter-heading { padding-bottom:0; } }
     @media (max-width:760px) {
         .monthly-table-wrap { overflow:visible; padding:10px; border-top:0; }
@@ -3811,7 +3949,7 @@
                             <td data-label="Period / Main Meter">
                                 <div class="monthly-period-label">{{ $monthLabels[(int) ($record->month ?? 0)] ?? $record->month }} {{ (int) ($record->year ?? $selectedYear) }}</div>
                                 <div class="monthly-scope-cell">
-                                    <span class="scope-pill" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span>
+                                    <span class="scope-pill {{ $isCprfFacilityLevel ? 'facility' : 'main' }}" style="background:{{ $scopeBg }};color:{{ $scopeColor }};">{{ $scopeLabelRow }}</span>
                                     <span class="monthly-meter-name">{{ $scopeNameRow }}</span>
                                     @if($sourceKey === 'cprf' || str_contains(strtolower((string)($record->external_source ?? '')), 'cprf'))
                                         <span class="monthly-cprf-tag" title="Imported from CPRF meter reading integration"><i class="fa-solid fa-cloud-arrow-down"></i> CPRF</span>
@@ -3834,15 +3972,19 @@
                             </td>
                             <td data-label="Performance"><div class="monthly-performance-cell">
                                 @if($reviewStatus === 'approved')
-                                    <span class="monthly-status-pill" style="background:{{ $changeBg }};color:{{ $changeColor }};">
+                                    @php
+                                        $changeClass = $deviationRow > 0.0001 ? 'increased' : ($deviationRow < -0.0001 ? 'decreased' : 'no-change');
+                                        $alertLevelSlug = strtolower(str_replace(' ', '-', (string) $baselineAlertLabel));
+                                    @endphp
+                                    <span class="monthly-status-pill change-pill {{ $changeClass }}" style="background:{{ $changeBg }};color:{{ $changeColor }};">
                                         {{ $changeLabel }}
                                     </span>
-                                    <span class="monthly-status-pill" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
+                                    <span class="monthly-status-pill alert-pill {{ $alertLevelSlug }}" style="background:{{ $baselineAlertBg }};color:{{ $baselineAlertColor }};">
                                         {{ $baselineAlertLabel }}
                                     </span>
                                     @if(!empty($record->trend_spike_detected))
                                         <div style="margin-top:6px;">
-                                            <span class="monthly-status-pill" style="background:#fee2e2;color:#991b1b;">
+                                            <span class="monthly-status-pill alert-pill spike" style="background:#fee2e2;color:#991b1b;">
                                                 3-Month Spike
                                             </span>
                                         </div>
@@ -3856,7 +3998,7 @@
                             <td data-label="Billing"><div class="monthly-billing-cell"><div class="monthly-record-metric"><span>Rate</span><strong class="monthly-muted-number">PHP {{ number_format($rate, 2) }}/kWh</strong></div><div class="monthly-record-metric"><span>Cost</span><strong class="monthly-cost">PHP {{ number_format($cost, 2) }}</strong></div></div></td>
                             <td data-label="Review Status">
                                 <div class="monthly-review-cell">
-                                    <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};"><i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>{{ $reviewTheme['label'] }}</span>
+                                    <span class="monthly-review-pill {{ $reviewStatus }}" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};"><i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>{{ $reviewTheme['label'] }}</span>
                                     @if($record->review_remarks)<div class="monthly-review-remark" title="{{ $record->review_remarks }}">{{ \Illuminate\Support\Str::limit($record->review_remarks, 55) }}</div>@endif
                                 </div>
                             </td>
@@ -3877,9 +4019,9 @@
                                     </span>
                                 </div>
                                 @if($billImageUrl)
-                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener" class="monthly-bill-link"><i class="fa-solid fa-receipt"></i> Bill</a>
+                                    <a href="{{ $billImageUrl }}" target="_blank" rel="noopener" class="monthly-bill-link"><i class="fa-solid fa-camera"></i> Reading Photo</a>
                                 @else
-                                    <span class="monthly-bill-link missing"><i class="fa-solid fa-receipt"></i> No bill</span>
+                                    <span class="monthly-bill-link missing"><i class="fa-solid fa-camera"></i> No photo</span>
                                 @endif
                                 </div>
                             </td>
@@ -3923,7 +4065,7 @@
                                             <strong>{{ $billingPeriodLabel }} breakdown</strong>
                                             <span>{{ $scopeNameRow }} &middot; {{ $sourceLabel }}</span>
                                         </div>
-                                        <span class="monthly-review-pill" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};">
+                                        <span class="monthly-review-pill {{ $reviewStatus }}" style="background:{{ $reviewTheme['bg'] }};color:{{ $reviewTheme['color'] }};">
                                             <i class="fa-solid {{ $reviewStatus === 'approved' ? 'fa-circle-check' : ($reviewStatus === 'returned' ? 'fa-rotate-left' : 'fa-clock') }}"></i>
                                             {{ $reviewTheme['label'] }}
                                         </span>
@@ -3976,7 +4118,7 @@
                                         <div class="monthly-record-breakdown-item">
                                             <span>Billing period</span>
                                             <strong>{{ $billingPeriodLabel }}</strong>
-                                            <small>{{ $billImageUrl ? 'Supporting bill attached' : 'No supporting bill attached' }}</small>
+                                            <small>{{ $billImageUrl ? 'Meter reading photo attached' : 'No reading photo attached' }}</small>
                                         </div>
                                         <div class="monthly-record-breakdown-item">
                                             <span>Verification</span>
@@ -3988,7 +4130,7 @@
                                     <div class="monthly-record-breakdown-actions">
                                         <a href="{{ $recommendationUrl }}"><i class="fa-solid fa-wand-magic-sparkles"></i> View energy insight</a>
                                         @if($billImageUrl)
-                                            <a href="{{ $billImageUrl }}" target="_blank" rel="noopener"><i class="fa-solid fa-receipt"></i> Open supporting bill</a>
+                                            <a href="{{ $billImageUrl }}" target="_blank" rel="noopener"><i class="fa-solid fa-camera"></i> View reading photo</a>
                                         @endif
                                     </div>
                                 </section>
@@ -4165,7 +4307,7 @@
                     </span>
                 </div>
                 <div class="monthly-field">
-                    <label for="add_rate_per_kwh">Rate (PHP/kWh) <span style="color:#e11d48;">*</span></label>
+                    <label for="add_rate_per_kwh">Rate (PHP/kWh) <span style="font-size:0.75rem;font-weight:600;color:#64748b;">(QC Commercial Rate)</span> <span style="color:#e11d48;">*</span></label>
                     <input type="number" min="0" step="0.01" inputmode="decimal" id="add_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required oninput="computeEnergyCost(); syncAddSaveButtonState();">
                 </div>
             </div>
@@ -4176,11 +4318,11 @@
                 <input type="number" step="0.01" id="add_energy_cost" name="energy_cost" readonly aria-live="polite" placeholder="Calculated from consumption × rate">
             </div>
 
-            <div class="monthly-form-section-title"><i class="fa-solid fa-image"></i> Supporting Document</div>
+            <div class="monthly-form-section-title"><i class="fa-solid fa-camera"></i> Supporting Evidence / Photo</div>
             <div class="monthly-field">
-                <label for="add_bill_image">Bill Image (Optional)</label>
+                <label for="add_bill_image">Meter Reading Photo (Optional)</label>
                 <input type="file" id="add_bill_image" name="bill_image" accept="image/*">
-                <span class="monthly-upload-help">Upload a clear photo or scan of the electric bill.</span>
+                <span class="monthly-upload-help">Upload a clear photo of the meter dial or reading log sheet.</span>
             </div>
 
             <div class="monthly-modal-actions">
@@ -4285,7 +4427,7 @@
                     </span>
                 </div>
                 <div class="monthly-field">
-                    <label for="add_weekly_rate_per_kwh">Rate (PHP/kWh) <span style="color:#e11d48;">*</span></label>
+                    <label for="add_weekly_rate_per_kwh">Rate (PHP/kWh) <span style="font-size:0.75rem;font-weight:600;color:#64748b;">(QC Commercial Rate)</span> <span style="color:#e11d48;">*</span></label>
                     <input type="number" min="0" step="0.01" inputmode="decimal" id="add_weekly_rate_per_kwh" name="rate_per_kwh" value="{{ old('rate_per_kwh', '12.00') }}" required oninput="computeWeeklyCost(); syncAddWeeklySaveButtonState();">
                 </div>
             </div>

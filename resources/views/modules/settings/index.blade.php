@@ -794,6 +794,51 @@ body.dark-mode .settings-file-chip {
                             <button type="submit" form="testEmailForm" class="settings-btn back"><i class="fa fa-paper-plane"></i> Send Test Email</button>
                             <span class="settings-help">Sends a test to your signed-in account using the currently saved configuration.</span>
                         </div>
+
+                        <div class="settings-subblock" style="margin-top:14px;margin-bottom:0;grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-bell"></i> Meter Reading Schedule & Reminders</h3>
+                            <p>Notify facility staff, encoders, and officers when it is time to record meter readings so scheduled logs are never forgotten.</p>
+                            <div class="settings-grid" style="margin-top:12px;">
+                                <div class="settings-field">
+                                    <label for="enable_reading_reminders">Reading Reminders</label>
+                                    <select id="enable_reading_reminders" name="enable_reading_reminders">
+                                        <option value="1" {{ (string) $getSetting('enable_reading_reminders', '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                        <option value="0" {{ (string) $getSetting('enable_reading_reminders', '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                                    </select>
+                                    @error('enable_reading_reminders') <div class="settings-error">{{ $message }}</div> @enderror
+                                    <span class="settings-help">Generates in-app notifications and alerts when readings are due.</span>
+                                </div>
+                                <div class="settings-field">
+                                    <label for="reading_reminder_frequency">Reminder Scope</label>
+                                    <select id="reading_reminder_frequency" name="reading_reminder_frequency">
+                                        <option value="weekly" {{ (string) $getSetting('reading_reminder_frequency', 'weekly') === 'weekly' ? 'selected' : '' }}>Weekly Readings (Week 1–4)</option>
+                                        <option value="monthly" {{ (string) $getSetting('reading_reminder_frequency', 'weekly') === 'monthly' ? 'selected' : '' }}>Monthly Records Only</option>
+                                        <option value="both" {{ (string) $getSetting('reading_reminder_frequency', 'weekly') === 'both' ? 'selected' : '' }}>Both Weekly & Monthly</option>
+                                    </select>
+                                    @error('reading_reminder_frequency') <div class="settings-error">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="settings-field">
+                                    <label for="reading_reminder_day">Scheduled Reading Day</label>
+                                    <select id="reading_reminder_day" name="reading_reminder_day">
+                                        <option value="friday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'friday' ? 'selected' : '' }}>Every Friday (Recommended)</option>
+                                        <option value="monday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'monday' ? 'selected' : '' }}>Every Monday</option>
+                                        <option value="thursday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'thursday' ? 'selected' : '' }}>Every Thursday</option>
+                                        <option value="wednesday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'wednesday' ? 'selected' : '' }}>Every Wednesday</option>
+                                        <option value="tuesday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'tuesday' ? 'selected' : '' }}>Every Tuesday</option>
+                                        <option value="saturday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'saturday' ? 'selected' : '' }}>Every Saturday</option>
+                                        <option value="sunday" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'sunday' ? 'selected' : '' }}>Every Sunday</option>
+                                        <option value="end_of_period" {{ (string) $getSetting('reading_reminder_day', 'friday') === 'end_of_period' ? 'selected' : '' }}>End of Period (Days 7, 14, 21, End of Month)</option>
+                                    </select>
+                                    @error('reading_reminder_day') <div class="settings-error">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="settings-field">
+                                    <label for="reading_reminder_time">Reminder Time</label>
+                                    <input type="time" id="reading_reminder_time" name="reading_reminder_time" value="{{ $getSetting('reading_reminder_time', '09:00') }}" required>
+                                    @error('reading_reminder_time') <div class="settings-error">{{ $message }}</div> @enderror
+                                    <span class="settings-help">Time of day to trigger notifications.</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

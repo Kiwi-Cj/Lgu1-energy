@@ -15,7 +15,14 @@ class FacilityFactory extends Factory
             'name' => $this->faker->company . ' Facility',
             'type' => $this->faker->randomElement(['Office', 'Warehouse', 'Plant']),
             'floor_area' => $this->faker->numberBetween(100, 10000),
-            'status' => $this->faker->randomElement(['active', 'inactive']),
+            'status' => 'active',
         ];
+    }
+
+    public function inactive()
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'inactive',
+        ]);
     }
 }

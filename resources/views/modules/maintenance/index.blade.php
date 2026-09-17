@@ -424,13 +424,26 @@
         gap: 11px;
         text-align: left;
     }
-    .facility-thumbnail,
+    .facility-thumbnail {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 10px;
+        border: 1px solid #dbeafe;
+        object-fit: cover;
+    }
     .facility-thumbnail-fallback {
         width: 42px;
         height: 42px;
         flex: 0 0 42px;
         border-radius: 10px;
         border: 1px solid #dbeafe;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+        color: #2563eb;
+        font-size: 1.1rem;
     }
     .issue-cell {
         display: flex;
@@ -590,6 +603,28 @@
     body.dark-mode .maint-detail-card span,
     body.dark-mode .maint-detail-card strong { color: #f8fafc; }
     body.dark-mode .maint-detail-remarks-block { background: #0f172a; border-color: #334155; color: #cbd5e1; border-left-color: #3b82f6; }
+    body.dark-mode .maintenance-modal { background: #0f172a; border-color: #334155; }
+    body.dark-mode .maintenance-modal-header { background: linear-gradient(135deg, #111827 0%, #1e293b 100%); border-bottom-color: #334155; }
+    body.dark-mode .maintenance-modal-title { color: #f8fafc; }
+    body.dark-mode .maintenance-modal-subtitle { color: #94a3b8; }
+    body.dark-mode .maintenance-modal-close { background: #1e293b; border-color: #475569; color: #cbd5e1; }
+    body.dark-mode .maintenance-modal-close:hover { background: #334155; color: #f8fafc; border-color: #64748b; }
+    body.dark-mode .maintenance-modal-body { background: #0f172a; }
+    body.dark-mode .maintenance-modal-actions { background: rgba(15, 23, 42, 0.97); border-top-color: #334155; }
+    body.dark-mode .maintenance-form .field-label { color: #cbd5e1; }
+    body.dark-mode .maintenance-form .field-control { background: #111827; border-color: #334155; color: #f8fafc; }
+    body.dark-mode .maintenance-form .field-control[disabled] { background: #1e293b; color: #64748b; }
+    body.dark-mode .maintenance-btn-cancel { background: #1e293b; border: 1px solid #475569; color: #cbd5e1; }
+    body.dark-mode .maintenance-btn-cancel:hover { background: #334155; color: #f8fafc; }
+    body.dark-mode .assignment-note { background: #042f2e; border-color: #115e59; color: #5eead4; }
+    body.dark-mode .assignment-note strong { color: #99f6e4; }
+    body.dark-mode .priority-pill.critical { background: #4c0519 !important; color: #fda4af !important; border-color: #be123c !important; }
+    body.dark-mode .priority-pill.high { background: #451a03 !important; color: #fdba74 !important; border-color: #9a3412 !important; }
+    body.dark-mode .priority-pill.normal { background: #1e293b !important; color: #cbd5e1 !important; border-color: #475569 !important; }
+    body.dark-mode .overdue-label { background: #4c0519 !important; color: #fda4af !important; border-color: #be123c !important; }
+    body.dark-mode .facility-thumbnail-fallback { background: linear-gradient(135deg, #1e3a8a, #1e293b) !important; border-color: #3b82f6 !important; color: #93c5fd !important; }
+    body.dark-mode .issue-cell-icon { background: #451a03 !important; color: #fdba74 !important; border: 1px solid #9a3412 !important; }
+    body.dark-mode .date-stack { color: #cbd5e1 !important; }
 
     /* MODAL TABS */
     .maintenance-modal-tabs {

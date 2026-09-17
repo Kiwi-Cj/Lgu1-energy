@@ -570,9 +570,9 @@
     body.dark-mode .dashboard-page .chart-insight-card.sustainability { background:linear-gradient(180deg,#111827 0%,#052e16 100%); border-color:#166534; }
     body.dark-mode .dashboard-page .chart-insight-card.gemp { background:linear-gradient(180deg,#111827 0%,#431407 100%); border-color:#9a3412; }
     body.dark-mode .dashboard-page .chart-insight-value { color:#f8fafc; }
-    body.dark-mode .dashboard-page .gemp-badge { background:rgba(239,68,68,.2); color:#fca5a5; }
-    body.dark-mode .dashboard-page .gemp-badge.good { background:rgba(34,197,94,.2); color:#86efac; }
-    body.dark-mode .dashboard-page .gemp-badge.warn { background:rgba(245,158,11,.2); color:#fde68a; }
+    body.dark-mode .dashboard-page .gemp-badge { background:#4c0519 !important; border:1px solid #be123c !important; color:#fda4af !important; }
+    body.dark-mode .dashboard-page .gemp-badge.good { background:#052e16 !important; border:1px solid #166534 !important; color:#86efac !important; }
+    body.dark-mode .dashboard-page .gemp-badge.warn { background:#451a03 !important; border:1px solid #9a3412 !important; color:#fdba74 !important; }
     body.dark-mode .dashboard-page .chart-footnote { background:rgba(245,158,11,.12); color:#fde68a; }
 
     /* Dashboard Dark Mode */
@@ -583,114 +583,289 @@
         color: #e5e7eb;
     }
 
-    body.dark-mode .dashboard-page .stat-card,
-    body.dark-mode .dashboard-page .summary-card,
-    body.dark-mode .dashboard-page .chart-container,
-    body.dark-mode .dashboard-page .insight-card,
-    body.dark-mode .dashboard-page .insight-card-header,
-    body.dark-mode .dashboard-page .alert-item {
-        background: #111827 !important;
-        border-color: #334155 !important;
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .summary-card,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .chart-container,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card {
+        background: #0f172a !important;
+        border-color: #1e293b !important;
         color: #e2e8f0 !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
     }
 
-    body.dark-mode .dashboard-page .custom-table thead th {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card-header {
+        background: #0f172a !important;
+        border-bottom-color: #1e293b !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card-meta {
+        color: #94a3b8 !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card.kpi-blue { --kpi-accent:#3b82f6; --kpi-soft:rgba(59,130,246,0.18); }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card.kpi-green { --kpi-accent:#22c55e; --kpi-soft:rgba(34,197,94,0.18); }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card.kpi-amber { --kpi-accent:#f59e0b; --kpi-soft:rgba(245,158,11,0.18); }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card.kpi-red { --kpi-accent:#f43f5e; --kpi-soft:rgba(244,63,94,0.18); }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .stat-card.kpi-violet { --kpi-accent:#a855f7; --kpi-soft:rgba(168,85,247,0.18); }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-role-badge {
+        background: #172554 !important;
+        border-color: #1e40af !important;
+        color: #bfdbfe !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .custom-table thead th {
         background: #111827 !important;
         color: #93c5fd !important;
         border-bottom-color: #334155 !important;
     }
 
-    body.dark-mode .dashboard-page .custom-table tbody tr td {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .custom-table tbody tr td {
         border-bottom-color: #1f2937 !important;
         color: #cbd5e1 !important;
     }
 
-
-
-    body.dark-mode .dashboard-page .custom-table tbody tr:hover {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .custom-table tbody tr:hover {
         background: #1f2937 !important;
     }
 
-    body.dark-mode .dashboard-page .quick-action-btn {
+    /* High Consumption Hubs Table */
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .consumption-table th {
+        background: #0b1220 !important;
+        color: #93c5fd !important;
+        border-bottom-color: #1e293b !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .consumption-table td.facility-name,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .consumption-table .value-kwh {
+        color: #f8fafc !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .consumption-table .value-baseline {
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .facility-rank {
+        background: #172554 !important;
+        color: #93c5fd !important;
+        border: 1px solid #1e40af !important;
+    }
+
+    /* Condition Status Pills */
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .status-pill.status-critical {
+        background: #4c0519 !important;
+        color: #fda4af !important;
+        border-color: #9f1239 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .status-pill.status-very-high {
+        background: #4c0519 !important;
+        color: #fb7185 !important;
+        border-color: #be123c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .status-pill.status-high {
+        background: #431407 !important;
+        color: #fdba74 !important;
+        border-color: #c2410c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .status-pill.status-warning {
+        background: #451a03 !important;
+        color: #fde68a !important;
+        border-color: #9a3412 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .status-pill.status-normal {
+        background: #052e16 !important;
+        color: #86efac !important;
+        border-color: #166534 !important;
+    }
+
+    /* Trend Indicators */
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .trend-indicator.stable {
+        background: #0b1220 !important;
+        border-color: #1e293b !important;
+        color: #94a3b8 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .trend-indicator.spike {
+        background: #4c0519 !important;
+        border-color: #9f1239 !important;
+        color: #fda4af !important;
+    }
+
+    /* Critical Notifications List */
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item {
+        background: #111827 !important;
+        border: 1px solid #1e293b !important;
+        border-left-width: 4px !important;
+        color: #cbd5e1 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.critical {
+        background: #1c0f16 !important;
+        border-color: #4c0519 !important;
+        border-left-color: #f43f5e !important;
+        color: #fecdd3 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.very-high {
+        background: #1c0f16 !important;
+        border-color: #4c0519 !important;
+        border-left-color: #fb7185 !important;
+        color: #fecdd3 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.high {
+        background: #1c150c !important;
+        border-color: #431407 !important;
+        border-left-color: #f97316 !important;
+        color: #fed7aa !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.warning {
+        background: #1c170c !important;
+        border-color: #451a03 !important;
+        border-left-color: #eab308 !important;
+        color: #fef08a !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item .alert-level {
+        color: #f8fafc !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-icon {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.critical .alert-icon {
+        background: rgba(225, 29, 72, 0.22) !important;
+        color: #fb7185 !important;
+        border-color: rgba(225, 29, 72, 0.4) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.very-high .alert-icon {
+        background: rgba(244, 63, 94, 0.22) !important;
+        color: #fb7185 !important;
+        border-color: rgba(244, 63, 94, 0.4) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.high .alert-icon {
+        background: rgba(234, 88, 12, 0.22) !important;
+        color: #fdba74 !important;
+        border-color: rgba(234, 88, 12, 0.4) !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .alert-item.warning .alert-icon {
+        background: rgba(217, 119, 6, 0.22) !important;
+        color: #fde68a !important;
+        border-color: rgba(217, 119, 6, 0.4) !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card-footer {
+        background: #0b1220 !important;
+        border-top-color: #1e293b !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-header-action,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-footer-link {
+        color: #60a5fa !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-header-action:hover,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-footer-link:hover {
+        color: #93c5fd !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .quick-action-btn {
         background: #111827 !important;
         border-color: #334155 !important;
         color: #f1f5f9 !important;
     }
 
-    body.dark-mode .dashboard-page .quick-action-btn:hover {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .quick-action-btn:hover {
         background: #1e293b !important;
         border-color: #475569 !important;
         box-shadow: 0 8px 18px rgba(2, 6, 23, 0.5) !important;
     }
 
-    body.dark-mode .dashboard-page .summary-card-heading {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-badge-danger {
+        background: #4c0519 !important;
+        color: #fda4af !important;
+        border: 1px solid #be123c !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-badge-warning {
+        background: #451a03 !important;
+        color: #fdba74 !important;
+        border: 1px solid #9a3412 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-badge-violet {
+        background: #2e1065 !important;
+        color: #d8b4fe !important;
+        border: 1px solid #7e22ce !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .summary-card-heading {
         color: #f1f5f9;
     }
 
-    body.dark-mode .dashboard-page .snapshot-total-badge,
-    body.dark-mode .dashboard-page .quick-actions-subtitle {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .snapshot-total-badge,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .quick-actions-subtitle {
         background: #1e293b;
+        border: 1px solid #334155;
         color: #94a3b8;
     }
 
-    body.dark-mode .dashboard-page .operational-status-bar {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .operational-pill.active {
+        background: #052e16 !important;
+        border-color: #166534 !important;
+        color: #86efac !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .operational-pill.maintenance {
+        background: #451a03 !important;
+        border-color: #9a3412 !important;
+        color: #fdba74 !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .operational-pill.inactive {
+        background: #4c0519 !important;
+        border-color: #be123c !important;
+        color: #fda4af !important;
+    }
+
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .operational-status-bar {
         background: #1e293b;
     }
 
-    body.dark-mode .dashboard-page .operational-status-meta {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .operational-status-meta {
         color: #94a3b8;
     }
 
-    body.dark-mode .dashboard-page .qa-ai .qa-icon-wrap { background: rgba(99, 102, 241, 0.18); color: #818cf8; }
-    body.dark-mode .dashboard-page .qa-load .qa-icon-wrap { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
-    body.dark-mode .dashboard-page .qa-facilities .qa-icon-wrap { background: rgba(5, 150, 105, 0.18); color: #34d399; }
-    body.dark-mode .dashboard-page .qa-meter .qa-icon-wrap { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
-    body.dark-mode .dashboard-page .qa-incidents .qa-icon-wrap { background: rgba(225, 29, 72, 0.18); color: #fb7185; }
-    body.dark-mode .dashboard-page .qa-maintenance .qa-icon-wrap { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-ai .qa-icon-wrap { background: rgba(99, 102, 241, 0.18); color: #818cf8; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-load .qa-icon-wrap { background: rgba(2, 132, 199, 0.18); color: #38bdf8; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-facilities .qa-icon-wrap { background: rgba(5, 150, 105, 0.18); color: #34d399; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-meter .qa-icon-wrap { background: rgba(217, 119, 6, 0.18); color: #fbbf24; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-incidents .qa-icon-wrap { background: rgba(225, 29, 72, 0.18); color: #fb7185; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .qa-maintenance .qa-icon-wrap { background: rgba(124, 58, 237, 0.18); color: #a78bfa; }
 
-    body.dark-mode .dashboard-page .dashboard-filter-panel,
-    body.dark-mode .dashboard-page .dashboard-filter-field input {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-filter-panel,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-filter-field input {
         background:#111827;
         border-color:#334155;
         color:#e2e8f0;
     }
-    body.dark-mode .dashboard-page .dashboard-title { color:#f8fafc; }
-    body.dark-mode .dashboard-page .dashboard-title-icon { background:#3b2417; border-color:#7c2d12; color:#fb923c; }
-    body.dark-mode .dashboard-page .dashboard-kpi-value { color:#f8fafc; }
-
-    body.dark-mode .dashboard-page .consumption-table th {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-filter-button.secondary {
         background: #0f172a !important;
-        color: #93c5fd !important;
+        border-color: #475569 !important;
+        color: #cbd5e1 !important;
     }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-filter-button.secondary:hover {
+        background: #1e293b !important;
+        border-color: #3b82f6 !important;
+        color: #eff6ff !important;
+    }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-title { color:#f8fafc; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-title-icon { background:#3b2417; border-color:#7c2d12; color:#fb923c; }
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .dashboard-kpi-value { color:#f8fafc; }
 
-    body.dark-mode .dashboard-page .consumption-table td.facility-name,
-    body.dark-mode .dashboard-page .consumption-table .value-kwh {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card-title.consumption,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page .insight-card-title.critical,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page h1,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page h2,
+    :is(html.dark-mode, body.dark-mode) .dashboard-page h3 {
         color: #f8fafc !important;
     }
 
-    body.dark-mode .dashboard-page .consumption-table .value-baseline {
-        color: #94a3b8 !important;
-    }
-    body.dark-mode .dashboard-page .insight-card-footer { background:#0f172a; border-color:#334155; }
-    body.dark-mode .dashboard-page .trend-indicator.stable { background:#0f172a; border-color:#334155; color:#94a3b8; }
-
-    body.dark-mode .dashboard-page .insight-card-title.consumption,
-    body.dark-mode .dashboard-page .insight-card-title.critical,
-    body.dark-mode .dashboard-page h1,
-    body.dark-mode .dashboard-page h2,
-    body.dark-mode .dashboard-page h3 {
-        color: #f8fafc !important;
-    }
-
-    body.dark-mode .dashboard-page [style*="background:#f0f7ff"],
-    body.dark-mode .dashboard-page [style*="background:#f0fdf4"],
-    body.dark-mode .dashboard-page [style*="background:#fffbeb"],
-    body.dark-mode .dashboard-page [style*="background:#fef2f2"],
-    body.dark-mode .dashboard-page [style*="background:#fff7ed"],
-    body.dark-mode .dashboard-page [style*="background:#f5f3ff"],
-    body.dark-mode .dashboard-page [style*="background:#eef2ff"],
-    body.dark-mode .dashboard-page [style*="background:#ecfdf5"],
-    body.dark-mode .dashboard-page [style*="background:#f8fafc"] {
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#f0f7ff"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#f0fdf4"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#fffbeb"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#fef2f2"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#fff7ed"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#f5f3ff"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#eef2ff"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#ecfdf5"],
+    :is(html.dark-mode, body.dark-mode) .dashboard-page [style*="background:#f8fafc"] {
         background: #111827 !important;
         border-color: #334155 !important;
         color: #e2e8f0 !important;
@@ -1441,7 +1616,7 @@
                                 <td class="value-baseline" style="text-align:center;">{{ number_format($facility->baseline_kwh, 2) }}</td>
                                 <td class="value-deviation" style="text-align:center; color:{{ $deviationColor }};">{{ number_format($deviation, 2) }}%</td>
                                 <td style="text-align:center;">
-                                    <span class="status-pill"
+                                    <span class="status-pill status-{{ Str::slug($status) }}"
                                           title="{{ $trendSpikeDetected ? 'Escalated because consumption increased for three consecutive months.' : 'Condition based on baseline variance thresholds.' }}"
                                           style="background:{{ $theme['bg'] }}; color:{{ $theme['text'] }}; border-color:{{ $theme['border'] }};">
                                         {{ $status }}

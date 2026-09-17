@@ -813,6 +813,42 @@ window.addEventListener('DOMContentLoaded', function() {
     .cat-badge.medical { background: #ffe4e6; color: #be123c; }
     .cat-badge.other { background: #f1f5f9; color: #475569; }
 
+    /* Row Status styling */
+    .custom-table tbody tr.is-inactive-row {
+        background-color: #fafafa !important;
+        opacity: 0.68;
+    }
+    .custom-table tbody tr.is-inactive-row:hover {
+        opacity: 0.95;
+        background-color: #f1f5f9 !important;
+    }
+    .status-badge-active {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        white-space: nowrap;
+    }
+    .status-badge-inactive {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        white-space: nowrap;
+    }
+
     /* Action buttons in Table */
     .action-icon-btn {
         width: 30px;
@@ -830,6 +866,24 @@ window.addEventListener('DOMContentLoaded', function() {
         background: #2563eb;
         color: #fff;
         border-color: #2563eb;
+        transform: scale(1.05);
+    }
+    .action-icon-btn.deactivate {
+        color: #d97706;
+    }
+    .action-icon-btn.deactivate:hover {
+        background: #d97706;
+        color: #fff;
+        border-color: #d97706;
+        transform: scale(1.05);
+    }
+    .action-icon-btn.activate {
+        color: #16a34a;
+    }
+    .action-icon-btn.activate:hover {
+        background: #16a34a;
+        color: #fff;
+        border-color: #16a34a;
         transform: scale(1.05);
     }
     .action-icon-btn.delete:hover {
@@ -1204,18 +1258,128 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    /* Table Element Classes for Light/Dark Mode Contrast */
+    .eq-name {
+        font-weight: 800;
+        color: #0f172a;
+        font-size: 0.9rem;
+        line-height: 1.25;
+    }
+    .eq-name.is-inactive {
+        color: #64748b !important;
+        text-decoration: line-through;
+    }
+    .eq-connected-kw {
+        font-size: 0.92rem;
+        font-weight: 850;
+        color: #2563eb;
+    }
+    .eq-connected-kw.is-inactive {
+        color: #64748b !important;
+    }
+    .eq-duty-hours {
+        font-size: 0.84rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+    .eq-energy-kwh {
+        font-size: 0.92rem;
+        font-weight: 850;
+        color: #0f172a;
+    }
+    .eq-energy-kwh.is-inactive {
+        color: #64748b !important;
+    }
+    .eq-monthly-cost {
+        font-size: 0.96rem;
+        font-weight: 900;
+        color: #059669;
+    }
+    .eq-monthly-cost.is-inactive {
+        color: #64748b !important;
+    }
+    .eq-subtext {
+        color: #64748b;
+    }
+    .eq-section-title {
+        color: #1e293b;
+    }
+    .sim-target-watts-badge {
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #2563eb;
+        background: #eff6ff;
+        padding: 3px 9px;
+        border-radius: 6px;
+        border: 1px solid #bfdbfe;
+    }
+    .sim-tip-box {
+        font-size: 0.75rem;
+        color: #0f766e;
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        padding: 8px 12px;
+        border-radius: 8px;
+        line-height: 1.45;
+    }
+    .top-consumer-title {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .preset-box {
+        background: #f0fdf4;
+        border: 1px dashed #86efac;
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+    .preset-box label {
+        color: #047857;
+    }
+
     /* Dark Mode Theme Support (matches qc-admin layout) */
     body.dark-mode .report-card-container { background: #111827; border-color: #334155; }
+    body.dark-mode .facility-heading-icon {
+        background: linear-gradient(135deg, #1e3a8a, #1e293b) !important;
+        border-color: #3b82f6 !important;
+        color: #93c5fd !important;
+        box-shadow: 0 4px 14px rgba(30, 58, 138, 0.4) !important;
+    }
+    body.dark-mode .status-pill.warning {
+        background: #451a03 !important;
+        border-color: #9a3412 !important;
+        color: #fdba74 !important;
+    }
+    body.dark-mode .status-pill.on-track {
+        background: #052e16 !important;
+        border-color: #166534 !important;
+        color: #86efac !important;
+    }
+    body.dark-mode .status-pill.neutral {
+        background: #1e293b !important;
+        border-color: #475569 !important;
+        color: #cbd5e1 !important;
+    }
     body.dark-mode .facility-page-title { color: #f8fafc; }
     body.dark-mode .facility-page-description { color: #94a3b8; }
     body.dark-mode .facility-toolbar { background: #111827; border-color: #334155; }
+    body.dark-mode .facility-toolbar > div > div:first-child { color: #f8fafc !important; }
     body.dark-mode .facility-meta-badge { background: #1f2937; border-color: #374151; color: #e2e8f0; }
+    body.dark-mode .facility-meta-badge strong { color: #f8fafc; }
+    body.dark-mode .facility-badge-active { background: #1f2937; border-color: #374151; color: #cbd5e1; }
+    body.dark-mode .facility-badge-active strong { color: #f8fafc; }
+    body.dark-mode .facility-count-pill { background: #172554; color: #93c5fd; }
     body.dark-mode .stat-card { background: #1f2937; border-color: #374151; }
     body.dark-mode .facility-stat-value { color: #f8fafc; }
     body.dark-mode .facility-stat-label, body.dark-mode .facility-stat-hint { color: #94a3b8; }
     body.dark-mode .insight-card { background: #111827; border-color: #334155; }
     body.dark-mode .insight-card-header { background: #1f2937; border-color: #374151; }
     body.dark-mode .insight-card-title { color: #f8fafc; }
+    body.dark-mode .insight-card-desc { color: #94a3b8; }
     body.dark-mode .table-card { background: #111827; border-color: #334155; }
     body.dark-mode .table-card-header { background: #1f2937; border-color: #334155; }
     body.dark-mode .formula-badge-wrap { background: #0f2a22; border-color: #166534; color: #86efac; }
@@ -1227,18 +1391,121 @@ window.addEventListener('DOMContentLoaded', function() {
     body.dark-mode .custom-table tbody tr:hover { background: #1f2937; box-shadow: inset 3px 0 0 #3b82f6; }
     body.dark-mode .custom-table tfoot td { background: #1f2937; border-color: #374151; color: #f8fafc; }
     body.dark-mode .meter-chip { background: #0c4a6e; border-color: #0284c7; color: #bae6fd; }
+    body.dark-mode .meter-chip i { color: #38bdf8; }
     body.dark-mode .meter-chip.sub { background: #4a044e; border-color: #c026d3; color: #f5d0fe; }
+    body.dark-mode .meter-chip.sub i { color: #e879f9; }
     body.dark-mode .meter-chip.facility { background: #1e293b; border-color: #475569; color: #cbd5e1; }
+    body.dark-mode .meter-chip.facility i { color: #94a3b8; }
     body.dark-mode .share-pill-badge { background: #1f2937; color: #e2e8f0; }
     body.dark-mode .share-track { background: #374151; }
     body.dark-mode .th-sortable:hover { background: #172554 !important; color: #93c5fd !important; }
     body.dark-mode #ltQuickSearch { background: #1f2937 !important; border-color: #374151 !important; color: #f8fafc !important; }
+    body.dark-mode .facility-select-box { background: #1f2937; border-color: #374151; }
+    body.dark-mode .facility-select-box label { color: #94a3b8; }
+    body.dark-mode .facility-select-input { background: #1f2937; border-color: #374151; color: #f8fafc; }
+    body.dark-mode .action-btn-secondary { background: #1f2937; color: #cbd5e1; border: 1px solid #374151; }
+    body.dark-mode .action-btn-secondary:hover { background: #374151; color: #f8fafc; }
+
+    /* Table Typography & States in Dark Mode */
+    body.dark-mode .eq-name { color: #f8fafc !important; }
+    body.dark-mode .eq-name.is-inactive { color: #94a3b8 !important; }
+    body.dark-mode .eq-connected-kw { color: #60a5fa !important; }
+    body.dark-mode .eq-connected-kw.is-inactive { color: #94a3b8 !important; }
+    body.dark-mode .eq-duty-hours { color: #f8fafc !important; }
+    body.dark-mode .eq-energy-kwh { color: #f8fafc !important; }
+    body.dark-mode .eq-energy-kwh.is-inactive { color: #94a3b8 !important; }
+    body.dark-mode .eq-monthly-cost { color: #34d399 !important; }
+    body.dark-mode .eq-monthly-cost.is-inactive { color: #94a3b8 !important; }
+    body.dark-mode .eq-subtext { color: #94a3b8 !important; }
+    body.dark-mode .eq-section-title { color: #f8fafc !important; }
+    body.dark-mode .top-consumer-title { color: #f8fafc !important; }
+    body.dark-mode .top-consumer-title small { color: #94a3b8 !important; }
+    body.dark-mode .top-consumer-header { color: #e2e8f0; }
+    body.dark-mode .top-consumer-header small { color: #94a3b8 !important; }
+    body.dark-mode .progress-bar-bg { background: #374151 !important; }
+    body.dark-mode #noRecordsRow strong { color: #94a3b8 !important; }
+
+    /* Filter Bar & Pills in Dark Mode */
+    body.dark-mode .filter-pills-bar { background: #111827 !important; border-color: #334155 !important; }
+    body.dark-mode .filter-pills-bar span { color: #94a3b8 !important; }
+    body.dark-mode .filter-pill { background: #1f2937 !important; border-color: #374151 !important; color: #cbd5e1 !important; }
+    body.dark-mode .filter-pill:hover,
+    body.dark-mode .filter-pill.active { background: #2563eb !important; border-color: #3b82f6 !important; color: #ffffff !important; box-shadow: 0 2px 8px rgba(37,99,235,0.4) !important; }
+
+    /* Category Badges in Dark Mode (High Contrast & Distinct Hues) */
+    body.dark-mode .cat-badge { background: #1f2937 !important; color: #cbd5e1 !important; border: 1px solid #374151 !important; }
+    body.dark-mode .cat-badge.hvac { background: #082f49 !important; color: #7dd3fc !important; border-color: #0369a1 !important; }
+    body.dark-mode .cat-badge.lighting { background: #422006 !important; color: #fde047 !important; border-color: #854d0e !important; }
+    body.dark-mode .cat-badge.it { background: #2e1065 !important; color: #c4b5fd !important; border-color: #6d28d9 !important; }
+    body.dark-mode .cat-badge.pumps { background: #431407 !important; color: #fdba74 !important; border-color: #c2410c !important; }
+    body.dark-mode .cat-badge.appliances { background: #052e16 !important; color: #86efac !important; border-color: #15803d !important; }
+    body.dark-mode .cat-badge.medical { background: #4c0519 !important; color: #fda4af !important; border-color: #be123c !important; }
+    body.dark-mode .cat-badge.other { background: #1e293b !important; color: #cbd5e1 !important; border-color: #475569 !important; }
+
+    /* Other Badges & Action Buttons in Dark Mode */
+    body.dark-mode .high-power-pill { background: #4c0519 !important; color: #fda4af !important; border: 1px solid #be123c !important; }
+    body.dark-mode .status-badge-active { background: #052e16 !important; color: #86efac !important; border: 1px solid #15803d !important; }
+    body.dark-mode .status-badge-inactive { background: #1e293b !important; color: #94a3b8 !important; border: 1px solid #475569 !important; }
+    body.dark-mode .action-icon-btn { background: #1f2937 !important; border-color: #374151 !important; color: #cbd5e1 !important; }
+    body.dark-mode .action-icon-btn:hover { background: #2563eb !important; border-color: #2563eb !important; color: #fff !important; }
+    body.dark-mode .action-icon-btn.deactivate { color: #fbbf24 !important; }
+    body.dark-mode .action-icon-btn.deactivate:hover { background: #d97706 !important; border-color: #d97706 !important; color: #fff !important; }
+    body.dark-mode .action-icon-btn.activate { color: #4ade80 !important; }
+    body.dark-mode .action-icon-btn.activate:hover { background: #16a34a !important; border-color: #16a34a !important; color: #fff !important; }
+    body.dark-mode .custom-table tbody tr.is-inactive-row { background-color: rgba(15, 23, 42, 0.5) !important; opacity: 0.65; }
+    body.dark-mode .custom-table tbody tr.is-inactive-row:hover { background-color: #1f2937 !important; opacity: 0.95; }
+
+    /* Visual Analytics & What-If Simulator in Dark Mode */
+    body.dark-mode .chart-view-toggle { background: #1f2937; }
+    body.dark-mode .chart-tab-btn { color: #94a3b8; }
+    body.dark-mode .chart-tab-btn:hover { color: #f8fafc; }
+    body.dark-mode .chart-tab-btn.active { background: #111827; color: #93c5fd; }
+    body.dark-mode .donut-center-sub { color: #94a3b8; }
+    body.dark-mode .donut-center-val { color: #f8fafc; }
+    body.dark-mode .category-table th { background: #1f2937; color: #94a3b8; border-color: #374151; }
+    body.dark-mode .category-table td { color: #e2e8f0; border-color: #374151; }
+    body.dark-mode .rank-badge { background: #1e293b; color: #94a3b8; }
+    body.dark-mode .rank-badge.rank-top { background: #78350f; color: #fde68a; border-color: #92400e; }
+    body.dark-mode .top-consumer-tag { background: #78350f; color: #fde68a; border-color: #92400e; }
     body.dark-mode .sim-container { background: #1f2937; border-color: #374151; }
+    body.dark-mode .sim-target-watts-badge { background: #1e3a8a; border-color: #3b82f6; color: #93c5fd; }
+    body.dark-mode .sim-target-btn { background: #111827; border-color: #374151; color: #cbd5e1; }
+    body.dark-mode .sim-target-btn:hover { background: #374151; color: #f8fafc; }
+    body.dark-mode .sim-target-btn.active { background: #2563eb; border-color: #3b82f6; color: #ffffff; }
     body.dark-mode .sim-slider-row { background: #111827; border-color: #374151; }
+    body.dark-mode .sim-slider-row span { color: #94a3b8; }
+    body.dark-mode .sim-quick-step-btn { background: #1f2937; border-color: #374151; color: #cbd5e1; }
+    body.dark-mode .sim-quick-step-btn:hover { background: #2563eb; border-color: #3b82f6; color: #ffffff; }
     body.dark-mode .sim-results-grid { background: #111827; border-color: #374151; }
+    body.dark-mode .sim-kpi-lbl { color: #94a3b8; }
+    body.dark-mode .sim-tip-box { background: #042f2e; border-color: #0f766e; color: #99f6e4; }
+    body.dark-mode .sim-tip-box i { color: #2dd4bf; }
+
+    /* Modals in Dark Mode */
     body.dark-mode .modal-card { background: #111827; border-color: #374151; color: #f8fafc; }
-    body.dark-mode .modal-head, body.dark-mode .modal-foot { background: #1f2937; border-color: #374151; }
-    body.dark-mode .form-input, body.dark-mode .form-select, body.dark-mode .form-textarea { background: #1f2937; border-color: #374151; color: #f8fafc; }
+    body.dark-mode .modal-head { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-color: #374151; }
+    body.dark-mode .modal-head h3 { color: #f8fafc; }
+    body.dark-mode .modal-head-subtitle { color: #94a3b8; }
+    body.dark-mode .modal-close { background: #1f2937; border-color: #374151; color: #cbd5e1; }
+    body.dark-mode .modal-close:hover { background: #4c0519; color: #fda4af; border-color: #be123c; }
+    body.dark-mode .modal-section-title { color: #93c5fd; border-color: #374151; }
+    body.dark-mode .modal-foot { background: #1f2937; border-color: #374151; }
+    body.dark-mode .form-group label { color: #cbd5e1; }
+    body.dark-mode .form-input,
+    body.dark-mode .form-select,
+    body.dark-mode .form-textarea { background: #1f2937; border-color: #374151; color: #f8fafc; }
+    body.dark-mode .form-input:focus,
+    body.dark-mode .form-select:focus,
+    body.dark-mode .form-textarea:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25); }
+    body.dark-mode .preset-box { background: #052e16 !important; border-color: #15803d !important; }
+    body.dark-mode .preset-box label { color: #86efac !important; }
+    body.dark-mode .calc-preview-strip { background: #1f2937; border-color: #374151; }
+    body.dark-mode .calc-preview-strip > div > div:last-child { color: #94a3b8 !important; }
+    body.dark-mode #statusModalTitle { color: #f8fafc !important; }
+    body.dark-mode #statusEquipmentName { color: #f8fafc !important; }
+    body.dark-mode #statusModalNotice { background: #422006 !important; border-color: #854d0e !important; color: #fde047 !important; }
+    body.dark-mode #statusModalNoticeIcon { color: #facc15 !important; }
+    body.dark-mode #statusModalIconBox { background: #451a03 !important; border-color: #78350f !important; color: #f59e0b !important; }
 </style>
 
 <div class="load-tracking-page">
@@ -1404,7 +1671,7 @@ window.addEventListener('DOMContentLoaded', function() {
                         ₱{{ number_format($summary['total_monthly_cost'], 2) }}
                     </div>
                     <div class="facility-stat-hint">
-                        <i class="fa-solid fa-tag" style="color:#ea8a00;"></i> Applied: ₱{{ number_format($ratePerKwh, 2) }}/kWh (Commercial Rate)
+                        <i class="fa-solid fa-tag" style="color:#ea8a00;"></i> Applied: ₱{{ number_format($ratePerKwh, 2) }}/kWh (QC Commercial Rate)
                     </div>
                 </div>
             </div>
@@ -1498,10 +1765,10 @@ window.addEventListener('DOMContentLoaded', function() {
                     <div style="padding:18px;">
                         <div class="sim-container">
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                <span style="font-size:0.76rem; font-weight:800; color:#1e293b;">
+                                <span class="eq-section-title" style="font-size:0.76rem; font-weight:800;">
                                     Select Target Load Category:
                                 </span>
-                                <span id="simTargetWattsBadge" style="font-size:0.74rem; font-weight:800; color:#2563eb; background:#eff6ff; padding:3px 9px; border-radius:6px; border:1px solid #bfdbfe;">
+                                <span id="simTargetWattsBadge" class="sim-target-watts-badge">
                                     Target Load: 0.00 kW
                                 </span>
                             </div>
@@ -1558,7 +1825,7 @@ window.addEventListener('DOMContentLoaded', function() {
                             </div>
 
                             <!-- Friendly Actionable Tip -->
-                            <div id="simActionTip" style="font-size:0.75rem; color:#0f766e; background:#f0fdfa; border:1px solid #99f6e4; padding:8px 12px; border-radius:8px; line-height:1.45;">
+                            <div id="simActionTip" class="sim-tip-box">
                                 <i class="fa-solid fa-lightbulb" style="color:#0d9488;"></i>
                                 <strong>Energy Tip:</strong> Reducing non-essential HVAC & lighting by 1.0 hour/day creates direct budgetary relief without impacting operational efficiency.
                             </div>
@@ -1566,7 +1833,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
                         <!-- Top Consuming Equipment List -->
                         <div style="margin-top:16px;">
-                            <div style="font-size:0.8rem; font-weight:800; color:#0f172a; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                            <div class="top-consumer-title">
                                 <span><i class="fa-solid fa-arrow-down-wide-short" style="color:#2563eb;"></i> Top Consuming Equipment</span>
                                 <small style="color:#64748b; font-weight:600;">Ranked by monthly kWh</small>
                             </div>
@@ -1594,7 +1861,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 <div class="table-card-header">
                     <div>
                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                            <h3 style="margin:0; font-size:1.05rem; font-weight:850; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                            <h3 class="eq-section-title" style="margin:0; font-size:1.05rem; font-weight:850; display:flex; align-items:center; gap:8px;">
                                 <i class="fa-solid fa-list-check" style="color:#2563eb;"></i> Equipment Load Schedule & Energy Computations
                             </h3>
                             <span id="equipmentCountBadge" class="table-counter-badge">
@@ -1625,11 +1892,34 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
-                <!-- Category Filter Pills Bar with Interactive Counts -->
+                <!-- Filter Pills Bars: Status & Category -->
                 <div class="filter-pills-bar">
-                    <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => 'all', 'search' => $search]) }}"
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-right: 4px;">
+                            <i class="fa-solid fa-filter" style="color: #2563eb;"></i> Status:
+                        </span>
+                        <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => $categoryFilter, 'status' => 'all', 'search' => $search]) }}"
+                           class="filter-pill {{ $statusFilter === 'all' || empty($statusFilter) ? 'active' : '' }}">
+                            <i class="fa-solid fa-list"></i> All Status ({{ $summary['total_items'] }})
+                        </a>
+                        <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => $categoryFilter, 'status' => 'active', 'search' => $search]) }}"
+                           class="filter-pill {{ $statusFilter === 'active' ? 'active' : '' }}" style="{{ $statusFilter === 'active' ? 'background:#16a34a; border-color:#16a34a;' : '' }}">
+                            <i class="fa-solid fa-circle-check" style="color: {{ $statusFilter === 'active' ? '#fff' : '#16a34a' }};"></i> Active ({{ $summary['active_items'] }})
+                        </a>
+                        <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => $categoryFilter, 'status' => 'inactive', 'search' => $search]) }}"
+                           class="filter-pill {{ $statusFilter === 'inactive' ? 'active' : '' }}" style="{{ $statusFilter === 'inactive' ? 'background:#64748b; border-color:#64748b;' : '' }}">
+                            <i class="fa-solid fa-power-off" style="color: {{ $statusFilter === 'inactive' ? '#fff' : '#94a3b8' }};"></i> Inactive ({{ $summary['inactive_items'] }})
+                        </a>
+                    </div>
+                </div>
+
+                <div class="filter-pills-bar">
+                    <span style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-right: 4px;">
+                        <i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Category:
+                    </span>
+                    <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => 'all', 'status' => $statusFilter, 'search' => $search]) }}"
                        class="filter-pill {{ $categoryFilter === 'all' || empty($categoryFilter) ? 'active' : '' }}">
-                        <i class="fa-solid fa-layer-group"></i> All Categories ({{ $summary['total_items'] }})
+                        All Categories
                     </a>
                     @foreach($categories as $cat)
                         @php
@@ -1643,7 +1933,7 @@ window.addEventListener('DOMContentLoaded', function() {
                                 default => 'fa-plug',
                             };
                         @endphp
-                        <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => $cat, 'search' => $search]) }}"
+                        <a href="{{ route('modules.load-tracking.index', ['facility_id' => $selectedFacilityId, 'category' => $cat, 'status' => $statusFilter, 'search' => $search]) }}"
                            class="filter-pill {{ $categoryFilter === $cat ? 'active' : '' }}">
                             <i class="fa-solid {{ $catIcon }}"></i> {{ $cat }}
                         </a>
@@ -1663,7 +1953,7 @@ window.addEventListener('DOMContentLoaded', function() {
                             <col style="width: 12%;">
                             <col style="width: 8%;">
                             @if($canManage)
-                            <col style="width: 6%;">
+                            <col style="width: 8%;">
                             @endif
                         </colgroup>
                         <thead>
@@ -1694,6 +1984,7 @@ window.addEventListener('DOMContentLoaded', function() {
                         <tbody id="ltTableBody">
                             @forelse($equipments as $idx => $eq)
                                 @php
+                                    $isInactive = strtolower((string)($eq->status ?? 'active')) === 'inactive';
                                     $totalKw = round($eq->total_watts / 1000, 3);
                                     $dailyKwh = round($eq->daily_kwh, 2);
                                     $monthlyKwh = round($eq->monthly_kwh, 2);
@@ -1724,7 +2015,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
                                     $isHighPower = $eq->rated_watts >= 3000 || $eq->total_watts >= 4000;
                                 @endphp
-                                <tr class="eq-table-row" data-search="{{ strtolower($eq->equipment_name . ' ' . $eq->category . ' ' . $eq->location . ' ' . $eq->meter_name . ' ' . $eq->notes) }}">
+                                <tr class="eq-table-row {{ $isInactive ? 'is-inactive-row' : '' }}" data-search="{{ strtolower($eq->equipment_name . ' ' . $eq->category . ' ' . $eq->location . ' ' . $eq->meter_name . ' ' . $eq->notes . ($isInactive ? ' inactive' : ' active')) }}">
                                     <td style="color:#94a3b8; font-weight:700; text-align:center;">
                                         {{ $idx + 1 }}
                                     </td>
@@ -1732,13 +2023,19 @@ window.addEventListener('DOMContentLoaded', function() {
                                     <!-- Equipment Name & Meta -->
                                     <td>
                                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                            <span style="font-weight:800; color:#0f172a; font-size:0.9rem; line-height:1.25;">
+                                            <span class="eq-name {{ $isInactive ? 'is-inactive' : '' }}">
                                                 {{ $eq->equipment_name }}
                                             </span>
-                                            @if($isHighPower)
-                                                <span class="high-power-pill" title="High power equipment (>3kW)">
-                                                    <i class="fa-solid fa-bolt"></i> High Load
+                                            @if($isInactive)
+                                                <span class="status-badge-inactive" title="Inactive / Decommissioned equipment (excluded from operational load)">
+                                                    <i class="fa-solid fa-power-off"></i> Inactive
                                                 </span>
+                                            @else
+                                                @if($isHighPower)
+                                                    <span class="high-power-pill" title="High power equipment (>3kW)">
+                                                        <i class="fa-solid fa-bolt"></i> High Load
+                                                    </span>
+                                                @endif
                                             @endif
                                         </div>
                                         <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
@@ -1746,13 +2043,13 @@ window.addEventListener('DOMContentLoaded', function() {
                                                 <i class="fa-solid {{ $catIcon }}"></i> {{ $eq->category ?: 'General' }}
                                             </span>
                                             @if($eq->location)
-                                                <span style="font-size:0.72rem; color:#64748b;" title="Location: {{ $eq->location }}">
+                                                <span class="eq-subtext" style="font-size:0.72rem;" title="Location: {{ $eq->location }}">
                                                     <i class="fa-solid fa-map-pin" style="color:#94a3b8;"></i> {{ Str::limit($eq->location, 30) }}
                                                 </span>
                                             @endif
                                         </div>
                                         @if($eq->notes)
-                                            <div style="font-size:0.71rem; color:#64748b; margin-top:3px;" title="{{ $eq->notes }}">
+                                            <div class="eq-subtext" style="font-size:0.71rem; margin-top:3px;" title="{{ $eq->notes }}">
                                                 <i class="fa-solid fa-tag" style="color:#94a3b8;"></i> {{ Str::limit($eq->notes, 40) }}
                                             </div>
                                         @endif
@@ -1790,62 +2087,67 @@ window.addEventListener('DOMContentLoaded', function() {
 
                                     <!-- Connected Load (kW & Qty x W) -->
                                     <td style="text-align:right;" data-sort-val="{{ $totalKw }}">
-                                        <div style="font-size:0.92rem; font-weight:850; color:#2563eb;">
+                                        <div class="eq-connected-kw {{ $isInactive ? 'is-inactive' : '' }}">
                                             {{ number_format($totalKw, 2) }} <small style="font-size:0.74rem; font-weight:700;">kW</small>
                                         </div>
-                                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
+                                        <div class="eq-subtext" style="font-size:0.72rem; margin-top:2px;">
                                             {{ $eq->quantity }} unit{{ $eq->quantity > 1 ? 's' : '' }} &times; {{ number_format($eq->rated_watts, 0) }} W
                                         </div>
                                     </td>
 
                                     <!-- Duty Cycle (Hours/Day & Days/Month) -->
                                     <td style="text-align:right;" data-sort-val="{{ $eq->operating_hours_per_day * $eq->operating_days_per_month }}">
-                                        <div style="font-size:0.84rem; font-weight:800; color:#1e293b;">
-                                            {{ number_format($eq->operating_hours_per_day, 1) }} hrs<span style="font-size:0.7rem; color:#64748b; font-weight:600;">/day</span>
+                                        <div class="eq-duty-hours">
+                                            {{ number_format($eq->operating_hours_per_day, 1) }} hrs<span class="eq-subtext" style="font-size:0.7rem; font-weight:600;">/day</span>
                                         </div>
-                                        <div style="font-size:0.71rem; color:#64748b; margin-top:2px;">
+                                        <div class="eq-subtext" style="font-size:0.71rem; margin-top:2px;">
                                             {{ $eq->operating_days_per_month }} days/mo <span style="color:#94a3b8;">({{ number_format($eq->operating_hours_per_day * $eq->operating_days_per_month, 0) }}h)</span>
                                         </div>
                                     </td>
 
                                     <!-- Energy Consumption (Monthly & Daily kWh) -->
                                     <td style="text-align:right;" data-sort-val="{{ $monthlyKwh }}">
-                                        <div style="font-size:0.92rem; font-weight:850; color:#0f172a;">
-                                            {{ number_format($monthlyKwh, 2) }} <small style="font-size:0.72rem; font-weight:700; color:#64748b;">kWh/mo</small>
+                                        <div class="eq-energy-kwh {{ $isInactive ? 'is-inactive' : '' }}">
+                                            {{ number_format($monthlyKwh, 2) }} <small class="eq-subtext" style="font-size:0.72rem; font-weight:700;">kWh/mo</small>
                                         </div>
-                                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
+                                        <div class="eq-subtext" style="font-size:0.72rem; margin-top:2px;">
                                             {{ number_format($dailyKwh, 2) }} kWh/day
                                         </div>
                                     </td>
 
                                     <!-- Monthly Cost -->
                                     <td style="text-align:right;" data-sort-val="{{ $monthlyCost }}">
-                                        <div style="font-size:0.96rem; font-weight:900; color:#059669;">
+                                        <div class="eq-monthly-cost {{ $isInactive ? 'is-inactive' : '' }}">
                                             &#8369;{{ number_format($monthlyCost, 2) }}
                                         </div>
-                                        <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">
+                                        <div class="eq-subtext" style="font-size:0.7rem; margin-top:2px;">
                                             &#8369;{{ number_format($dailyKwh * $ratePerKwh, 2) }}/day
                                         </div>
                                     </td>
 
                                     <!-- Facility Share % with Visual Bar -->
                                     <td style="text-align:center;" data-sort-val="{{ $sharePct }}">
-                                        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-                                            <span class="share-pill-badge">{{ $sharePct }}%</span>
-                                            <div class="share-track">
-                                                <div class="share-fill" style="width: {{ min(100, $sharePct * 2.5) }}%;"></div>
+                                        @if($isInactive)
+                                            <span style="font-size:0.72rem; color:#94a3b8; font-weight:700;">Standby</span>
+                                        @else
+                                            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                                                <span class="share-pill-badge">{{ $sharePct }}%</span>
+                                                <div class="share-track">
+                                                    <div class="share-fill" style="width: {{ min(100, $sharePct * 2.5) }}%;"></div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </td>
 
                                     <!-- Actions -->
                                     @if($canManage)
                                     <td style="text-align:center; white-space:nowrap;">
+                                        <!-- Quick Deactivate / Reactivate Toggle Action with custom Modal -->
+                                        <button type="button" class="action-icon-btn {{ $isInactive ? 'activate' : 'deactivate' }}" title="{{ $isInactive ? 'Reactivate Equipment (Include in Load)' : 'Deactivate Equipment (Mark as Inactive)' }}" onclick="openStatusModal({{ $eq->id }}, '{{ addslashes($eq->equipment_name) }}', {{ $isInactive ? 'true' : 'false' }})">
+                                            <i class="fa-solid {{ $isInactive ? 'fa-power-off' : 'fa-ban' }}"></i>
+                                        </button>
                                         <button type="button" class="action-icon-btn" title="Edit Equipment" onclick='openEditModal(@json($eq))'>
                                             <i class="fa-solid fa-pen-to-square"></i>
-                                        </button>
-                                        <button type="button" class="action-icon-btn delete" title="Delete Equipment" onclick="confirmDeleteEquipment({{ $eq->id }}, '{{ addslashes($eq->equipment_name) }}')">
-                                            <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </td>
                                     @endif
@@ -1864,18 +2166,18 @@ window.addEventListener('DOMContentLoaded', function() {
                         <tfoot>
                             <tr>
                                 <td style="text-align:center; color:#94a3b8;">&bull;</td>
-                                <td style="font-weight:850; color:#0f2450;">TOTAL LOAD & CONSUMPTION</td>
-                                <td style="color:#64748b; font-size:0.78rem;">{{ $summary['total_units'] }} Total Units</td>
-                                <td style="text-align:right; color:#2563eb; font-size:0.95rem; font-weight:850;">
+                                <td class="eq-name" style="font-weight:850;">TOTAL LOAD & CONSUMPTION</td>
+                                <td class="eq-subtext" style="font-size:0.78rem;">{{ $summary['total_units'] }} Total Units</td>
+                                <td class="eq-connected-kw" style="text-align:right; font-size:0.95rem; font-weight:850;">
                                     {{ number_format($summary['total_connected_kw'], 2) }} kW
                                 </td>
-                                <td style="text-align:right; color:#64748b; font-size:0.76rem;">
+                                <td class="eq-subtext" style="text-align:right; font-size:0.76rem;">
                                     {{ number_format($summary['total_daily_kwh'], 2) }} kWh/day
                                 </td>
-                                <td style="text-align:right; color:#0f2450; font-size:0.95rem; font-weight:850;">
+                                <td class="eq-energy-kwh" style="text-align:right; font-size:0.95rem; font-weight:850;">
                                     {{ number_format($summary['total_monthly_kwh'], 2) }} kWh
                                 </td>
-                                <td style="text-align:right; color:#059669; font-size:1rem; font-weight:900;">
+                                <td class="eq-monthly-cost" style="text-align:right; font-size:1rem; font-weight:900;">
                                     &#8369;{{ number_format($summary['total_monthly_cost'], 2) }}
                                 </td>
                                 <td style="text-align:center; font-weight:800;">100%</td>
@@ -1915,8 +2217,8 @@ window.addEventListener('DOMContentLoaded', function() {
             <div class="modal-body">
                 
                 <!-- Quick Preset Selector -->
-                <div class="form-group" style="background:#f0fdf4; border:1px dashed #86efac; padding:12px 14px; border-radius:12px;">
-                    <label style="color:#047857;">
+                <div class="form-group preset-box">
+                    <label>
                         <span><i class="fa-solid fa-bolt"></i> Auto-Fill Common Appliance Preset:</span>
                         <span class="form-optional">Quick Template</span>
                     </label>
@@ -1949,6 +2251,14 @@ window.addEventListener('DOMContentLoaded', function() {
                         <label for="add_location">Location / Room <span class="form-optional">Optional</span></label>
                         <input type="text" name="location" id="add_location" class="form-input" placeholder="e.g. 2nd Floor Admin Room">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="add_status">Operational Status <span class="form-required">Required</span></label>
+                    <select name="status" id="add_status" class="form-select">
+                        <option value="active" selected>Active / In-Service (Included in Connected Load)</option>
+                        <option value="inactive">Inactive / Standby (Excluded from Connected Load)</option>
+                    </select>
                 </div>
 
                 <div class="modal-section-title"><i class="fa-solid fa-gauge-high"></i> Meter & Electrical Assignment</div>
@@ -2089,6 +2399,14 @@ window.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="edit_status">Operational Status <span class="form-required">Required</span></label>
+                    <select name="status" id="edit_status" class="form-select">
+                        <option value="active">Active / In-Service (Included in Connected Load)</option>
+                        <option value="inactive">Inactive / Standby (Excluded from Connected Load)</option>
+                    </select>
+                </div>
+
                 <div class="modal-section-title"><i class="fa-solid fa-gauge-high"></i> Meter & Electrical Assignment</div>
 
                 <div class="form-row">
@@ -2183,31 +2501,30 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- DELETE CONFIRMATION MODAL -->
-<div id="ltDeleteModal" class="modal-overlay">
-    <div class="modal-card" style="max-width: 440px; text-align:center; padding: 24px;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-        <div class="delete-modal-warning-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+<!-- STATUS TOGGLE (DEACTIVATE / REACTIVATE) CONFIRMATION MODAL -->
+<div id="ltStatusModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; text-align:center; padding: 26px 24px;" role="dialog" aria-modal="true" aria-labelledby="statusModalTitle">
+        <div id="statusModalIconBox" class="delete-modal-warning-icon" style="background:#fffbeb; border-color:#fef3c7; color:#d97706; margin-bottom: 14px;">
+            <i id="statusModalIcon" class="fa-solid fa-ban"></i>
         </div>
-        <h3 id="deleteModalTitle" style="margin: 0 0 8px 0; font-size: 1.15rem; font-weight: 850; color: #0f172a;">
-            Confirm Removal
+        <h3 id="statusModalTitle" style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 850;">
+            Deactivate Equipment
         </h3>
-        <p style="color: #64748b; font-size: 0.85rem; line-height: 1.5; margin: 0 0 16px 0;">
-            Are you sure you want to remove <strong id="deleteEquipmentName" style="color:#0f172a;"></strong> from this facility's load schedule?
+        <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0 0 16px 0;">
+            Are you sure you want to <span id="statusModalActionWord">deactivate</span> <strong id="statusEquipmentName"></strong>?
         </p>
-        <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 8px 12px; margin-bottom: 20px; font-size: 0.74rem; color: #991b1b; text-align: left; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-circle-info" style="color:#dc2626;"></i>
-            <span>This action will recalculate total facility connected load and baseline variance.</span>
+        <div id="statusModalNotice" style="background: #fefce8; border: 1px solid #fef08a; border-radius: 10px; padding: 12px 14px; margin-bottom: 22px; font-size: 0.78rem; color: #854d0e; text-align: left; display: flex; align-items: flex-start; gap: 10px; line-height: 1.45;">
+            <i id="statusModalNoticeIcon" class="fa-solid fa-circle-info" style="color:#d97706; font-size: 1.05rem; margin-top: 2px; flex-shrink: 0;"></i>
+            <span id="statusModalNoticeText">This equipment will remain saved in your facility records for historical inventory, but will be <strong>excluded from active connected load (kW), monthly kWh, and electricity cost calculations</strong>.</span>
         </div>
         <div style="display: flex; justify-content: center; gap: 10px;">
-            <button type="button" class="action-btn-secondary" onclick="closeDeleteModal()" style="min-width: 100px; justify-content: center;">
+            <button type="button" class="action-btn-secondary" onclick="closeStatusModal()" style="min-width: 110px; justify-content: center;">
                 Cancel
             </button>
-            <form id="ltDeleteForm" method="POST" action="" style="display:inline; margin:0;">
+            <form id="ltStatusForm" method="POST" action="" style="display:inline; margin:0;">
                 @csrf
-                @method('DELETE')
-                <button type="submit" class="action-btn-danger" style="min-width: 120px; justify-content: center;">
-                    <i class="fa-solid fa-trash-can"></i> Yes, Remove
+                <button type="submit" id="statusModalSubmitBtn" class="action-btn-primary" style="background:#d97706; min-width: 160px; justify-content: center; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);">
+                    <i id="statusModalBtnIcon" class="fa-solid fa-ban"></i> <span id="statusModalBtnText">Yes, Deactivate</span>
                 </button>
             </form>
         </div>
@@ -2433,6 +2750,7 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById('edit_equipment_name').value = equipment.equipment_name || '';
         document.getElementById('edit_category').value = equipment.category || 'HVAC / Cooling';
         document.getElementById('edit_location').value = equipment.location || '';
+        document.getElementById('edit_status').value = equipment.status || 'active';
         document.getElementById('edit_quantity').value = equipment.quantity || 1;
         document.getElementById('edit_rated_watts').value = equipment.rated_watts || '';
         document.getElementById('edit_hours').value = equipment.operating_hours_per_day || 8;
@@ -2503,20 +2821,80 @@ window.addEventListener('DOMContentLoaded', function() {
         document.getElementById(prefix + 'prev_cost').textContent = '₱' + monthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Delete Confirmation Modal Control
-    function confirmDeleteEquipment(id, name) {
-        const modal = document.getElementById('ltDeleteModal');
-        const form = document.getElementById('ltDeleteForm');
-        const nameEl = document.getElementById('deleteEquipmentName');
+    // Status Modal (Deactivate / Reactivate) Control
+    function openStatusModal(id, name, isInactive) {
+        const modal = document.getElementById('ltStatusModal');
+        const form = document.getElementById('ltStatusForm');
+        const nameEl = document.getElementById('statusEquipmentName');
+        const titleEl = document.getElementById('statusModalTitle');
+        const actionWordEl = document.getElementById('statusModalActionWord');
+        const iconBox = document.getElementById('statusModalIconBox');
+        const iconEl = document.getElementById('statusModalIcon');
+        const noticeEl = document.getElementById('statusModalNotice');
+        const noticeIcon = document.getElementById('statusModalNoticeIcon');
+        const noticeText = document.getElementById('statusModalNoticeText');
+        const submitBtn = document.getElementById('statusModalSubmitBtn');
+        const btnIcon = document.getElementById('statusModalBtnIcon');
+        const btnText = document.getElementById('statusModalBtnText');
+
         if (!modal || !form) return;
 
-        form.action = "{{ url('modules/load-tracking/equipment') }}/" + id;
+        form.action = "{{ url('modules/load-tracking/equipment') }}/" + id + "/toggle-status";
         if (nameEl) nameEl.textContent = name;
+
+        if (isInactive) {
+            // Reactivate configuration
+            if (titleEl) titleEl.textContent = 'Reactivate Equipment';
+            if (actionWordEl) actionWordEl.textContent = 'reactivate';
+            if (iconBox) {
+                iconBox.style.background = '#f0fdf4';
+                iconBox.style.borderColor = '#bbf7d0';
+                iconBox.style.color = '#16a34a';
+            }
+            if (iconEl) iconEl.className = 'fa-solid fa-power-off';
+            if (noticeEl) {
+                noticeEl.style.background = '#f0fdf4';
+                noticeEl.style.borderColor = '#bbf7d0';
+                noticeEl.style.color = '#166534';
+            }
+            if (noticeIcon) noticeIcon.style.color = '#16a34a';
+            if (noticeText) noticeText.innerHTML = 'This equipment will be restored to <strong>active operational status</strong> and included in facility connected load (kW), monthly kWh, and electricity cost computations.';
+            if (submitBtn) {
+                submitBtn.style.background = '#16a34a';
+                submitBtn.style.boxShadow = '0 4px 14px rgba(22, 163, 74, 0.25)';
+            }
+            if (btnIcon) btnIcon.className = 'fa-solid fa-power-off';
+            if (btnText) btnText.textContent = 'Yes, Reactivate';
+        } else {
+            // Deactivate configuration
+            if (titleEl) titleEl.textContent = 'Deactivate Equipment';
+            if (actionWordEl) actionWordEl.textContent = 'deactivate';
+            if (iconBox) {
+                iconBox.style.background = '#fffbeb';
+                iconBox.style.borderColor = '#fef3c7';
+                iconBox.style.color = '#d97706';
+            }
+            if (iconEl) iconEl.className = 'fa-solid fa-ban';
+            if (noticeEl) {
+                noticeEl.style.background = '#fefce8';
+                noticeEl.style.borderColor = '#fef08a';
+                noticeEl.style.color = '#854d0e';
+            }
+            if (noticeIcon) noticeIcon.style.color = '#d97706';
+            if (noticeText) noticeText.innerHTML = 'This equipment will remain saved in your facility records for historical inventory, but will be <strong>excluded from active connected load (kW), monthly kWh, and electricity cost calculations</strong>.';
+            if (submitBtn) {
+                submitBtn.style.background = '#d97706';
+                submitBtn.style.boxShadow = '0 4px 14px rgba(217, 119, 6, 0.25)';
+            }
+            if (btnIcon) btnIcon.className = 'fa-solid fa-ban';
+            if (btnText) btnText.textContent = 'Yes, Deactivate';
+        }
+
         modal.classList.add('is-active');
     }
 
-    function closeDeleteModal() {
-        const modal = document.getElementById('ltDeleteModal');
+    function closeStatusModal() {
+        const modal = document.getElementById('ltStatusModal');
         if (modal) modal.classList.remove('is-active');
     }
 

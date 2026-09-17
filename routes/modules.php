@@ -20,7 +20,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/facilities', [FacilityController::class, 'index'])->name('facilities.index');
     Route::redirect('/facilities/create', '/facilities')->name('facilities.create');
     Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
+    Route::get('/facilities/inactive', [FacilityController::class, 'inactive'])->name('facilities.inactive');
     Route::post('/facilities/sync-cprf', [FacilityController::class, 'syncCprf'])->name('facilities.sync-cprf');
+    Route::post('/facilities/{id}/reactivate', [FacilityController::class, 'reactivate'])->name('facilities.reactivate');
+    Route::post('/facilities/{id}/deactivate', [FacilityController::class, 'deactivate'])->name('facilities.deactivate');
     Route::get('/facilities/{id}', [FacilityController::class, 'show'])->name('facilities.show');
     Route::get('/facilities/{id}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
     Route::put('/facilities/{id}', [FacilityController::class, 'update'])->name('facilities.update');
@@ -34,9 +37,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Facilities
     Route::get('/modules/facilities/index', [FacilityController::class, 'index'])->name('modules.facilities.index');
     Route::redirect('/modules/facilities/create', '/modules/facilities/index')->name('modules.facilities.create');
+    Route::get('/modules/facilities/inactive', [FacilityController::class, 'inactive'])->name('modules.facilities.inactive');
+    Route::post('/modules/facilities/{id}/reactivate', [FacilityController::class, 'reactivate'])->name('modules.facilities.reactivate');
+    Route::post('/modules/facilities/{id}/deactivate', [FacilityController::class, 'deactivate'])->name('modules.facilities.deactivate');
     Route::get('/modules/facilities/archive', [FacilityController::class, 'archive'])->name('modules.facilities.archive');
     Route::post('/modules/facilities/{id}/restore', [FacilityController::class, 'restore'])->name('modules.facilities.restore');
     Route::delete('/modules/facilities/{id}/force-delete', [FacilityController::class, 'forceDelete'])->name('modules.facilities.force-delete');
+    Route::delete('/modules/facilities/{id}', [FacilityController::class, 'destroy'])->name('modules.facilities.destroy');
     Route::get('/modules/facilities/{id}/show', function ($id) {
         $facility = \App\Models\Facility::findOrFail($id);
         $showAvg = false;
@@ -83,6 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/modules/load-tracking', [LoadTrackingController::class, 'index'])->name('modules.load-tracking.index');
     Route::post('/modules/load-tracking/equipment', [LoadTrackingController::class, 'store'])->name('modules.load-tracking.equipment.store');
     Route::put('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'update'])->name('modules.load-tracking.equipment.update');
+    Route::post('/modules/load-tracking/equipment/{id}/toggle-status', [LoadTrackingController::class, 'toggleStatus'])->name('modules.load-tracking.equipment.toggle-status');
     Route::delete('/modules/load-tracking/equipment/{id}', [LoadTrackingController::class, 'destroy'])->name('modules.load-tracking.equipment.destroy');
     Route::get('/modules/load-tracking/export/{facility}', [LoadTrackingController::class, 'export'])
         ->middleware('download.confirmed')

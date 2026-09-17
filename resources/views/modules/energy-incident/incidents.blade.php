@@ -82,7 +82,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     <i class="fa-solid fa-triangle-exclamation"></i> Report Incident
                 </button>
                 @endif
-                <a href="{{ route('energy-incidents.export', $exportQuery) }}" class="download-btn" data-secure-download>
+                <a href="{{ route('energy-incidents.export', $exportQuery) }}" class="download-btn" id="incidentExportBtn" data-secure-download>
                     <i class="fa-solid fa-download"></i> Download
                 </a>
                 <a href="{{ route('energy-incidents.history') }}" class="history-btn">
@@ -323,7 +323,7 @@ window.addEventListener('DOMContentLoaded', function() {
                                 <span class="chip severity {{ $levelKey }}">{{ $levelLabel }}</span>
                                 <span class="chip status {{ $statusKey }}">{{ $statusLabel }}</span>
                                 @if($canExportReports)
-                                    <a href="{{ route('energy-incidents.download', $incident) }}" class="incident-pdf-btn" data-secure-download onclick="event.stopPropagation()">
+                                    <a href="{{ route('energy-incidents.download', $incident) }}" class="incident-pdf-btn" data-secure-download>
                                         <i class="fa-solid fa-file-pdf"></i> Download PDF
                                     </a>
                                 @endif
@@ -396,9 +396,9 @@ window.addEventListener('DOMContentLoaded', function() {
                                             </select>
                                         </div>
                                         <div class="action-field">
-                                            <label for="incident_asset_{{ $incident->id }}">Affected Meter / Sub-meter</label>
+                                            <label for="incident_asset_{{ $incident->id }}">Affected Meter / Equipment / Panel</label>
                                             <select name="affected_asset" id="incident_asset_{{ $incident->id }}" class="action-select">
-                                                <option value="">-- Select Meter / Sub-meter --</option>
+                                                <option value="">-- Select Meter / Panel / Line --</option>
                                                 <optgroup label="⚡ Main Meter &amp; Panel">
                                                     <option value="Main Utility Meter" {{ $incident->affected_asset === 'Main Utility Meter' ? 'selected' : '' }}>Main Utility Meter</option>
                                                     <option value="Main Distribution Panel (MDP)" {{ $incident->affected_asset === 'Main Distribution Panel (MDP)' ? 'selected' : '' }}>Main Distribution Panel (MDP)</option>
@@ -564,7 +564,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     <option value="Main Distribution Panel (MDP)">Main Distribution Panel (MDP)</option>
                 </select>
                 <small class="field-help" style="font-size: 0.73rem; color: #64748b; margin-top: 4px; display: block;">
-                    Choose <strong>Main Meter</strong> or select the specific <strong>Sub-meter</strong> / equipment affected.
+                    Choose <strong>Main Meter</strong> or select the specific electrical panel / line affected.
                 </small>
             </div>
             <div class="report-field">
@@ -613,9 +613,10 @@ function onReportFacilityChange() {
     mainOpt.selected = true;
     optMain.appendChild(mainOpt);
     optMain.appendChild(new Option('Main Distribution Panel (MDP)', 'Main Distribution Panel (MDP)'));
+    optMain.appendChild(new Option('Branch Circuit / Breaker Panel', 'Branch Circuit / Breaker Panel'));
     assetSelect.appendChild(optMain);
 
-    // Category 2: Facility Sub-meters
+    // Category 2: Facility Sub-meters (if any exist)
     let submeters = [];
     if (selectedOpt.dataset.submeters) {
         try {
@@ -623,22 +624,19 @@ function onReportFacilityChange() {
         } catch(e){}
     }
 
-    const optSub = document.createElement('optgroup');
-    optSub.label = '📊 Sub-meters in ' + facName;
     if (submeters && submeters.length > 0) {
+        const optSub = document.createElement('optgroup');
+        optSub.label = '📊 Sub-meters in ' + facName;
         submeters.forEach(s => {
             optSub.appendChild(new Option('Sub-meter: ' + s.name, 'Sub-meter: ' + s.name));
         });
-    } else {
-        const noSubOpt = new Option('(No sub-meters registered for this facility)', '');
-        noSubOpt.disabled = true;
-        optSub.appendChild(noSubOpt);
+        assetSelect.appendChild(optSub);
     }
-    assetSelect.appendChild(optSub);
 
-    // Category 3: General Electrical Line
+    // Category 3: Electrical Lines & Equipment
     const optEq = document.createElement('optgroup');
-    optEq.label = '🔌 Other Electrical Line';
+    optEq.label = '🔌 Electrical Lines & Equipment';
+    optEq.appendChild(new Option('HVAC / Aircon Dedicated Line', 'HVAC / Aircon Dedicated Line'));
     optEq.appendChild(new Option('Other Electrical Line / Feeder', 'Other Electrical Line / Feeder'));
     assetSelect.appendChild(optEq);
 }
@@ -733,6 +731,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    const exportBtn = document.getElementById('incidentExportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const filterForm = document.querySelector('.incident-filters');
+            let targetUrl = '{{ route('energy-incidents.export', [], false) }}';
+            if (filterForm) {
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams();
+                for (const [key, value] of formData.entries()) {
+                    if (value && value !== 'all' && value !== '0') {
+                        params.append(key, value);
+                    }
+                }
+                const qs = params.toString();
+                if (qs) targetUrl += '?' + qs;
+            }
+            const fullUrl = new URL(targetUrl, window.location.origin).href;
+            if (typeof window.requestSecureDownload === 'function') {
+                window.requestSecureDownload(fullUrl, {
+                    title: 'Confirm Incident Export',
+                    description: 'Please enter your account password before exporting incident records.',
+                    icon: '<i class="fa-solid fa-file-excel" style="color:#15803d;"></i>'
+                });
+            } else {
+                window.location.href = fullUrl;
+            }
+        });
+    }
 });
 </script>
 
@@ -1538,219 +1567,240 @@ body.dark-mode .triage-quick-btn.event {
 }
 
 /* Page-level dark mode */
-body.dark-mode .incident-page .incident-shell {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-shell {
     background: #0f172a;
     border: 1px solid #334155;
     box-shadow: 0 18px 34px rgba(2, 6, 23, 0.5);
 }
-body.dark-mode .incident-page .incident-header h2,
-body.dark-mode .incident-page .facility-name,
-body.dark-mode .incident-page .value-main,
-body.dark-mode .incident-page .modal-top h3,
-body.dark-mode .incident-page .detail-item strong {
-    color: #e2e8f0;
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-header h2,
+:is(html.dark-mode, body.dark-mode) .incident-page .facility-name,
+:is(html.dark-mode, body.dark-mode) .incident-page .value-main,
+:is(html.dark-mode, body.dark-mode) .incident-page .modal-top h3,
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-item strong {
+    color: #f8fafc;
 }
-body.dark-mode .incident-page .incident-header p,
-body.dark-mode .incident-page .facility-desc,
-body.dark-mode .incident-page .value-label,
-body.dark-mode .incident-page .value-sub,
-body.dark-mode .incident-page .empty-state,
-body.dark-mode .incident-page .detail-item span,
-body.dark-mode .incident-page .detail-block span,
-body.dark-mode .incident-page .detail-block p {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-header p,
+:is(html.dark-mode, body.dark-mode) .incident-page .facility-desc,
+:is(html.dark-mode, body.dark-mode) .incident-page .value-label,
+:is(html.dark-mode, body.dark-mode) .incident-page .value-sub,
+:is(html.dark-mode, body.dark-mode) .incident-page .empty-state,
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-item span,
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-block span,
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-block p {
     color: #94a3b8;
 }
-body.dark-mode .incident-page .metric-card {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card {
     border-color: #334155;
 }
-body.dark-mode .incident-page .metric-card.total {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card.total {
     background: rgba(37, 99, 235, 0.22);
     color: #93c5fd;
     border-color: rgba(147, 197, 253, 0.3);
 }
-body.dark-mode .incident-page .metric-card.critical {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card.critical {
     background: rgba(190, 24, 93, 0.24);
     color: #fda4af;
     border-color: rgba(244, 114, 182, 0.3);
 }
-body.dark-mode .incident-page .metric-card.open {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card.open {
     background: rgba(146, 64, 14, 0.26);
     color: #fde68a;
     border-color: rgba(251, 191, 36, 0.35);
 }
-body.dark-mode .incident-page .metric-card.pending {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card.pending {
     background: rgba(194, 65, 12, 0.24);
     color: #fdba74;
     border-color: rgba(251, 146, 60, 0.3);
 }
-body.dark-mode .incident-page .metric-card.ongoing {
+:is(html.dark-mode, body.dark-mode) .incident-page .metric-card.ongoing {
     background: rgba(14, 116, 144, 0.24);
     color: #67e8f9;
     border-color: rgba(125, 211, 252, 0.3);
 }
-body.dark-mode .incident-page .incident-filters input,
-body.dark-mode .incident-page .incident-filters select {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-filters input,
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-filters select {
     background: #0b1220;
     border-color: #334155;
     color: #e2e8f0;
 }
-body.dark-mode .incident-page .incident-filters input::placeholder {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-filters input::placeholder {
     color: #64748b;
 }
-body.dark-mode .incident-page .filter-btn.clear {
+:is(html.dark-mode, body.dark-mode) .incident-page .filter-btn.clear {
     background: #111827;
     color: #e2e8f0;
     border-color: #475569;
 }
-body.dark-mode .incident-page .download-btn {
+:is(html.dark-mode, body.dark-mode) .incident-page .download-btn {
     background: #0f766e;
 }
-body.dark-mode .incident-page .download-btn:hover {
+:is(html.dark-mode, body.dark-mode) .incident-page .download-btn:hover {
     background: #14b8a6;
 }
-body.dark-mode .incident-page .incident-list-container {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-list-container {
     background: #111827;
     border-color: #334155;
 }
-body.dark-mode .incident-page .incident-list-row {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-list-row {
     border-bottom-color: #334155;
 }
-body.dark-mode .incident-page .incident-list-row:hover,
-body.dark-mode .incident-page .incident-list-row:focus {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-list-row:hover,
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-list-row:focus {
     background: #1f2937;
 }
-body.dark-mode .incident-page .chip.severity.critical {
-    background: rgba(127, 29, 29, 0.32);
-    color: #fca5a5;
-    border-color: rgba(248, 113, 113, 0.35);
+:is(html.dark-mode, body.dark-mode) .incident-page .source-chip.cprf {
+    background: #042f2e !important;
+    border-color: #0d9488 !important;
+    color: #5eead4 !important;
 }
-body.dark-mode .incident-page .chip.severity.very-high {
+:is(html.dark-mode, body.dark-mode) .incident-page .source-chip.auto {
+    background: #1e3a8a !important;
+    border-color: #3b82f6 !important;
+    color: #bfdbfe !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-page .source-chip.manual {
+    background: #3b0764 !important;
+    border-color: #9333ea !important;
+    color: #e9d5ff !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.severity.critical {
+    background: #4c0519 !important;
+    color: #fda4af !important;
+    border: 1px solid #be123c !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.severity.very-high {
     background: rgba(190, 24, 93, 0.28);
     color: #f9a8d4;
     border-color: rgba(244, 114, 182, 0.34);
 }
-body.dark-mode .incident-page .chip.severity.high {
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.severity.high {
     background: rgba(146, 64, 14, 0.3);
     color: #fdba74;
     border-color: rgba(251, 146, 60, 0.34);
 }
-body.dark-mode .incident-page .chip.severity.warning {
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.severity.warning {
     background: rgba(146, 64, 14, 0.24);
     color: #fde68a;
     border-color: rgba(251, 191, 36, 0.35);
 }
-body.dark-mode .incident-page .chip.severity.normal {
-    background: rgba(22, 101, 52, 0.24);
-    color: #86efac;
-    border-color: rgba(74, 222, 128, 0.3);
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.severity.normal {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
 }
-body.dark-mode .incident-page .chip.status.open {
-    background: rgba(146, 64, 14, 0.26);
-    color: #fde68a;
-    border-color: rgba(251, 191, 36, 0.35);
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.status.open {
+    background: #451a03 !important;
+    color: #fdba74 !important;
+    border: 1px solid #9a3412 !important;
 }
-body.dark-mode .incident-page .chip.status.pending {
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.status.pending {
     background: rgba(194, 65, 12, 0.24);
     color: #fdba74;
     border-color: rgba(251, 146, 60, 0.3);
 }
-body.dark-mode .incident-page .chip.status.ongoing {
-    background: rgba(14, 116, 144, 0.24);
-    color: #67e8f9;
-    border-color: rgba(125, 211, 252, 0.3);
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.status.ongoing {
+    background: #1e3a8a !important;
+    color: #93c5fd !important;
+    border: 1px solid #3b82f6 !important;
 }
-body.dark-mode .incident-page .chip.status.resolved {
-    background: rgba(22, 101, 52, 0.24);
-    color: #86efac;
-    border-color: rgba(74, 222, 128, 0.3);
+:is(html.dark-mode, body.dark-mode) .incident-page .chip.status.resolved {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
 }
-body.dark-mode .incident-page .detail-btn {
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-btn {
     background: #1e3a8a;
     border-color: #1d4ed8;
     color: #dbeafe;
 }
-body.dark-mode .incident-page .detail-btn:hover {
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-btn:hover {
     background: #1d4ed8;
 }
-body.dark-mode .incident-page .incident-modal {
-    background: rgba(2, 6, 23, 0.7);
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-modal {
+    background: rgba(2, 6, 23, 0.76);
 }
-body.dark-mode .incident-page .incident-modal-content {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-modal-content {
     background: #111827;
     border: 1px solid #334155;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.6);
 }
-body.dark-mode .incident-page .modal-top {
+:is(html.dark-mode, body.dark-mode) .incident-page .modal-top {
     border-color: #334155;
     background: linear-gradient(135deg, #111827 35%, #0f172a);
 }
-body.dark-mode .incident-page .modal-top p {
+:is(html.dark-mode, body.dark-mode) .incident-page .modal-top p {
     color: #94a3b8;
 }
-body.dark-mode .incident-page .incident-modal-close {
+:is(html.dark-mode, body.dark-mode) .incident-page .modal-eyebrow {
+    color: #f87171;
+}
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-modal-close {
     background: #0f172a;
     border-color: #334155;
     color: #94a3b8;
 }
-body.dark-mode .incident-page .incident-modal-close:hover {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-modal-close:hover {
+    background: #4c0519;
+    border-color: #be123c;
     color: #fda4af;
 }
-body.dark-mode .incident-page .detail-item {
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-item {
     background: #0f172a;
     border-color: #334155;
 }
-body.dark-mode .incident-page .detail-item.is-deviation {
-    background: rgba(190, 24, 93, .12);
-    border-color: rgba(251, 113, 133, .35);
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-item.is-deviation {
+    background: #4c0519;
+    border-color: #be123c;
 }
-body.dark-mode .incident-page .detail-item.is-deviation strong {
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-item.is-deviation strong {
     color: #fda4af;
 }
-body.dark-mode .incident-page .incident-section-title {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-section-title {
     color: #cbd5e1;
 }
-body.dark-mode .incident-page .incident-section-title i {
+:is(html.dark-mode, body.dark-mode) .incident-page .incident-section-title i {
     color: #60a5fa;
 }
-body.dark-mode .incident-page .detail-block {
+:is(html.dark-mode, body.dark-mode) .incident-page .detail-block {
     background: #0f172a;
     border-color: #334155;
 }
-body.dark-mode .incident-page .modal-actions {
+:is(html.dark-mode, body.dark-mode) .incident-page .modal-actions {
     border-color: #334155;
 }
-body.dark-mode .incident-page .cimm-managed-note {
+:is(html.dark-mode, body.dark-mode) .incident-page .cimm-managed-note {
     background: rgba(13, 148, 136, .12);
     border-color: rgba(45, 212, 191, .3);
     color: #99f6e4;
 }
-body.dark-mode .incident-page .cimm-managed-note > i {
+:is(html.dark-mode, body.dark-mode) .incident-page .cimm-managed-note > i {
     background: rgba(13, 148, 136, .2);
 }
-body.dark-mode .incident-page .cimm-managed-note strong {
+:is(html.dark-mode, body.dark-mode) .incident-page .cimm-managed-note strong {
     color: #ccfbf1;
 }
-body.dark-mode .incident-page .attachment-list a {
+:is(html.dark-mode, body.dark-mode) .incident-page .attachment-list a {
     color: #93c5fd;
 }
-body.dark-mode .report-modal-content {
+:is(html.dark-mode, body.dark-mode) .report-modal-content {
     background: #111827;
     border: 1px solid #334155;
 }
-body.dark-mode .report-modal-heading h3,
-body.dark-mode .report-field label {
+:is(html.dark-mode, body.dark-mode) .report-modal-heading h3,
+:is(html.dark-mode, body.dark-mode) .report-field label {
     color: #e2e8f0;
 }
-body.dark-mode .report-modal-heading p {
+:is(html.dark-mode, body.dark-mode) .report-modal-heading p {
     color: #94a3b8;
 }
-body.dark-mode .report-field input,
-body.dark-mode .report-field select,
-body.dark-mode .report-field textarea {
+:is(html.dark-mode, body.dark-mode) .report-field input,
+:is(html.dark-mode, body.dark-mode) .report-field select,
+:is(html.dark-mode, body.dark-mode) .report-field textarea {
     background: #0b1220;
     border-color: #334155;
     color: #e2e8f0;
 }
-body.dark-mode .report-cancel {
+:is(html.dark-mode, body.dark-mode) .report-cancel {
     background: #1f2937;
     border-color: #475569;
     color: #e2e8f0;
@@ -2119,31 +2169,124 @@ body.dark-mode .report-cancel {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-/* DARK MODE */
-body.dark-mode .incident-pipeline-stepper {
-    background: #1e293b;
-    border-color: #334155;
-    color: #94a3b8;
+/* DARK MODE FOR LIFECYCLE PIPELINE, TRIAGE & WORKFLOW FORM */
+:is(html.dark-mode, body.dark-mode) .incident-pipeline-stepper {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
 }
-body.dark-mode .incident-pipeline-stepper .pipe-step.current { color: #60a5fa; }
-body.dark-mode .incident-pipeline-stepper .pipe-step.done { color: #34d399; }
-body.dark-mode .modal-lifecycle-pipeline {
-    background: #1e293b;
-    border-color: #334155;
+:is(html.dark-mode, body.dark-mode) .incident-pipeline-stepper .pipe-step.current { color: #60a5fa !important; }
+:is(html.dark-mode, body.dark-mode) .incident-pipeline-stepper .pipe-step.done { color: #34d399 !important; }
+
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline {
+    background: #0f172a !important;
+    border-color: #334155 !important;
 }
-body.dark-mode .modal-lifecycle-pipeline .pipe-text strong { color: #f8fafc; }
-body.dark-mode .modal-lifecycle-pipeline .pipe-text span { color: #94a3b8; }
-body.dark-mode .incident-action-section {
-    background: #1e293b;
-    border-color: #334155;
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-icon {
+    background: #1e293b !important;
+    color: #94a3b8 !important;
+    border: 1px solid #334155 !important;
 }
-body.dark-mode .incident-action-form label { color: #cbd5e1; }
-body.dark-mode .incident-action-form .action-select,
-body.dark-mode .incident-action-form .action-input,
-body.dark-mode .incident-action-form .action-textarea {
-    background: #0f172a;
-    border-color: #334155;
-    color: #f8fafc;
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-item.active .pipe-icon {
+    background: #1e3a8a !important;
+    color: #93c5fd !important;
+    border: 1px solid #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-item.done .pipe-icon {
+    background: #052e16 !important;
+    color: #86efac !important;
+    border: 1px solid #166534 !important;
+}
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-text strong {
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-text span {
+    color: #94a3b8 !important;
+}
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-connector {
+    background: #334155 !important;
+}
+:is(html.dark-mode, body.dark-mode) .modal-lifecycle-pipeline .pipe-connector.done {
+    background: #10b981 !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .incident-pdf-btn {
+    background: #1e3a8a !important;
+    border: 1px solid #3b82f6 !important;
+    color: #bfdbfe !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-pdf-btn:hover {
+    background: #2563eb !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+}
+
+:is(html.dark-mode, body.dark-mode) .incident-action-section {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+:is(html.dark-mode, body.dark-mode) .triage-quick-btn.dispatch {
+    background: #1e3a8a !important;
+    border: 1px solid #3b82f6 !important;
+    color: #93c5fd !important;
+}
+:is(html.dark-mode, body.dark-mode) .triage-quick-btn.dispatch:hover {
+    background: #2563eb !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+}
+:is(html.dark-mode, body.dark-mode) .triage-quick-btn.event {
+    background: #052e16 !important;
+    border: 1px solid #166534 !important;
+    color: #86efac !important;
+}
+:is(html.dark-mode, body.dark-mode) .triage-quick-btn.event:hover {
+    background: #16a34a !important;
+    border-color: #4ade80 !important;
+    color: #ffffff !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-action-form label {
+    color: #cbd5e1 !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-select,
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-input,
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-textarea {
+    background: #0b1220 !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-select:focus,
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-input:focus,
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+:is(html.dark-mode, body.dark-mode) .operational-event-box {
+    background: #052e16 !important;
+    border: 1px solid #166534 !important;
+}
+:is(html.dark-mode, body.dark-mode) .operational-event-box div {
+    color: #86efac !important;
+}
+:is(html.dark-mode, body.dark-mode) .operational-event-box p {
+    color: #a7f3d0 !important;
+}
+:is(html.dark-mode, body.dark-mode) .operational-event-box label {
+    color: #86efac !important;
+}
+:is(html.dark-mode, body.dark-mode) .operational-event-box select {
+    background: #0b1220 !important;
+    border-color: #166534 !important;
+    color: #f8fafc !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-action-form .sync-hint {
+    color: #34d399 !important;
+}
+:is(html.dark-mode, body.dark-mode) .incident-action-form .action-submit-btn {
+    background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
 }
 </style>
 @endsection
